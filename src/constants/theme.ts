@@ -24,6 +24,17 @@ export const Colors = {
   },
 } as const;
 
+// Eatzy brand tokens
+export const Brand = {
+  bg: '#FFF8F4',
+  orange: '#E8672A',
+  orangeLight: '#FFF0E8',
+  textPrimary: '#1C0F00',
+  textSecondary: '#8B7355',
+  card: '#FFFFFF',
+  border: '#F0E8E0',
+} as const;
+
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({

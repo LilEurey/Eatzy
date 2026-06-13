@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "EatzyTemp",
-    "slug": "EatzyTemp",
+    "name": "Eatzy",
+    "slug": "eatzy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "eatzytemp",
+    "scheme": "eatzy",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
