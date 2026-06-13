@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as ExpoLinking from 'expo-linking';
+import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 
@@ -184,6 +185,16 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Dev-only bypass */}
+          {__DEV__ && (
+            <TouchableOpacity
+              onPress={() => router.replace('/(tabs)')}
+              style={{ marginTop: 20, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#CCC', fontSize: 12 }}>⚙ Skip login (dev only)</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </SafeAreaView>
     </View>

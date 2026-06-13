@@ -121,3 +121,13 @@ chore(db): apply escrow RPC migration
 ```
 
 Always run `npx tsc --noEmit` before committing. Never commit with TypeScript errors.
+
+## Build Status
+
+- [x] Phase 1 — App shell (auth gate, tab navigator, Supabase + DB migrations)
+- [x] Phase 2 — Login screen + Onboarding preferences screen
+- [x] Phase 3 — Home screen (greeting, search, queue banner, recommendations, store list)
+- [ ] Phase 4 — Store detail (`/store/[id].tsx`) + Food item detail (`/item/[id].tsx`)
+- [ ] Phase 5 — Cart state (`src/lib/cart-store.ts`) + Cart screen + Checkout with time slot picker
+- [ ] Phase 6 — Order tracking (`/track/[id].tsx`) with Realtime + Rating screen (`/rate/[id].tsx`)
+- [ ] Phase 7 — Full Orders tab, Wallet tab (balance + top-up), Profile tab (avatar, settings, logout)

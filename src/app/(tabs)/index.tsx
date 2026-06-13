@@ -154,7 +154,7 @@ export default function HomeScreen() {
                 </View>
               </View>
             </View>
-            <TouchableOpacity onPress={() => router.push(`/store/${topVendor.id}` as any)}>
+            <TouchableOpacity onPress={() => router.push(`/store/${topVendor.id}`)}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>View ›</Text>
             </TouchableOpacity>
           </View>
@@ -200,7 +200,7 @@ export default function HomeScreen() {
                           ฿{featured.price}
                         </Text>
                         <TouchableOpacity
-                          onPress={() => router.push(`/item/${featured.id}` as any)}
+                          onPress={() => router.push(`/item/${featured.id}`)}
                           style={{
                             backgroundColor: '#a04100', borderRadius: 16,
                             paddingHorizontal: 16, paddingVertical: 8,
@@ -245,7 +245,7 @@ export default function HomeScreen() {
               return (
                 <TouchableOpacity
                   key={i}
-                  onPress={() => item && router.push(`/item/${item.id}` as any)}
+                  onPress={() => item && router.push(`/item/${item.id}`)}
                   activeOpacity={0.85}
                   style={{
                     flex: 1, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
@@ -305,7 +305,7 @@ export default function HomeScreen() {
             {vendors.slice(0, 6).map(vendor => (
               <TouchableOpacity
                 key={vendor.id}
-                onPress={() => router.push(`/store/${vendor.id}` as any)}
+                onPress={() => router.push(`/store/${vendor.id}`)}
                 activeOpacity={0.85}
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 16,
