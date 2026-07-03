@@ -2,6 +2,7 @@ import { View, TouchableOpacity, Text } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
+import { useCart, cartCount } from '@/lib/cart-store';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -16,6 +17,7 @@ function TabIcon({ name, focused }: { name: IoniconsName; focused: boolean }) {
 }
 
 export default function TabsLayout() {
+  const count = cartCount(useCart());
   return (
     <View style={{ flex: 1 }}>
       <Tabs
@@ -93,6 +95,16 @@ export default function TabsLayout() {
         }}
       >
         <Text style={{ fontSize: 22 }}>🛒</Text>
+        {count > 0 && (
+          <View style={{
+            position: 'absolute', top: -4, right: -4,
+            minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6,
+            backgroundColor: '#fff', borderWidth: 2, borderColor: Brand.orange,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: Brand.orange }}>{count}</Text>
+          </View>
+        )}
       </TouchableOpacity>
     </View>
   );

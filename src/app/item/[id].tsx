@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { getMenuItemById, getVendorName } from '@/lib/mock-data';
+import { addToCart } from '@/lib/cart-store';
 
 function SpiceIndicator({ level }: { level: number }) {
   if (level === 0) return <Text style={{ fontSize: 12, color: Brand.textSecondary }}>No spice</Text>;
@@ -214,6 +215,10 @@ export default function ItemDetailScreen() {
           {/* Add to cart button */}
           <TouchableOpacity
             activeOpacity={0.85}
+            onPress={() => {
+              addToCart(item, qty);
+              router.push('/cart');
+            }}
             style={{
               flex: 1, backgroundColor: Brand.orange, borderRadius: 14,
               height: 44, alignItems: 'center', justifyContent: 'center',

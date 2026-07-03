@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Brand } from '@/constants/theme';
-import { MOCK_CART, getVendorById } from '@/lib/mock-data';
+import { getVendorById } from '@/lib/mock-data';
+import { useCart, setQty, clearCart, cartSubtotal } from '@/lib/cart-store';
 
 const TIME_SLOTS = [
   '12:00 – 12:15',
@@ -14,19 +15,18 @@ const TIME_SLOTS = [
 ];
 
 export default function CartScreen() {
-  const [items, setItems] = useState(MOCK_CART.items.map(i => ({ ...i })));
+  const cart = useCart();
+  const items = cart.items;
   const [selectedSlot, setSelectedSlot] = useState(TIME_SLOTS[1]);
 
-  const vendor = getVendorById(MOCK_CART.vendor_id);
-  const subtotal = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
-  const total = subtotal + MOCK_CART.packaging_fee;
+  const vendor = cart.vendor_id ? getVendorById(cart.vendor_id) : null;
+  const subtotal = cartSubtotal(cart);
+  const total = subtotal + cart.packaging_fee;
 
-  function setQty(id: string, delta: number) {
-    setItems(prev =>
-      prev
-        .map(i => i.menu_item_id === id ? { ...i, quantity: i.quantity + delta } : i)
-        .filter(i => i.quantity > 0)
-    );
+  function placeOrder() {
+    Alert.alert('Order placed', `Pickup at ${selectedSlot}. Total ฿${total}.`, [
+      { text: 'OK', onPress: () => { clearCart(); router.replace('/(tabs)/orders'); } },
+    ]);
   }
 
   if (items.length === 0) {
@@ -177,7 +177,7 @@ export default function CartScreen() {
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 14, color: Brand.textSecondary }}>Packaging fee</Text>
-            <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{MOCK_CART.packaging_fee}</Text>
+            <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{cart.packaging_fee}</Text>
           </View>
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -197,6 +197,7 @@ export default function CartScreen() {
       }}>
         <TouchableOpacity
           activeOpacity={0.85}
+          onPress={placeOrder}
           style={{
             backgroundColor: Brand.orange, borderRadius: 16,
             paddingVertical: 16, alignItems: 'center',

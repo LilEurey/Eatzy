@@ -451,17 +451,6 @@ export const MOCK_WALLET_TRANSACTIONS = [
   },
 ];
 
-// ─── Cart ─────────────────────────────────────────────────────────────────────
-
-export const MOCK_CART = {
-  vendor_id: 'v001',
-  items: [
-    { menu_item_id: 'm001', name: 'Pad Thai', unit_price: 55, quantity: 2 },
-    { menu_item_id: 'm010', name: 'Thai Milk Tea', unit_price: 35, quantity: 1 },
-  ],
-  packaging_fee: 5,
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function getVendorById(id: string) {
