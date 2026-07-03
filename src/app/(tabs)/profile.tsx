@@ -13,6 +13,8 @@ const DEV_ROUTES: { label: string; route: string }[] = [
   { label: '🛒 Cart', route: '/cart' },
   { label: '🏪 Store detail (sample)', route: '/store/v001' },
   { label: '🍛 Food item detail (sample)', route: '/item/m001' },
+  { label: '📍 Track order (sample)', route: '/track/o001' },
+  { label: '⭐ Rate order (sample)', route: '/rate/o003' },
 ];
 
 export default function ProfileScreen() {

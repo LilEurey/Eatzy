@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/theme';
 import { MOCK_WALLET_BALANCE, MOCK_WALLET_TRANSACTIONS } from '@/lib/mock-data';
@@ -25,6 +26,20 @@ function formatDate(iso: string) {
 }
 
 export default function WalletScreen() {
+  const [balance, setBalance] = useState(MOCK_WALLET_BALANCE);
+  const [txns, setTxns] = useState(MOCK_WALLET_TRANSACTIONS);
+
+  // ponytail: local mock top-up. Route through the topup_wallet RPC when the DB is live.
+  function topUp(amount: number) {
+    setBalance(b => b + amount);
+    setTxns(prev => [
+      { id: `wt${Date.now()}`, type: 'topup' as const, amount, description: 'Wallet top-up', created_at: new Date().toISOString() },
+      ...prev,
+    ]);
+  }
+
+  const comingSoon = () => Alert.alert('Coming soon', 'This feature isn’t available yet.');
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
@@ -59,13 +74,14 @@ export default function WalletScreen() {
               CAMPUS WALLET BALANCE
             </Text>
             <Text style={{ fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1, marginBottom: 20 }}>
-              ฿{MOCK_WALLET_BALANCE.toLocaleString()}.00
+              ฿{balance.toLocaleString()}.00
             </Text>
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {TOP_UP_AMOUNTS.map(amount => (
                 <TouchableOpacity
                   key={amount}
+                  onPress={() => topUp(amount)}
                   style={{
                     flex: 1, backgroundColor: 'rgba(255,255,255,0.2)',
                     borderRadius: 12, paddingVertical: 10, alignItems: 'center',
@@ -81,12 +97,13 @@ export default function WalletScreen() {
         {/* Quick actions */}
         <View style={{ flexDirection: 'row', gap: 12, marginHorizontal: 20, marginBottom: 28 }}>
           {[
-            { icon: '↓', label: 'Top Up' },
-            { icon: '⇄', label: 'Transfer' },
-            { icon: '📄', label: 'Statement' },
-          ].map(({ icon, label }) => (
+            { icon: '↓', label: 'Top Up', onPress: () => topUp(100) },
+            { icon: '⇄', label: 'Transfer', onPress: comingSoon },
+            { icon: '📄', label: 'Statement', onPress: comingSoon },
+          ].map(({ icon, label, onPress }) => (
             <TouchableOpacity
               key={label}
+              onPress={onPress}
               style={{
                 flex: 1, backgroundColor: Brand.card, borderRadius: 16,
                 paddingVertical: 16, alignItems: 'center', gap: 6,
@@ -117,7 +134,7 @@ export default function WalletScreen() {
             shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
           }}>
-            {MOCK_WALLET_TRANSACTIONS.map((tx, i) => {
+            {txns.map((tx, i) => {
               const cfg = TX_CONFIG[tx.type];
               const isPositive = tx.amount > 0;
               return (

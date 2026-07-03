@@ -127,7 +127,16 @@ Always run `npx tsc --noEmit` before committing. Never commit with TypeScript er
 - [x] Phase 1 — App shell (auth gate, tab navigator, Supabase + DB migrations)
 - [x] Phase 2 — Login screen + Onboarding preferences screen
 - [x] Phase 3 — Home screen (greeting, search, queue banner, recommendations, store list)
-- [ ] Phase 4 — Store detail (`/store/[id].tsx`) + Food item detail (`/item/[id].tsx`)
-- [ ] Phase 5 — Cart state (`src/lib/cart-store.ts`) + Cart screen + Checkout with time slot picker
-- [ ] Phase 6 — Order tracking (`/track/[id].tsx`) with Realtime + Rating screen (`/rate/[id].tsx`)
-- [ ] Phase 7 — Full Orders tab, Wallet tab (balance + top-up), Profile tab (avatar, settings, logout)
+- [x] Phase 4 — Store detail (`/store/[id].tsx`) + Food item detail (`/item/[id].tsx`)
+- [x] Phase 5 — Cart state (`src/lib/cart-store.ts`) + Cart screen + Checkout with time slot picker
+- [x] Phase 6 — Order tracking (`/track/[id].tsx`) + Rating screen (`/rate/[id].tsx`)
+- [~] Phase 7 — Orders tab (done), Wallet tab (balance + local top-up, done), Profile tab (dev nav + logout done; avatar/settings still TODO)
+
+### Data strategy (current)
+
+The DB is empty during development, so screens run on **mock fixtures** in `src/lib/mock-data.ts`.
+Home (`/(tabs)/index.tsx`) queries Supabase and falls back to mock when the DB returns nothing; other
+screens read mock directly. Client-side state uses `src/lib/cart-store.ts` (cart) and local component
+state (wallet). Points wired to mock that need a real backend when the DB is live — search for `ponytail:`
+comments — are: track-screen status progression (→ Supabase Realtime on `orders.status`), rating submit
+(→ `ratings` insert), and wallet top-up (→ `topup_wallet` RPC).
