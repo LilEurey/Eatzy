@@ -179,7 +179,7 @@ export default function LoginScreen() {
           {/* Vendor link */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
             <Text style={{ color: Brand.textSecondary, fontSize: 13 }}>For Vendor </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Coming soon', 'Vendor sign-up isn’t available yet.')}>
               <Text style={{ color: '#4A90D9', fontWeight: '600', fontSize: 13 }}>
                 Click Here
               </Text>

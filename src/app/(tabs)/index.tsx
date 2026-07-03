@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -103,6 +103,7 @@ export default function HomeScreen() {
 
   const topVendor = vendors[0] ?? null;
   const queue = queueStatus(topVendor?.current_queue_count ?? null);
+  const comingSoon = () => Alert.alert('Coming soon', 'This feature isn’t available yet.');
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -124,7 +125,7 @@ export default function HomeScreen() {
           <Text style={{ color: '#020202' }}>Eat</Text>
           <Text style={{ color: Brand.orange }}>zy</Text>
         </Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={comingSoon}>
           <Text style={{ fontSize: 22 }}>🔔</Text>
         </TouchableOpacity>
       </View>
@@ -138,6 +139,7 @@ export default function HomeScreen() {
         {/* Search bar */}
         <TouchableOpacity
           activeOpacity={0.8}
+          onPress={comingSoon}
           style={{
             backgroundColor: 'rgba(248,221,210,0.5)', borderRadius: 16,
             paddingVertical: 18, paddingLeft: 48, paddingRight: 16, marginBottom: 20,
