@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
+import { MOCK_VENDORS, MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
 
 type Vendor = {
   id: string;
@@ -60,10 +61,35 @@ export default function HomeScreen() {
       ]);
 
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
-      if (vendorsRes.data) setVendors(vendorsRes.data as Vendor[]);
-      if (featuredRes.data?.[0]) setFeatured(featuredRes.data[0] as unknown as MenuItem);
-      if (trendingRes.data) setTrending(trendingRes.data as unknown as MenuItem[]);
-    } catch {}
+
+      const dbVendors = vendorsRes.data as Vendor[] | null;
+      const dbFeatured = featuredRes.data?.[0] as unknown as MenuItem | undefined;
+      const dbTrending = trendingRes.data as unknown as MenuItem[] | null;
+
+      // Fall back to mock data when DB is empty
+      setVendors(dbVendors?.length ? dbVendors : MOCK_VENDORS as unknown as Vendor[]);
+
+      if (dbFeatured) {
+        setFeatured(dbFeatured);
+      } else {
+        const mockFeatured = MOCK_MENU_ITEMS.find(i => i.is_featured)!;
+        setFeatured({ ...mockFeatured, vendors: { name: getVendorName(mockFeatured.vendor_id) } });
+      }
+
+      if (dbTrending?.length) {
+        setTrending(dbTrending);
+      } else {
+        const mockTrending = MOCK_MENU_ITEMS.filter(i => !i.is_featured).slice(0, 2);
+        setTrending(mockTrending.map(i => ({ ...i, vendors: { name: getVendorName(i.vendor_id) } })));
+      }
+    } catch {
+      // Full fallback if Supabase is unreachable
+      const mockFeatured = MOCK_MENU_ITEMS.find(i => i.is_featured)!;
+      setVendors(MOCK_VENDORS as unknown as Vendor[]);
+      setFeatured({ ...mockFeatured, vendors: { name: getVendorName(mockFeatured.vendor_id) } });
+      const mockTrending = MOCK_MENU_ITEMS.filter(i => !i.is_featured).slice(0, 2);
+      setTrending(mockTrending.map(i => ({ ...i, vendors: { name: getVendorName(i.vendor_id) } })));
+    }
     setLoading(false);
   }
 

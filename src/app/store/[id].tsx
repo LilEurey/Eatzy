@@ -1,26 +1,265 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Brand } from '@/constants/theme';
+import { getVendorById, getMenuItemsByVendor } from '@/lib/mock-data';
+
+function queueStatus(count: number) {
+  if (count <= 3) return { label: 'No Queue', color: '#22c55e' };
+  if (count <= 8) return { label: 'Moderate', color: '#f59e0b' };
+  return { label: 'Busy', color: '#ef4444' };
+}
+
+function spiceLabel(level: number) {
+  if (level === 0) return 'No spice';
+  return '🌶'.repeat(level);
+}
 
 export default function StoreDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  const vendor = getVendorById(id);
+  const allItems = getMenuItemsByVendor(id);
+
+  const categories = ['All', ...Array.from(new Set(allItems.map(i => i.category)))];
+  const filteredItems = activeCategory === 'All'
+    ? allItems
+    : allItems.filter(i => i.category === activeCategory);
+
+  if (!vendor) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 40 }}>🏪</Text>
+          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>Store not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const queue = queueStatus(vendor.current_queue_count);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
-        </TouchableOpacity>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>
-          Store Detail
-        </Text>
-      </View>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 40 }}>🏪</Text>
-        <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>Coming in Phase 4</Text>
-        <Text style={{ color: Brand.textSecondary, fontSize: 12, marginTop: 4 }}>ID: {id}</Text>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+        {/* Header image area */}
+        <View style={{ height: 220, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+          {vendor.cover_image_url
+            ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            : <Text style={{ fontSize: 72 }}>🏪</Text>
+          }
+          {/* Back button */}
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{
+              position: 'absolute', top: 16, left: 16,
+              width: 40, height: 40, borderRadius: 20,
+              backgroundColor: 'rgba(255,255,255,0.9)',
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
+            }}
+          >
+            <Text style={{ fontSize: 18, color: Brand.textPrimary }}>←</Text>
+          </TouchableOpacity>
+
+          {/* Open badge */}
+          <View style={{
+            position: 'absolute', top: 16, right: 16,
+            backgroundColor: vendor.is_open ? '#22c55e' : '#ef4444',
+            borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4,
+          }}>
+            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
+              {vendor.is_open ? 'Open' : 'Closed'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ padding: 20 }}>
+          {/* Vendor name + tags row */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Text style={{ fontSize: 24, fontWeight: '700', color: Brand.textPrimary, flex: 1 }}>
+              {vendor.name}
+            </Text>
+            {vendor.is_halal_certified && (
+              <View style={{
+                backgroundColor: '#d1fae5', borderRadius: 8,
+                paddingHorizontal: 10, paddingVertical: 4,
+              }}>
+                <Text style={{ fontSize: 12, color: '#065f46', fontWeight: '700' }}>Halal ✓</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Cuisine tags */}
+          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            {vendor.cuisine_tags.map(tag => (
+              <View key={tag} style={{
+                backgroundColor: Brand.orangeLight, borderRadius: 99,
+                paddingHorizontal: 10, paddingVertical: 4,
+              }}>
+                <Text style={{ fontSize: 12, color: Brand.orange, fontWeight: '600' }}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Stats row */}
+          <View style={{
+            flexDirection: 'row', gap: 12, marginBottom: 16,
+            backgroundColor: Brand.card, borderRadius: 16, padding: 14,
+            shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
+          }}>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ fontSize: 18, marginBottom: 2 }}>⏱</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>
+                {vendor.estimated_wait_min}–{vendor.estimated_wait_min + 3} min
+              </Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>Wait time</Text>
+            </View>
+            <View style={{ width: 1, backgroundColor: Brand.border }} />
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: queue.color }} />
+              </View>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>
+                {vendor.current_queue_count} orders
+              </Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{queue.label}</Text>
+            </View>
+            <View style={{ width: 1, backgroundColor: Brand.border }} />
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ fontSize: 18, marginBottom: 2 }}>🕐</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>
+                {vendor.open_time}–{vendor.close_time}
+              </Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>Hours</Text>
+            </View>
+          </View>
+
+          {/* Bio */}
+          <Text style={{ fontSize: 14, color: Brand.textSecondary, lineHeight: 20, marginBottom: 24 }}>
+            {vendor.bio}
+          </Text>
+
+          {/* Menu section */}
+          <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
+            Menu
+          </Text>
+
+          {/* Category tabs */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {categories.map(cat => {
+                const active = cat === activeCategory;
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    onPress={() => setActiveCategory(cat)}
+                    style={{
+                      paddingHorizontal: 16, paddingVertical: 8, borderRadius: 99,
+                      backgroundColor: active ? Brand.orange : Brand.card,
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: active ? 0 : 0.04, shadowRadius: 4, elevation: active ? 0 : 1,
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: 13, fontWeight: '600',
+                      color: active ? '#fff' : Brand.textSecondary,
+                    }}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          {/* Menu items */}
+          <View style={{ gap: 12 }}>
+            {filteredItems.map(item => (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => router.push(`/item/${item.id}`)}
+                activeOpacity={0.85}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 14,
+                  backgroundColor: Brand.card, borderRadius: 20, padding: 14,
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
+                }}
+              >
+                {/* Image */}
+                <View style={{
+                  width: 80, height: 80, borderRadius: 14,
+                  backgroundColor: Brand.orangeLight, overflow: 'hidden',
+                  alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  {item.image_url
+                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    : <Text style={{ fontSize: 34 }}>🍽️</Text>
+                  }
+                </View>
+
+                {/* Info */}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, marginBottom: 3 }}>
+                    {item.name}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: Brand.textSecondary, marginBottom: 6 }} numberOfLines={2}>
+                    {item.description}
+                  </Text>
+
+                  {/* Dietary badges */}
+                  <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
+                    {item.is_halal && (
+                      <View style={{ backgroundColor: '#d1fae5', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 10, color: '#065f46', fontWeight: '600' }}>Halal</Text>
+                      </View>
+                    )}
+                    {item.is_vegetarian && (
+                      <View style={{ backgroundColor: '#dcfce7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 10, color: '#166534', fontWeight: '600' }}>Veg 🌿</Text>
+                      </View>
+                    )}
+                    {item.spice_level > 0 && (
+                      <View style={{ backgroundColor: '#fef3c7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 10, color: '#92400e' }}>{spiceLabel(item.spice_level)}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#a04100' }}>
+                      ฿{item.price}
+                    </Text>
+                    <View style={{
+                      width: 30, height: 30, borderRadius: 15,
+                      backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Text style={{ fontSize: 18, color: Brand.orange, lineHeight: 20 }}>+</Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            {filteredItems.length === 0 && (
+              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                <Text style={{ fontSize: 32, marginBottom: 8 }}>🍽️</Text>
+                <Text style={{ color: Brand.textSecondary }}>No items in this category</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
