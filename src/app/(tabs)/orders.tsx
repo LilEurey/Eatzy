@@ -164,7 +164,7 @@ export default function OrdersScreen() {
                 {/* Action button */}
                 {isActive && (
                   <TouchableOpacity
-                    onPress={() => router.push(`/store/${order.vendor_id}`)}
+                    onPress={() => router.push(`/track/${order.id}`)}
                     style={{
                       marginTop: 12, backgroundColor: order.status === 'ready' ? Brand.orange : Brand.orangeLight,
                       borderRadius: 12, paddingVertical: 10, alignItems: 'center',
@@ -181,13 +181,14 @@ export default function OrdersScreen() {
 
                 {order.status === 'completed' && (
                   <TouchableOpacity
+                    onPress={() => router.push(`/rate/${order.id}`)}
                     style={{
                       marginTop: 12, borderWidth: 1.5, borderColor: Brand.border,
                       borderRadius: 12, paddingVertical: 10, alignItems: 'center',
                     }}
                   >
                     <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textSecondary }}>
-                      Reorder
+                      Rate order
                     </Text>
                   </TouchableOpacity>
                 )}

@@ -468,3 +468,7 @@ export function getMenuItemsByVendor(vendorId: string) {
 export function getVendorName(vendorId: string) {
   return MOCK_VENDORS.find(v => v.id === vendorId)?.name ?? '';
 }
+
+export function getOrderById(id: string) {
+  return MOCK_ORDERS.find(o => o.id === id) ?? null;
+}
