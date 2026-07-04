@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/theme';
 import { MOCK_WALLET_BALANCE, MOCK_WALLET_TRANSACTIONS } from '@/lib/mock-data';
+import { showAlert } from '@/lib/alert';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
 
@@ -38,7 +39,7 @@ export default function WalletScreen() {
     ]);
   }
 
-  const comingSoon = () => Alert.alert('Coming soon', 'This feature isn’t available yet.');
+  const comingSoon = () => showAlert('Coming soon', 'This feature isn’t available yet.');
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>

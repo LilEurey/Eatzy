@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as ExpoLinking from 'expo-linking';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
+import { showAlert } from '@/lib/alert';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -28,7 +29,7 @@ export default function LoginScreen() {
         await supabase.auth.exchangeCodeForSession(result.url);
       }
     } catch (e: any) {
-      Alert.alert('Sign in failed', e.message);
+      showAlert('Sign in failed', e.message);
     } finally {
       setLoading(false);
     }
@@ -179,7 +180,7 @@ export default function LoginScreen() {
           {/* Vendor link */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
             <Text style={{ color: Brand.textSecondary, fontSize: 13 }}>For Vendor </Text>
-            <TouchableOpacity onPress={() => Alert.alert('Coming soon', 'Vendor sign-up isn’t available yet.')}>
+            <TouchableOpacity onPress={() => showAlert('Coming soon', 'Vendor sign-up isn’t available yet.')}>
               <Text style={{ color: '#4A90D9', fontWeight: '600', fontSize: 13 }}>
                 Click Here
               </Text>

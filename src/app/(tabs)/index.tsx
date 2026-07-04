@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { MOCK_VENDORS, MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
+import { showAlert } from '@/lib/alert';
 
 type Vendor = {
   id: string;
@@ -103,7 +104,7 @@ export default function HomeScreen() {
 
   const topVendor = vendors[0] ?? null;
   const queue = queueStatus(topVendor?.current_queue_count ?? null);
-  const comingSoon = () => Alert.alert('Coming soon', 'This feature isn’t available yet.');
+  const comingSoon = () => showAlert('Coming soon', 'This feature isn’t available yet.');
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
+import { showAlert } from '@/lib/alert';
 
 const DIETARY_OPTIONS = ['Halal', 'Vegetarian', 'Jay'] as const;
 type Dietary = (typeof DIETARY_OPTIONS)[number];
@@ -64,7 +65,7 @@ export default function OnboardingScreen() {
       if (error) throw error;
       router.replace('/(tabs)');
     } catch (e: any) {
-      Alert.alert('Error saving preferences', e.message);
+      showAlert('Error saving preferences', e.message);
       setSaving(false);
     }
   }

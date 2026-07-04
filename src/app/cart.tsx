@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { getVendorById } from '@/lib/mock-data';
 import { useCart, setQty, clearCart, cartSubtotal } from '@/lib/cart-store';
+import { showAlert } from '@/lib/alert';
 
 const TIME_SLOTS = [
   '12:00 – 12:15',
@@ -24,9 +25,10 @@ export default function CartScreen() {
   const total = subtotal + cart.packaging_fee;
 
   function placeOrder() {
-    Alert.alert('Order placed', `Pickup at ${selectedSlot}. Total ฿${total}.`, [
-      { text: 'OK', onPress: () => { clearCart(); router.replace('/(tabs)/orders'); } },
-    ]);
+    showAlert('Order placed', `Pickup at ${selectedSlot}. Total ฿${total}.`, () => {
+      clearCart();
+      router.replace('/(tabs)/orders');
+    });
   }
 
   if (items.length === 0) {

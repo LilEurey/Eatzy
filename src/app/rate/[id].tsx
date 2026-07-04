@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { getOrderById, getVendorName } from '@/lib/mock-data';
+import { showAlert } from '@/lib/alert';
 
 const LABELS = ['', 'Bad', 'Meh', 'Good', 'Great', 'Amazing'];
 
@@ -33,9 +34,9 @@ export default function RateScreen() {
 
   function submit() {
     // ponytail: no persistence yet — insert into ratings table when the DB is live.
-    Alert.alert('Thanks for the feedback!', `You rated ${vendor} ${score}★.`, [
-      { text: 'Done', onPress: () => router.replace('/(tabs)/orders') },
-    ]);
+    showAlert('Thanks for the feedback!', `You rated ${vendor} ${score}★.`, () =>
+      router.replace('/(tabs)/orders'),
+    );
   }
 
   return (
