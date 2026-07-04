@@ -130,7 +130,8 @@ Always run `npx tsc --noEmit` before committing. Never commit with TypeScript er
 - [x] Phase 4 — Store detail (`/store/[id].tsx`) + Food item detail (`/item/[id].tsx`)
 - [x] Phase 5 — Cart state (`src/lib/cart-store.ts`) + Cart screen + Checkout with time slot picker
 - [x] Phase 6 — Order tracking (`/track/[id].tsx`) + Rating screen (`/rate/[id].tsx`)
-- [~] Phase 7 — Orders tab (done), Wallet tab (balance + local top-up, done), Profile tab (dev nav + logout done; avatar/settings still TODO)
+- [x] Phase 7 — Orders tab, Wallet tab (balance + local top-up), Profile tab (initials avatar, settings list, dev nav, logout)
+- [x] ML pipeline — `ml/recommend.py`: TF-IDF food vectors, user vector, cosine ranking with allergy/budget/dietary filters, co-occurrence "because you ordered"; runs on CSV fixtures in `ml/data/` (swap loader to Supabase when live). `cd ml && ./.venv/bin/python recommend.py` runs demo + self-checks.
 
 ### Data strategy (current)
 

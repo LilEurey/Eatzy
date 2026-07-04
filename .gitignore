@@ -37,6 +37,10 @@ yarn-error.*
 # local tooling
 .mcp.json
 
+# python (ml/)
+.venv/
+__pycache__/
+
 # typescript
 *.tsbuildinfo
 

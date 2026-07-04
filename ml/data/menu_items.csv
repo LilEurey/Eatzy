@@ -1,0 +1,11 @@
+id,name,category,price,spice_level,is_halal,is_vegetarian,is_jay,ingredients,tags,allergens
+m001,Pad Thai,Noodles,55,1,1,0,0,rice noodles|egg|tofu|bean sprouts|peanuts|tamarind sauce|fish sauce,popular|noodles|street food,peanuts|eggs|shellfish
+m002,Green Curry with Rice,Curry,65,3,1,0,0,coconut milk|green curry paste|chicken|thai eggplant|basil|jasmine rice,spicy|curry|thai,shellfish
+m003,Khao Man Gai,Rice Dishes,50,0,1,0,0,chicken|jasmine rice|ginger|garlic|cucumber|soy sauce,mild|halal|popular,soy
+m010,Thai Milk Tea,Drinks,35,0,1,1,0,thai tea leaves|condensed milk|evaporated milk|sugar|ice,drink|popular|cold,dairy
+m004,Som Tam Thai,Salads,45,4,0,0,0,green papaya|tomatoes|green beans|peanuts|dried shrimp|fish sauce|lime|chili,spicy|isaan|salad,peanuts|shellfish
+m005,Gai Yang Set,Grilled,70,2,0,0,0,chicken|lemongrass|garlic|turmeric|sticky rice|fish sauce,grilled|isaan|hearty,
+m006,Tom Yum Noodles,Soup,60,3,1,0,0,rice noodles|shrimp|mushrooms|lemongrass|galangal|kaffir lime leaves|chili|fish sauce,spicy|soup|noodles|popular,shellfish
+m007,Wonton Noodle Soup,Soup,55,0,0,0,0,egg noodles|pork wonton|bok choy|pork broth|garlic|soy sauce,mild|soup|noodles,gluten|eggs
+m008,Buddha Bowl,Bowls,85,0,0,1,1,quinoa|broccoli|sweet potato|avocado|chickpeas|tahini|lemon,vegan|healthy|bowls,sesame
+m009,Tropical Smoothie,Drinks,40,0,0,1,1,mango|pineapple|banana|coconut milk,vegan|drink|healthy,
