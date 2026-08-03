@@ -20,15 +20,6 @@ export default function RootLayout() {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (session === undefined) return; // still loading
-    if (!session) {
-      router.replace('/(auth)');
-    } else {
-      checkOnboarding(session.user.id);
-    }
-  }, [session]);
-
   async function checkOnboarding(userId: string) {
     const { data } = await supabase
       .from('user_preferences')
@@ -42,6 +33,15 @@ export default function RootLayout() {
       router.replace('/(tabs)');
     }
   }
+
+  useEffect(() => {
+    if (session === undefined) return; // still loading
+    if (!session) {
+      router.replace('/(auth)');
+    } else {
+      checkOnboarding(session.user.id);
+    }
+  }, [session]);
 
   return (
     <I18nProvider>

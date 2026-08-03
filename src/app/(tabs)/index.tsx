@@ -49,8 +49,6 @@ export default function HomeScreen() {
   const [trending, setTrending] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadData(); }, []);
-
   async function loadData() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -95,6 +93,9 @@ export default function HomeScreen() {
     }
     setLoading(false);
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount; loadData guards its own setLoading(false)
+  useEffect(() => { void loadData(); }, []);
 
   if (loading) {
     return (

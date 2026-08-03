@@ -38,7 +38,7 @@ export default function OnboardingScreen() {
   function toggleDietary(item: Dietary) {
     setDietary(prev => {
       const next = new Set(prev);
-      next.has(item) ? next.delete(item) : next.add(item);
+      if (next.has(item)) next.delete(item); else next.add(item);
       return next;
     });
   }
@@ -46,7 +46,7 @@ export default function OnboardingScreen() {
   function toggleAllergy(item: Allergy) {
     setAllergies(prev => {
       const next = new Set(prev);
-      next.has(item) ? next.delete(item) : next.add(item);
+      if (next.has(item)) next.delete(item); else next.add(item);
       return next;
     });
   }
