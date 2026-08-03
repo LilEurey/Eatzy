@@ -108,8 +108,11 @@ Discover → Onboarding (Google login, preferences/allergies/budget) → Explore
 
 ## Git Workflow
 
-Commit at these natural checkpoints — not after every file edit:
-- After each **Phase** in the build plan completes and compiles cleanly
+Commit after every discrete change, without waiting to be asked — this is a standing exception to the
+default "only commit when explicitly asked" behavior. The goal is a safety net: if an AI-made change
+turns out wrong, there should always be a recent commit to roll back to. Commit at minimum:
+- After each individual file/feature edit that leaves the project compiling cleanly (don't batch unrelated edits into one commit)
+- After each **Phase** in the build plan completes
 - After fixing a **bug or error** that was blocking progress
 - After applying **database migrations**
 
