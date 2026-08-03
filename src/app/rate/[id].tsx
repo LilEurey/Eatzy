@@ -5,10 +5,15 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { getOrderById, getVendorName } from '@/lib/mock-data';
 import { showAlert } from '@/lib/alert';
+import { useI18n, type TranslationKey } from '@/lib/i18n';
 
-const LABELS = ['', 'Bad', 'Meh', 'Good', 'Great', 'Amazing'];
+// Index 1–5 maps to a star score; index 0 has no label (nothing selected yet).
+const LABEL_KEYS: (TranslationKey | null)[] = [
+  null, 'rate.labelBad', 'rate.labelMeh', 'rate.labelGood', 'rate.labelGreat', 'rate.labelAmazing',
+];
 
 export default function RateScreen() {
+  const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const order = getOrderById(id);
   const [score, setScore] = useState(0);
@@ -24,7 +29,7 @@ export default function RateScreen() {
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 40 }}>🧾</Text>
-          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>Order not found</Text>
+          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t('common.orderNotFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -34,7 +39,7 @@ export default function RateScreen() {
 
   function submit() {
     // ponytail: no persistence yet — insert into ratings table when the DB is live.
-    showAlert('Thanks for the feedback!', `You rated ${vendor} ${score}★.`, () =>
+    showAlert(t('rate.thanksTitle'), t('rate.thanksMsg', { vendor, score }), () =>
       router.replace('/(tabs)/orders'),
     );
   }
@@ -46,7 +51,7 @@ export default function RateScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </TouchableOpacity>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>Rate Order</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('rate.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
@@ -69,18 +74,18 @@ export default function RateScreen() {
             ))}
           </View>
           <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.orange, height: 22, marginTop: 10 }}>
-            {LABELS[score]}
+            {LABEL_KEYS[score] ? t(LABEL_KEYS[score]!) : ''}
           </Text>
         </View>
 
         {/* Comment */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10, marginTop: 16 }}>
-          COMMENT (OPTIONAL)
+          {t('rate.commentLabel')}
         </Text>
         <TextInput
           value={comment}
           onChangeText={setComment}
-          placeholder="Tell others what you thought…"
+          placeholder={t('rate.commentPlaceholder')}
           placeholderTextColor={Brand.textSecondary}
           multiline
           style={{
@@ -107,7 +112,7 @@ export default function RateScreen() {
           }}
         >
           <Text style={{ color: score === 0 ? Brand.textSecondary : '#fff', fontSize: 16, fontWeight: '700' }}>
-            Submit Rating
+            {t('rate.submit')}
           </Text>
         </TouchableOpacity>
       </View>

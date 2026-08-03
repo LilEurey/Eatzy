@@ -4,13 +4,31 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as ExpoLinking from 'expo-linking';
 import { router } from 'expo-router';
+import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
+import { useI18n } from '@/lib/i18n';
 
 WebBrowser.maybeCompleteAuthSession();
 
+// The redirect URL carries session tokens after the ?query or in the #fragment
+// depending on platform/flow — check both.
+function extractAuthParams(url: string): Record<string, string> {
+  const params = new URLSearchParams();
+  const [beforeHash, hash] = url.split('#');
+  const queryIndex = beforeHash.indexOf('?');
+  if (queryIndex !== -1) {
+    new URLSearchParams(beforeHash.slice(queryIndex + 1)).forEach((v, k) => params.set(k, v));
+  }
+  if (hash) {
+    new URLSearchParams(hash).forEach((v, k) => params.set(k, v));
+  }
+  return Object.fromEntries(params.entries());
+}
+
 export default function LoginScreen() {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
 
   async function signInWithGoogle() {
@@ -25,11 +43,21 @@ export default function LoginScreen() {
       if (!data.url) throw new Error('No auth URL returned');
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-      if (result.type === 'success') {
-        await supabase.auth.exchangeCodeForSession(result.url);
+      if (result.type !== 'success') throw new Error('Browser flow cancelled');
+
+      const params = extractAuthParams(result.url);
+      if (params.error) throw new Error(params.error_description || params.error);
+      if (!params.access_token || !params.refresh_token) {
+        throw new Error('No session tokens returned');
       }
+
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: params.access_token,
+        refresh_token: params.refresh_token,
+      });
+      if (sessionError) throw sessionError;
     } catch (e: any) {
-      showAlert('Sign in failed', e.message);
+      showAlert(t('auth.signInFailedTitle'), e.message);
     } finally {
       setLoading(false);
     }
@@ -74,7 +102,7 @@ export default function LoginScreen() {
             <Text style={{ color: Brand.orange }}>zy</Text>
           </Text>
           <Text style={{ color: Brand.textSecondary, fontSize: 14, marginTop: 4 }}>
-            Your smart dining companion.
+            {t('auth.tagline')}
           </Text>
         </View>
 
@@ -140,7 +168,7 @@ export default function LoginScreen() {
               marginBottom: 20,
             }}
           >
-            Welcome Back
+            {t('auth.welcomeBack')}
           </Text>
 
           {/* Google button */}
@@ -160,29 +188,27 @@ export default function LoginScreen() {
               opacity: loading ? 0.6 : 1,
             }}
           >
-            {/* Google G logo colours */}
             <View
               style={{
                 width: 20,
                 height: 20,
-                borderRadius: 10,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#4285F4' }}>G</Text>
+              <AntDesign name="google" size={18} color="#4285F4" />
             </View>
             <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.textPrimary }}>
-              {loading ? 'Signing in…' : 'Continue with Google'}
+              {loading ? t('auth.signingIn') : t('auth.continueWithGoogle')}
             </Text>
           </TouchableOpacity>
 
           {/* Vendor link */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
-            <Text style={{ color: Brand.textSecondary, fontSize: 13 }}>For Vendor </Text>
-            <TouchableOpacity onPress={() => showAlert('Coming soon', 'Vendor sign-up isn’t available yet.')}>
+            <Text style={{ color: Brand.textSecondary, fontSize: 13 }}>{t('auth.forVendor')}</Text>
+            <TouchableOpacity onPress={() => showAlert(t('common.comingSoonTitle'), t('auth.vendorSignupMsg'))}>
               <Text style={{ color: '#4A90D9', fontWeight: '600', fontSize: 13 }}>
-                Click Here
+                {t('auth.clickHere')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -193,7 +219,7 @@ export default function LoginScreen() {
               onPress={() => router.replace('/(tabs)')}
               style={{ marginTop: 20, alignItems: 'center' }}
             >
-              <Text style={{ color: '#CCC', fontSize: 12 }}>⚙ Skip login (dev only)</Text>
+              <Text style={{ color: '#CCC', fontSize: 12 }}>{t('auth.skipLoginDev')}</Text>
             </TouchableOpacity>
           )}
         </View>

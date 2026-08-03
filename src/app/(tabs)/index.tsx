@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { MOCK_VENDORS, MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
 import { showAlert } from '@/lib/alert';
+import { useI18n, type TranslationKey } from '@/lib/i18n';
 
 type Vendor = {
   id: string;
@@ -27,20 +28,21 @@ type MenuItem = {
   vendors: { name: string } | null;
 };
 
-function getGreeting() {
+function getGreetingKey(): TranslationKey {
   const h = new Date().getHours();
-  if (h < 12) return 'Morning';
-  if (h < 17) return 'Afternoon';
-  return 'Evening';
+  if (h < 12) return 'home.greetingMorning';
+  if (h < 17) return 'home.greetingAfternoon';
+  return 'home.greetingEvening';
 }
 
-function queueStatus(count: number | null) {
-  if (!count || count <= 3) return { label: 'No Queue', color: '#22c55e' };
-  if (count <= 8) return { label: 'Moderate Queue', color: '#f59e0b' };
-  return { label: 'Busy', color: '#ef4444' };
+function queueStatus(count: number | null): { labelKey: TranslationKey; color: string } {
+  if (!count || count <= 3) return { labelKey: 'common.noQueue', color: '#22c55e' };
+  if (count <= 8) return { labelKey: 'common.moderateQueue', color: '#f59e0b' };
+  return { labelKey: 'common.busy', color: '#ef4444' };
 }
 
 export default function HomeScreen() {
+  const { t } = useI18n();
   const [firstName, setFirstName] = useState('');
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [featured, setFeatured] = useState<MenuItem | null>(null);
@@ -104,7 +106,7 @@ export default function HomeScreen() {
 
   const topVendor = vendors[0] ?? null;
   const queue = queueStatus(topVendor?.current_queue_count ?? null);
-  const comingSoon = () => showAlert('Coming soon', 'This feature isn’t available yet.');
+  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -134,7 +136,7 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Greeting */}
         <Text style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
-          {getGreeting()}{firstName ? `, ${firstName}.` : '.'}
+          {t(getGreetingKey())}{firstName ? `, ${firstName}.` : '.'}
         </Text>
 
         {/* Search bar */}
@@ -149,7 +151,7 @@ export default function HomeScreen() {
           <View style={{ position: 'absolute', left: 16, top: 0, bottom: 0, justifyContent: 'center' }}>
             <Text style={{ fontSize: 16 }}>🔍</Text>
           </View>
-          <Text style={{ color: '#5a4136', fontSize: 16 }}>Find your dishes!</Text>
+          <Text style={{ color: '#5a4136', fontSize: 16 }}>{t('home.searchPlaceholder')}</Text>
         </TouchableOpacity>
 
         {/* Queue banner */}
@@ -178,13 +180,13 @@ export default function HomeScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: queue.color }} />
                   <Text style={{ fontSize: 12, color: '#5a4136' }}>
-                    {queue.label} • {topVendor.estimated_wait_min ?? 5}–{(topVendor.estimated_wait_min ?? 5) + 3} min
+                    {t(queue.labelKey)} • {topVendor.estimated_wait_min ?? 5}–{(topVendor.estimated_wait_min ?? 5) + 3} min
                   </Text>
                 </View>
               </View>
             </View>
             <TouchableOpacity onPress={() => router.push(`/store/${topVendor.id}`)}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>View ›</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>{t('home.view')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -192,7 +194,7 @@ export default function HomeScreen() {
         {/* Recommended For You */}
         <View style={{ marginBottom: 28 }}>
           <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
-            Recommended For You
+            {t('home.recommendedForYou')}
           </Text>
 
           {/* Featured card */}
@@ -213,7 +215,7 @@ export default function HomeScreen() {
                     alignSelf: 'flex-start', marginBottom: 12,
                   }}>
                     <Text style={{ fontSize: 9 }}>✨</Text>
-                    <Text style={{ fontSize: 12, color: '#5a4136' }}>New  menu</Text>
+                    <Text style={{ fontSize: 12, color: '#5a4136' }}>{t('home.newMenu')}</Text>
                   </View>
 
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
@@ -222,7 +224,7 @@ export default function HomeScreen() {
                         {featured.name}
                       </Text>
                       <Text style={{ fontSize: 15, color: '#5a4136', marginBottom: 14 }}>
-                        {featured.category ?? 'Thai Food'}
+                        {featured.category ?? t('home.thaiFood')}
                       </Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                         <Text style={{ fontSize: 20, fontWeight: '700', color: '#a04100' }}>
@@ -237,7 +239,7 @@ export default function HomeScreen() {
                             shadowOpacity: 0.39, shadowRadius: 7, elevation: 3,
                           }}
                         >
-                          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>Add to cart</Text>
+                          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{t('home.addToCart')}</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -262,7 +264,7 @@ export default function HomeScreen() {
               alignItems: 'center', justifyContent: 'center', marginBottom: 12,
               shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
             }}>
-              <Text style={{ color: Brand.textSecondary }}>No featured items today</Text>
+              <Text style={{ color: Brand.textSecondary }}>{t('home.noFeaturedItems')}</Text>
             </View>
           )}
 
@@ -296,7 +298,7 @@ export default function HomeScreen() {
                       flexDirection: 'row', alignItems: 'center', gap: 3,
                     }}>
                       <Text style={{ fontSize: 9 }}>🔥</Text>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>Trending</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('home.trending')}</Text>
                     </View>
                   </View>
                   {/* Info */}
@@ -328,7 +330,7 @@ export default function HomeScreen() {
         {/* Store Options */}
         <View>
           <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
-            Store Options
+            {t('home.storeOptions')}
           </Text>
           <View style={{ gap: 12 }}>
             {vendors.slice(0, 6).map(vendor => (
@@ -358,14 +360,14 @@ export default function HomeScreen() {
                     {vendor.name}
                   </Text>
                   <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 6 }}>
-                    {vendor.cuisine_tags?.[0] ?? 'Thai Food'}
+                    {vendor.cuisine_tags?.[0] ?? t('home.thaiFood')}
                   </Text>
                   {vendor.is_halal_certified && (
                     <View style={{
                       backgroundColor: '#ffeae1', borderRadius: 4,
                       paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start',
                     }}>
-                      <Text style={{ fontSize: 10, color: '#565656' }}>Halal</Text>
+                      <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
                     </View>
                   )}
                 </View>
@@ -373,7 +375,7 @@ export default function HomeScreen() {
             ))}
             {vendors.length === 0 && (
               <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-                <Text style={{ color: Brand.textSecondary }}>No stalls open right now</Text>
+                <Text style={{ color: Brand.textSecondary }}>{t('home.noStallsOpen')}</Text>
               </View>
             )}
           </View>

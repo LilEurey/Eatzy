@@ -6,6 +6,7 @@ import { Brand } from '@/constants/theme';
 import { getVendorById } from '@/lib/mock-data';
 import { useCart, setQty, clearCart, cartSubtotal } from '@/lib/cart-store';
 import { showAlert } from '@/lib/alert';
+import { useI18n } from '@/lib/i18n';
 
 const TIME_SLOTS = [
   '12:00 – 12:15',
@@ -16,6 +17,7 @@ const TIME_SLOTS = [
 ];
 
 export default function CartScreen() {
+  const { t } = useI18n();
   const cart = useCart();
   const items = cart.items;
   const [selectedSlot, setSelectedSlot] = useState(TIME_SLOTS[1]);
@@ -25,7 +27,7 @@ export default function CartScreen() {
   const total = subtotal + cart.packaging_fee;
 
   function placeOrder() {
-    showAlert('Order placed', `Pickup at ${selectedSlot}. Total ฿${total}.`, () => {
+    showAlert(t('cart.orderPlacedTitle'), t('cart.orderPlacedMsg', { slot: selectedSlot, total }), () => {
       clearCart();
       router.replace('/(tabs)/orders');
     });
@@ -38,15 +40,15 @@ export default function CartScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
           </TouchableOpacity>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>Your Cart</Text>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('cart.title')}</Text>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 48, marginBottom: 16 }}>🛒</Text>
           <Text style={{ fontSize: 18, fontWeight: '700', color: Brand.textPrimary, marginBottom: 6 }}>
-            Cart is empty
+            {t('cart.empty')}
           </Text>
           <Text style={{ fontSize: 14, color: Brand.textSecondary, marginBottom: 28 }}>
-            Add something delicious
+            {t('cart.addSomething')}
           </Text>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)')}
@@ -55,7 +57,7 @@ export default function CartScreen() {
               paddingHorizontal: 28, paddingVertical: 12,
             }}
           >
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Browse Menu</Text>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('cart.browseMenu')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -82,14 +84,14 @@ export default function CartScreen() {
             <Text style={{ fontSize: 20 }}>🏪</Text>
             <View>
               <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textPrimary }}>{vendor.name}</Text>
-              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>Stall {vendor.stall_number}</Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('cart.stall', { n: vendor.stall_number })}</Text>
             </View>
           </View>
         )}
 
         {/* Cart items */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
-          ITEMS
+          {t('cart.items')}
         </Text>
         <View style={{
           backgroundColor: Brand.card, borderRadius: 20, overflow: 'hidden', marginBottom: 24,
@@ -104,7 +106,7 @@ export default function CartScreen() {
                   <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.textPrimary, marginBottom: 2 }}>
                     {item.name}
                   </Text>
-                  <Text style={{ fontSize: 14, color: Brand.textSecondary }}>฿{item.unit_price} each</Text>
+                  <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.unitPrice', { price: item.unit_price })}</Text>
                 </View>
 
                 {/* Qty controls */}
@@ -139,7 +141,7 @@ export default function CartScreen() {
 
         {/* Pickup time slot */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
-          PICKUP TIME
+          {t('cart.pickupTime')}
         </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
           {TIME_SLOTS.map(slot => {
@@ -166,7 +168,7 @@ export default function CartScreen() {
 
         {/* Order summary */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
-          SUMMARY
+          {t('cart.summary')}
         </Text>
         <View style={{
           backgroundColor: Brand.card, borderRadius: 20, padding: 16, gap: 10,
@@ -174,16 +176,16 @@ export default function CartScreen() {
           shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
         }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 14, color: Brand.textSecondary }}>Subtotal</Text>
+            <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.subtotal')}</Text>
             <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{subtotal}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 14, color: Brand.textSecondary }}>Packaging fee</Text>
+            <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.packagingFee')}</Text>
             <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{cart.packaging_fee}</Text>
           </View>
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary }}>Total</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary }}>{t('common.total')}</Text>
             <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.orange }}>฿{total}</Text>
           </View>
         </View>
@@ -208,10 +210,10 @@ export default function CartScreen() {
           }}
         >
           <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
-            Place Order · ฿{total}
+            {t('cart.placeOrder', { total })}
           </Text>
           <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>
-            Pickup at {selectedSlot}
+            {t('cart.pickupAt', { slot: selectedSlot })}
           </Text>
         </TouchableOpacity>
       </View>

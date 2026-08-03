@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/theme';
 import { MOCK_WALLET_BALANCE, MOCK_WALLET_TRANSACTIONS } from '@/lib/mock-data';
 import { showAlert } from '@/lib/alert';
+import { useI18n } from '@/lib/i18n';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
 
@@ -16,17 +17,18 @@ const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
 
 const TOP_UP_AMOUNTS = [100, 200, 500];
 
-function formatDate(iso: string) {
+function formatDate(iso: string, t: ReturnType<typeof useI18n>['t']) {
   const d = new Date(iso);
   const now = new Date();
   const diff = (now.getTime() - d.getTime()) / 1000;
-  if (diff < 86400) return 'Today ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-  if (diff < 172800) return 'Yesterday ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  if (diff < 86400) return t('common.today') + ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  if (diff < 172800) return t('common.yesterday') + ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' +
     d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function WalletScreen() {
+  const { t } = useI18n();
   const [balance, setBalance] = useState(MOCK_WALLET_BALANCE);
   const [txns, setTxns] = useState(MOCK_WALLET_TRANSACTIONS);
 
@@ -39,7 +41,7 @@ export default function WalletScreen() {
     ]);
   }
 
-  const comingSoon = () => showAlert('Coming soon', 'This feature isn’t available yet.');
+  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -47,7 +49,7 @@ export default function WalletScreen() {
         {/* Header */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5 }}>
-            Wallet
+            {t('wallet.title')}
           </Text>
         </View>
 
@@ -72,7 +74,7 @@ export default function WalletScreen() {
             }} />
 
             <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '600', marginBottom: 8 }}>
-              CAMPUS WALLET BALANCE
+              {t('wallet.balanceLabel')}
             </Text>
             <Text style={{ fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1, marginBottom: 20 }}>
               ฿{balance.toLocaleString()}.00
@@ -98,9 +100,9 @@ export default function WalletScreen() {
         {/* Quick actions */}
         <View style={{ flexDirection: 'row', gap: 12, marginHorizontal: 20, marginBottom: 28 }}>
           {[
-            { icon: '↓', label: 'Top Up', onPress: () => topUp(100) },
-            { icon: '⇄', label: 'Transfer', onPress: comingSoon },
-            { icon: '📄', label: 'Statement', onPress: comingSoon },
+            { icon: '↓', label: t('wallet.topUp'), onPress: () => topUp(100) },
+            { icon: '⇄', label: t('wallet.transfer'), onPress: comingSoon },
+            { icon: '📄', label: t('wallet.statement'), onPress: comingSoon },
           ].map(({ icon, label, onPress }) => (
             <TouchableOpacity
               key={label}
@@ -126,7 +128,7 @@ export default function WalletScreen() {
         {/* Transactions */}
         <View style={{ paddingHorizontal: 20 }}>
           <Text style={{ fontSize: 18, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
-            Recent Transactions
+            {t('wallet.recentTransactions')}
           </Text>
 
           <View style={{
@@ -157,7 +159,7 @@ export default function WalletScreen() {
                         {tx.description}
                       </Text>
                       <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                        {formatDate(tx.created_at)}
+                        {formatDate(tx.created_at, t)}
                       </Text>
                     </View>
 

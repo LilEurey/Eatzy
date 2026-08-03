@@ -4,30 +4,41 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { MOCK_ORDERS, getVendorName } from '@/lib/mock-data';
+import { useI18n, type TranslationKey } from '@/lib/i18n';
 
 type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'ready' | 'completed' | 'cancelled';
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
 
-const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bg: string }> = {
-  pending:   { label: 'Pending',   color: '#d97706', bg: '#fef3c7' },
-  accepted:  { label: 'Preparing', color: '#2563eb', bg: '#dbeafe' },
-  rejected:  { label: 'Rejected',  color: '#dc2626', bg: '#fee2e2' },
-  ready:     { label: 'Ready!',    color: '#16a34a', bg: '#dcfce7' },
-  completed: { label: 'Completed', color: '#6b7280', bg: '#f3f4f6' },
-  cancelled: { label: 'Cancelled', color: '#9ca3af', bg: '#f3f4f6' },
+const STATUS_CONFIG: Record<OrderStatus, { labelKey: TranslationKey; color: string; bg: string }> = {
+  pending:   { labelKey: 'orders.status.pending',   color: '#d97706', bg: '#fef3c7' },
+  accepted:  { labelKey: 'orders.status.preparing', color: '#2563eb', bg: '#dbeafe' },
+  rejected:  { labelKey: 'orders.status.rejected',  color: '#dc2626', bg: '#fee2e2' },
+  ready:     { labelKey: 'orders.status.ready',     color: '#16a34a', bg: '#dcfce7' },
+  completed: { labelKey: 'orders.status.completed', color: '#6b7280', bg: '#f3f4f6' },
+  cancelled: { labelKey: 'orders.status.cancelled', color: '#9ca3af', bg: '#f3f4f6' },
 };
+
+const FILTER_LABELS: Record<FilterTab, TranslationKey> = {
+  All: 'orders.filter.all',
+  Active: 'orders.filter.active',
+  Completed: 'orders.filter.completed',
+  Cancelled: 'orders.filter.cancelled',
+};
+
+const PROGRESS_STEPS: TranslationKey[] = ['track.stepPlacedLabel', 'orders.status.preparing', 'orders.status.ready'];
 
 const ACTIVE: OrderStatus[] = ['pending', 'accepted', 'ready'];
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, t: ReturnType<typeof useI18n>['t']) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 60) return t('common.justNow');
+  if (diff < 3600) return t('common.minutesAgo', { n: Math.floor(diff / 60) });
+  if (diff < 86400) return t('common.hoursAgo', { n: Math.floor(diff / 3600) });
+  return t('common.daysAgo', { n: Math.floor(diff / 86400) });
 }
 
 export default function OrdersScreen() {
+  const { t } = useI18n();
   const [tab, setTab] = useState<FilterTab>('All');
 
   const filtered = MOCK_ORDERS.filter(o => {
@@ -45,22 +56,22 @@ export default function OrdersScreen() {
       {/* Header */}
       <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 }}>
         <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5 }}>
-          Orders
+          {t('orders.title')}
         </Text>
       </View>
 
       {/* Filter tabs */}
-      <ScrollView
-        horizontal showsHorizontalScrollIndicator={false}
-        style={{ flexGrow: 0, height: 52 }}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 8, alignItems: 'center', height: 52 }}
-      >
-        {tabs.map(t => {
-          const active = t === tab;
+      <View style={{ height: 52 }}>
+        <ScrollView
+          horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, gap: 8, alignItems: 'center', height: 52 }}
+        >
+        {tabs.map(filterTab => {
+          const active = filterTab === tab;
           return (
             <TouchableOpacity
-              key={t}
-              onPress={() => setTab(t)}
+              key={filterTab}
+              onPress={() => setTab(filterTab)}
               style={{
                 paddingHorizontal: 16, paddingVertical: 8, borderRadius: 99,
                 backgroundColor: active ? Brand.orange : Brand.card,
@@ -69,18 +80,19 @@ export default function OrdersScreen() {
               }}
             >
               <Text style={{ fontSize: 13, fontWeight: '600', color: active ? '#fff' : Brand.textSecondary }}>
-                {t}
+                {t(FILTER_LABELS[filterTab])}
               </Text>
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
         {tab === 'All' && filtered.some(o => ACTIVE.includes(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
-            ACTIVE
+            {t('orders.active')}
           </Text>
         )}
 
@@ -109,11 +121,11 @@ export default function OrdersScreen() {
                       {vendor}
                     </Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      Queue #{order.queue_number} · {timeAgo(order.created_at)}
+                      {t('orders.queueLine', { n: order.queue_number, time: timeAgo(order.created_at, t) })}
                     </Text>
                   </View>
                   <View style={{ backgroundColor: cfg.bg, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 }}>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: cfg.color }}>{cfg.label}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: cfg.color }}>{t(cfg.labelKey)}</Text>
                   </View>
                 </View>
 
@@ -132,7 +144,7 @@ export default function OrdersScreen() {
                       }} />
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-                      {['Order placed', 'Preparing', 'Ready!'].map((s, i) => (
+                      {PROGRESS_STEPS.map((s, i) => (
                         <Text key={s} style={{
                           fontSize: 10,
                           color: (
@@ -141,7 +153,7 @@ export default function OrdersScreen() {
                             (order.status === 'ready')
                           ) ? Brand.orange : Brand.textSecondary,
                         }}>
-                          {s}
+                          {t(s)}
                         </Text>
                       ))}
                     </View>
@@ -153,7 +165,7 @@ export default function OrdersScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={{ fontSize: 12 }}>🕐</Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      Pickup {order.pickup_start}–{order.pickup_end}
+                      {t('common.pickupRange', { start: order.pickup_start, end: order.pickup_end })}
                     </Text>
                   </View>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>
@@ -174,7 +186,7 @@ export default function OrdersScreen() {
                       fontSize: 13, fontWeight: '700',
                       color: order.status === 'ready' ? '#fff' : Brand.orange,
                     }}>
-                      {order.status === 'ready' ? '🎉 Ready for Pickup!' : 'Track Order'}
+                      {order.status === 'ready' ? t('orders.readyForPickup') : t('orders.trackOrder')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -188,7 +200,7 @@ export default function OrdersScreen() {
                     }}
                   >
                     <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textSecondary }}>
-                      Rate order
+                      {t('orders.rateOrder')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -200,10 +212,10 @@ export default function OrdersScreen() {
             <View style={{ alignItems: 'center', paddingVertical: 60 }}>
               <Text style={{ fontSize: 40, marginBottom: 12 }}>🧾</Text>
               <Text style={{ fontSize: 16, fontWeight: '600', color: Brand.textPrimary, marginBottom: 4 }}>
-                No orders here
+                {t('orders.noOrdersTitle')}
               </Text>
               <Text style={{ fontSize: 14, color: Brand.textSecondary }}>
-                Your orders will appear here
+                {t('orders.noOrdersSubtitle')}
               </Text>
             </View>
           )}

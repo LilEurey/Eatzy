@@ -3,6 +3,7 @@ import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useCart, cartCount } from '@/lib/cart-store';
+import { useI18n } from '@/lib/i18n';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -17,6 +18,7 @@ function TabIcon({ name, focused }: { name: IoniconsName; focused: boolean }) {
 }
 
 export default function TabsLayout() {
+  const { t } = useI18n();
   const count = cartCount(useCart());
   return (
     <View style={{ flex: 1 }}>
@@ -39,7 +41,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Home',
+            title: t('tabs.home'),
             tabBarIcon: ({ focused }) => (
               <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
             ),
@@ -48,7 +50,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="orders"
           options={{
-            title: 'Orders',
+            title: t('tabs.orders'),
             tabBarIcon: ({ focused }) => (
               <TabIcon name={focused ? 'receipt' : 'receipt-outline'} focused={focused} />
             ),
@@ -57,7 +59,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="wallet"
           options={{
-            title: 'Wallet',
+            title: t('tabs.wallet'),
             tabBarIcon: ({ focused }) => (
               <TabIcon name={focused ? 'wallet' : 'wallet-outline'} focused={focused} />
             ),
@@ -66,7 +68,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: 'Profile',
+            title: t('tabs.profile'),
             tabBarIcon: ({ focused }) => (
               <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
             ),
@@ -74,28 +76,28 @@ export default function TabsLayout() {
         />
       </Tabs>
 
-      {/* Floating cart button */}
-      <TouchableOpacity
-        onPress={() => router.push('/cart')}
-        style={{
-          position: 'absolute',
-          bottom: 90,
-          right: 20,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: Brand.orange,
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: Brand.orange,
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.4,
-          shadowRadius: 8,
-          elevation: 6,
-        }}
-      >
-        <Text style={{ fontSize: 22 }}>🛒</Text>
-        {count > 0 && (
+      {/* Floating cart button — only when cart has items */}
+      {count > 0 && (
+        <TouchableOpacity
+          onPress={() => router.push('/cart')}
+          style={{
+            position: 'absolute',
+            bottom: 90,
+            right: 20,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: Brand.orange,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: Brand.orange,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+            elevation: 6,
+          }}
+        >
+          <Text style={{ fontSize: 22 }}>🛒</Text>
           <View style={{
             position: 'absolute', top: -4, right: -4,
             minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6,
@@ -104,8 +106,8 @@ export default function TabsLayout() {
           }}>
             <Text style={{ fontSize: 11, fontWeight: '800', color: Brand.orange }}>{count}</Text>
           </View>
-        )}
-      </TouchableOpacity>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

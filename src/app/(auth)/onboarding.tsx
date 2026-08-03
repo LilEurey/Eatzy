@@ -6,14 +6,30 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
+import { useI18n, type TranslationKey } from '@/lib/i18n';
 
 const DIETARY_OPTIONS = ['Halal', 'Vegetarian', 'Jay'] as const;
 type Dietary = (typeof DIETARY_OPTIONS)[number];
+const DIETARY_LABELS: Record<Dietary, TranslationKey> = {
+  Halal: 'onboarding.dietary.halal',
+  Vegetarian: 'onboarding.dietary.vegetarian',
+  Jay: 'onboarding.dietary.jay',
+};
 
 const ALLERGY_OPTIONS = ['Peanuts', 'Dairy', 'Gluten', 'Seafood', 'Beef', 'Egg', 'Other...'] as const;
 type Allergy = (typeof ALLERGY_OPTIONS)[number];
+const ALLERGY_LABELS: Record<Allergy, TranslationKey> = {
+  Peanuts: 'onboarding.allergy.peanuts',
+  Dairy: 'onboarding.allergy.dairy',
+  Gluten: 'onboarding.allergy.gluten',
+  Seafood: 'onboarding.allergy.seafood',
+  Beef: 'onboarding.allergy.beef',
+  Egg: 'onboarding.allergy.egg',
+  'Other...': 'onboarding.allergy.other',
+};
 
 export default function OnboardingScreen() {
+  const { t } = useI18n();
   const [dietary, setDietary] = useState<Set<Dietary>>(new Set());
   const [allergies, setAllergies] = useState<Set<Allergy>>(new Set());
   const [budget, setBudget] = useState(60);
@@ -65,7 +81,7 @@ export default function OnboardingScreen() {
       if (error) throw error;
       router.replace('/(tabs)');
     } catch (e: any) {
-      showAlert('Error saving preferences', e.message);
+      showAlert(t('onboarding.errorSavingTitle'), e.message);
       setSaving(false);
     }
   }
@@ -92,7 +108,7 @@ export default function OnboardingScreen() {
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#DDD' }} />
         </View>
         <TouchableOpacity onPress={handleSkip} disabled={saving}>
-          <Text style={{ color: Brand.orange, fontWeight: '600', fontSize: 15 }}>Skip</Text>
+          <Text style={{ color: Brand.orange, fontWeight: '600', fontSize: 15 }}>{t('onboarding.skip')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -103,11 +119,11 @@ export default function OnboardingScreen() {
         {/* Title */}
         <View style={{ marginTop: 20, marginBottom: 36 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary }}>
-            Personalize your plate
+            {t('onboarding.title')}
           </Text>
           <Text style={{ fontSize: 22 }}>🥗</Text>
           <Text style={{ color: Brand.textSecondary, fontSize: 15, marginTop: 8, lineHeight: 22 }}>
-            Tell us what you like, and we'll handle{'\n'}the rest.
+            {t('onboarding.subtitle')}
           </Text>
         </View>
 
@@ -122,7 +138,7 @@ export default function OnboardingScreen() {
               marginBottom: 14,
             }}
           >
-            DIETARY PREFERENCES
+            {t('onboarding.dietaryPreferences')}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {DIETARY_OPTIONS.map(item => {
@@ -153,7 +169,7 @@ export default function OnboardingScreen() {
                       fontSize: 15,
                     }}
                   >
-                    {item}
+                    {t(DIETARY_LABELS[item])}
                   </Text>
                 </TouchableOpacity>
               );
@@ -172,7 +188,7 @@ export default function OnboardingScreen() {
               marginBottom: 14,
             }}
           >
-            ALLERGIES & AVOIDANCES
+            {t('onboarding.allergies')}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {ALLERGY_OPTIONS.map(item => {
@@ -201,7 +217,7 @@ export default function OnboardingScreen() {
                       fontSize: 15,
                     }}
                   >
-                    {item}
+                    {t(ALLERGY_LABELS[item])}
                   </Text>
                 </TouchableOpacity>
               );
@@ -227,7 +243,7 @@ export default function OnboardingScreen() {
                 color: Brand.textSecondary,
               }}
             >
-              TYPICAL MEAL BUDGET
+              {t('onboarding.budget')}
             </Text>
             <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.orange }}>
               ฿{budget >= 150 ? '150+' : budget}
@@ -261,10 +277,10 @@ export default function OnboardingScreen() {
               }}
             >
               <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>
-                Street Food (฿30)
+                {t('onboarding.streetFood')}
               </Text>
               <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>
-                Premium (฿150+)
+                {t('onboarding.premium')}
               </Text>
             </View>
           </View>
@@ -299,7 +315,7 @@ export default function OnboardingScreen() {
           }}
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
-            {saving ? 'Saving…' : 'Continue'}
+            {saving ? t('onboarding.saving') : t('onboarding.continue')}
           </Text>
           <Text style={{ color: '#fff', fontSize: 16 }}>→</Text>
         </TouchableOpacity>

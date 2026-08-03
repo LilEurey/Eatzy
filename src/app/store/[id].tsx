@@ -4,19 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { getVendorById, getMenuItemsByVendor } from '@/lib/mock-data';
+import { useI18n, type TranslationKey } from '@/lib/i18n';
 
-function queueStatus(count: number) {
-  if (count <= 3) return { label: 'No Queue', color: '#22c55e' };
-  if (count <= 8) return { label: 'Moderate', color: '#f59e0b' };
-  return { label: 'Busy', color: '#ef4444' };
+function queueStatus(count: number): { labelKey: TranslationKey; color: string } {
+  if (count <= 3) return { labelKey: 'common.noQueue', color: '#22c55e' };
+  if (count <= 8) return { labelKey: 'common.moderate', color: '#f59e0b' };
+  return { labelKey: 'common.busy', color: '#ef4444' };
 }
 
-function spiceLabel(level: number) {
-  if (level === 0) return 'No spice';
+function spiceLabel(level: number, t: ReturnType<typeof useI18n>['t']) {
+  if (level === 0) return t('common.noSpice');
   return '🌶'.repeat(level);
 }
 
 export default function StoreDetailScreen() {
+  const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeCategory, setActiveCategory] = useState('All');
 
@@ -38,7 +40,7 @@ export default function StoreDetailScreen() {
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 40 }}>🏪</Text>
-          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>Store not found</Text>
+          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t('store.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -77,7 +79,7 @@ export default function StoreDetailScreen() {
             borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4,
           }}>
             <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
-              {vendor.is_open ? 'Open' : 'Closed'}
+              {vendor.is_open ? t('common.open') : t('common.closed')}
             </Text>
           </View>
         </View>
@@ -93,7 +95,7 @@ export default function StoreDetailScreen() {
                 backgroundColor: '#d1fae5', borderRadius: 8,
                 paddingHorizontal: 10, paddingVertical: 4,
               }}>
-                <Text style={{ fontSize: 12, color: '#065f46', fontWeight: '700' }}>Halal ✓</Text>
+                <Text style={{ fontSize: 12, color: '#065f46', fontWeight: '700' }}>{t('common.halalCertified')}</Text>
               </View>
             )}
           </View>
@@ -122,7 +124,7 @@ export default function StoreDetailScreen() {
               <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>
                 {vendor.estimated_wait_min}–{vendor.estimated_wait_min + 3} min
               </Text>
-              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>Wait time</Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('store.waitTime')}</Text>
             </View>
             <View style={{ width: 1, backgroundColor: Brand.border }} />
             <View style={{ flex: 1, alignItems: 'center' }}>
@@ -130,9 +132,9 @@ export default function StoreDetailScreen() {
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: queue.color }} />
               </View>
               <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>
-                {vendor.current_queue_count} orders
+                {t('store.ordersCount', { n: vendor.current_queue_count })}
               </Text>
-              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{queue.label}</Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t(queue.labelKey)}</Text>
             </View>
             <View style={{ width: 1, backgroundColor: Brand.border }} />
             <View style={{ flex: 1, alignItems: 'center' }}>
@@ -140,7 +142,7 @@ export default function StoreDetailScreen() {
               <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>
                 {vendor.open_time}–{vendor.close_time}
               </Text>
-              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>Hours</Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('store.hours')}</Text>
             </View>
           </View>
 
@@ -151,7 +153,7 @@ export default function StoreDetailScreen() {
 
           {/* Menu section */}
           <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
-            Menu
+            {t('store.menu')}
           </Text>
 
           {/* Category tabs */}
@@ -174,7 +176,7 @@ export default function StoreDetailScreen() {
                       fontSize: 13, fontWeight: '600',
                       color: active ? '#fff' : Brand.textSecondary,
                     }}>
-                      {cat}
+                      {cat === 'All' ? t('store.all') : cat}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -221,17 +223,17 @@ export default function StoreDetailScreen() {
                   <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
                     {item.is_halal && (
                       <View style={{ backgroundColor: '#d1fae5', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#065f46', fontWeight: '600' }}>Halal</Text>
+                        <Text style={{ fontSize: 10, color: '#065f46', fontWeight: '600' }}>{t('common.halal')}</Text>
                       </View>
                     )}
                     {item.is_vegetarian && (
                       <View style={{ backgroundColor: '#dcfce7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#166534', fontWeight: '600' }}>Veg 🌿</Text>
+                        <Text style={{ fontSize: 10, color: '#166534', fontWeight: '600' }}>{t('store.veg')}</Text>
                       </View>
                     )}
                     {item.spice_level > 0 && (
                       <View style={{ backgroundColor: '#fef3c7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#92400e' }}>{spiceLabel(item.spice_level)}</Text>
+                        <Text style={{ fontSize: 10, color: '#92400e' }}>{spiceLabel(item.spice_level, t)}</Text>
                       </View>
                     )}
                   </View>
@@ -254,7 +256,7 @@ export default function StoreDetailScreen() {
             {filteredItems.length === 0 && (
               <View style={{ alignItems: 'center', paddingVertical: 40 }}>
                 <Text style={{ fontSize: 32, marginBottom: 8 }}>🍽️</Text>
-                <Text style={{ color: Brand.textSecondary }}>No items in this category</Text>
+                <Text style={{ color: Brand.textSecondary }}>{t('store.noItemsInCategory')}</Text>
               </View>
             )}
           </View>

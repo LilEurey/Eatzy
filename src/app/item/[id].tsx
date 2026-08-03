@@ -5,9 +5,11 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { getMenuItemById, getVendorName } from '@/lib/mock-data';
 import { addToCart } from '@/lib/cart-store';
+import { useI18n } from '@/lib/i18n';
 
 function SpiceIndicator({ level }: { level: number }) {
-  if (level === 0) return <Text style={{ fontSize: 12, color: Brand.textSecondary }}>No spice</Text>;
+  const { t } = useI18n();
+  if (level === 0) return <Text style={{ fontSize: 12, color: Brand.textSecondary }}>{t('common.noSpice')}</Text>;
   return (
     <View style={{ flexDirection: 'row', gap: 2 }}>
       {Array.from({ length: 5 }).map((_, i) => (
@@ -18,6 +20,7 @@ function SpiceIndicator({ level }: { level: number }) {
 }
 
 export default function ItemDetailScreen() {
+  const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [qty, setQty] = useState(1);
 
@@ -33,7 +36,7 @@ export default function ItemDetailScreen() {
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 40 }}>🍽️</Text>
-          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>Item not found</Text>
+          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t('item.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -75,7 +78,7 @@ export default function ItemDetailScreen() {
               flexDirection: 'row', alignItems: 'center', gap: 4,
             }}>
               <Text style={{ fontSize: 10 }}>✨</Text>
-              <Text style={{ fontSize: 12, color: '#fff', fontWeight: '700' }}>Featured</Text>
+              <Text style={{ fontSize: 12, color: '#fff', fontWeight: '700' }}>{t('item.featured')}</Text>
             </View>
           )}
         </View>
@@ -95,24 +98,24 @@ export default function ItemDetailScreen() {
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
             {item.is_halal && (
               <View style={{ backgroundColor: '#d1fae5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 13, color: '#065f46', fontWeight: '700' }}>Halal ✓</Text>
+                <Text style={{ fontSize: 13, color: '#065f46', fontWeight: '700' }}>{t('common.halalCertified')}</Text>
               </View>
             )}
             {item.is_vegetarian && (
               <View style={{ backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 13, color: '#166534', fontWeight: '700' }}>Vegetarian 🌿</Text>
+                <Text style={{ fontSize: 13, color: '#166534', fontWeight: '700' }}>{t('common.vegetarian')}</Text>
               </View>
             )}
             {item.is_jay && (
               <View style={{ backgroundColor: '#fef9c3', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 13, color: '#854d0e', fontWeight: '700' }}>Jay 🌿</Text>
+                <Text style={{ fontSize: 13, color: '#854d0e', fontWeight: '700' }}>{t('common.jay')}</Text>
               </View>
             )}
           </View>
 
           {/* Spice level */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <Text style={{ fontSize: 13, color: Brand.textSecondary, fontWeight: '600' }}>Spice</Text>
+            <Text style={{ fontSize: 13, color: Brand.textSecondary, fontWeight: '600' }}>{t('item.spice')}</Text>
             <SpiceIndicator level={item.spice_level} />
           </View>
 
@@ -129,9 +132,9 @@ export default function ItemDetailScreen() {
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
           }}>
             {[
-              { icon: '🔥', value: `${item.calories} kcal`, label: 'Calories' },
-              { icon: '⏱', value: `${item.preparation_time_min} min`, label: 'Prep time' },
-              { icon: '🏷️', value: `฿${item.price}`, label: 'Price' },
+              { icon: '🔥', value: `${item.calories} kcal`, label: t('item.calories') },
+              { icon: '⏱', value: `${item.preparation_time_min} min`, label: t('item.prepTime') },
+              { icon: '🏷️', value: `฿${item.price}`, label: t('item.price') },
             ].map(({ icon, value, label }, i) => (
               <View key={label} style={{
                 flex: 1, alignItems: 'center', paddingVertical: 14,
@@ -148,7 +151,7 @@ export default function ItemDetailScreen() {
           {item.ingredients.length > 0 && (
             <View style={{ marginBottom: 16 }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, marginBottom: 8 }}>
-                Ingredients
+                {t('item.ingredients')}
               </Text>
               <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                 {item.ingredients.map(ing => (
@@ -170,7 +173,7 @@ export default function ItemDetailScreen() {
               borderWidth: 1, borderColor: '#fed7aa',
             }}>
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#c2410c', marginBottom: 4 }}>
-                ⚠️ Allergens
+                {t('item.allergens')}
               </Text>
               <Text style={{ fontSize: 13, color: '#9a3412' }}>
                 {item.allergens.join(', ')}
@@ -228,7 +231,7 @@ export default function ItemDetailScreen() {
             }}
           >
             <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
-              Add to Cart · ฿{total}
+              {t('item.addToCart', { total })}
             </Text>
           </TouchableOpacity>
         </View>

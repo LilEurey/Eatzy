@@ -4,19 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { getOrderById, getVendorName } from '@/lib/mock-data';
+import { useI18n, type TranslationKey } from '@/lib/i18n';
 
 type Status = 'pending' | 'accepted' | 'ready' | 'completed';
 
-const STEPS: { key: Status; label: string; icon: string; hint: string }[] = [
-  { key: 'pending',   label: 'Order placed', icon: '📝', hint: 'Waiting for the vendor to accept' },
-  { key: 'accepted',  label: 'Preparing',    icon: '👨‍🍳', hint: 'Your food is being cooked' },
-  { key: 'ready',     label: 'Ready!',       icon: '🎉', hint: 'Come pick it up at the stall' },
-  { key: 'completed', label: 'Picked up',    icon: '✅', hint: 'Enjoy your meal!' },
+const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: TranslationKey }[] = [
+  { key: 'pending',   labelKey: 'track.stepPlacedLabel',   icon: '📝', hintKey: 'track.stepPlacedHint' },
+  { key: 'accepted',  labelKey: 'orders.status.preparing', icon: '👨‍🍳', hintKey: 'track.stepPreparingHint' },
+  { key: 'ready',     labelKey: 'orders.status.ready',     icon: '🎉', hintKey: 'track.stepReadyHint' },
+  { key: 'completed', labelKey: 'track.stepPickedUpLabel', icon: '✅', hintKey: 'track.stepPickedUpHint' },
 ];
 
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];
 
 export default function TrackScreen() {
+  const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const order = getOrderById(id);
 
@@ -27,8 +29,8 @@ export default function TrackScreen() {
   useEffect(() => {
     const idx = ORDER.indexOf(status);
     if (idx < 0 || status === 'ready' || status === 'completed') return; // stop at ready; pickup is manual
-    const t = setTimeout(() => setStatus(ORDER[idx + 1]), 5000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setStatus(ORDER[idx + 1]), 5000);
+    return () => clearTimeout(timer);
   }, [status]);
 
   if (!order) {
@@ -41,7 +43,7 @@ export default function TrackScreen() {
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 40 }}>🧾</Text>
-          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>Order not found</Text>
+          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t('common.orderNotFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -58,7 +60,7 @@ export default function TrackScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </TouchableOpacity>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>Track Order</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('track.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
@@ -70,7 +72,7 @@ export default function TrackScreen() {
           shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
         }}>
           <Text style={{ fontSize: 13, fontWeight: '600', letterSpacing: 1, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary }}>
-            QUEUE NUMBER
+            {t('track.queueNumber')}
           </Text>
           <Text style={{ fontSize: 56, fontWeight: '800', color: isReady ? '#fff' : Brand.orange, marginVertical: 4 }}>
             #{order.queue_number}
@@ -79,7 +81,7 @@ export default function TrackScreen() {
             {vendor}
           </Text>
           <Text style={{ fontSize: 13, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary, marginTop: 2 }}>
-            Pickup {order.pickup_start}–{order.pickup_end}
+            {t('common.pickupRange', { start: order.pickup_start, end: order.pickup_end })}
           </Text>
         </View>
 
@@ -111,10 +113,10 @@ export default function TrackScreen() {
                 {/* Text */}
                 <View style={{ flex: 1, paddingBottom: i < STEPS.length - 1 ? 20 : 0 }}>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: reached ? Brand.textPrimary : Brand.textSecondary }}>
-                    {step.label}
+                    {t(step.labelKey)}
                   </Text>
                   {active && (
-                    <Text style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{step.hint}</Text>
+                    <Text style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{t(step.hintKey)}</Text>
                   )}
                 </View>
               </View>
@@ -124,7 +126,7 @@ export default function TrackScreen() {
 
         {/* Items */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
-          ORDER
+          {t('track.order')}
         </Text>
         <View style={{
           backgroundColor: Brand.card, borderRadius: 20, padding: 16, gap: 10,
@@ -141,7 +143,7 @@ export default function TrackScreen() {
           ))}
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>Total</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('common.total')}</Text>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.orange }}>฿{order.total_amount}</Text>
           </View>
         </View>
@@ -159,7 +161,7 @@ export default function TrackScreen() {
             onPress={() => setStatus('completed')}
             style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
           >
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>I've picked it up</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.pickedItUp')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -175,7 +177,7 @@ export default function TrackScreen() {
             onPress={() => router.replace(`/rate/${order.id}`)}
             style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
           >
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Rate your order</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.rateYourOrder')}</Text>
           </TouchableOpacity>
         </View>
       )}

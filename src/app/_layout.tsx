@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Slot, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from '@/lib/supabase';
+import { I18nProvider } from '@/lib/i18n';
 import type { Session } from '@supabase/supabase-js';
 
 export default function RootLayout() {
@@ -43,9 +44,9 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <I18nProvider>
       <StatusBar style="dark" />
       <Slot />
-    </>
+    </I18nProvider>
   );
 }

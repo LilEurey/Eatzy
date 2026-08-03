@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
+import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
 
 const DEV_ROUTES: { label: string; route: string }[] = [
   { label: '🔐 Login screen', route: '/(auth)' },
@@ -20,8 +21,10 @@ const DEV_ROUTES: { label: string; route: string }[] = [
 ];
 
 export default function ProfileScreen() {
+  const { t, locale, setLocale } = useI18n();
   const [name, setName] = useState('Student');
   const [email, setEmail] = useState('');
+  const [languagePickerOpen, setLanguagePickerOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -35,25 +38,26 @@ export default function ProfileScreen() {
     });
   }, []);
 
-  const comingSoon = () => showAlert('Coming soon', 'This feature isn’t available yet.');
+  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
 
   const SETTINGS: { icon: string; label: string; onPress: () => void }[] = [
-    { icon: '🥗', label: 'Dietary preferences', onPress: () => router.push('/(auth)/onboarding') },
-    { icon: '💰', label: 'Campus Wallet', onPress: () => router.push('/(tabs)/wallet') },
-    { icon: '🔔', label: 'Notifications', onPress: comingSoon },
-    { icon: '🌐', label: 'Language', onPress: comingSoon },
-    { icon: '💬', label: 'Help & support', onPress: comingSoon },
+    { icon: '🥗', label: t('profile.dietaryPreferences'), onPress: () => router.push('/(auth)/onboarding') },
+    { icon: '💰', label: t('profile.campusWallet'), onPress: () => router.push('/(tabs)/wallet') },
+    { icon: '🔔', label: t('profile.notifications'), onPress: comingSoon },
+    { icon: '🌐', label: t('profile.language'), onPress: () => setLanguagePickerOpen(true) },
+    { icon: '💬', label: t('profile.help'), onPress: comingSoon },
   ];
 
   async function signOut() {
     await supabase.auth.signOut();
+    router.replace('/(auth)');
   }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
         <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5, marginBottom: 20 }}>
-          Profile
+          {t('profile.title')}
         </Text>
 
         {/* Avatar card */}
@@ -75,14 +79,14 @@ export default function ProfileScreen() {
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: Brand.textPrimary }}>{name}</Text>
             <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 2 }}>
-              {email || 'KMUTT student'}
+              {email || t('profile.kmuttStudent')}
             </Text>
           </View>
         </View>
 
         {/* Settings */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
-          SETTINGS
+          {t('profile.settingsHeader')}
         </Text>
         <View style={{
           backgroundColor: Brand.card, borderRadius: 20, overflow: 'hidden', marginBottom: 28,
@@ -153,10 +157,50 @@ export default function ProfileScreen() {
           }}
         >
           <Text style={{ color: Brand.orange, fontWeight: '600', fontSize: 15 }}>
-            → Logout
+            {t('profile.logout')}
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={languagePickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguagePickerOpen(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setLanguagePickerOpen(false)}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
+        >
+          <View style={{ backgroundColor: Brand.card, borderRadius: 20, padding: 8 }}>
+            <Text style={{
+              fontSize: 15, fontWeight: '700', color: Brand.textPrimary,
+              paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
+            }}>
+              {t('profile.languagePickerTitle')}
+            </Text>
+            {(Object.keys(LOCALE_LABELS) as Locale[]).map((code) => (
+              <TouchableOpacity
+                key={code}
+                onPress={() => {
+                  setLocale(code);
+                  setLanguagePickerOpen(false);
+                }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                  paddingHorizontal: 16, paddingVertical: 14,
+                }}
+              >
+                <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: locale === code ? '700' : '500' }}>
+                  {LOCALE_LABELS[code]}
+                </Text>
+                {locale === code && <Text style={{ color: Brand.orange, fontSize: 16, fontWeight: '700' }}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
