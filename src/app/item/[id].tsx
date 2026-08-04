@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { getMenuItemById, getVendorName } from '@/lib/mock-data';
 import { addToCart } from '@/lib/cart-store';
 import { useI18n } from '@/lib/i18n';
+import type { Database } from '@/types/database.types';
+
+type MenuItem = Database['public']['Tables']['menu_items']['Row'];
 
 function SpiceIndicator({ level }: { level: number }) {
   const { t } = useI18n();
@@ -23,8 +26,25 @@ export default function ItemDetailScreen() {
   const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [qty, setQty] = useState(1);
+  const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
+  const [vendorName, setVendorName] = useState('');
 
-  const item = getMenuItemById(id);
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.from('menu_items').select('*, vendors(name)').eq('id', id).maybeSingle();
+      setItem(data ?? null);
+      setVendorName((data as any)?.vendors?.name ?? '');
+    }
+    void load();
+  }, [id]);
+
+  if (item === undefined) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={Brand.orange} size="large" />
+      </SafeAreaView>
+    );
+  }
 
   if (!item) {
     return (
@@ -42,7 +62,6 @@ export default function ItemDetailScreen() {
     );
   }
 
-  const vendorName = getVendorName(item.vendor_id);
   const total = item.price * qty;
 
   return (

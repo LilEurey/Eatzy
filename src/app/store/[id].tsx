@@ -1,10 +1,14 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { getVendorById, getMenuItemsByVendor } from '@/lib/mock-data';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import type { Database } from '@/types/database.types';
+
+type Vendor = Database['public']['Tables']['vendors']['Row'];
+type MenuItem = Database['public']['Tables']['menu_items']['Row'];
 
 function queueStatus(count: number): { labelKey: TranslationKey; color: string } {
   if (count <= 3) return { labelKey: 'common.noQueue', color: '#22c55e' };
@@ -21,14 +25,33 @@ export default function StoreDetailScreen() {
   const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
+  const [allItems, setAllItems] = useState<MenuItem[]>([]);
 
-  const vendor = getVendorById(id);
-  const allItems = getMenuItemsByVendor(id);
+  useEffect(() => {
+    async function load() {
+      const [vendorRes, itemsRes] = await Promise.all([
+        supabase.from('vendors').select('*').eq('id', id).maybeSingle(),
+        supabase.from('menu_items').select('*').eq('vendor_id', id).order('name'),
+      ]);
+      setVendor(vendorRes.data ?? null);
+      setAllItems(itemsRes.data ?? []);
+    }
+    void load();
+  }, [id]);
 
-  const categories = ['All', ...Array.from(new Set(allItems.map(i => i.category)))];
+  const categories = ['All', ...Array.from(new Set(allItems.map(i => i.category).filter((c): c is string => !!c)))];
   const filteredItems = activeCategory === 'All'
     ? allItems
     : allItems.filter(i => i.category === activeCategory);
+
+  if (vendor === undefined) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={Brand.orange} size="large" />
+      </SafeAreaView>
+    );
+  }
 
   if (!vendor) {
     return (
