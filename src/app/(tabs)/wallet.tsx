@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { BANGKOK_TZ } from '@/lib/time';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
 type WalletTxn = { id: string; type: TxType; amount: number; description: string | null; created_at: string };
@@ -22,10 +23,10 @@ function formatDate(iso: string, t: ReturnType<typeof useI18n>['t']) {
   const d = new Date(iso);
   const now = new Date();
   const diff = (now.getTime() - d.getTime()) / 1000;
-  if (diff < 86400) return t('common.today') + ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-  if (diff < 172800) return t('common.yesterday') + ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' +
-    d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  if (diff < 86400) return t('common.today') + ' ' + d.toLocaleTimeString('th-TH', { timeZone: BANGKOK_TZ, hour: '2-digit', minute: '2-digit' });
+  if (diff < 172800) return t('common.yesterday') + ' ' + d.toLocaleTimeString('th-TH', { timeZone: BANGKOK_TZ, hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('en-GB', { timeZone: BANGKOK_TZ, day: 'numeric', month: 'short' }) + ' ' +
+    d.toLocaleTimeString('th-TH', { timeZone: BANGKOK_TZ, hour: '2-digit', minute: '2-digit' });
 }
 
 export default function WalletScreen() {

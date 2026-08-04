@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { formatBangkokClock } from '@/lib/time';
 
 type Status = 'pending' | 'accepted' | 'ready' | 'completed';
 
@@ -27,11 +28,6 @@ const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: Tra
 ];
 
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];
-
-function formatClock(iso: string | null) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-}
 
 export default function TrackScreen() {
   const { t } = useI18n();
@@ -136,7 +132,7 @@ export default function TrackScreen() {
             {vendor}
           </Text>
           <Text style={{ fontSize: 13, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary, marginTop: 2 }}>
-            {t('common.pickupRange', { start: formatClock(order.pickup_start), end: formatClock(order.pickup_end) })}
+            {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
           </Text>
         </View>
 

@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { formatBangkokClock } from '@/lib/time';
 
 type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'ready' | 'completed' | 'cancelled';
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
@@ -21,11 +22,6 @@ type StudentOrder = {
   vendor_name: string;
   items: { name: string; quantity: number }[];
 };
-
-function formatClock(iso: string | null) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-}
 
 const STATUS_CONFIG: Record<OrderStatus, { labelKey: TranslationKey; color: string; bg: string }> = {
   pending:   { labelKey: 'orders.status.pending',   color: '#d97706', bg: '#fef3c7' },
@@ -218,7 +214,7 @@ export default function OrdersScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={{ fontSize: 12 }}>🕐</Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      {t('common.pickupRange', { start: formatClock(order.pickup_start), end: formatClock(order.pickup_end) })}
+                      {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
                     </Text>
                   </View>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>

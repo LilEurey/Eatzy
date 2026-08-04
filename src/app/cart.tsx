@@ -7,38 +7,22 @@ import { Brand } from '@/constants/theme';
 import { useCart, setQty, clearCart, cartSubtotal } from '@/lib/cart-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { nextPickupSlots, timeSegmentForBangkok } from '@/lib/time';
 import type { Database } from '@/types/database.types';
 
 type Vendor = Database['public']['Tables']['vendors']['Row'];
-
-const TIME_SLOTS = [
-  '12:00 – 12:15',
-  '12:15 – 12:30',
-  '12:30 – 12:45',
-  '12:45 – 13:00',
-  '13:00 – 13:15',
-];
-
-// Turns "12:15" into a real timestamptz for today, for the pickup window.
-function slotTimeToISO(hhmm: string) {
-  const [h, m] = hhmm.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d.toISOString();
-}
-
-function timeSegmentFor(hhmm: string): 'breakfast' | 'lunch' | 'dinner' {
-  const hour = Number(hhmm.split(':')[0]);
-  if (hour < 11) return 'breakfast';
-  if (hour < 17) return 'lunch';
-  return 'dinner';
-}
 
 export default function CartScreen() {
   const { t } = useI18n();
   const cart = useCart();
   const items = cart.items;
-  const [selectedSlot, setSelectedSlot] = useState(TIME_SLOTS[1]);
+  // Computed once per visit (not on every render) so the offered windows
+  // don't shift under the student while they're picking one — real "next
+  // available" slots rolling from right now in Thailand time, not a fixed
+  // noon-only list.
+  const [slots] = useState(() => nextPickupSlots());
+  const [selectedIndex, setSelectedIndex] = useState(1);
+  const selectedSlot = slots[selectedIndex];
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [placing, setPlacing] = useState(false);
 
@@ -62,8 +46,6 @@ export default function CartScreen() {
         .rpc('next_queue_number', { p_vendor_id: cart.vendor_id });
       if (queueError) throw queueError;
 
-      const [startLabel, endLabel] = selectedSlot.split(' – ');
-
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -75,9 +57,9 @@ export default function CartScreen() {
           packaging_fee: cart.packaging_fee,
           total_amount: total,
           payment_method: 'wallet',
-          pickup_start: slotTimeToISO(startLabel),
-          pickup_end: slotTimeToISO(endLabel),
-          time_segment: timeSegmentFor(startLabel),
+          pickup_start: selectedSlot.start.toISOString(),
+          pickup_end: selectedSlot.end.toISOString(),
+          time_segment: timeSegmentForBangkok(selectedSlot.start),
         })
         .select('id')
         .single();
@@ -215,12 +197,12 @@ export default function CartScreen() {
           {t('cart.pickupTime')}
         </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-          {TIME_SLOTS.map(slot => {
-            const active = slot === selectedSlot;
+          {slots.map((slot, i) => {
+            const active = i === selectedIndex;
             return (
               <TouchableOpacity
-                key={slot}
-                onPress={() => setSelectedSlot(slot)}
+                key={slot.start.toISOString()}
+                onPress={() => setSelectedIndex(i)}
                 style={{
                   paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
                   backgroundColor: active ? Brand.orange : Brand.card,
@@ -230,7 +212,7 @@ export default function CartScreen() {
                 }}
               >
                 <Text style={{ fontSize: 13, fontWeight: '600', color: active ? '#fff' : Brand.textSecondary }}>
-                  {slot}
+                  {slot.label}
                 </Text>
               </TouchableOpacity>
             );
@@ -289,7 +271,7 @@ export default function CartScreen() {
                 {t('cart.placeOrder', { total })}
               </Text>
               <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>
-                {t('cart.pickupAt', { slot: selectedSlot })}
+                {t('cart.pickupAt', { slot: selectedSlot.label })}
               </Text>
             </>
           )}

@@ -4,24 +4,18 @@ import { Brand } from '@/constants/theme';
 import { getVendorPayments } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
-
-function isToday(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  return d.toDateString() === now.toDateString();
-}
+import { BANGKOK_TZ, isBangkokToday, formatBangkokDate } from '@/lib/time';
 
 function formatDateTime(iso: string, t: ReturnType<typeof useI18n>['t']) {
-  const d = new Date(iso);
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  return isToday(iso) ? `${t('common.today')}, ${time}` : `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}, ${time}`;
+  const time = new Date(iso).toLocaleTimeString('en-US', { timeZone: BANGKOK_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
+  return isBangkokToday(iso) ? `${t('common.today')}, ${time}` : `${formatBangkokDate(iso)}, ${time}`;
 }
 
 export default function VendorFinanceScreen() {
   const { t } = useI18n();
   const payments = getVendorPayments();
 
-  const todayPayments = payments.filter(p => isToday(p.created_at));
+  const todayPayments = payments.filter(p => isBangkokToday(p.created_at));
   const totalRevenueToday = todayPayments.reduce((sum, p) => sum + p.amount, 0);
   const availableToWithdraw = payments.reduce((sum, p) => sum + p.amount, 0);
 
