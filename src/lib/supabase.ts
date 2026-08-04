@@ -1,5 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import 'react-native-get-random-values';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import * as aesjs from 'aes-js';
@@ -55,9 +56,16 @@ class LargeSecureStore {
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
+// expo-secure-store has no web implementation (its ExpoSecureStore.web.ts is
+// an empty stub), so LargeSecureStore would crash every auth call in a
+// browser. Native storage already sandboxes localStorage per-origin and has
+// no OS keychain equivalent to lean on, so plain AsyncStorage (browser
+// localStorage under the hood) is the right fallback there.
+const authStorage = Platform.OS === 'web' ? AsyncStorage : new LargeSecureStore();
+
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: new LargeSecureStore(),
+    storage: authStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
