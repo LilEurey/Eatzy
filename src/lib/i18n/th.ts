@@ -208,4 +208,31 @@ export const th: Record<TranslationKey, string> = {
   'vendor.login.noAccount': 'ยังไม่มีบัญชีผู้ขาย? ',
   'vendor.login.applyHere': 'สมัครที่นี่',
   'vendor.login.heroHeadline': 'จัดการร้านของคุณให้ฉลาดขึ้นด้วย AI',
+
+  // Vendor — sidebar / topbar
+  'vendor.portalLabel': 'พอร์ทัลผู้ขาย',
+  'vendor.nav.overview': 'ภาพรวม',
+  'vendor.nav.orders': 'คำสั่งซื้อ',
+  'vendor.nav.menu': 'เมนู',
+  'vendor.nav.analytics': 'วิเคราะห์',
+  'vendor.nav.helpCenter': 'ศูนย์ช่วยเหลือ',
+  'vendor.topbar.storeOpen': 'ร้านเปิด',
+  'vendor.topbar.storeClosed': 'ร้านปิด',
+
+  // Vendor — overview
+  'vendor.overview.title': 'ภาพรวมแดชบอร์ด',
+  'vendor.overview.subtitle': 'ภาพรวมร้านค้า',
+  'vendor.overview.today': 'วันนี้',
+  'vendor.overview.downloadReport': 'ดาวน์โหลดรายงาน',
+  'vendor.overview.totalOrders': 'คำสั่งซื้อทั้งหมด',
+  'vendor.overview.vsYesterday': 'เทียบกับเมื่อวาน',
+  'vendor.overview.revenueToday': 'รายได้ (วันนี้)',
+  'vendor.overview.activeQueue': 'คิวที่กำลังดำเนินการ',
+  'vendor.overview.ordersPrep': 'ออเดอร์กำลังทำ',
+  'vendor.overview.avgPrepTime': 'เวลาเตรียมเฉลี่ย',
+  'vendor.overview.salesVelocity': 'ยอดขายรายชั่วโมง',
+  'vendor.overview.trafficHeatmap': 'ความหนาแน่นวันนี้',
+  'vendor.overview.morning': 'เช้า',
+  'vendor.overview.lunch': 'เที่ยง',
+  'vendor.overview.evening': 'เย็น',
 };

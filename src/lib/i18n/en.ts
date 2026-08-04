@@ -206,6 +206,33 @@ export const en = {
   'vendor.login.noAccount': 'Don’t have a vendor account? ',
   'vendor.login.applyHere': 'Apply here.',
   'vendor.login.heroHeadline': 'Manage your stall smarter with AI.',
+
+  // Vendor — sidebar / topbar
+  'vendor.portalLabel': 'VENDOR PORTAL',
+  'vendor.nav.overview': 'Overview',
+  'vendor.nav.orders': 'Orders',
+  'vendor.nav.menu': 'Menu',
+  'vendor.nav.analytics': 'Analytics',
+  'vendor.nav.helpCenter': 'Help Center',
+  'vendor.topbar.storeOpen': 'Store Open',
+  'vendor.topbar.storeClosed': 'Store Closed',
+
+  // Vendor — overview
+  'vendor.overview.title': 'Dashboard Overview',
+  'vendor.overview.subtitle': 'ภาพรวมร้านค้า',
+  'vendor.overview.today': 'Today',
+  'vendor.overview.downloadReport': 'Download Report',
+  'vendor.overview.totalOrders': 'TOTAL ORDERS',
+  'vendor.overview.vsYesterday': 'vs. yesterday',
+  'vendor.overview.revenueToday': 'REVENUE (TODAY)',
+  'vendor.overview.activeQueue': 'ACTIVE QUEUE',
+  'vendor.overview.ordersPrep': 'orders prep',
+  'vendor.overview.avgPrepTime': 'AVG PREP TIME',
+  'vendor.overview.salesVelocity': 'Sales Velocity',
+  'vendor.overview.trafficHeatmap': 'Today’s Traffic Heatmap',
+  'vendor.overview.morning': 'Morning',
+  'vendor.overview.lunch': 'Lunch',
+  'vendor.overview.evening': 'Evening',
 } as const;
 
 export type TranslationKey = keyof typeof en;
