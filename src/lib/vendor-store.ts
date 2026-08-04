@@ -9,7 +9,7 @@ import {
 // survives Expo Router unmounting screens on navigation — same pattern as cart-store.ts.
 
 type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'ready' | 'completed' | 'cancelled';
-type MenuItem = ReturnType<typeof getMenuItemsByVendor>[number];
+type MenuItem = Omit<ReturnType<typeof getMenuItemsByVendor>[number], 'image_url'> & { image_url: string | null };
 type OrderItem = ReturnType<typeof getOrdersByVendor>[number]['items'][number] & { done: boolean };
 type VendorOrder = Omit<ReturnType<typeof getOrdersByVendor>[number], 'items' | 'status'> & {
   items: OrderItem[];
