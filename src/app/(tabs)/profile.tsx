@@ -19,6 +19,12 @@ const DEV_ROUTES: { label: string; route: string }[] = [
   { label: '🍛 Food item detail (sample)', route: '/item/m001' },
   { label: '📍 Track order (sample)', route: '/track/o001' },
   { label: '⭐ Rate order (sample)', route: '/rate/o003' },
+  { label: '🧑‍🍳 Vendor login', route: '/vendor-login' },
+  { label: '🧑‍🍳 Vendor Overview', route: '/(vendor)/overview' },
+  { label: '🧑‍🍳 Vendor Orders (KDS)', route: '/(vendor)/orders' },
+  { label: '🧑‍🍳 Vendor Menu', route: '/(vendor)/menu' },
+  { label: '🧑‍🍳 Vendor Add Item', route: '/(vendor)/menu/new' },
+  { label: '🧑‍🍳 Vendor Finance', route: '/(vendor)/analytics' },
 ];
 
 export default function ProfileScreen() {
