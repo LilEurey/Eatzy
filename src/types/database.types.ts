@@ -475,6 +475,7 @@ export type Database = {
           id: string
           language: string
           name: string
+          notifications_enabled: boolean
           role: string
           university_id: string | null
           wallet_balance: number
@@ -487,6 +488,7 @@ export type Database = {
           id: string
           language?: string
           name: string
+          notifications_enabled?: boolean
           role?: string
           university_id?: string | null
           wallet_balance?: number
@@ -499,6 +501,7 @@ export type Database = {
           id?: string
           language?: string
           name?: string
+          notifications_enabled?: boolean
           role?: string
           university_id?: string | null
           wallet_balance?: number
