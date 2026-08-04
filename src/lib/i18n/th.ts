@@ -192,4 +192,20 @@ export const th: Record<TranslationKey, string> = {
   // Notifications
   'notifications.title': 'การแจ้งเตือน',
   'notifications.empty': 'ยังไม่มีการแจ้งเตือน',
+
+  // Vendor — login
+  'vendor.login.brand': 'Eatzy',
+  'vendor.login.brandSubtitle': 'พอร์ทัลผู้ขาย',
+  'vendor.login.heading': 'พอร์ทัลผู้ขาย',
+  'vendor.login.subtitle': 'เข้าสู่ระบบเพื่อจัดการร้านของคุณ',
+  'vendor.login.emailLabel': 'อีเมล',
+  'vendor.login.emailPlaceholder': 'manager@stall.com',
+  'vendor.login.passwordLabel': 'รหัสผ่าน',
+  'vendor.login.forgotPassword': 'ลืมรหัสผ่าน?',
+  'vendor.login.rememberMe': 'จดจำฉันไว้ 30 วัน',
+  'vendor.login.signIn': 'เข้าสู่แดชบอร์ด',
+  'vendor.login.signingIn': 'กำลังเข้าสู่ระบบ…',
+  'vendor.login.noAccount': 'ยังไม่มีบัญชีผู้ขาย? ',
+  'vendor.login.applyHere': 'สมัครที่นี่',
+  'vendor.login.heroHeadline': 'จัดการร้านของคุณให้ฉลาดขึ้นด้วย AI',
 };

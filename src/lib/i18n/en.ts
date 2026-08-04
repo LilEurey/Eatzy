@@ -190,6 +190,22 @@ export const en = {
   // Notifications
   'notifications.title': 'Notifications',
   'notifications.empty': 'No notifications yet',
+
+  // Vendor — login
+  'vendor.login.brand': 'Eatzy',
+  'vendor.login.brandSubtitle': 'VENDOR PORTAL',
+  'vendor.login.heading': 'Vendor Portal',
+  'vendor.login.subtitle': 'Sign in to manage your stall operations.',
+  'vendor.login.emailLabel': 'Email Address',
+  'vendor.login.emailPlaceholder': 'manager@stall.com',
+  'vendor.login.passwordLabel': 'Password',
+  'vendor.login.forgotPassword': 'Forgot Password?',
+  'vendor.login.rememberMe': 'Remember me for 30 days',
+  'vendor.login.signIn': 'Sign In to Dashboard',
+  'vendor.login.signingIn': 'Signing in…',
+  'vendor.login.noAccount': 'Don’t have a vendor account? ',
+  'vendor.login.applyHere': 'Apply here.',
+  'vendor.login.heroHeadline': 'Manage your stall smarter with AI.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

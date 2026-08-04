@@ -218,7 +218,7 @@ export default function LoginScreen() {
           {/* Vendor link */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
             <Text style={{ color: Brand.textSecondary, fontSize: 13 }}>{t('auth.forVendor')}</Text>
-            <TouchableOpacity onPress={() => showAlert(t('common.comingSoonTitle'), t('auth.vendorSignupMsg'))}>
+            <TouchableOpacity onPress={() => router.push('/vendor-login' as any)}>
               <Text style={{ color: '#4A90D9', fontWeight: '600', fontSize: 13 }}>
                 {t('auth.clickHere')}
               </Text>
