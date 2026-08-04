@@ -1,16 +1,29 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as ExpoLinking from 'expo-linking';
 import { router } from 'expo-router';
-import { AntDesign } from '@expo/vector-icons';
+import Svg, { Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
-import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Exact paths from the Figma export — the real 4-color Google "G", not an
+// icon-font approximation.
+function GoogleIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+      <Path d="M18.8 10.2083C18.8 9.55833 18.7417 8.93333 18.6333 8.33333H10V11.8833H14.9333C14.7167 13.025 14.0667 13.9917 13.0917 14.6417V16.95H16.0667C17.8 15.35 18.8 13 18.8 10.2083V10.2083" fill="#4285F4" />
+      <Path d="M10 19.1667C12.475 19.1667 14.55 18.35 16.0667 16.95L13.0917 14.6417C12.275 15.1917 11.2333 15.525 10 15.525C7.61667 15.525 5.59167 13.9167 4.86667 11.75H1.81667V14.1167C3.325 17.1083 6.41667 19.1667 10 19.1667V19.1667" fill="#34A853" />
+      <Path d="M4.86667 11.7417C4.68333 11.1917 4.575 10.6083 4.575 10C4.575 9.39167 4.68333 8.80833 4.86667 8.25833V5.89167H1.81667C1.19167 7.125 0.833333 8.51667 0.833333 10C0.833333 11.4833 1.19167 12.875 1.81667 14.1083L4.19167 12.2583L4.86667 11.7417V11.7417" fill="#FBBC05" />
+      <Path d="M10 4.48333C11.35 4.48333 12.55 4.95 13.5083 5.85L16.1333 3.225C14.5417 1.74167 12.475 0.833333 10 0.833333C6.41667 0.833333 3.325 2.89167 1.81667 5.89167L4.86667 8.25833C5.59167 6.09167 7.61667 4.48333 10 4.48333V4.48333" fill="#EA4335" />
+    </Svg>
+  );
+}
 
 // PKCE puts the auth code and any error in the ?query string, but check the
 // #fragment too in case a provider/platform combination ever redirects there.
@@ -76,160 +89,135 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Brand.bg }}>
-      {/* Orange glow blob — top */}
+    <View style={{ flex: 1, backgroundColor: '#FFF8F6' }}>
+      {/* Background Decoration — orange, top-left */}
       <View
+        pointerEvents="none"
         style={{
           position: 'absolute',
-          top: -100,
-          left: '50%',
-          marginLeft: -160,
-          width: 320,
-          height: 320,
-          borderRadius: 160,
-          backgroundColor: '#F9C49A',
-          opacity: 0.55,
+          top: '2.59%', left: '3.33%', right: '27.69%', bottom: '71.04%',
+          borderRadius: 9999,
+          backgroundColor: 'rgba(255,107,0,0.2)',
         }}
       />
-      {/* Blue glow blob — bottom */}
+      {/* Overlay+Blur — blue, bottom-right */}
       <View
+        pointerEvents="none"
         style={{
           position: 'absolute',
-          bottom: -80,
-          left: '50%',
-          marginLeft: -140,
-          width: 280,
-          height: 280,
-          borderRadius: 140,
-          backgroundColor: '#B8CEED',
-          opacity: 0.45,
+          top: '62.22%', right: 0, bottom: 0, left: '15.64%',
+          borderRadius: 9999,
+          backgroundColor: 'rgba(156,202,255,0.3)',
         }}
       />
 
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 28 }}>
-        {/* Logo + tagline */}
-        <View style={{ alignItems: 'center', marginBottom: 32 }}>
-          <Text style={{ fontSize: 38, fontWeight: '800', letterSpacing: -0.5 }}>
-            <Text style={{ color: Brand.textPrimary }}>Eat</Text>
-            <Text style={{ color: Brand.orange }}>zy</Text>
-          </Text>
-          <Text style={{ color: Brand.textSecondary, fontSize: 14, marginTop: 4 }}>
-            {t('auth.tagline')}
-          </Text>
-        </View>
-
-        {/* Dining image card */}
-        <View
-          style={{
-            backgroundColor: Brand.card,
-            borderRadius: 20,
-            overflow: 'hidden',
-            height: 180,
-            marginBottom: 16,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.05,
-            shadowRadius: 8,
-            elevation: 2,
-          }}
-        >
-          {/* Orange side strips + centre placeholder for dining illustration */}
-          <View style={{ flex: 1, flexDirection: 'row' }}>
-            <View style={{ width: 10, backgroundColor: Brand.orange, opacity: 0.7 }} />
-            <View style={{ flex: 1, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 48 }}>🍽️</Text>
-              <Text style={{ color: Brand.textSecondary, fontSize: 12, marginTop: 6 }}>
-                KMUTT Dining Hall
-              </Text>
-            </View>
-            <View style={{ width: 10, backgroundColor: Brand.orange, opacity: 0.7 }} />
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20 }}>
+        <View style={{ maxWidth: 448, width: '100%', alignSelf: 'center', gap: 24 }}>
+          {/* Header / Logo Area */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ fontSize: 40, fontWeight: '800', letterSpacing: -1.2, textAlign: 'center' }}>
+              <Text style={{ color: '#020202' }}>Eat</Text>
+              <Text style={{ color: '#e76106' }}>zy</Text>
+            </Text>
+            <Text style={{ color: '#5a4136', fontSize: 16, lineHeight: 24, textAlign: 'center' }}>
+              {t('auth.tagline')}
+            </Text>
           </View>
-          {/* Bottom fade overlay */}
+
+          {/* Illustration Area */}
           <View
             style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 10,
-              right: 10,
-              height: 48,
-              backgroundColor: Brand.card,
-              opacity: 0.6,
-            }}
-          />
-        </View>
-
-        {/* Welcome card */}
-        <View
-          style={{
-            backgroundColor: Brand.card,
-            borderRadius: 20,
-            padding: 24,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.05,
-            shadowRadius: 8,
-            elevation: 2,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 22,
-              fontWeight: '700',
-              color: Brand.textPrimary,
-              textAlign: 'center',
-              marginBottom: 20,
+              aspectRatio: 2,
+              width: '100%',
+              backgroundColor: '#fff',
+              borderWidth: 1,
+              borderColor: 'rgba(226,191,176,0.3)',
+              borderRadius: 24,
+              overflow: 'hidden',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.04,
+              shadowRadius: 30,
+              elevation: 2,
             }}
           >
-            {t('auth.welcomeBack')}
-          </Text>
+            <Image
+              source={require('../../../assets/images/auth-illustration.png')}
+              resizeMode="cover"
+              style={{ width: '100%', height: '100%', opacity: 0.8 }}
+            />
+            <LinearGradient
+              pointerEvents="none"
+              colors={['rgba(255,255,255,0)', '#fff']}
+              style={{ position: 'absolute', top: 16, left: 0, right: 0, bottom: 0 }}
+            />
+          </View>
 
-          {/* Google button */}
-          <TouchableOpacity
-            onPress={signInWithGoogle}
-            disabled={loading}
+          {/* Login Card */}
+          <View
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 1.5,
-              borderColor: '#E0D8D0',
-              borderRadius: 50,
-              paddingVertical: 13,
-              gap: 10,
-              backgroundColor: Brand.card,
-              opacity: loading ? 0.6 : 1,
+              backgroundColor: 'rgba(255,255,255,0.7)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.5)',
+              borderRadius: 24,
+              paddingTop: 24,
+              paddingHorizontal: 25,
+              paddingBottom: 25,
+              gap: 24,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.08,
+              shadowRadius: 30,
+              elevation: 4,
             }}
           >
-            <View
+            <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', textAlign: 'center' }}>
+              {t('auth.welcomeBack')}
+            </Text>
+
+            {/* Google button */}
+            <TouchableOpacity
+              onPress={signInWithGoogle}
+              disabled={loading}
               style={{
-                width: 20,
-                height: 20,
+                flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
+                height: 46,
+                borderWidth: 1,
+                borderColor: 'rgba(226,191,176,0.5)',
+                borderRadius: 16,
+                gap: 10,
+                backgroundColor: '#fff',
+                opacity: loading ? 0.6 : 1,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 1,
               }}
             >
-              <AntDesign name="google" size={18} color="#4285F4" />
-            </View>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.textPrimary }}>
-              {loading ? t('auth.signingIn') : t('auth.continueWithGoogle')}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Vendor link */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
-            <Text style={{ color: Brand.textSecondary, fontSize: 13 }}>{t('auth.forVendor')}</Text>
-            <TouchableOpacity onPress={() => router.push('/vendor-login' as any)}>
-              <Text style={{ color: '#4A90D9', fontWeight: '600', fontSize: 13 }}>
-                {t('auth.clickHere')}
+              <GoogleIcon size={20} />
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>
+                {loading ? t('auth.signingIn') : t('auth.continueWithGoogle')}
               </Text>
             </TouchableOpacity>
+
+            {/* Vendor link */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
+              <Text style={{ color: '#5a4136', fontSize: 16 }}>{t('auth.forVendor')}</Text>
+              <TouchableOpacity onPress={() => router.push('/vendor-login' as any)}>
+                <Text style={{ color: '#4648d4', fontWeight: '600', fontSize: 14 }}>
+                  {t('auth.clickHere')}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Dev-only bypass */}
           {__DEV__ && (
             <TouchableOpacity
               onPress={() => router.replace('/(tabs)')}
-              style={{ marginTop: 20, alignItems: 'center' }}
+              style={{ alignItems: 'center' }}
             >
               <Text style={{ color: '#CCC', fontSize: 12 }}>{t('auth.skipLoginDev')}</Text>
             </TouchableOpacity>
