@@ -108,6 +108,7 @@ export const en = {
   'wallet.transfer': 'Transfer',
   'wallet.statement': 'Statement',
   'wallet.recentTransactions': 'Recent Transactions',
+  'wallet.topUpFailedTitle': 'Top-up failed',
 
   // Cart
   'cart.title': 'Your Cart',

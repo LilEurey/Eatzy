@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { MOCK_WALLET_BALANCE, MOCK_WALLET_TRANSACTIONS } from '@/lib/mock-data';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
+type WalletTxn = { id: string; type: TxType; amount: number; description: string | null; created_at: string };
 
 const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
   topup:    { icon: '↓', color: '#16a34a' },
@@ -29,19 +30,49 @@ function formatDate(iso: string, t: ReturnType<typeof useI18n>['t']) {
 
 export default function WalletScreen() {
   const { t } = useI18n();
-  const [balance, setBalance] = useState(MOCK_WALLET_BALANCE);
-  const [txns, setTxns] = useState(MOCK_WALLET_TRANSACTIONS);
+  const [balance, setBalance] = useState(0);
+  const [txns, setTxns] = useState<WalletTxn[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [toppingUp, setToppingUp] = useState(false);
 
-  // ponytail: local mock top-up. Route through the topup_wallet RPC when the DB is live.
-  function topUp(amount: number) {
-    setBalance(b => b + amount);
-    setTxns(prev => [
-      { id: `wt${Date.now()}`, type: 'topup' as const, amount, description: 'Wallet top-up', created_at: new Date().toISOString() },
-      ...prev,
+  async function loadWallet(userId: string) {
+    const [profileRes, txnsRes] = await Promise.all([
+      supabase.from('users').select('wallet_balance').eq('id', userId).maybeSingle(),
+      supabase.from('wallet_transactions').select('id,type,amount,description,created_at').eq('user_id', userId).order('created_at', { ascending: false }),
     ]);
+    setBalance(profileRes.data?.wallet_balance ?? 0);
+    setTxns((txnsRes.data ?? []) as WalletTxn[]);
+  }
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { setLoading(false); return; }
+      loadWallet(user.id).then(() => setLoading(false));
+    });
+  }, []);
+
+  async function topUp(amount: number) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg')); return; }
+    setToppingUp(true);
+    const { error } = await supabase.rpc('topup_wallet', { p_user_id: user.id, p_amount: amount });
+    if (error) {
+      showAlert(t('wallet.topUpFailedTitle'), error.message);
+    } else {
+      await loadWallet(user.id);
+    }
+    setToppingUp(false);
   }
 
   const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
+
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={Brand.orange} size="large" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -85,9 +116,11 @@ export default function WalletScreen() {
                 <TouchableOpacity
                   key={amount}
                   onPress={() => topUp(amount)}
+                  disabled={toppingUp}
                   style={{
                     flex: 1, backgroundColor: 'rgba(255,255,255,0.2)',
                     borderRadius: 12, paddingVertical: 10, alignItems: 'center',
+                    opacity: toppingUp ? 0.6 : 1,
                   }}
                 >
                   <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>+฿{amount}</Text>

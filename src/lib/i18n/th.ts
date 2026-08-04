@@ -110,6 +110,7 @@ export const th: Record<TranslationKey, string> = {
   'wallet.transfer': 'โอนเงิน',
   'wallet.statement': 'รายการเดินบัญชี',
   'wallet.recentTransactions': 'รายการล่าสุด',
+  'wallet.topUpFailedTitle': 'เติมเงินไม่สำเร็จ',
 
   // Cart
   'cart.title': 'ตะกร้าของคุณ',
