@@ -451,6 +451,56 @@ export const MOCK_WALLET_TRANSACTIONS = [
   },
 ];
 
+// ─── Notifications ──────────────────────────────────────────────────────────────
+
+export const MOCK_NOTIFICATIONS = [
+  {
+    id: 'n001',
+    type: 'order' as const,
+    icon: '🎉',
+    title: 'Order ready for pickup!',
+    body: "Malee's Thai Kitchen · Queue #Q12",
+    read: false,
+    created_at: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'n002',
+    type: 'promo' as const,
+    icon: '🏷️',
+    title: '20% off at Green Harvest',
+    body: 'Today only — valid on all vegetarian mains.',
+    read: false,
+    created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'n003',
+    type: 'order' as const,
+    icon: '👨‍🍳',
+    title: 'Your order is being prepared',
+    body: "Malee's Thai Kitchen · Queue #Q12",
+    read: true,
+    created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'n004',
+    type: 'system' as const,
+    icon: '💰',
+    title: 'Wallet top-up successful',
+    body: '฿200 added via PromptPay',
+    read: true,
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'n005',
+    type: 'promo' as const,
+    icon: '✨',
+    title: 'New menu at Som Tam Station',
+    body: 'Check out this week’s Latest Release picks.',
+    read: true,
+    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function getVendorById(id: string) {

@@ -466,6 +466,7 @@ export type Database = {
       }
       users: {
         Row: {
+          avatar_url: string | null
           created_at: string
           department: string | null
           email: string
@@ -477,6 +478,7 @@ export type Database = {
           wallet_balance: number
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           department?: string | null
           email: string
@@ -488,6 +490,7 @@ export type Database = {
           wallet_balance?: number
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           department?: string | null
           email?: string

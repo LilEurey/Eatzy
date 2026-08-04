@@ -26,6 +26,7 @@ export const th: Record<TranslationKey, string> = {
   'common.orderNotFound': 'ไม่พบคำสั่งซื้อ',
   'common.total': 'ยอดรวม',
   'common.pickupRange': 'รับที่ {start}–{end}',
+  'common.permissionNeededTitle': 'ต้องได้รับอนุญาต',
 
   // Auth / login
   'auth.tagline': 'ผู้ช่วยมื้ออาหารอัจฉริยะของคุณ',
@@ -185,4 +186,10 @@ export const th: Record<TranslationKey, string> = {
   'profile.help': 'ช่วยเหลือ & สนับสนุน',
   'profile.logout': '→ ออกจากระบบ',
   'profile.languagePickerTitle': 'เลือกภาษา',
+  'profile.avatarPermissionMsg': 'อนุญาตให้เข้าถึงคลังภาพเพื่อตั้งค่ารูปโปรไฟล์',
+  'profile.avatarUploadErrorTitle': 'อัปเดตรูปโปรไฟล์ไม่สำเร็จ',
+
+  // Notifications
+  'notifications.title': 'การแจ้งเตือน',
+  'notifications.empty': 'ยังไม่มีการแจ้งเตือน',
 };

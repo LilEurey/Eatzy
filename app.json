@@ -35,6 +35,12 @@
             "imageWidth": 76
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Eatzy needs access to your photos so you can set a profile picture."
+        }
       ]
     ],
     "experiments": {

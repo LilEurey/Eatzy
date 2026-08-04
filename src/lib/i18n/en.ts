@@ -24,6 +24,7 @@ export const en = {
   'common.orderNotFound': 'Order not found',
   'common.total': 'Total',
   'common.pickupRange': 'Pickup {start}–{end}',
+  'common.permissionNeededTitle': 'Permission needed',
 
   // Auth / login
   'auth.tagline': 'Your smart dining companion.',
@@ -183,6 +184,12 @@ export const en = {
   'profile.help': 'Help & support',
   'profile.logout': '→ Logout',
   'profile.languagePickerTitle': 'Choose language',
+  'profile.avatarPermissionMsg': 'Allow photo library access to set a profile picture.',
+  'profile.avatarUploadErrorTitle': 'Couldn’t update profile picture',
+
+  // Notifications
+  'notifications.title': 'Notifications',
+  'notifications.empty': 'No notifications yet',
 } as const;
 
 export type TranslationKey = keyof typeof en;

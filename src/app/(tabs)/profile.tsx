@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
@@ -24,6 +25,8 @@ export default function ProfileScreen() {
   const { t, locale, setLocale } = useI18n();
   const [name, setName] = useState('Student');
   const [email, setEmail] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [languagePickerOpen, setLanguagePickerOpen] = useState(false);
 
   useEffect(() => {
@@ -35,15 +38,62 @@ export default function ProfileScreen() {
         user.email?.split('@')[0] ??
         'Student',
       );
+      supabase.from('users').select('avatar_url').eq('id', user.id).maybeSingle().then(({ data }) => {
+        if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+      });
     });
   }, []);
 
   const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
 
+  async function pickAvatar() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { comingSoon(); return; } // dev skip-login: no account to attach a photo to
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showAlert(t('common.permissionNeededTitle'), t('profile.avatarPermissionMsg'));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+    setUploadingAvatar(true);
+    try {
+      const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+      const path = `${user.id}/avatar.${ext}`;
+      const arraybuffer = await fetch(asset.uri).then(res => res.arrayBuffer());
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, arraybuffer, { contentType: asset.mimeType ?? 'image/jpeg', upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+      const bustedUrl = `${publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase.from('users').update({ avatar_url: bustedUrl }).eq('id', user.id);
+      if (updateError) throw updateError;
+
+      setAvatarUrl(bustedUrl);
+    } catch (e) {
+      showAlert(t('profile.avatarUploadErrorTitle'), e instanceof Error ? e.message : String(e));
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
   const SETTINGS: { icon: string; label: string; onPress: () => void }[] = [
     { icon: '🥗', label: t('profile.dietaryPreferences'), onPress: () => router.push('/(auth)/onboarding') },
     { icon: '💰', label: t('profile.campusWallet'), onPress: () => router.push('/(tabs)/wallet') },
-    { icon: '🔔', label: t('profile.notifications'), onPress: comingSoon },
+    { icon: '🔔', label: t('profile.notifications'), onPress: () => router.push('/notifications') },
     { icon: '🌐', label: t('profile.language'), onPress: () => setLanguagePickerOpen(true) },
     { icon: '💬', label: t('profile.help'), onPress: comingSoon },
   ];
@@ -61,21 +111,42 @@ export default function ProfileScreen() {
         </Text>
 
         {/* Avatar card */}
-        {/* ponytail: initials avatar — wire photo upload to Supabase Storage when accounts are live */}
         <View style={{
           flexDirection: 'row', alignItems: 'center', gap: 16,
           backgroundColor: Brand.card, borderRadius: 20, padding: 20, marginBottom: 24,
           shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
         }}>
-          <View style={{
-            width: 64, height: 64, borderRadius: 32,
-            backgroundColor: Brand.orange, alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Text style={{ fontSize: 26, fontWeight: '800', color: '#fff' }}>
-              {name.charAt(0).toUpperCase()}
-            </Text>
-          </View>
+          <TouchableOpacity onPress={pickAvatar} disabled={uploadingAvatar} activeOpacity={0.8} style={{ position: 'relative' }}>
+            <View style={{
+              width: 64, height: 64, borderRadius: 32, overflow: 'hidden',
+              backgroundColor: Brand.orange, alignItems: 'center', justifyContent: 'center',
+            }}>
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={{ width: 64, height: 64 }} />
+              ) : (
+                <Text style={{ fontSize: 26, fontWeight: '800', color: '#fff' }}>
+                  {name.charAt(0).toUpperCase()}
+                </Text>
+              )}
+              {uploadingAvatar && (
+                <View style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <ActivityIndicator color="#fff" size="small" />
+                </View>
+              )}
+            </View>
+            <View style={{
+              position: 'absolute', bottom: -2, right: -2,
+              width: 22, height: 22, borderRadius: 11,
+              backgroundColor: Brand.card, borderWidth: 2, borderColor: Brand.bg,
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Text style={{ fontSize: 11 }}>📷</Text>
+            </View>
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: Brand.textPrimary }}>{name}</Text>
             <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 2 }}>

@@ -44,6 +44,7 @@ function queueStatus(count: number | null): { labelKey: TranslationKey; color: s
 export default function HomeScreen() {
   const { t } = useI18n();
   const [firstName, setFirstName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [featured, setFeatured] = useState<MenuItem | null>(null);
   const [trending, setTrending] = useState<MenuItem[]>([]);
@@ -54,7 +55,7 @@ export default function HomeScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       const [profileRes, vendorsRes, featuredRes, trendingRes] = await Promise.all([
         user
-          ? supabase.from('users').select('name').eq('id', user.id).maybeSingle()
+          ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
         supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url').eq('is_open', true).order('current_queue_count', { ascending: true }),
         supabase.from('menu_items').select('id,name,price,category,image_url,vendor_id,vendors(name)').eq('is_featured', true).eq('is_available', true).limit(1),
@@ -62,6 +63,7 @@ export default function HomeScreen() {
       ]);
 
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
+      if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
 
       const dbVendors = vendorsRes.data as Vendor[] | null;
       const dbFeatured = featuredRes.data?.[0] as unknown as MenuItem | undefined;
@@ -118,18 +120,20 @@ export default function HomeScreen() {
       }}>
         <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
           <View style={{
-            width: 40, height: 40, borderRadius: 20,
+            width: 40, height: 40, borderRadius: 20, overflow: 'hidden',
             backgroundColor: Brand.orangeLight, borderWidth: 2, borderColor: Brand.card,
             alignItems: 'center', justifyContent: 'center',
           }}>
-            <Text style={{ fontSize: 18 }}>👤</Text>
+            {avatarUrl
+              ? <Image source={{ uri: avatarUrl }} style={{ width: 40, height: 40 }} />
+              : <Text style={{ fontSize: 18 }}>👤</Text>}
           </View>
         </TouchableOpacity>
         <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -1.2 }}>
           <Text style={{ color: '#020202' }}>Eat</Text>
           <Text style={{ color: Brand.orange }}>zy</Text>
         </Text>
-        <TouchableOpacity onPress={comingSoon}>
+        <TouchableOpacity onPress={() => router.push('/notifications')}>
           <Text style={{ fontSize: 22 }}>🔔</Text>
         </TouchableOpacity>
       </View>
