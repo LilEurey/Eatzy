@@ -163,7 +163,7 @@ export default function StoreDetailScreen() {
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={{ fontSize: 18, marginBottom: 2 }}>🕐</Text>
               <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>
-                {vendor.open_time}–{vendor.close_time}
+                {vendor.open_time?.slice(0, 5)}–{vendor.close_time?.slice(0, 5)}
               </Text>
               <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('store.hours')}</Text>
             </View>
