@@ -37,6 +37,9 @@ yarn-error.*
 # local tooling
 .mcp.json
 
+# Supabase CLI link cache
+supabase/.temp/
+
 # python (ml/)
 .venv/
 __pycache__/
