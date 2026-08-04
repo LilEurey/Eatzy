@@ -127,6 +127,8 @@ export const th: Record<TranslationKey, string> = {
   'cart.pickupAt': 'รับที่ {slot}',
   'cart.orderPlacedTitle': 'สั่งซื้อสำเร็จ',
   'cart.orderPlacedMsg': 'รับที่ {slot} ยอดรวม ฿{total}',
+  'cart.orderFailedTitle': 'สั่งซื้อไม่สำเร็จ',
+  'cart.insufficientBalanceMsg': 'ยอดเงินใน Campus Wallet ไม่พอสำหรับคำสั่งซื้อนี้ กรุณาเติมเงินที่แท็บกระเป๋าเงินแล้วลองใหม่อีกครั้ง',
 
   // Item detail
   'item.notFound': 'ไม่พบเมนูนี้',

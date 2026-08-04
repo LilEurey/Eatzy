@@ -125,6 +125,8 @@ export const en = {
   'cart.pickupAt': 'Pickup at {slot}',
   'cart.orderPlacedTitle': 'Order placed',
   'cart.orderPlacedMsg': 'Pickup at {slot}. Total ฿{total}.',
+  'cart.orderFailedTitle': 'Couldn’t place order',
+  'cart.insufficientBalanceMsg': 'Your Campus Wallet balance is too low for this order. Top up in the Wallet tab and try again.',
 
   // Item detail
   'item.notFound': 'Item not found',

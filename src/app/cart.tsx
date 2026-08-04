@@ -1,12 +1,15 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { getVendorById } from '@/lib/mock-data';
 import { useCart, setQty, clearCart, cartSubtotal } from '@/lib/cart-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import type { Database } from '@/types/database.types';
+
+type Vendor = Database['public']['Tables']['vendors']['Row'];
 
 const TIME_SLOTS = [
   '12:00 – 12:15',
@@ -16,21 +19,89 @@ const TIME_SLOTS = [
   '13:00 – 13:15',
 ];
 
+// Turns "12:15" into a real timestamptz for today, for the pickup window.
+function slotTimeToISO(hhmm: string) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+}
+
+function timeSegmentFor(hhmm: string): 'breakfast' | 'lunch' | 'dinner' {
+  const hour = Number(hhmm.split(':')[0]);
+  if (hour < 11) return 'breakfast';
+  if (hour < 17) return 'lunch';
+  return 'dinner';
+}
+
 export default function CartScreen() {
   const { t } = useI18n();
   const cart = useCart();
   const items = cart.items;
   const [selectedSlot, setSelectedSlot] = useState(TIME_SLOTS[1]);
+  const [vendor, setVendor] = useState<Vendor | null>(null);
+  const [placing, setPlacing] = useState(false);
 
-  const vendor = cart.vendor_id ? getVendorById(cart.vendor_id) : null;
   const subtotal = cartSubtotal(cart);
   const total = subtotal + cart.packaging_fee;
 
-  function placeOrder() {
-    showAlert(t('cart.orderPlacedTitle'), t('cart.orderPlacedMsg', { slot: selectedSlot, total }), () => {
+  useEffect(() => {
+    if (!cart.vendor_id) return; // cart empty — the empty-state branch below renders instead
+    supabase.from('vendors').select('*').eq('id', cart.vendor_id).maybeSingle()
+      .then(({ data }) => setVendor(data ?? null));
+  }, [cart.vendor_id]);
+
+  async function placeOrder() {
+    if (!cart.vendor_id) return;
+    setPlacing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not signed in');
+
+      const { data: queueNumber, error: queueError } = await supabase
+        .rpc('next_queue_number', { p_vendor_id: cart.vendor_id });
+      if (queueError) throw queueError;
+
+      const [startLabel, endLabel] = selectedSlot.split(' – ');
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          vendor_id: cart.vendor_id,
+          queue_number: queueNumber,
+          status: 'pending',
+          subtotal,
+          packaging_fee: cart.packaging_fee,
+          total_amount: total,
+          payment_method: 'wallet',
+          pickup_start: slotTimeToISO(startLabel),
+          pickup_end: slotTimeToISO(endLabel),
+          time_segment: timeSegmentFor(startLabel),
+        })
+        .select('id')
+        .single();
+      if (orderError) throw orderError;
+
+      const { error: itemsError } = await supabase.from('order_items').insert(
+        items.map(i => ({ order_id: order.id, menu_item_id: i.menu_item_id, quantity: i.quantity, unit_price: i.unit_price })),
+      );
+      if (itemsError) throw itemsError;
+
+      const { error: escrowError } = await supabase
+        .rpc('place_order_escrow', { p_user_id: user.id, p_order_id: order.id, p_amount: total });
+      if (escrowError) throw escrowError;
+
       clearCart();
-      router.replace('/(tabs)/orders');
-    });
+      router.replace(`/track/${order.id}`);
+    } catch (e: any) {
+      const message = e.message === 'insufficient_wallet_balance'
+        ? t('cart.insufficientBalanceMsg')
+        : e.message;
+      showAlert(t('cart.orderFailedTitle'), message);
+    } finally {
+      setPlacing(false);
+    }
   }
 
   if (items.length === 0) {
@@ -84,7 +155,7 @@ export default function CartScreen() {
             <Text style={{ fontSize: 20 }}>🏪</Text>
             <View>
               <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textPrimary }}>{vendor.name}</Text>
-              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('cart.stall', { n: vendor.stall_number })}</Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('cart.stall', { n: vendor.stall_number ?? '' })}</Text>
             </View>
           </View>
         )}
@@ -202,19 +273,26 @@ export default function CartScreen() {
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={placeOrder}
+          disabled={placing}
           style={{
             backgroundColor: Brand.orange, borderRadius: 16,
-            paddingVertical: 16, alignItems: 'center',
+            paddingVertical: 16, alignItems: 'center', opacity: placing ? 0.7 : 1,
             shadowColor: Brand.orange, shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.35, shadowRadius: 8, elevation: 4,
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
-            {t('cart.placeOrder', { total })}
-          </Text>
-          <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>
-            {t('cart.pickupAt', { slot: selectedSlot })}
-          </Text>
+          {placing ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
+                {t('cart.placeOrder', { total })}
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>
+                {t('cart.pickupAt', { slot: selectedSlot })}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
