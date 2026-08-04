@@ -253,4 +253,14 @@ export const th: Record<TranslationKey, string> = {
   'vendor.orders.itemsPaid': '{n} รายการ · ชำระแล้ว',
   'vendor.orders.handedToCustomer': 'ส่งมอบแล้ว',
   'vendor.orders.emptyColumn': 'ยังไม่มีรายการ',
+
+  // Vendor — menu catalog
+  'vendor.menu.title': 'คลังเมนู',
+  'vendor.menu.subtitle': 'คลังเมนู',
+  'vendor.menu.addNewItem': '+ เพิ่มเมนูใหม่',
+  'vendor.menu.allItems': 'ทั้งหมด',
+  'vendor.menu.availability': 'พร้อมขาย',
+  'vendor.menu.empty': 'ยังไม่มีเมนู',
+  'vendor.menu.edit': 'แก้ไข',
+  'vendor.menu.delete': 'ลบ',
 };

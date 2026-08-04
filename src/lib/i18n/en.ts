@@ -251,6 +251,16 @@ export const en = {
   'vendor.orders.itemsPaid': '{n} Items · Paid',
   'vendor.orders.handedToCustomer': 'Handed to Customer',
   'vendor.orders.emptyColumn': 'Nothing here',
+
+  // Vendor — menu catalog
+  'vendor.menu.title': 'Menu Catalog',
+  'vendor.menu.subtitle': 'คลังเมนู',
+  'vendor.menu.addNewItem': '+ Add New Item',
+  'vendor.menu.allItems': 'All Items',
+  'vendor.menu.availability': 'Availability',
+  'vendor.menu.empty': 'No menu items yet',
+  'vendor.menu.edit': 'Edit',
+  'vendor.menu.delete': 'Delete',
 } as const;
 
 export type TranslationKey = keyof typeof en;
