@@ -68,7 +68,10 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     storage: authStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    // Only takes effect in a real browser context (checks for `window.document`,
+    // which native RN doesn't have) — lets the web build auto-complete the PKCE
+    // code exchange after Google redirects back to the page.
+    detectSessionInUrl: true,
     // PKCE keeps the OAuth callback URL limited to a single-use code — a
     // hijacker who intercepts the "eatzy://" redirect (custom URL schemes
     // aren't exclusively claimed on Android) gets an unusable code, not a

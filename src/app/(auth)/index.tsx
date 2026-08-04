@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as ExpoLinking from 'expo-linking';
@@ -35,6 +35,20 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const redirectTo = ExpoLinking.createURL('/');
+
+      if (Platform.OS === 'web') {
+        // Full-page redirect — no popup involved, so there's nothing for a
+        // popup blocker to kill. The page navigates away here; when Google
+        // sends it back with ?code=..., detectSessionInUrl (supabase.ts)
+        // completes the PKCE exchange automatically on reload.
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo },
+        });
+        if (error) throw error;
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo, skipBrowserRedirect: true },
