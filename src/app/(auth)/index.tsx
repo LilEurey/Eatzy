@@ -12,8 +12,8 @@ import { useI18n } from '@/lib/i18n';
 
 WebBrowser.maybeCompleteAuthSession();
 
-// The redirect URL carries session tokens after the ?query or in the #fragment
-// depending on platform/flow — check both.
+// PKCE puts the auth code and any error in the ?query string, but check the
+// #fragment too in case a provider/platform combination ever redirects there.
 function extractAuthParams(url: string): Record<string, string> {
   const params = new URLSearchParams();
   const [beforeHash, hash] = url.split('#');
@@ -47,15 +47,13 @@ export default function LoginScreen() {
 
       const params = extractAuthParams(result.url);
       if (params.error) throw new Error(params.error_description || params.error);
-      if (!params.access_token || !params.refresh_token) {
-        throw new Error('No session tokens returned');
-      }
+      if (!params.code) throw new Error('No authorization code returned');
 
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: params.access_token,
-        refresh_token: params.refresh_token,
-      });
-      if (sessionError) throw sessionError;
+      // PKCE: exchange the single-use code for a session using the code
+      // verifier signInWithOAuth stashed locally — never transmitted over
+      // the redirect URL, so an intercepted callback alone is useless.
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
+      if (exchangeError) throw exchangeError;
     } catch (e: any) {
       showAlert(t('auth.signInFailedTitle'), e.message);
     } finally {

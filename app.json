@@ -41,7 +41,8 @@
         {
           "photosPermission": "Eatzy needs access to your photos so you can set a profile picture."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
