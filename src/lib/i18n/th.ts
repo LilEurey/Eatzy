@@ -194,6 +194,15 @@ export const th: Record<TranslationKey, string> = {
   'profile.recentOrders': 'คำสั่งซื้อล่าสุด',
   'profile.viewAll': 'ดูทั้งหมด',
   'profile.noOrdersYet': 'ยังไม่มีคำสั่งซื้อ',
+
+  // Edit Preferences & Allergies (Account Details)
+  'editPreferences.subtitle': 'ปรับแต่งคำแนะนำ AI ของคุณด้วยการบอกความต้องการด้านอาหาร',
+  'editPreferences.dietaryType': 'ประเภทอาหาร',
+  'editPreferences.foodAllergies': 'อาการแพ้อาหาร',
+  'editPreferences.saveChanges': 'บันทึกการเปลี่ยนแปลง',
+  'editPreferences.saving': 'กำลังบันทึก…',
+  'editPreferences.savedTitle': 'อัปเดตค่ากำหนดแล้ว',
+  'editPreferences.savedMsg': 'บันทึกความต้องการด้านอาหารของคุณแล้ว',
   'profile.logout': '→ ออกจากระบบ',
   'profile.languagePickerTitle': 'เลือกภาษา',
   'profile.avatarPermissionMsg': 'อนุญาตให้เข้าถึงคลังภาพเพื่อตั้งค่ารูปโปรไฟล์',

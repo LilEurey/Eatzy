@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
@@ -89,48 +89,53 @@ export default function ProfileScreen() {
   const [recentOrder, setRecentOrder] = useState<RecentOrder | null | undefined>(undefined);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { setRecentOrder(null); return; } // dev skip-login: keep defaults
-      setEmail(user.email ?? '');
-      setName(
-        (user.user_metadata?.full_name as string) ??
-        user.email?.split('@')[0] ??
-        'Student',
-      );
+  // useFocusEffect (not a mount-only effect) so returning from Edit
+  // Preferences or Account Details shows the just-saved chips/data
+  // immediately, without needing a full remount.
+  useFocusEffect(
+    useCallback(() => {
+      supabase.auth.getUser().then(async ({ data: { user } }) => {
+        if (!user) { setRecentOrder(null); return; } // dev skip-login: keep defaults
+        setEmail(user.email ?? '');
+        setName(
+          (user.user_metadata?.full_name as string) ??
+          user.email?.split('@')[0] ??
+          'Student',
+        );
 
-      const [profileRes, prefsRes, orderRes] = await Promise.all([
-        supabase.from('users').select('avatar_url,notifications_enabled').eq('id', user.id).maybeSingle(),
-        supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle(),
-        supabase
-          .from('orders')
-          .select('id,status,total_amount,created_at,order_items(quantity,menu_items(name))')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+        const [profileRes, prefsRes, orderRes] = await Promise.all([
+          supabase.from('users').select('avatar_url,notifications_enabled').eq('id', user.id).maybeSingle(),
+          supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle(),
+          supabase
+            .from('orders')
+            .select('id,status,total_amount,created_at,order_items(quantity,menu_items(name))')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ]);
 
-      if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
-      if (profileRes.data) setNotificationsEnabled(profileRes.data.notifications_enabled);
+        if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
+        if (profileRes.data) setNotificationsEnabled(profileRes.data.notifications_enabled);
 
-      const prefs = prefsRes.data;
-      const dietary: string[] = [];
-      if (prefs?.is_halal) dietary.push(t('onboarding.dietary.halal'));
-      if (prefs?.is_vegetarian) dietary.push(t('onboarding.dietary.vegetarian'));
-      if (prefs?.is_jay) dietary.push(t('onboarding.dietary.jay'));
-      setDietaryChips(dietary);
-      setAllergyChips((prefs?.allergies ?? []).map(a => a.charAt(0).toUpperCase() + a.slice(1)));
+        const prefs = prefsRes.data;
+        const dietary: string[] = [];
+        if (prefs?.is_halal) dietary.push(t('onboarding.dietary.halal'));
+        if (prefs?.is_vegetarian) dietary.push(t('onboarding.dietary.vegetarian'));
+        if (prefs?.is_jay) dietary.push(t('onboarding.dietary.jay'));
+        setDietaryChips(dietary);
+        setAllergyChips((prefs?.allergies ?? []).map(a => a.charAt(0).toUpperCase() + a.slice(1)));
 
-      const order = orderRes.data as any;
-      if (!order) { setRecentOrder(null); return; }
-      const items = order.order_items ?? [];
-      const itemSummary = items.length
-        ? items[0].menu_items?.name + (items.length > 1 ? ` +${items.length - 1}` : '')
-        : '';
-      setRecentOrder({ id: order.id, status: order.status, total_amount: order.total_amount, created_at: order.created_at, itemSummary });
-    });
-  }, [t]);
+        const order = orderRes.data as any;
+        if (!order) { setRecentOrder(null); return; }
+        const items = order.order_items ?? [];
+        const itemSummary = items.length
+          ? items[0].menu_items?.name + (items.length > 1 ? ` +${items.length - 1}` : '')
+          : '';
+        setRecentOrder({ id: order.id, status: order.status, total_amount: order.total_amount, created_at: order.created_at, itemSummary });
+      });
+    }, [t]),
+  );
 
   const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
 
@@ -340,7 +345,7 @@ export default function ProfileScreen() {
 
         {/* Account settings links */}
         <View style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.04, shadowRadius: 30, elevation: 2 }}>
-          <TouchableOpacity onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
+          <TouchableOpacity onPress={() => router.push('/edit-preferences')} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
               <Ionicons name="person-circle-outline" size={20} color="#261812" />
               <Text style={{ fontSize: 16, color: '#261812' }}>{t('profile.accountDetails')}</Text>

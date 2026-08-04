@@ -192,6 +192,15 @@ export const en = {
   'profile.recentOrders': 'Recent Orders',
   'profile.viewAll': 'View All',
   'profile.noOrdersYet': 'No orders yet',
+
+  // Edit Preferences & Allergies (Account Details)
+  'editPreferences.subtitle': 'Customize your AI recommendations by letting us know your dietary needs.',
+  'editPreferences.dietaryType': 'Dietary Type',
+  'editPreferences.foodAllergies': 'Food Allergies',
+  'editPreferences.saveChanges': 'Save Changes',
+  'editPreferences.saving': 'Saving…',
+  'editPreferences.savedTitle': 'Preferences updated',
+  'editPreferences.savedMsg': 'Your dietary preferences have been saved.',
   'profile.logout': '→ Logout',
   'profile.languagePickerTitle': 'Choose language',
   'profile.avatarPermissionMsg': 'Allow photo library access to set a profile picture.',
