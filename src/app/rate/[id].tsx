@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { getOrderById, getVendorName } from '@/lib/mock-data';
 import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 
@@ -12,12 +12,42 @@ const LABEL_KEYS: (TranslationKey | null)[] = [
   null, 'rate.labelBad', 'rate.labelMeh', 'rate.labelGood', 'rate.labelGreat', 'rate.labelAmazing',
 ];
 
+type RateOrder = { id: string; vendor_name: string; item_names: string[]; primary_menu_item_id: string | null };
+
 export default function RateScreen() {
   const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const order = getOrderById(id);
+  const [order, setOrder] = useState<RateOrder | null | undefined>(undefined);
   const [score, setScore] = useState(0);
   const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from('orders')
+        .select('id,vendors(name),order_items(menu_item_id,menu_items(name))')
+        .eq('id', id)
+        .maybeSingle();
+      if (!data) { setOrder(null); return; }
+      const orderItems = (data as any).order_items ?? [];
+      setOrder({
+        id: data.id,
+        vendor_name: (data as any).vendors?.name ?? '',
+        item_names: orderItems.map((oi: any) => oi.menu_items?.name ?? ''),
+        primary_menu_item_id: orderItems[0]?.menu_item_id ?? null,
+      });
+    }
+    void load();
+  }, [id]);
+
+  if (order === undefined) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={Brand.orange} size="large" />
+      </SafeAreaView>
+    );
+  }
 
   if (!order) {
     return (
@@ -35,10 +65,26 @@ export default function RateScreen() {
     );
   }
 
-  const vendor = getVendorName(order.vendor_id);
+  const vendor = order.vendor_name;
 
-  function submit() {
-    // ponytail: no persistence yet — insert into ratings table when the DB is live.
+  async function submit() {
+    if (!order?.primary_menu_item_id) return;
+    setSubmitting(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSubmitting(false); return; }
+
+    const { error } = await supabase.from('ratings').insert({
+      user_id: user.id,
+      menu_item_id: order.primary_menu_item_id,
+      order_id: order.id,
+      score,
+      comment: comment.trim() || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      showAlert(t('common.orderNotFound'), error.message);
+      return;
+    }
     showAlert(t('rate.thanksTitle'), t('rate.thanksMsg', { vendor, score }), () =>
       router.replace('/(tabs)/orders'),
     );
@@ -60,7 +106,7 @@ export default function RateScreen() {
           <Text style={{ fontSize: 44, marginBottom: 8 }}>🍽️</Text>
           <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary }}>{vendor}</Text>
           <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' }}>
-            {order.items.map(i => i.name).join(', ')}
+            {order.item_names.join(', ')}
           </Text>
         </View>
 
@@ -104,7 +150,7 @@ export default function RateScreen() {
       }}>
         <TouchableOpacity
           activeOpacity={0.85}
-          disabled={score === 0}
+          disabled={score === 0 || submitting}
           onPress={submit}
           style={{
             backgroundColor: score === 0 ? Brand.border : Brand.orange,

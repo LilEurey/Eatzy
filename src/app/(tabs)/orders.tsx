@@ -1,13 +1,31 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { MOCK_ORDERS, getVendorName } from '@/lib/mock-data';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 
 type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'ready' | 'completed' | 'cancelled';
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
+
+type StudentOrder = {
+  id: string;
+  vendor_id: string;
+  queue_number: number | null;
+  status: OrderStatus;
+  total_amount: number;
+  pickup_start: string | null;
+  pickup_end: string | null;
+  created_at: string;
+  vendor_name: string;
+  items: { name: string; quantity: number }[];
+};
+
+function formatClock(iso: string | null) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
 
 const STATUS_CONFIG: Record<OrderStatus, { labelKey: TranslationKey; color: string; bg: string }> = {
   pending:   { labelKey: 'orders.status.pending',   color: '#d97706', bg: '#fef3c7' },
@@ -40,8 +58,38 @@ function timeAgo(iso: string, t: ReturnType<typeof useI18n>['t']) {
 export default function OrdersScreen() {
   const { t } = useI18n();
   const [tab, setTab] = useState<FilterTab>('All');
+  const [orders, setOrders] = useState<StudentOrder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = MOCK_ORDERS.filter(o => {
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const { data } = await supabase
+        .from('orders')
+        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name))')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      setOrders(((data as any[] | null) ?? []).map(o => ({
+        id: o.id,
+        vendor_id: o.vendor_id,
+        queue_number: o.queue_number,
+        status: o.status,
+        total_amount: o.total_amount,
+        pickup_start: o.pickup_start,
+        pickup_end: o.pickup_end,
+        created_at: o.created_at,
+        vendor_name: o.vendors?.name ?? '',
+        items: (o.order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', quantity: oi.quantity })),
+      })));
+      setLoading(false);
+    }
+    void load();
+  }, []);
+
+  const filtered = orders.filter(o => {
     if (tab === 'All') return true;
     if (tab === 'Active') return ACTIVE.includes(o.status);
     if (tab === 'Completed') return o.status === 'completed';
@@ -88,6 +136,11 @@ export default function OrdersScreen() {
         </ScrollView>
       </View>
 
+      {loading ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={Brand.orange} size="large" />
+        </View>
+      ) : (
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
         {tab === 'All' && filtered.some(o => ACTIVE.includes(o.status)) && (
@@ -99,7 +152,7 @@ export default function OrdersScreen() {
         <View style={{ gap: 12 }}>
           {filtered.map(order => {
             const cfg = STATUS_CONFIG[order.status];
-            const vendor = getVendorName(order.vendor_id);
+            const vendor = order.vendor_name;
             const isActive = ACTIVE.includes(order.status);
             const itemSummary = order.items.map(i => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join(', ');
 
@@ -121,7 +174,7 @@ export default function OrdersScreen() {
                       {vendor}
                     </Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      {t('orders.queueLine', { n: order.queue_number, time: timeAgo(order.created_at, t) })}
+                      {t('orders.queueLine', { n: order.queue_number ?? '—', time: timeAgo(order.created_at, t) })}
                     </Text>
                   </View>
                   <View style={{ backgroundColor: cfg.bg, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 }}>
@@ -165,7 +218,7 @@ export default function OrdersScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={{ fontSize: 12 }}>🕐</Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      {t('common.pickupRange', { start: order.pickup_start, end: order.pickup_end })}
+                      {t('common.pickupRange', { start: formatClock(order.pickup_start), end: formatClock(order.pickup_end) })}
                     </Text>
                   </View>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>
@@ -221,6 +274,7 @@ export default function OrdersScreen() {
           )}
         </View>
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

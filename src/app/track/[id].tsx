@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { getOrderById, getVendorName } from '@/lib/mock-data';
+import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 
 type Status = 'pending' | 'accepted' | 'ready' | 'completed';
+
+type TrackOrder = {
+  id: string;
+  queue_number: number | null;
+  pickup_start: string | null;
+  pickup_end: string | null;
+  total_amount: number;
+  vendor_name: string;
+  items: { name: string; quantity: number; unit_price: number }[];
+};
 
 const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: TranslationKey }[] = [
   { key: 'pending',   labelKey: 'track.stepPlacedLabel',   icon: '📝', hintKey: 'track.stepPlacedHint' },
@@ -17,21 +28,65 @@ const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: Tra
 
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];
 
+function formatClock(iso: string | null) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function TrackScreen() {
   const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const order = getOrderById(id);
-
-  // ponytail: simulated live progression on a timer. Swap for a Supabase
-  // Realtime subscription on orders.status when the DB is live.
-  const [status, setStatus] = useState<Status>((order?.status as Status) ?? 'pending');
+  const [order, setOrder] = useState<TrackOrder | null | undefined>(undefined);
+  const [status, setStatus] = useState<Status>('pending');
 
   useEffect(() => {
-    const idx = ORDER.indexOf(status);
-    if (idx < 0 || status === 'ready' || status === 'completed') return; // stop at ready; pickup is manual
-    const timer = setTimeout(() => setStatus(ORDER[idx + 1]), 5000);
-    return () => clearTimeout(timer);
-  }, [status]);
+    async function load() {
+      const { data } = await supabase
+        .from('orders')
+        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,vendors(name),order_items(quantity,unit_price,menu_items(name))')
+        .eq('id', id)
+        .maybeSingle();
+      if (!data) { setOrder(null); return; }
+      setOrder({
+        id: data.id,
+        queue_number: data.queue_number,
+        pickup_start: data.pickup_start,
+        pickup_end: data.pickup_end,
+        total_amount: data.total_amount,
+        vendor_name: (data as any).vendors?.name ?? '',
+        items: ((data as any).order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', quantity: oi.quantity, unit_price: oi.unit_price })),
+      });
+      setStatus(data.status as Status);
+    }
+    void load();
+
+    const channel = supabase
+      .channel(`track-order-${id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => {
+        setStatus(payload.new.status as Status);
+      })
+      .subscribe();
+    return () => { void channel.unsubscribe(); };
+  }, [id]);
+
+  async function markPickedUp() {
+    if (!order) return;
+    const { error } = await supabase.from('orders').update({ status: 'completed' }).eq('id', order.id);
+    if (error) { showAlert(t('common.orderNotFound'), error.message); return; }
+    const { error: releaseError } = await supabase.rpc('release_escrow_to_vendor', { p_order_id: order.id });
+    if (releaseError && releaseError.message !== 'order_not_found_or_already_settled') {
+      showAlert(t('common.orderNotFound'), releaseError.message);
+    }
+    setStatus('completed');
+  }
+
+  if (order === undefined) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={Brand.orange} size="large" />
+      </SafeAreaView>
+    );
+  }
 
   if (!order) {
     return (
@@ -49,7 +104,7 @@ export default function TrackScreen() {
     );
   }
 
-  const vendor = getVendorName(order.vendor_id);
+  const vendor = order.vendor_name;
   const currentIdx = ORDER.indexOf(status);
   const isReady = status === 'ready';
 
@@ -81,7 +136,7 @@ export default function TrackScreen() {
             {vendor}
           </Text>
           <Text style={{ fontSize: 13, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary, marginTop: 2 }}>
-            {t('common.pickupRange', { start: order.pickup_start, end: order.pickup_end })}
+            {t('common.pickupRange', { start: formatClock(order.pickup_start), end: formatClock(order.pickup_end) })}
           </Text>
         </View>
 
@@ -158,7 +213,7 @@ export default function TrackScreen() {
         }}>
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => setStatus('completed')}
+            onPress={markPickedUp}
             style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
           >
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.pickedItUp')}</Text>
