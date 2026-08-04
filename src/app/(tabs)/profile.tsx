@@ -15,10 +15,10 @@ const DEV_ROUTES: { label: string; route: string }[] = [
   { label: '📋 Orders tab', route: '/(tabs)/orders' },
   { label: '💰 Wallet tab', route: '/(tabs)/wallet' },
   { label: '🛒 Cart', route: '/cart' },
-  { label: '🏪 Store detail (sample)', route: '/store/v001' },
-  { label: '🍛 Food item detail (sample)', route: '/item/m001' },
-  { label: '📍 Track order (sample)', route: '/track/o001' },
-  { label: '⭐ Rate order (sample)', route: '/rate/o003' },
+  { label: '🏪 Store detail (Malee\'s Thai Kitchen)', route: '/store/f87c67e2-51cd-40a9-abdc-74c4bc5250ce' },
+  { label: '🍛 Food item detail (Pad Thai)', route: '/item/030d7f8e-8cca-4f50-88c3-83681e72b9ce' },
+  // Track/Rate sample links removed — real orders are RLS-scoped to their
+  // own student, so a sample id only resolves for whoever placed it.
   { label: '🧑‍🍳 Vendor login', route: '/vendor-login' },
   { label: '🧑‍🍳 Vendor Overview', route: '/(vendor)/overview' },
   { label: '🧑‍🍳 Vendor Orders (KDS)', route: '/(vendor)/orders' },
