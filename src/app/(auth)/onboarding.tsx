@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,6 +34,36 @@ export default function OnboardingScreen() {
   const [allergies, setAllergies] = useState<Set<Allergy>>(new Set());
   const [budget, setBudget] = useState(60);
   const [saving, setSaving] = useState(false);
+
+  async function loadPreferences() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('user_preferences')
+      .select('is_halal,is_vegetarian,is_jay,allergies,budget_max')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (!data) return; // first-time onboarding: keep blank defaults
+
+    const nextDietary = new Set<Dietary>();
+    if (data.is_halal) nextDietary.add('Halal');
+    if (data.is_vegetarian) nextDietary.add('Vegetarian');
+    if (data.is_jay) nextDietary.add('Jay');
+    setDietary(nextDietary);
+
+    const nextAllergies = new Set<Allergy>();
+    for (const saved of data.allergies ?? []) {
+      const option = ALLERGY_OPTIONS.find(o => o.toLowerCase() === saved);
+      if (option) nextAllergies.add(option);
+    }
+    setAllergies(nextAllergies);
+
+    setBudget(data.budget_max ?? 150);
+  }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount to pre-fill previously saved preferences
+  useEffect(() => { void loadPreferences(); }, []);
 
   function toggleDietary(item: Dietary) {
     setDietary(prev => {
