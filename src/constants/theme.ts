@@ -9,4 +9,6 @@ export const Brand = {
   textSecondary: '#8B7355',
   card: '#FFFFFF',
   border: '#F0E8E0',
+  vendorAccent: '#6C63FF',
+  vendorAccentLight: '#EEECFF',
 } as const;

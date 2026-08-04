@@ -344,9 +344,70 @@ export const MOCK_ORDERS = [
     pickup_end: '12:45',
     time_segment: 'lunch',
     created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    customer_name: 'Nan T.',
+    prep_seconds: 12 * 60,
+    special_request: 'Extra peanuts on the side',
     items: [
       { name: 'Pad Thai', quantity: 2, unit_price: 55 },
       { name: 'Thai Milk Tea', quantity: 1, unit_price: 35 },
+    ],
+  },
+  {
+    id: 'o006',
+    vendor_id: 'v001',
+    queue_number: 16,
+    status: 'pending' as const,
+    subtotal: 105,
+    packaging_fee: 5,
+    total_amount: 110,
+    payment_method: 'wallet',
+    pickup_start: '13:05',
+    pickup_end: '13:20',
+    time_segment: 'lunch',
+    created_at: new Date(Date.now() - 30 * 1000).toISOString(),
+    customer_name: 'Aran P.',
+    prep_seconds: 15 * 60,
+    special_request: 'No cilantro please',
+    items: [
+      { name: 'Green Curry with Rice', quantity: 1, unit_price: 65 },
+      { name: 'Thai Milk Tea', quantity: 1, unit_price: 35 },
+    ],
+  },
+  {
+    id: 'o007',
+    vendor_id: 'v001',
+    queue_number: 17,
+    status: 'pending' as const,
+    subtotal: 50,
+    packaging_fee: 5,
+    total_amount: 55,
+    payment_method: 'wallet',
+    pickup_start: '13:10',
+    pickup_end: '13:25',
+    time_segment: 'lunch',
+    created_at: new Date(Date.now() - 90 * 1000).toISOString(),
+    customer_name: 'Min S.',
+    prep_seconds: 5 * 60,
+    items: [
+      { name: 'Khao Man Gai', quantity: 1, unit_price: 50 },
+    ],
+  },
+  {
+    id: 'o008',
+    vendor_id: 'v001',
+    queue_number: 11,
+    status: 'ready' as const,
+    subtotal: 55,
+    packaging_fee: 5,
+    total_amount: 60,
+    payment_method: 'wallet',
+    pickup_start: '12:05',
+    pickup_end: '12:20',
+    time_segment: 'lunch',
+    created_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+    customer_name: 'John D.',
+    items: [
+      { name: 'Pad Thai', quantity: 1, unit_price: 55 },
     ],
   },
   {
@@ -501,10 +562,19 @@ export const MOCK_NOTIFICATIONS = [
   },
 ];
 
+// ─── Vendor session ─────────────────────────────────────────────────────────
+
+export const MOCK_VENDOR_SESSION = { vendorId: 'v001', managerName: 'Malee Srisuk' } as const;
+// ponytail: replace with Supabase email/password auth + users.role === 'vendor' check.
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function getVendorById(id: string) {
   return MOCK_VENDORS.find(v => v.id === id) ?? null;
+}
+
+export function getOrdersByVendor(vendorId: string) {
+  return MOCK_ORDERS.filter(o => o.vendor_id === vendorId);
 }
 
 export function getMenuItemById(id: string) {
