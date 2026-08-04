@@ -125,10 +125,7 @@ function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI
   return (
     <CardShell>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <View>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary }}>#{order.queue_number}</Text>
-          {order.customer_name && <Text style={{ fontSize: 11, color: '#8A8F9B', fontWeight: '600' }}>{order.customer_name}</Text>}
-        </View>
+        <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary }}>#{order.queue_number}</Text>
         <View style={{ backgroundColor: '#DCFCE7', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
           <Text style={{ fontSize: 10, fontWeight: '700', color: '#16a34a' }}>{t('vendor.orders.waiting')}</Text>
         </View>

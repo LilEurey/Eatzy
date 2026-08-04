@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -517,6 +519,7 @@ export type Database = {
           is_open: boolean
           name: string
           open_time: string | null
+          owner_user_id: string | null
           stall_number: string | null
         }
         Insert: {
@@ -532,6 +535,7 @@ export type Database = {
           is_open?: boolean
           name: string
           open_time?: string | null
+          owner_user_id?: string | null
           stall_number?: string | null
         }
         Update: {
@@ -547,9 +551,18 @@ export type Database = {
           is_open?: boolean
           name?: string
           open_time?: string | null
+          owner_user_id?: string | null
           stall_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vendors_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wallet_transactions: {
         Row: {

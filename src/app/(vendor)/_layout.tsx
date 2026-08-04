@@ -1,10 +1,13 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot, router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { getVendorById, MOCK_VENDOR_SESSION } from '@/lib/mock-data';
-import { useVendorOrders, useStoreOpen, setStoreOpen } from '@/lib/vendor-store';
+import {
+  useVendorOrders, useVendorProfile, useVendorLoading, useStoreOpen,
+  setStoreOpen, initVendorSession, signOutVendor,
+} from '@/lib/vendor-store';
 import { useI18n } from '@/lib/i18n';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -21,9 +24,27 @@ export default function VendorLayout() {
   const pathname = usePathname();
   const orders = useVendorOrders();
   const storeOpen = useStoreOpen();
-  const vendor = getVendorById(MOCK_VENDOR_SESSION.vendorId);
+  const vendor = useVendorProfile();
+  const loading = useVendorLoading();
+  const initStarted = useRef(false);
+
+  useEffect(() => {
+    if (initStarted.current) return;
+    initStarted.current = true;
+    initVendorSession().then(result => {
+      if (result !== 'ok') router.replace('/vendor-login' as any);
+    });
+  }, []);
 
   const activeCount = orders.filter(o => o.status === 'pending' || o.status === 'accepted').length;
+
+  if (loading || !vendor) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F5F9', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={Brand.vendorAccent} size="large" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F5F9' }} edges={['top', 'bottom']}>
@@ -69,13 +90,21 @@ export default function VendorLayout() {
             </View>
           </View>
 
-          <TouchableOpacity
-            onPress={() => router.push('/(auth)' as any)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#EEF0F5' }}
-          >
-            <Ionicons name="help-circle-outline" size={18} color="#8A8F9B" />
-            <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.helpCenter')}</Text>
-          </TouchableOpacity>
+          <View style={{ borderTopWidth: 1, borderTopColor: '#EEF0F5', paddingTop: 8 }}>
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
+            >
+              <Ionicons name="help-circle-outline" size={18} color="#8A8F9B" />
+              <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.helpCenter')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => signOutVendor().then(() => router.replace('/vendor-login' as any))}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
+            >
+              <Ionicons name="log-out-outline" size={18} color="#8A8F9B" />
+              <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.logOut')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Main column */}
@@ -87,7 +116,6 @@ export default function VendorLayout() {
           }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary }}>{vendor?.name ?? ''}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              {/* ponytail: real vendors.update({is_open}) call belongs on this toggle. */}
               <TouchableOpacity
                 onPress={() => setStoreOpen(!storeOpen)}
                 style={{

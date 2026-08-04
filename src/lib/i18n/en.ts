@@ -214,6 +214,7 @@ export const en = {
   'vendor.nav.menu': 'Menu',
   'vendor.nav.analytics': 'Analytics',
   'vendor.nav.helpCenter': 'Help Center',
+  'vendor.nav.logOut': 'Log Out',
   'vendor.topbar.storeOpen': 'Store Open',
   'vendor.topbar.storeClosed': 'Store Closed',
 

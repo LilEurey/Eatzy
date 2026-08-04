@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { supabase } from '@/lib/supabase';
 
 export default function VendorLoginScreen() {
   const { t } = useI18n();
@@ -16,15 +17,26 @@ export default function VendorLoginScreen() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ponytail: real Supabase email/password auth + users.role === 'vendor' check.
-  // The mock flow signs any input straight in as MOCK_VENDOR_SESSION's vendor.
-  function signIn() {
+  async function signInWith(loginEmail: string, loginPassword: string) {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
+      if (error) throw error;
+
+      const { data: profile } = await supabase.from('users').select('role').eq('id', data.user.id).maybeSingle();
+      if (profile?.role !== 'vendor') {
+        await supabase.auth.signOut();
+        throw new Error('This account is not registered as a vendor.');
+      }
+
       router.replace('/(vendor)/overview' as any);
-    }, 400);
+    } catch (e: any) {
+      showAlert(t('auth.signInFailedTitle'), e.message);
+      setLoading(false);
+    }
   }
+
+  const signIn = () => signInWith(email, password);
 
   const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
 
@@ -143,8 +155,11 @@ export default function VendorLoginScreen() {
             </View>
 
             {__DEV__ && (
-              <TouchableOpacity onPress={signIn} style={{ marginTop: 20, alignItems: 'center' }}>
-                <Text style={{ color: '#CCC', fontSize: 12 }}>{t('auth.skipLoginDev')}</Text>
+              <TouchableOpacity
+                onPress={() => { setEmail('manager@maleethai.eatzy.app'); setPassword('jzWQpIYhiY3!Aa1'); }}
+                style={{ marginTop: 20, alignItems: 'center' }}
+              >
+                <Text style={{ color: '#CCC', fontSize: 12 }}>⚙ Fill demo vendor credentials (dev only)</Text>
               </TouchableOpacity>
             )}
 

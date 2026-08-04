@@ -5,7 +5,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { MOCK_VENDOR_SESSION } from '@/lib/mock-data';
 import { addMenuItem } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -60,7 +59,7 @@ export default function AddMenuItemScreen() {
     setImageUri(result.assets[0].uri);
   }
 
-  function saveItem() {
+  async function saveItem() {
     const trimmedName = name.trim();
     const parsedPrice = parseFloat(price);
     if (!trimmedName || !parsedPrice || parsedPrice <= 0) {
@@ -71,33 +70,23 @@ export default function AddMenuItemScreen() {
     setSaving(true);
     const allergenList = [...allergens, ...(otherAllergen.trim() ? [otherAllergen.trim()] : [])];
 
-    // ponytail: insert into menu_items via Supabase instead of local vendor-store state.
-    addMenuItem({
-      id: `m-${Date.now()}`,
-      vendor_id: MOCK_VENDOR_SESSION.vendorId,
+    const ok = await addMenuItem({
       name: trimmedName,
       description: description.trim(),
       price: parsedPrice,
       category: category || 'Other',
       spice_level: spiceLevel,
-      is_available: true,
-      is_halal: false,
-      is_vegetarian: false,
-      is_jay: false,
-      allergens: allergenList,
-      tags: [],
-      ingredients: [],
-      calories: 0,
       preparation_time_min: parseInt(prepTime, 10) || 0,
-      image_url: imageUri,
-      is_featured: false,
-      available_time_segment: 'all',
-      release_date: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      allergens: allergenList,
+      // ponytail: upload to Supabase Storage and use its public URL — a local
+      // device file:// path would be unreachable from any other client.
+      image_url: null,
     });
 
     setSaving(false);
-    showAlert(t('vendor.menuNew.savedTitle'), t('vendor.menuNew.savedMsg', { name: trimmedName }), () => router.back());
+    if (ok) {
+      showAlert(t('vendor.menuNew.savedTitle'), t('vendor.menuNew.savedMsg', { name: trimmedName }), () => router.back());
+    }
   }
 
   return (

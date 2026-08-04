@@ -1,8 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { getVendorById, MOCK_VENDOR_SESSION } from '@/lib/mock-data';
-import { useVendorOrders } from '@/lib/vendor-store';
+import { useVendorOrders, useVendorProfile } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 
@@ -39,7 +38,7 @@ function StatCard({ label, value, sub, icon }: { label: string; value: string; s
 export default function VendorOverviewScreen() {
   const { t } = useI18n();
   const orders = useVendorOrders();
-  const vendor = getVendorById(MOCK_VENDOR_SESSION.vendorId);
+  const vendor = useVendorProfile();
 
   const totalOrders = orders.length;
   const revenueToday = orders

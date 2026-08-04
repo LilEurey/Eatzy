@@ -216,6 +216,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.nav.menu': 'เมนู',
   'vendor.nav.analytics': 'วิเคราะห์',
   'vendor.nav.helpCenter': 'ศูนย์ช่วยเหลือ',
+  'vendor.nav.logOut': 'ออกจากระบบ',
   'vendor.topbar.storeOpen': 'ร้านเปิด',
   'vendor.topbar.storeClosed': 'ร้านปิด',
 
