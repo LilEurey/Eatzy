@@ -235,4 +235,22 @@ export const th: Record<TranslationKey, string> = {
   'vendor.overview.morning': 'เช้า',
   'vendor.overview.lunch': 'เที่ยง',
   'vendor.overview.evening': 'เย็น',
+
+  // Vendor — orders (KDS)
+  'vendor.orders.title': 'ออเดอร์สด (KDS)',
+  'vendor.orders.activeCount': '{n} กำลังดำเนินการ',
+  'vendor.orders.filter': 'ตัวกรอง',
+  'vendor.orders.incoming': 'ออเดอร์ใหม่',
+  'vendor.orders.preparing': 'กำลังเตรียม',
+  'vendor.orders.readyForPickup': 'พร้อมรับ',
+  'vendor.orders.pickup': 'รับที่',
+  'vendor.orders.special': 'พิเศษ: ',
+  'vendor.orders.reject': 'ปฏิเสธ',
+  'vendor.orders.confirmStart': 'ยืนยัน & เริ่มทำ',
+  'vendor.orders.issue': 'แจ้งปัญหา',
+  'vendor.orders.markReady': 'ทำเสร็จแล้ว',
+  'vendor.orders.waiting': 'รอรับ',
+  'vendor.orders.itemsPaid': '{n} รายการ · ชำระแล้ว',
+  'vendor.orders.handedToCustomer': 'ส่งมอบแล้ว',
+  'vendor.orders.emptyColumn': 'ยังไม่มีรายการ',
 };

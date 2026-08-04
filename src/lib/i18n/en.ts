@@ -233,6 +233,24 @@ export const en = {
   'vendor.overview.morning': 'Morning',
   'vendor.overview.lunch': 'Lunch',
   'vendor.overview.evening': 'Evening',
+
+  // Vendor — orders (KDS)
+  'vendor.orders.title': 'Live Orders KDS',
+  'vendor.orders.activeCount': '{n} Active',
+  'vendor.orders.filter': 'Filter',
+  'vendor.orders.incoming': 'Incoming',
+  'vendor.orders.preparing': 'Preparing',
+  'vendor.orders.readyForPickup': 'Ready for Pickup',
+  'vendor.orders.pickup': 'PICKUP',
+  'vendor.orders.special': 'Special: ',
+  'vendor.orders.reject': 'Reject',
+  'vendor.orders.confirmStart': 'Confirm & Start',
+  'vendor.orders.issue': 'Issue',
+  'vendor.orders.markReady': 'Mark Ready',
+  'vendor.orders.waiting': 'WAITING',
+  'vendor.orders.itemsPaid': '{n} Items · Paid',
+  'vendor.orders.handedToCustomer': 'Handed to Customer',
+  'vendor.orders.emptyColumn': 'Nothing here',
 } as const;
 
 export type TranslationKey = keyof typeof en;
