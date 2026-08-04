@@ -289,6 +289,25 @@ export const en = {
   'vendor.menuNew.validationMsg': 'Please add a name and price.',
   'vendor.menuNew.savedTitle': 'Item added',
   'vendor.menuNew.savedMsg': '{name} was added to your menu.',
+
+  // Vendor — finance / analytics
+  'vendor.finance.title': 'Finance',
+  'vendor.finance.totalRevenueToday': 'TOTAL REVENUE (TODAY)',
+  'vendor.finance.amountPayment': 'PAYMENTS TODAY',
+  'vendor.finance.availableToWithdraw': 'AVAILABLE TO WITHDRAW',
+  'vendor.finance.withdraw': 'Withdraw',
+  'vendor.finance.paymentHistory': 'Payment History',
+  'vendor.finance.filter': 'Filter',
+  'vendor.finance.export': 'Export',
+  'vendor.finance.colDateTime': 'DATE & TIME',
+  'vendor.finance.colOrder': 'ORDER #',
+  'vendor.finance.colAmount': 'AMOUNT',
+  'vendor.finance.colMethod': 'METHOD',
+  'vendor.finance.colStatus': 'STATUS',
+  'vendor.finance.completed': 'COMPLETED',
+  'vendor.finance.viewAll': 'View All Transactions',
+  'vendor.finance.campusWallet': 'Campus Wallet',
+  'vendor.finance.empty': 'No payments yet',
 } as const;
 
 export type TranslationKey = keyof typeof en;

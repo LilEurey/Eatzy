@@ -291,4 +291,23 @@ export const th: Record<TranslationKey, string> = {
   'vendor.menuNew.validationMsg': 'กรุณาใส่ชื่อเมนูและราคา',
   'vendor.menuNew.savedTitle': 'เพิ่มเมนูแล้ว',
   'vendor.menuNew.savedMsg': 'เพิ่ม {name} ลงในเมนูของคุณแล้ว',
+
+  // Vendor — finance / analytics
+  'vendor.finance.title': 'การเงิน',
+  'vendor.finance.totalRevenueToday': 'รายได้รวม (วันนี้)',
+  'vendor.finance.amountPayment': 'การชำระเงินวันนี้',
+  'vendor.finance.availableToWithdraw': 'ยอดเงินพร้อมถอน',
+  'vendor.finance.withdraw': 'ถอนเงิน',
+  'vendor.finance.paymentHistory': 'ประวัติการชำระเงิน',
+  'vendor.finance.filter': 'ตัวกรอง',
+  'vendor.finance.export': 'ส่งออก',
+  'vendor.finance.colDateTime': 'วันที่ & เวลา',
+  'vendor.finance.colOrder': 'เลขที่ออเดอร์',
+  'vendor.finance.colAmount': 'จำนวนเงิน',
+  'vendor.finance.colMethod': 'วิธีชำระ',
+  'vendor.finance.colStatus': 'สถานะ',
+  'vendor.finance.completed': 'สำเร็จ',
+  'vendor.finance.viewAll': 'ดูธุรกรรมทั้งหมด',
+  'vendor.finance.campusWallet': 'Campus Wallet',
+  'vendor.finance.empty': 'ยังไม่มีรายการชำระเงิน',
 };
