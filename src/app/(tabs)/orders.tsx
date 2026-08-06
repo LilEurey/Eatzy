@@ -6,8 +6,8 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { formatBangkokClock } from '@/lib/time';
+import type { OrderStatus } from '@/lib/vendor-store';
 
-type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'ready' | 'completed' | 'cancelled';
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
 
 type StudentOrder = {
