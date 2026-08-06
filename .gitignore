@@ -8,6 +8,7 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+nativewind-env.d.ts
 
 # Native
 .kotlin/
@@ -47,8 +48,9 @@ __pycache__/
 # typescript
 *.tsbuildinfo
 
-example
-
 # generated native folders
 /ios
 /android
+
+# graphify knowledge-graph output
+graphify-out/
