@@ -9,7 +9,7 @@ import { showAlert } from '@/lib/alert';
 
 export type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'ready' | 'completed' | 'cancelled';
 
-export type VendorProfile = {
+type VendorProfile = {
   id: string;
   name: string;
   estimated_wait_min: number;
@@ -31,7 +31,7 @@ export type MenuItem = {
   preparation_time_min: number | null;
 };
 
-export type OrderItem = { menu_item_id: string; name: string; quantity: number; unit_price: number; done: boolean };
+type OrderItem = { menu_item_id: string; name: string; quantity: number; unit_price: number; done: boolean };
 export type VendorOrder = {
   id: string;
   queue_number: number | null;
@@ -225,7 +225,7 @@ export async function toggleAvailability(itemId: string) {
   }
 }
 
-export type NewMenuItemInput = {
+type NewMenuItemInput = {
   name: string;
   description: string;
   price: number;
@@ -268,7 +268,7 @@ export async function setStoreOpen(open: boolean) {
 
 // ─── Derived: payments / finance ───────────────────────────────────────────
 
-export type VendorPayment = {
+type VendorPayment = {
   order_id: string;
   display_id: string;
   created_at: string;

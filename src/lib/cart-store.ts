@@ -6,14 +6,14 @@ import { useSyncExternalStore } from 'react';
 
 const PACKAGING_FEE = 5;
 
-export type CartItem = {
+type CartItem = {
   menu_item_id: string;
   name: string;
   unit_price: number;
   quantity: number;
 };
 
-export type Cart = {
+type Cart = {
   vendor_id: string | null;
   items: CartItem[];
   packaging_fee: number;

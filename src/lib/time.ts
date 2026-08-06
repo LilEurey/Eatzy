@@ -26,7 +26,7 @@ export function isBangkokToday(iso: string) {
   return dayKey(new Date(iso)) === dayKey(new Date());
 }
 
-export type PickupSlot = { start: Date; end: Date; label: string };
+type PickupSlot = { start: Date; end: Date; label: string };
 
 // Absolute instants are timezone-agnostic — Thailand is a fixed UTC+7 with
 // no DST, so "round up to the next 5 minutes from now" lands on the same
