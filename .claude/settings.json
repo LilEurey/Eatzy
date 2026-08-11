@@ -2,5 +2,28 @@
   "enabledPlugins": {
     "expo@claude-plugins-official": true
   },
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "skillOverrides": {
+    "eas-app-stores": "on",
+    "eas-hosting": "on",
+    "eas-observe": "on",
+    "eas-simulator": "on",
+    "eas-update-insights": "on",
+    "eas-workflows": "on",
+    "expo-app-clip": "on",
+    "expo-brownfield": "on",
+    "expo-data-fetching": "on",
+    "expo-dev-client": "on",
+    "expo-dom": "on",
+    "expo-examples": "on",
+    "expo-module": "on",
+    "expo-native-ui": "on",
+    "expo-project-structure": "on",
+    "expo-router": "on",
+    "expo-skill-feedback": "on",
+    "expo-tailwind-setup": "on",
+    "expo-ui": "on",
+    "expo-upgrade": "on",
+    "expo-web-to-native": "on"
+  }
 }
