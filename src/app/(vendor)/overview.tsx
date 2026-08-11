@@ -23,7 +23,7 @@ const HEATMAP_ROWS = [
   [0.05, 0.15, 0.3, 0.5, 0.55, 0.35],
 ];
 
-function StatCard({ label, value, sub, icon }: { label: string; value: string; sub?: string; icon: React.ComponentProps<typeof Ionicons>['name'] }) {
+function StatCard({ label, value, delta, sub, icon }: { label: string; value: string; delta?: string; sub?: string; icon: React.ComponentProps<typeof Ionicons>['name'] }) {
   return (
     <View style={{ flex: 1, minWidth: 160, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
@@ -32,7 +32,15 @@ function StatCard({ label, value, sub, icon }: { label: string; value: string; s
           <Ionicons name={icon} size={14} color={Brand.vendorAccent} />
         </View>
       </View>
-      <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary, marginBottom: 4 }}>{value}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+        <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{value}</Text>
+        {delta && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+            <Ionicons name="arrow-up" size={10} color="#16a34a" />
+            <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#16a34a' }}>{delta}</Text>
+          </View>
+        )}
+      </View>
       {sub && <Text style={{ fontSize: 11.5, color: '#8A8F9B' }}>{sub}</Text>}
     </View>
   );
@@ -85,10 +93,10 @@ export default function VendorOverviewScreen() {
         </View>
       </View>
 
-      {/* Stat cards */}
+      {/* Stat cards — delta badges are decorative (no historical order data to diff against yet) */}
       <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap' }}>
-        <StatCard label={t('vendor.overview.totalOrders')} value={String(totalOrders)} sub={rangeSub} icon="bag-handle-outline" />
-        <StatCard label={t('vendor.overview.revenueToday')} value={`฿${revenueToday.toLocaleString()}`} sub={rangeSub} icon="cash-outline" />
+        <StatCard label={t('vendor.overview.totalOrders')} value={String(totalOrders)} delta={range === 'today' ? '12%' : undefined} sub={rangeSub} icon="bag-handle-outline" />
+        <StatCard label={t('vendor.overview.revenueToday')} value={`฿${revenueToday.toLocaleString()}`} delta={range === 'today' ? '8.5%' : undefined} sub={rangeSub} icon="cash-outline" />
         <View style={{ flex: 1, minWidth: 180, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
             <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#8A8F9B', letterSpacing: 0.5 }}>{t('vendor.overview.activeQueue')}</Text>

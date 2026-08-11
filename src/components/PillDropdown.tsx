@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 
@@ -22,6 +22,7 @@ export function PillDropdown<T extends string>({
   const anchorRef = useRef<View>(null);
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const { width: screenWidth } = useWindowDimensions();
 
   const openMenu = () => {
     anchorRef.current?.measureInWindow((x, y, width, height) => {
@@ -29,6 +30,9 @@ export function PillDropdown<T extends string>({
       setOpen(true);
     });
   };
+
+  const menuWidth = Math.max(anchor.width, 160);
+  const menuLeft = Math.min(anchor.x, screenWidth - menuWidth - 12);
 
   return (
     <>
@@ -50,8 +54,8 @@ export function PillDropdown<T extends string>({
         <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)}>
           <View
             style={{
-              position: 'absolute', top: anchor.y + anchor.height + 4, left: anchor.x,
-              minWidth: Math.max(anchor.width, 160), backgroundColor: '#fff', borderRadius: 10,
+              position: 'absolute', top: anchor.y + anchor.height + 4, left: menuLeft,
+              minWidth: menuWidth, backgroundColor: '#fff', borderRadius: 10,
               borderWidth: 1, borderColor: '#EEF0F5', paddingVertical: 6,
               shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6,
             }}

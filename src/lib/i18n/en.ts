@@ -265,6 +265,7 @@ export const en = {
   'vendor.orders.incoming': 'Incoming',
   'vendor.orders.preparing': 'Preparing',
   'vendor.orders.readyForPickup': 'Ready for Pickup',
+  'vendor.orders.completed': 'Completed',
   'vendor.orders.pickup': 'PICKUP',
   'vendor.orders.special': 'Special: ',
   'vendor.orders.reject': 'Reject',

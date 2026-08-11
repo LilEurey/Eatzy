@@ -267,6 +267,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.orders.incoming': 'ออเดอร์ใหม่',
   'vendor.orders.preparing': 'กำลังเตรียม',
   'vendor.orders.readyForPickup': 'พร้อมรับ',
+  'vendor.orders.completed': 'เสร็จสิ้น',
   'vendor.orders.pickup': 'รับที่',
   'vendor.orders.special': 'พิเศษ: ',
   'vendor.orders.reject': 'ปฏิเสธ',

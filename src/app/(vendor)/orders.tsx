@@ -122,6 +122,15 @@ function PreparingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof 
   );
 }
 
+function CompletedRow({ order }: { order: VendorOrder }) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 12, opacity: 0.55 }}>
+      <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.textPrimary }}>#{order.queue_number}</Text>
+      <Text style={{ fontSize: 11, color: '#8A8F9B' }}>{order.pickup_start}</Text>
+    </View>
+  );
+}
+
 function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t'] }) {
   return (
     <CardShell>
@@ -141,7 +150,7 @@ function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI
   );
 }
 
-type ColumnFilter = 'all' | 'incoming' | 'preparing' | 'ready';
+type ColumnFilter = 'all' | 'incoming' | 'preparing' | 'ready' | 'completed';
 
 export default function VendorOrdersScreen() {
   const { t } = useI18n();
@@ -151,6 +160,7 @@ export default function VendorOrdersScreen() {
   const incoming = orders.filter(o => o.status === 'pending');
   const preparing = orders.filter(o => o.status === 'accepted');
   const ready = orders.filter(o => o.status === 'ready');
+  const completed = orders.filter(o => o.status === 'completed');
   const activeCount = incoming.length + preparing.length + ready.length;
 
   const filterOptions: { key: ColumnFilter; label: string }[] = [
@@ -158,12 +168,14 @@ export default function VendorOrdersScreen() {
     { key: 'incoming', label: t('vendor.orders.incoming') },
     { key: 'preparing', label: t('vendor.orders.preparing') },
     { key: 'ready', label: t('vendor.orders.readyForPickup') },
+    { key: 'completed', label: t('vendor.orders.completed') },
   ];
 
-  const allColumns: { key: ColumnFilter; dot: string; titleKey: 'vendor.orders.incoming' | 'vendor.orders.preparing' | 'vendor.orders.readyForPickup'; data: VendorOrder[]; render: (o: VendorOrder) => React.ReactNode }[] = [
+  const allColumns: { key: ColumnFilter; dot: string; titleKey: 'vendor.orders.incoming' | 'vendor.orders.preparing' | 'vendor.orders.readyForPickup' | 'vendor.orders.completed'; data: VendorOrder[]; render: (o: VendorOrder) => React.ReactNode; ghosted?: boolean }[] = [
     { key: 'incoming', dot: '#ef4444', titleKey: 'vendor.orders.incoming', data: incoming, render: o => <IncomingCard key={o.id} order={o} t={t} /> },
     { key: 'preparing', dot: '#f59e0b', titleKey: 'vendor.orders.preparing', data: preparing, render: o => <PreparingCard key={o.id} order={o} t={t} /> },
     { key: 'ready', dot: '#22c55e', titleKey: 'vendor.orders.readyForPickup', data: ready, render: o => <ReadyCard key={o.id} order={o} t={t} /> },
+    { key: 'completed', dot: '#8A8F9B', titleKey: 'vendor.orders.completed', data: completed, render: o => <CompletedRow key={o.id} order={o} />, ghosted: true },
   ];
   const columns = columnFilter === 'all' ? allColumns : allColumns.filter(c => c.key === columnFilter);
 
@@ -193,13 +205,23 @@ export default function VendorOrdersScreen() {
               <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{t(col.titleKey)}</Text>
               <Text style={{ fontSize: 12, color: '#8A8F9B', fontWeight: '600' }}>{col.data.length}</Text>
             </View>
-            <View style={{ gap: 12 }}>
-              {col.data.length === 0 ? (
+            {col.ghosted ? (
+              col.data.length === 0 ? (
                 <Text style={{ fontSize: 12, color: '#B0B4BF', paddingVertical: 8 }}>{t('vendor.orders.emptyColumn')}</Text>
               ) : (
-                col.data.map(col.render)
-              )}
-            </View>
+                <View style={{ backgroundColor: '#F7F8FA', borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5' }}>
+                  {col.data.map(col.render)}
+                </View>
+              )
+            ) : (
+              <View style={{ gap: 12 }}>
+                {col.data.length === 0 ? (
+                  <Text style={{ fontSize: 12, color: '#B0B4BF', paddingVertical: 8 }}>{t('vendor.orders.emptyColumn')}</Text>
+                ) : (
+                  col.data.map(col.render)
+                )}
+              </View>
+            )}
           </View>
         ))}
       </View>
