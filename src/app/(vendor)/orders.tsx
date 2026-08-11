@@ -237,7 +237,9 @@ export default function VendorOrdersScreen() {
   const incoming = orders.filter(o => o.status === 'pending');
   const preparing = orders.filter(o => o.status === 'accepted');
   const ready = orders.filter(o => o.status === 'ready');
-  const completed = orders.filter(o => o.status === 'completed');
+  const completed = orders
+    .filter(o => o.status === 'completed')
+    .sort((a, b) => new Date(b.pickup_start ?? b.created_at).getTime() - new Date(a.pickup_start ?? a.created_at).getTime());
   const activeCount = incoming.length + preparing.length + ready.length;
 
   const filterOptions: { key: ColumnFilter; label: string }[] = [
