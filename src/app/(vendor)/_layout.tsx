@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot, router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +26,10 @@ const NAV: NavItem[] = [
 // phones get a bottom tab bar instead — same breakpoint vendor-login.tsx
 // uses to decide when there's room for its side-by-side hero panel.
 const TABLET_BREAKPOINT = 760;
+// Between TABLET_BREAKPOINT and this width there's room for a bottom tab
+// bar's worth of nav but not a permanent 220px sidebar without squeezing
+// content, so this range gets a hamburger-triggered overlay drawer instead.
+const DESKTOP_BREAKPOINT = 1024;
 
 function NavRow({ item, active, badge, onPress }: { item: NavItem; active: boolean; badge: number; onPress: () => void }) {
   const { t } = useI18n();
@@ -48,6 +52,50 @@ function NavRow({ item, active, badge, onPress }: { item: NavItem; active: boole
         </View>
       )}
     </TouchableOpacity>
+  );
+}
+
+function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; activeCount: number; onNavigate: (href: string) => void }) {
+  const { t } = useI18n();
+  return (
+    <View style={{ flex: 1, justifyContent: 'space-between' }}>
+      <View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, marginBottom: 28 }}>
+          <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: Brand.vendorAccent, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="restaurant" size={16} color="#fff" />
+          </View>
+          <View>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.vendorAccent }}>{t('vendor.login.brand')}</Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.6 }}>{t('vendor.portalLabel')}</Text>
+          </View>
+        </View>
+
+        <View style={{ gap: 2, paddingHorizontal: 12 }}>
+          {NAV.map(item => {
+            const active = pathname === item.match || pathname.startsWith(item.match + '/');
+            return (
+              <NavRow key={item.href} item={item} active={active} badge={activeCount} onPress={() => onNavigate(item.href)} />
+            );
+          })}
+        </View>
+      </View>
+
+      <View style={{ borderTopWidth: 1, borderTopColor: '#EEF0F5', paddingTop: 8 }}>
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
+        >
+          <Ionicons name="help-circle-outline" size={18} color="#8A8F9B" />
+          <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.helpCenter')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => signOutVendor().then(() => router.replace('/vendor-login' as any))}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
+        >
+          <Ionicons name="log-out-outline" size={18} color="#8A8F9B" />
+          <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.logOut')}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
@@ -96,6 +144,8 @@ export default function VendorLayout() {
   const initStarted = useRef(false);
   const { width } = useWindowDimensions();
   const isTablet = width >= TABLET_BREAKPOINT;
+  const isDesktop = width >= DESKTOP_BREAKPOINT;
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (initStarted.current) return;
@@ -120,6 +170,15 @@ export default function VendorLayout() {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       paddingHorizontal: isTablet ? 24 : 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#EEF0F5', backgroundColor: '#fff',
     }}>
+      {isTablet && !isDesktop && (
+        <TouchableOpacity
+          onPress={() => setDrawerOpen(true)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={{ marginRight: 14 }}
+        >
+          <Ionicons name="menu-outline" size={24} color={Brand.textPrimary} />
+        </TouchableOpacity>
+      )}
       <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{vendor?.name ?? ''}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: isTablet ? 14 : 10 }}>
         <TouchableOpacity
@@ -142,7 +201,7 @@ export default function VendorLayout() {
             {(vendor?.name ?? 'V').charAt(0).toUpperCase()}
           </Text>
         </View>
-        {!isTablet && (
+        {!isDesktop && (
           <TouchableOpacity
             onPress={() => signOutVendor().then(() => router.replace('/vendor-login' as any))}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -172,47 +231,37 @@ export default function VendorLayout() {
     );
   }
 
+  if (!isDesktop) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F5F9' }} edges={['top', 'bottom']}>
+        <View style={{ flex: 1 }}>
+          {topbar}
+          {content}
+        </View>
+        <Modal visible={drawerOpen} transparent animationType="fade" onRequestClose={() => setDrawerOpen(false)}>
+          <View style={{ flex: 1, flexDirection: 'row' }}>
+            <View style={{ width: 260, backgroundColor: '#fff', paddingVertical: 20 }}>
+              <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
+                <SidebarBody
+                  pathname={pathname}
+                  activeCount={activeCount}
+                  onNavigate={(href) => { setDrawerOpen(false); router.push(href as any); }}
+                />
+              </SafeAreaView>
+            </View>
+            <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setDrawerOpen(false)} />
+          </View>
+        </Modal>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F5F9' }} edges={['top', 'bottom']}>
       <View style={{ flex: 1, flexDirection: 'row' }}>
         {/* Sidebar */}
-        <View style={{ width: 220, backgroundColor: '#fff', borderRightWidth: 1, borderRightColor: '#EEF0F5', paddingVertical: 20, justifyContent: 'space-between' }}>
-          <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, marginBottom: 28 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: Brand.vendorAccent, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="restaurant" size={16} color="#fff" />
-              </View>
-              <View>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.vendorAccent }}>{t('vendor.login.brand')}</Text>
-                <Text style={{ fontSize: 9, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.6 }}>{t('vendor.portalLabel')}</Text>
-              </View>
-            </View>
-
-            <View style={{ gap: 2, paddingHorizontal: 12 }}>
-              {NAV.map(item => {
-                const active = pathname === item.match || pathname.startsWith(item.match + '/');
-                return (
-                  <NavRow key={item.href} item={item} active={active} badge={activeCount} onPress={() => router.push(item.href as any)} />
-                );
-              })}
-            </View>
-          </View>
-
-          <View style={{ borderTopWidth: 1, borderTopColor: '#EEF0F5', paddingTop: 8 }}>
-            <TouchableOpacity
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
-            >
-              <Ionicons name="help-circle-outline" size={18} color="#8A8F9B" />
-              <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.helpCenter')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => signOutVendor().then(() => router.replace('/vendor-login' as any))}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
-            >
-              <Ionicons name="log-out-outline" size={18} color="#8A8F9B" />
-              <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.logOut')}</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={{ width: 220, backgroundColor: '#fff', borderRightWidth: 1, borderRightColor: '#EEF0F5', paddingVertical: 20 }}>
+          <SidebarBody pathname={pathname} activeCount={activeCount} onNavigate={(href) => router.push(href as any)} />
         </View>
 
         {/* Main column */}
