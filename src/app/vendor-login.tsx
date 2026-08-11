@@ -147,7 +147,7 @@ export default function VendorLoginScreen() {
               <Text style={{ color: Brand.textSecondary, fontSize: 13 }}>
                 {t('vendor.login.noAccount')}
               </Text>
-              <TouchableOpacity onPress={comingSoon}>
+              <TouchableOpacity onPress={() => router.push('/vendor-apply' as any)}>
                 <Text style={{ color: Brand.vendorAccent, fontWeight: '600', fontSize: 13 }}>
                   {t('vendor.login.applyHere')}
                 </Text>

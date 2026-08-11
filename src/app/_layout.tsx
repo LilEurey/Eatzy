@@ -32,6 +32,11 @@ export default function RootLayout() {
       return;
     }
 
+    if (profile?.role === 'admin') {
+      router.replace('/(admin)/applications' as any);
+      return;
+    }
+
     const { data } = await supabase
       .from('user_preferences')
       .select('user_id')

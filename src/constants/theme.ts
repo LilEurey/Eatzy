@@ -11,4 +11,6 @@ export const Brand = {
   border: '#F0E8E0',
   vendorAccent: '#6C63FF',
   vendorAccentLight: '#EEECFF',
+  adminAccent: '#1F2937',
+  adminAccentLight: '#EEF1F5',
 } as const;
