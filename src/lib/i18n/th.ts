@@ -276,6 +276,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.orders.markReady': 'ทำเสร็จแล้ว',
   'vendor.orders.waiting': 'รอรับ',
   'vendor.orders.itemsPaid': '{n} รายการ · ชำระแล้ว',
+  'vendor.orders.itemsCount': '{n} รายการ',
   'vendor.orders.handedToCustomer': 'ส่งมอบแล้ว',
   'vendor.orders.emptyColumn': 'ยังไม่มีรายการ',
 

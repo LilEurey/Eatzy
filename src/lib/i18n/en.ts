@@ -274,6 +274,7 @@ export const en = {
   'vendor.orders.markReady': 'Mark Ready',
   'vendor.orders.waiting': 'WAITING',
   'vendor.orders.itemsPaid': '{n} Items · Paid',
+  'vendor.orders.itemsCount': '{n} items',
   'vendor.orders.handedToCustomer': 'Handed to Customer',
   'vendor.orders.emptyColumn': 'Nothing here',
 

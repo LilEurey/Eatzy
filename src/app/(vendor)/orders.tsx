@@ -184,15 +184,22 @@ function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI
   );
 }
 
-function CompletedTicket({ order }: { order: VendorOrder }) {
+function CompletedTicket({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t'] }) {
+  const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
   return (
     <View style={{
-      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      flexDirection: 'row', alignItems: 'center', gap: 10,
       backgroundColor: '#F7F8FA', borderRadius: 10, borderWidth: 1, borderColor: '#EEF0F5',
-      paddingHorizontal: 12, paddingVertical: 9, opacity: 0.6,
+      paddingHorizontal: 12, paddingVertical: 10,
     }}>
-      <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.textPrimary }}>#{order.queue_number}</Text>
-      <Text style={{ fontSize: 11, color: '#8A8F9B' }}>{order.pickup_start}</Text>
+      <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }}>#{order.queue_number}</Text>
+        <Text style={{ fontSize: 11, color: '#4B4F58', marginTop: 1 }}>
+          {t('vendor.orders.itemsCount', { n: itemCount })}
+        </Text>
+      </View>
+      <Text style={{ fontSize: 11, fontWeight: '600', color: '#4B4F58' }}>{order.pickup_start}</Text>
     </View>
   );
 }
@@ -230,7 +237,7 @@ export default function VendorOrdersScreen() {
     { key: 'incoming', dot: '#ef4444', titleKey: 'vendor.orders.incoming', data: incoming, render: o => <IncomingCard key={o.id} order={o} t={t} /> },
     { key: 'preparing', dot: '#f59e0b', titleKey: 'vendor.orders.preparing', data: preparing, render: o => <PreparingCard key={o.id} order={o} t={t} /> },
     { key: 'ready', dot: '#22c55e', titleKey: 'vendor.orders.readyForPickup', data: ready, render: o => <ReadyCard key={o.id} order={o} t={t} /> },
-    { key: 'completed', dot: '#8A8F9B', titleKey: 'vendor.orders.completed', data: completed, render: o => <CompletedTicket key={o.id} order={o} />, ghosted: true },
+    { key: 'completed', dot: '#8A8F9B', titleKey: 'vendor.orders.completed', data: completed, render: o => <CompletedTicket key={o.id} order={o} t={t} />, ghosted: true },
   ];
   const columns = columnFilter === 'all' ? allColumns : allColumns.filter(c => c.key === columnFilter);
 
@@ -254,7 +261,7 @@ export default function VendorOrdersScreen() {
 
       <View style={{ flexDirection: 'row', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         {columns.map(col => (
-          <View key={col.key} style={{ flex: 1, minWidth: 260, gap: 12, opacity: col.ghosted ? 0.85 : 1 }}>
+          <View key={col.key} style={{ flex: 1, minWidth: 260, gap: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: col.dot }} />
               <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{t(col.titleKey)}</Text>
