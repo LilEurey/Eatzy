@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorOrders, useVendorProfile } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
+import { PillDropdown } from '@/components/PillDropdown';
 
 // Decorative — illustrative hourly sales shape, not backed by real interaction data.
 const SALES_VELOCITY = [
@@ -39,14 +42,24 @@ export default function VendorOverviewScreen() {
   const { t } = useI18n();
   const orders = useVendorOrders();
   const vendor = useVendorProfile();
+  const [range, setRange] = useState<DateRangeFilter>('today');
 
-  const totalOrders = orders.length;
-  const revenueToday = orders
+  const rangeOptions: { key: DateRangeFilter; label: string }[] = [
+    { key: 'today', label: t('common.today') },
+    { key: 'yesterday', label: t('common.yesterday') },
+    { key: 'week', label: t('common.thisWeek') },
+    { key: 'month', label: t('common.thisMonth') },
+  ];
+  const rangedOrders = orders.filter(o => isBangkokDateInRange(o.created_at, range));
+
+  const totalOrders = rangedOrders.length;
+  const revenueToday = rangedOrders
     .filter(o => o.status !== 'rejected' && o.status !== 'cancelled')
     .reduce((sum, o) => sum + o.total_amount, 0);
   const activeQueue = orders.filter(o => o.status === 'pending' || o.status === 'accepted').length;
   const queueCapacity = 20;
   const avgPrep = vendor?.estimated_wait_min ?? 0;
+  const rangeSub = range === 'today' ? t('vendor.overview.vsYesterday') : rangeOptions.find(o => o.key === range)!.label;
 
   const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
 
@@ -59,11 +72,13 @@ export default function VendorOverviewScreen() {
           <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>{t('vendor.overview.subtitle')}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <TouchableOpacity onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#fff' }}>
-            <Ionicons name="calendar-outline" size={14} color={Brand.textPrimary} />
-            <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.overview.today')}</Text>
-            <Ionicons name="chevron-down" size={12} color="#8A8F9B" />
-          </TouchableOpacity>
+          <PillDropdown
+            icon="calendar-outline"
+            label={rangeOptions.find(o => o.key === range)!.label}
+            options={rangeOptions}
+            selected={range}
+            onSelect={setRange}
+          />
           <TouchableOpacity onPress={comingSoon} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{t('vendor.overview.downloadReport')}</Text>
           </TouchableOpacity>
@@ -72,8 +87,8 @@ export default function VendorOverviewScreen() {
 
       {/* Stat cards */}
       <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap' }}>
-        <StatCard label={t('vendor.overview.totalOrders')} value={String(totalOrders)} sub={t('vendor.overview.vsYesterday')} icon="bag-handle-outline" />
-        <StatCard label={t('vendor.overview.revenueToday')} value={`฿${revenueToday.toLocaleString()}`} sub={t('vendor.overview.vsYesterday')} icon="cash-outline" />
+        <StatCard label={t('vendor.overview.totalOrders')} value={String(totalOrders)} sub={rangeSub} icon="bag-handle-outline" />
+        <StatCard label={t('vendor.overview.revenueToday')} value={`฿${revenueToday.toLocaleString()}`} sub={rangeSub} icon="cash-outline" />
         <View style={{ flex: 1, minWidth: 180, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
             <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#8A8F9B', letterSpacing: 0.5 }}>{t('vendor.overview.activeQueue')}</Text>

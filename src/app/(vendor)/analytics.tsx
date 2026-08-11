@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { getVendorPayments } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
-import { BANGKOK_TZ, isBangkokToday, formatBangkokDate } from '@/lib/time';
+import { BANGKOK_TZ, isBangkokToday, formatBangkokDate, isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
+import { PillDropdown } from '@/components/PillDropdown';
 
 function formatDateTime(iso: string, t: ReturnType<typeof useI18n>['t']) {
   const time = new Date(iso).toLocaleTimeString('en-US', { timeZone: BANGKOK_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
@@ -18,10 +20,19 @@ export default function VendorFinanceScreen() {
   const { width } = useWindowDimensions();
   const tableScrolls = width < TABLE_MIN_WIDTH + 32;
   const payments = getVendorPayments();
+  const [historyFilter, setHistoryFilter] = useState<DateRangeFilter>('all');
 
   const todayPayments = payments.filter(p => isBangkokToday(p.created_at));
   const totalRevenueToday = todayPayments.reduce((sum, p) => sum + p.amount, 0);
   const availableToWithdraw = payments.reduce((sum, p) => sum + p.amount, 0);
+  const visiblePayments = payments.filter(p => isBangkokDateInRange(p.created_at, historyFilter));
+
+  const historyFilterOptions: { key: DateRangeFilter; label: string }[] = [
+    { key: 'all', label: t('common.allTime') },
+    { key: 'today', label: t('common.today') },
+    { key: 'week', label: t('common.thisWeek') },
+    { key: 'month', label: t('common.thisMonth') },
+  ];
 
   const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
 
@@ -65,10 +76,14 @@ export default function VendorFinanceScreen() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.finance.paymentHistory')}</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }}>
-              <Ionicons name="filter-outline" size={12} color={Brand.textPrimary} />
-              <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.finance.filter')}</Text>
-            </TouchableOpacity>
+            <PillDropdown
+              compact
+              icon="filter-outline"
+              label={historyFilterOptions.find(o => o.key === historyFilter)!.label}
+              options={historyFilterOptions}
+              selected={historyFilter}
+              onSelect={setHistoryFilter}
+            />
             <TouchableOpacity onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }}>
               <Ionicons name="download-outline" size={12} color={Brand.textPrimary} />
               <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.finance.export')}</Text>
@@ -76,7 +91,7 @@ export default function VendorFinanceScreen() {
           </View>
         </View>
 
-        {payments.length === 0 ? (
+        {visiblePayments.length === 0 ? (
           <Text style={{ fontSize: 13, color: '#B0B4BF', padding: 18 }}>{t('vendor.finance.empty')}</Text>
         ) : (
           <>
@@ -89,7 +104,7 @@ export default function VendorFinanceScreen() {
                   <Text style={{ flex: 1.6, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colMethod')}</Text>
                   <Text style={{ flex: 1.2, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colStatus')}</Text>
                 </View>
-                {payments.map(p => (
+                {visiblePayments.map(p => (
                   <View key={p.order_id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
                     <Text style={{ flex: 2, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{formatDateTime(p.created_at, t)}</Text>
                     <Text style={{ flex: 1.4, fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{p.display_id}</Text>

@@ -19,11 +19,34 @@ export function formatBangkokDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { timeZone: BANGKOK_TZ, day: 'numeric', month: 'short' });
 }
 
+// en-CA formats as YYYY-MM-DD, giving a string that sorts/compares like a date.
+function bangkokDayKey(d: Date) {
+  return d.toLocaleDateString('en-CA', { timeZone: BANGKOK_TZ });
+}
+
 // Compares calendar dates in Thailand time, not the device's own local
 // calendar day (which can differ from Bangkok's near midnight).
 export function isBangkokToday(iso: string) {
-  const dayKey = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: BANGKOK_TZ }); // en-CA -> YYYY-MM-DD
-  return dayKey(new Date(iso)) === dayKey(new Date());
+  return bangkokDayKey(new Date(iso)) === bangkokDayKey(new Date());
+}
+
+export type DateRangeFilter = 'today' | 'yesterday' | 'week' | 'month' | 'all';
+
+// Rolling windows measured in Bangkok calendar days, not raw 24h buckets,
+// so "yesterday" means Thailand's previous calendar day regardless of the
+// device's own timezone.
+export function isBangkokDateInRange(iso: string, range: DateRangeFilter) {
+  if (range === 'all') return true;
+  const target = new Date(iso);
+  const now = new Date();
+  if (range === 'today') return bangkokDayKey(target) === bangkokDayKey(now);
+  if (range === 'yesterday') {
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    return bangkokDayKey(target) === bangkokDayKey(yesterday);
+  }
+  const days = range === 'week' ? 7 : 30;
+  const cutoff = now.getTime() - days * 24 * 60 * 60 * 1000;
+  return target.getTime() >= cutoff && target.getTime() <= now.getTime();
 }
 
 type PickupSlot = { start: Date; end: Date; label: string };

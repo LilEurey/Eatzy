@@ -5,6 +5,7 @@ import { Brand } from '@/constants/theme';
 import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { PillDropdown } from '@/components/PillDropdown';
 
 type VendorOrder = ReturnType<typeof useVendorOrders>[number];
 
@@ -140,22 +141,31 @@ function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI
   );
 }
 
+type ColumnFilter = 'all' | 'incoming' | 'preparing' | 'ready';
+
 export default function VendorOrdersScreen() {
   const { t } = useI18n();
   const orders = useVendorOrders();
+  const [columnFilter, setColumnFilter] = useState<ColumnFilter>('all');
 
   const incoming = orders.filter(o => o.status === 'pending');
   const preparing = orders.filter(o => o.status === 'accepted');
   const ready = orders.filter(o => o.status === 'ready');
   const activeCount = incoming.length + preparing.length + ready.length;
 
-  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
+  const filterOptions: { key: ColumnFilter; label: string }[] = [
+    { key: 'all', label: t('common.all') },
+    { key: 'incoming', label: t('vendor.orders.incoming') },
+    { key: 'preparing', label: t('vendor.orders.preparing') },
+    { key: 'ready', label: t('vendor.orders.readyForPickup') },
+  ];
 
-  const columns: { key: string; dot: string; titleKey: 'vendor.orders.incoming' | 'vendor.orders.preparing' | 'vendor.orders.readyForPickup'; data: VendorOrder[]; render: (o: VendorOrder) => React.ReactNode }[] = [
+  const allColumns: { key: ColumnFilter; dot: string; titleKey: 'vendor.orders.incoming' | 'vendor.orders.preparing' | 'vendor.orders.readyForPickup'; data: VendorOrder[]; render: (o: VendorOrder) => React.ReactNode }[] = [
     { key: 'incoming', dot: '#ef4444', titleKey: 'vendor.orders.incoming', data: incoming, render: o => <IncomingCard key={o.id} order={o} t={t} /> },
     { key: 'preparing', dot: '#f59e0b', titleKey: 'vendor.orders.preparing', data: preparing, render: o => <PreparingCard key={o.id} order={o} t={t} /> },
     { key: 'ready', dot: '#22c55e', titleKey: 'vendor.orders.readyForPickup', data: ready, render: o => <ReadyCard key={o.id} order={o} t={t} /> },
   ];
+  const columns = columnFilter === 'all' ? allColumns : allColumns.filter(c => c.key === columnFilter);
 
   return (
     <View style={{ gap: 20 }}>
@@ -166,10 +176,13 @@ export default function VendorOrdersScreen() {
             <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.orders.activeCount', { n: activeCount })}</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#fff' }}>
-          <Ionicons name="filter-outline" size={14} color={Brand.textPrimary} />
-          <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.orders.filter')}</Text>
-        </TouchableOpacity>
+        <PillDropdown
+          icon="filter-outline"
+          label={filterOptions.find(o => o.key === columnFilter)!.label}
+          options={filterOptions}
+          selected={columnFilter}
+          onSelect={setColumnFilter}
+        />
       </View>
 
       <View style={{ flexDirection: 'row', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
