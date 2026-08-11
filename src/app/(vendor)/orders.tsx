@@ -5,9 +5,24 @@ import { Brand } from '@/constants/theme';
 import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { BANGKOK_TZ, formatBangkokDate, isBangkokToday } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
 
 type VendorOrder = ReturnType<typeof useVendorOrders>[number];
+
+// pickup_start is a raw UTC timestamptz from the DB — every render of it
+// must go through here so vendors always see Thailand wall-clock time,
+// never the ISO string or the device's own timezone.
+function formatPickupClock(iso: string | null) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-US', { timeZone: BANGKOK_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function formatPickupDateTime(iso: string | null, t: ReturnType<typeof useI18n>['t']) {
+  if (!iso) return '';
+  const time = formatPickupClock(iso);
+  return isBangkokToday(iso) ? `${t('common.today')}, ${time}` : `${formatBangkokDate(iso)}, ${time}`;
+}
 
 function formatCountdown(seconds: number) {
   const clamped = Math.max(0, seconds);
@@ -89,7 +104,7 @@ function IncomingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof u
           <View>
             <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary }}>#{order.queue_number}</Text>
             <Text style={{ fontSize: 10.5, color: '#8A8F9B', fontWeight: '600' }}>
-              {t('vendor.orders.pickup')} {order.pickup_start}
+              {t('vendor.orders.pickup')} {formatPickupClock(order.pickup_start)}
             </Text>
           </View>
           <CountdownChip initialSeconds={order.prep_seconds ?? 900} />
@@ -124,7 +139,7 @@ function PreparingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof 
       header={
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary }}>#{order.queue_number}</Text>
-          <TimeChip text={order.pickup_start ?? ''} />
+          <TimeChip text={formatPickupClock(order.pickup_start)} />
         </View>
       }
       footer={
@@ -199,7 +214,7 @@ function CompletedTicket({ order, t }: { order: VendorOrder; t: ReturnType<typeo
           {t('vendor.orders.itemsCount', { n: itemCount })}
         </Text>
       </View>
-      <Text style={{ fontSize: 11, fontWeight: '600', color: '#4B4F58' }}>{order.pickup_start}</Text>
+      <Text style={{ fontSize: 11, fontWeight: '600', color: '#4B4F58' }}>{formatPickupDateTime(order.pickup_start, t)}</Text>
     </View>
   );
 }
