@@ -22,7 +22,7 @@ const HEATMAP_ROWS = [
 
 function StatCard({ label, value, sub, icon }: { label: string; value: string; sub?: string; icon: React.ComponentProps<typeof Ionicons>['name'] }) {
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
+    <View style={{ flex: 1, minWidth: 160, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#8A8F9B', letterSpacing: 0.5 }}>{label}</Text>
         <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: Brand.vendorAccentLight, alignItems: 'center', justifyContent: 'center' }}>

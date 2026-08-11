@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { getVendorPayments } from '@/lib/vendor-store';
@@ -11,8 +11,12 @@ function formatDateTime(iso: string, t: ReturnType<typeof useI18n>['t']) {
   return isBangkokToday(iso) ? `${t('common.today')}, ${time}` : `${formatBangkokDate(iso)}, ${time}`;
 }
 
+const TABLE_MIN_WIDTH = 560;
+
 export default function VendorFinanceScreen() {
   const { t } = useI18n();
+  const { width } = useWindowDimensions();
+  const tableScrolls = width < TABLE_MIN_WIDTH + 32;
   const payments = getVendorPayments();
 
   const todayPayments = payments.filter(p => isBangkokToday(p.created_at));
@@ -76,26 +80,30 @@ export default function VendorFinanceScreen() {
           <Text style={{ fontSize: 13, color: '#B0B4BF', padding: 18 }}>{t('vendor.finance.empty')}</Text>
         ) : (
           <>
-            <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#EEF0F5', paddingHorizontal: 18, paddingVertical: 10 }}>
-              <Text style={{ flex: 2, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colDateTime')}</Text>
-              <Text style={{ flex: 1.4, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colOrder')}</Text>
-              <Text style={{ flex: 1, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colAmount')}</Text>
-              <Text style={{ flex: 1.6, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colMethod')}</Text>
-              <Text style={{ flex: 1.2, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colStatus')}</Text>
-            </View>
-            {payments.map(p => (
-              <View key={p.order_id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
-                <Text style={{ flex: 2, fontSize: 12.5, color: '#4B4F58' }}>{formatDateTime(p.created_at, t)}</Text>
-                <Text style={{ flex: 1.4, fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }}>{p.display_id}</Text>
-                <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary }}>฿{p.amount.toFixed(2)}</Text>
-                <Text style={{ flex: 1.6, fontSize: 12.5, color: '#4B4F58' }}>{t('vendor.finance.campusWallet')}</Text>
-                <View style={{ flex: 1.2 }}>
-                  <View style={{ alignSelf: 'flex-start', backgroundColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#16a34a' }}>{t('vendor.finance.completed')}</Text>
-                  </View>
+            <ScrollView horizontal={tableScrolls} showsHorizontalScrollIndicator={false}>
+              <View style={{ minWidth: tableScrolls ? TABLE_MIN_WIDTH : '100%' }}>
+                <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#EEF0F5', paddingHorizontal: 18, paddingVertical: 10 }}>
+                  <Text style={{ flex: 2, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colDateTime')}</Text>
+                  <Text style={{ flex: 1.4, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colOrder')}</Text>
+                  <Text style={{ flex: 1, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colAmount')}</Text>
+                  <Text style={{ flex: 1.6, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colMethod')}</Text>
+                  <Text style={{ flex: 1.2, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colStatus')}</Text>
                 </View>
+                {payments.map(p => (
+                  <View key={p.order_id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
+                    <Text style={{ flex: 2, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{formatDateTime(p.created_at, t)}</Text>
+                    <Text style={{ flex: 1.4, fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{p.display_id}</Text>
+                    <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>฿{p.amount.toFixed(2)}</Text>
+                    <Text style={{ flex: 1.6, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{t('vendor.finance.campusWallet')}</Text>
+                    <View style={{ flex: 1.2 }}>
+                      <View style={{ alignSelf: 'flex-start', backgroundColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#16a34a' }}>{t('vendor.finance.completed')}</Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
               </View>
-            ))}
+            </ScrollView>
             <TouchableOpacity onPress={comingSoon} style={{ alignItems: 'center', paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
               <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.viewAll')}</Text>
             </TouchableOpacity>
