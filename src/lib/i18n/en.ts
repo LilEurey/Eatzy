@@ -334,6 +334,26 @@ export const en = {
   'vendor.finance.viewAll': 'View All Transactions',
   'vendor.finance.campusWallet': 'Campus Wallet',
   'vendor.finance.empty': 'No payments yet',
+
+  // Vendor — profile
+  'vendor.profile.title': 'Store Profile',
+  'vendor.profile.backCaption': 'Back',
+  'vendor.profile.nameLabel': 'Store Name',
+  'vendor.profile.stallNumberLabel': 'Stall Number',
+  'vendor.profile.bioLabel': 'Bio',
+  'vendor.profile.bioPlaceholder': 'Tell students about your store...',
+  'vendor.profile.cuisineTagsLabel': 'Cuisine Tags',
+  'vendor.profile.cuisineTagsPlaceholder': 'e.g. Thai, Rice Dishes, Curry',
+  'vendor.profile.cuisineTagsHint': 'Separate tags with commas',
+  'vendor.profile.halalCertifiedLabel': 'Halal Certified',
+  'vendor.profile.openTimeLabel': 'Open Time',
+  'vendor.profile.closeTimeLabel': 'Close Time',
+  'vendor.profile.timePlaceholder': 'HH:MM',
+  'vendor.profile.cancel': 'Cancel',
+  'vendor.profile.save': 'Save Changes',
+  'vendor.profile.saving': 'Saving…',
+  'vendor.profile.savedTitle': 'Profile updated',
+  'vendor.profile.savedMsg': 'Your store profile was saved.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

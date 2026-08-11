@@ -14,6 +14,12 @@ type VendorProfile = {
   name: string;
   estimated_wait_min: number;
   current_queue_count: number;
+  stall_number: string | null;
+  bio: string | null;
+  cuisine_tags: string[];
+  is_halal_certified: boolean;
+  open_time: string | null;
+  close_time: string | null;
 };
 
 export type MenuItem = {
@@ -139,12 +145,23 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
 
   const { data: vendor } = await supabase
     .from('vendors')
-    .select('id,name,estimated_wait_min,current_queue_count,is_open')
+    .select('id,name,estimated_wait_min,current_queue_count,is_open,stall_number,bio,cuisine_tags,is_halal_certified,open_time,close_time')
     .eq('owner_user_id', user.id)
     .maybeSingle();
   if (!vendor) { loading = false; emit(); return 'not-vendor'; }
 
-  vendorProfile = { id: vendor.id, name: vendor.name, estimated_wait_min: vendor.estimated_wait_min, current_queue_count: vendor.current_queue_count };
+  vendorProfile = {
+    id: vendor.id,
+    name: vendor.name,
+    estimated_wait_min: vendor.estimated_wait_min,
+    current_queue_count: vendor.current_queue_count,
+    stall_number: vendor.stall_number,
+    bio: vendor.bio,
+    cuisine_tags: vendor.cuisine_tags ?? [],
+    is_halal_certified: vendor.is_halal_certified,
+    open_time: vendor.open_time,
+    close_time: vendor.close_time,
+  };
   storeOpen = vendor.is_open;
 
   await Promise.all([fetchMenu(vendor.id), fetchOrders(vendor.id)]);
@@ -264,6 +281,27 @@ export async function setStoreOpen(open: boolean) {
     emit();
     showAlert('Could not update store status', error.message);
   }
+}
+
+// ─── Profile ────────────────────────────────────────────────────────────────
+
+type VendorProfilePatch = Partial<Pick<VendorProfile,
+  'name' | 'stall_number' | 'bio' | 'cuisine_tags' | 'is_halal_certified' | 'open_time' | 'close_time'
+>>;
+
+export async function updateVendorProfile(patch: VendorProfilePatch): Promise<boolean> {
+  if (!vendorProfile) return false;
+  const previous = vendorProfile;
+  vendorProfile = { ...vendorProfile, ...patch }; // optimistic
+  emit();
+  const { error } = await supabase.from('vendors').update(patch).eq('id', previous.id);
+  if (error) {
+    vendorProfile = previous;
+    emit();
+    showAlert('Could not save profile', error.message);
+    return false;
+  }
+  return true;
 }
 
 // ─── Derived: payments / finance ───────────────────────────────────────────

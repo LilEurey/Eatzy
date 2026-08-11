@@ -211,11 +211,14 @@ export default function VendorLayout() {
           )}
           <Ionicons name="chevron-down" size={12} color="#8A8F9B" />
         </TouchableOpacity>
-        <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: Brand.vendorAccent, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity
+          onPress={() => router.push('/(vendor)/profile' as any)}
+          style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: Brand.vendorAccent, alignItems: 'center', justifyContent: 'center' }}
+        >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
             {(vendor?.name ?? 'V').charAt(0).toUpperCase()}
           </Text>
-        </View>
+        </TouchableOpacity>
         {!isDesktop && (
           <TouchableOpacity
             onPress={() => signOutVendor().then(() => router.replace('/vendor-login' as any))}
