@@ -668,6 +668,10 @@ export type Database = {
     }
     Functions: {
       next_queue_number: { Args: { p_vendor_id: string }; Returns: number }
+      pending_vendor_application_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: { vendor_id: string }[]
+      }
       place_order_escrow: {
         Args: { p_amount: number; p_order_id: string; p_user_id: string }
         Returns: undefined

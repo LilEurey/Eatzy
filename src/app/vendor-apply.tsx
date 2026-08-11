@@ -28,7 +28,7 @@ export default function VendorApplyScreen() {
     async function loadStalls() {
       const [{ data: vendors }, { data: pending }] = await Promise.all([
         supabase.from('vendors').select('id,name,stall_number').is('owner_user_id', null).order('name'),
-        supabase.from('vendor_applications').select('vendor_id').eq('status', 'pending'),
+        supabase.rpc('pending_vendor_application_ids'),
       ]);
       const pendingIds = new Set((pending ?? []).map(p => p.vendor_id));
       setStalls((vendors ?? []).filter(v => !pendingIds.has(v.id)));
