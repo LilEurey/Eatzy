@@ -8,7 +8,7 @@ import {
   useVendorOrders, useVendorProfile, useVendorLoading, useStoreOpen,
   setStoreOpen, initVendorSession, signOutVendor,
 } from '@/lib/vendor-store';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 type NavLabelKey = 'vendor.nav.overview' | 'vendor.nav.orders' | 'vendor.nav.menu' | 'vendor.nav.analytics';
@@ -135,7 +135,7 @@ function BottomTabBar({ pathname, badge }: { pathname: string; badge: number }) 
 }
 
 export default function VendorLayout() {
-  const { t } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const pathname = usePathname();
   const orders = useVendorOrders();
   const storeOpen = useStoreOpen();
@@ -146,6 +146,7 @@ export default function VendorLayout() {
   const isTablet = width >= TABLET_BREAKPOINT;
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [langPickerOpen, setLangPickerOpen] = useState(false);
 
   useEffect(() => {
     if (initStarted.current) return;
@@ -181,6 +182,20 @@ export default function VendorLayout() {
       )}
       <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{vendor?.name ?? ''}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: isTablet ? 14 : 10 }}>
+        <TouchableOpacity
+          onPress={() => setLangPickerOpen(true)}
+          style={{
+            flexDirection: 'row', alignItems: 'center', gap: 6,
+            borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 50, paddingHorizontal: 12, paddingVertical: 7,
+          }}
+        >
+          <Ionicons name="globe-outline" size={14} color={Brand.textPrimary} />
+          {isTablet && (
+            <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textPrimary }}>
+              {LOCALE_LABELS[locale]}
+            </Text>
+          )}
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setStoreOpen(!storeOpen)}
           style={{
@@ -219,6 +234,40 @@ export default function VendorLayout() {
     </ScrollView>
   );
 
+  const langPickerModal = (
+    <Modal visible={langPickerOpen} transparent animationType="fade" onRequestClose={() => setLangPickerOpen(false)}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={() => setLangPickerOpen(false)}
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
+      >
+        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>
+          <Text style={{
+            fontSize: 15, fontWeight: '700', color: Brand.textPrimary,
+            paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
+          }}>
+            {t('profile.languagePickerTitle')}
+          </Text>
+          {(Object.keys(LOCALE_LABELS) as Locale[]).map((code) => (
+            <TouchableOpacity
+              key={code}
+              onPress={() => { setLocale(code); setLangPickerOpen(false); }}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                paddingHorizontal: 16, paddingVertical: 14,
+              }}
+            >
+              <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: locale === code ? '700' : '500' }}>
+                {LOCALE_LABELS[code]}
+              </Text>
+              {locale === code && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   if (!isTablet) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F5F9' }} edges={['top']}>
@@ -227,6 +276,7 @@ export default function VendorLayout() {
           {content}
           <BottomTabBar pathname={pathname} badge={activeCount} />
         </View>
+        {langPickerModal}
       </SafeAreaView>
     );
   }
@@ -252,6 +302,7 @@ export default function VendorLayout() {
             <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setDrawerOpen(false)} />
           </View>
         </Modal>
+        {langPickerModal}
       </SafeAreaView>
     );
   }
@@ -270,6 +321,7 @@ export default function VendorLayout() {
           {content}
         </View>
       </View>
+      {langPickerModal}
     </SafeAreaView>
   );
 }
