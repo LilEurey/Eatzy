@@ -20,7 +20,18 @@ export default function RootLayout() {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function checkOnboarding(userId: string) {
+  async function routeAfterAuth(userId: string) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profile?.role === 'vendor') {
+      router.replace('/(vendor)/overview' as any);
+      return;
+    }
+
     const { data } = await supabase
       .from('user_preferences')
       .select('user_id')
@@ -39,7 +50,7 @@ export default function RootLayout() {
     if (!session) {
       router.replace('/(auth)');
     } else {
-      checkOnboarding(session.user.id);
+      routeAfterAuth(session.user.id);
     }
   }, [session]);
 
