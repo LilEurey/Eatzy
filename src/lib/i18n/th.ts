@@ -195,6 +195,7 @@ export const th: Record<TranslationKey, string> = {
   'profile.recentOrders': 'คำสั่งซื้อล่าสุด',
   'profile.viewAll': 'ดูทั้งหมด',
   'profile.noOrdersYet': 'ยังไม่มีคำสั่งซื้อ',
+  'profile.applyVendor': 'สมัครเปิดร้าน',
 
   // Edit Preferences & Allergies (Account Details)
   'editPreferences.subtitle': 'ปรับแต่งคำแนะนำ AI ของคุณด้วยการบอกความต้องการด้านอาหาร',

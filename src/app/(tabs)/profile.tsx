@@ -355,6 +355,14 @@ export default function ProfileScreen() {
             />
           </View>
 
+          <TouchableOpacity onPress={() => router.push('/vendor-apply' as any)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              <Ionicons name="storefront-outline" size={20} color="#261812" />
+              <Text style={{ fontSize: 16, color: '#261812' }}>{t('profile.applyVendor')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={14} color="#5A4136" />
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
               <Ionicons name="help-circle-outline" size={20} color="#261812" />

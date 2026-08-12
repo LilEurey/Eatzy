@@ -193,6 +193,7 @@ export const en = {
   'profile.recentOrders': 'Recent Orders',
   'profile.viewAll': 'View All',
   'profile.noOrdersYet': 'No orders yet',
+  'profile.applyVendor': 'Apply to open a store',
 
   // Edit Preferences & Allergies (Account Details)
   'editPreferences.subtitle': 'Customize your AI recommendations by letting us know your dietary needs.',
