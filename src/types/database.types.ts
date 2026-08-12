@@ -510,6 +510,7 @@ export type Database = {
       }
       vendor_applications: {
         Row: {
+          applicant_user_id: string | null
           bio: string | null
           email: string
           full_name: string
@@ -523,6 +524,7 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          applicant_user_id?: string | null
           bio?: string | null
           email: string
           full_name: string
@@ -536,6 +538,7 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          applicant_user_id?: string | null
           bio?: string | null
           email?: string
           full_name?: string
@@ -549,6 +552,13 @@ export type Database = {
           vendor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vendor_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vendor_applications_reviewed_by_fkey"
             columns: ["reviewed_by"]
