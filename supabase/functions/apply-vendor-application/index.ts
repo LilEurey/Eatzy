@@ -1,9 +1,8 @@
-// Public endpoint: creates the applicant's auth account (with the password
-// they chose) and their vendor_applications row, in that order. If the row
-// insert fails — most likely someone else's application for the same stall
-// landed first — the just-created auth user is deleted so nothing orphans.
+// Authenticated endpoint: the applicant already has a real (Google-signed-in)
+// account before calling this — it only records the application against
+// their own id. No auth account creation, nothing to clean up on failure.
 //
-// Deploy: supabase functions deploy apply-vendor-application
+// Deploy: supabase functions deploy apply-vendor-application --use-api
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -22,33 +21,48 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) return json({ error: 'Missing authorization header' }, 401);
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-  let body: {
-    vendor_id?: string;
-    full_name?: string;
-    email?: string;
-    phone?: string;
-    bio?: string | null;
-    password?: string;
-  };
+  const adminClient = createClient(supabaseUrl, serviceRoleKey);
+  const callerClient = createClient(supabaseUrl, serviceRoleKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: { user: caller } } = await callerClient.auth.getUser();
+  if (!caller) return json({ error: 'Invalid session' }, 401);
+
+  const { data: callerProfile } = await adminClient
+    .from('users')
+    .select('role')
+    .eq('id', caller.id)
+    .maybeSingle();
+  if (callerProfile?.role !== 'student') {
+    return json({ error: "This account can't apply for a vendor stall", code: 'NOT_STUDENT' }, 409);
+  }
+
+  let body: { vendor_id?: string; full_name?: string; phone?: string; bio?: string | null };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'Invalid JSON body', code: 'MISSING_FIELDS' }, 400);
   }
 
-  const { vendor_id, full_name, email, phone, password } = body;
-  if (!vendor_id || !full_name || !email || !phone || !password) {
-    return json(
-      { error: 'vendor_id, full_name, email, phone, and password are required', code: 'MISSING_FIELDS' },
-      400,
-    );
+  const { vendor_id, full_name, phone } = body;
+  if (!vendor_id || !full_name || !phone) {
+    return json({ error: 'vendor_id, full_name, and phone are required', code: 'MISSING_FIELDS' }, 400);
   }
-  if (password.length < 8) {
-    return json({ error: 'Password must be at least 8 characters', code: 'PASSWORD_TOO_WEAK' }, 400);
+
+  const { data: existingPending } = await adminClient
+    .from('vendor_applications')
+    .select('id')
+    .eq('applicant_user_id', caller.id)
+    .eq('status', 'pending')
+    .maybeSingle();
+  if (existingPending) {
+    return json({ error: 'You already have a pending application', code: 'ALREADY_APPLIED' }, 409);
   }
 
   const { data: vendor } = await adminClient
@@ -60,42 +74,23 @@ Deno.serve(async (req) => {
     return json({ error: 'This stall is no longer available', code: 'STALL_UNAVAILABLE' }, 409);
   }
 
-  const { data: created, error: createError } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name },
-  });
-  if (createError || !created.user) {
-    const createErrorMsg = (createError?.message ?? '').toLowerCase();
-    const alreadyExists = createErrorMsg.includes('already') && createErrorMsg.includes('registered');
-    return json(
-      {
-        error: alreadyExists ? 'This email is already registered' : (createError?.message ?? 'Could not create account'),
-        code: alreadyExists ? 'EMAIL_IN_USE' : 'CREATE_FAILED',
-      },
-      alreadyExists ? 409 : 500,
-    );
-  }
-
   const { error: insertError } = await adminClient.from('vendor_applications').insert({
     vendor_id,
     full_name,
-    email,
+    email: caller.email,
     phone,
     bio: body.bio || null,
-    applicant_user_id: created.user.id,
+    applicant_user_id: caller.id,
   });
   if (insertError) {
-    await adminClient.auth.admin.deleteUser(created.user.id);
-    const duplicate = insertError.code === '23505';
-    return json(
-      {
-        error: duplicate ? 'This stall already has a pending application' : insertError.message,
-        code: duplicate ? 'STALL_ALREADY_PENDING' : 'INSERT_FAILED',
-      },
-      duplicate ? 409 : 500,
-    );
+    const msg = insertError.message ?? '';
+    if (msg.includes('vendor_applications_one_pending_per_vendor')) {
+      return json({ error: 'This stall already has a pending application', code: 'STALL_ALREADY_PENDING' }, 409);
+    }
+    if (msg.includes('vendor_applications_one_pending_per_applicant')) {
+      return json({ error: 'You already have a pending application', code: 'ALREADY_APPLIED' }, 409);
+    }
+    return json({ error: insertError.message, code: 'INSERT_FAILED' }, 500);
   }
 
   return json({ ok: true });
