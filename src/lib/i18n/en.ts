@@ -364,14 +364,22 @@ export const en = {
   'vendor.apply.fullNameLabel': 'Full Name',
   'vendor.apply.emailLabel': 'Email Address',
   'vendor.apply.phoneLabel': 'Phone Number',
+  'vendor.apply.passwordLabel': 'Password',
+  'vendor.apply.passwordPlaceholder': 'At least 8 characters',
+  'vendor.apply.confirmPasswordLabel': 'Confirm Password',
+  'vendor.apply.confirmPasswordPlaceholder': 'Re-enter your password',
   'vendor.apply.bioLabel': 'About Your Stall (optional)',
   'vendor.apply.bioPlaceholder': 'What do you serve?',
   'vendor.apply.submit': 'Submit Application',
   'vendor.apply.submitting': 'Submitting…',
   'vendor.apply.submittedTitle': 'Application submitted',
-  'vendor.apply.submittedMsg': 'An admin will review it and be in touch.',
+  'vendor.apply.submittedMsg': 'You can log in with this email and password once an admin approves your stall claim.',
   'vendor.apply.errorTitle': 'Couldn’t submit application',
-  'vendor.apply.duplicateMsg': 'This stall already has a pending application.',
+  'vendor.apply.passwordMismatchMsg': 'Passwords don’t match.',
+  'vendor.apply.passwordTooShortMsg': 'Password must be at least 8 characters.',
+  'vendor.apply.emailInUseMsg': 'This email is already registered.',
+  'vendor.apply.stallAlreadyPendingMsg': 'This stall already has a pending application.',
+  'vendor.apply.stallUnavailableMsg': 'This stall was just claimed by someone else.',
   'vendor.apply.backToLogin': '← Back to vendor login',
 
   // Admin — login
@@ -410,7 +418,7 @@ export const en = {
   'admin.applications.confirmReject': 'Confirm Reject',
   'admin.applications.cancel': 'Cancel',
   'admin.applications.approvedTitle': 'Vendor approved',
-  'admin.applications.approvedMsg': 'Temp password (relay to vendor, shown once):\n\n{password}',
+  'admin.applications.approvedMsg': 'They can log in with the password they set when applying.',
   'admin.applications.errorTitle': 'Action failed',
 } as const;
 
