@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Stack, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from '@/lib/supabase';
@@ -20,6 +20,12 @@ const PUBLIC_ROUTES = ['/admin-login', '/become-vendor'];
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const pathname = usePathname();
+  // onAuthStateChange fires a new session object (same user) on background
+  // token refresh, not just on sign-in/out. Routing off session-object
+  // identity would then re-run routeAfterAuth and yank the user back to
+  // their landing screen mid-navigation every ~hour. Track the routed user
+  // id instead so only an actual sign-in/sign-out/switch re-routes.
+  const routedUserId = useRef<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -89,8 +95,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (session === undefined) return; // still loading
     if (!session) {
+      routedUserId.current = null;
       if (!PUBLIC_ROUTES.includes(pathname)) router.replace('/(auth)');
     } else {
+      if (session.user.id === routedUserId.current) return; // token refresh, not a new sign-in
+      routedUserId.current = session.user.id;
       routeAfterAuth(session.user.id);
     }
     // pathname deliberately excluded: this only needs pathname's value at
