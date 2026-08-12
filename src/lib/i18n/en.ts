@@ -397,7 +397,7 @@ export const en = {
   'admin.applications.confirmReject': 'Confirm Reject',
   'admin.applications.cancel': 'Cancel',
   'admin.applications.approvedTitle': 'Vendor approved',
-  'admin.applications.approvedMsg': 'They can log in with the password they set when applying.',
+  'admin.applications.approvedMsg': 'They’ll get vendor access on their existing account the next time they sign in.',
   'admin.applications.errorTitle': 'Action failed',
 } as const;
 

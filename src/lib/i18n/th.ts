@@ -399,6 +399,6 @@ export const th: Record<TranslationKey, string> = {
   'admin.applications.confirmReject': 'ยืนยันการปฏิเสธ',
   'admin.applications.cancel': 'ยกเลิก',
   'admin.applications.approvedTitle': 'อนุมัติผู้ขายแล้ว',
-  'admin.applications.approvedMsg': 'ผู้ขายสามารถเข้าสู่ระบบด้วยรหัสผ่านที่ตั้งไว้ตอนสมัครได้เลย',
+  'admin.applications.approvedMsg': 'ผู้ขายจะได้สิทธิ์ในบัญชีที่มีอยู่แล้วทันทีที่เข้าสู่ระบบครั้งถัดไป',
   'admin.applications.errorTitle': 'ดำเนินการไม่สำเร็จ',
 };
