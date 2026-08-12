@@ -1,9 +1,10 @@
-// Rejects a pending vendor_applications row: deletes the applicant's auth
-// account (created at apply time, no longer wanted) and marks the
-// application rejected, in one call — so a mid-way failure can't leave the
-// application pointing at a deleted account without a rejected status.
+// Rejects a pending vendor_applications row: marks it rejected. Does NOT
+// touch the applicant's auth account — under Google-only auth that account
+// is the applicant's real, persistent identity (used for the rest of the
+// app), not something created just for this application. Deleting it here
+// would delete a real user's account over a rejected stall claim.
 //
-// Deploy: supabase functions deploy reject-vendor-application
+// Deploy: supabase functions deploy reject-vendor-application --use-api
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -58,10 +59,6 @@ Deno.serve(async (req) => {
   if (fetchError || !application) return json({ error: 'Application not found' }, 404);
   if (application.status !== 'pending') {
     return json({ error: 'Application already reviewed', code: 'APPLICATION_ALREADY_REVIEWED' }, 409);
-  }
-
-  if (application.applicant_user_id) {
-    await adminClient.auth.admin.deleteUser(application.applicant_user_id);
   }
 
   const { error: updateError } = await adminClient
