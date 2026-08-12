@@ -51,7 +51,10 @@ export default function BecomeVendorScreen() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(auth)'))}
+            style={{ alignItems: 'center' }}
+          >
             <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>{t('vendor.pitch.backToLogin')}</Text>
           </TouchableOpacity>
         </View>
