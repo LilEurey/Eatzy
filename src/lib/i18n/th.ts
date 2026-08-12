@@ -39,6 +39,7 @@ export const th: Record<TranslationKey, string> = {
   'auth.signingIn': 'กำลังเข้าสู่ระบบ…',
   'auth.vendorSignupMsg': 'การสมัครสำหรับผู้ขายยังไม่เปิดให้ใช้งาน',
   'auth.signInFailedTitle': 'เข้าสู่ระบบไม่สำเร็จ',
+  'auth.becomeVendorCta': 'อยากขายของในมหาวิทยาลัยไหม? สมัครเป็นผู้ขาย',
 
   // Onboarding
   'onboarding.skip': 'ข้าม',
@@ -362,6 +363,16 @@ export const th: Record<TranslationKey, string> = {
   'vendor.apply.stallAlreadyPendingMsg': 'ร้านนี้มีใบสมัครที่รอตรวจสอบอยู่แล้ว',
   'vendor.apply.stallUnavailableMsg': 'ร้านนี้เพิ่งถูกจับจองโดยผู้อื่น',
   'vendor.apply.backToLogin': '← กลับ',
+
+  // Vendor — pitch (public, pre-auth discovery entry point)
+  'vendor.pitch.title': 'ขายของบน Eatzy',
+  'vendor.pitch.subtitle': 'เข้าถึงนักศึกษาทั่วมหาวิทยาลัยและจัดการร้านของคุณได้ในที่เดียว',
+  'vendor.pitch.benefit1': 'ให้นักศึกษาค้นพบร้านของคุณเวลาเลือกมื้ออาหาร',
+  'vendor.pitch.benefit2': 'จัดการเมนู คิว และออเดอร์จากแดชบอร์ดที่ใช้งานง่าย',
+  'vendor.pitch.benefit3': 'ไม่ต้องสร้างบัญชีใหม่ ใช้บัญชี Google เดียวกัน',
+  'vendor.pitch.reviewNote': 'คุณจะเข้าสู่ระบบด้วย Google แล้วกรอกใบสมัครสั้นๆ ทางแอดมินจะตรวจสอบก่อนเปิดร้านของคุณ',
+  'vendor.pitch.cta': 'ดำเนินการต่อด้วย Google',
+  'vendor.pitch.backToLogin': '← กลับไปหน้าเข้าสู่ระบบ',
 
   // Admin — login
   'admin.login.brand': 'Eatzy',

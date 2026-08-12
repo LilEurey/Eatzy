@@ -37,6 +37,7 @@ export const en = {
   'auth.signingIn': 'Signing in…',
   'auth.vendorSignupMsg': 'Vendor sign-up isn’t available yet.',
   'auth.signInFailedTitle': 'Sign in failed',
+  'auth.becomeVendorCta': 'Want to sell on campus? Become a Vendor',
 
   // Onboarding
   'onboarding.skip': 'Skip',
@@ -360,6 +361,16 @@ export const en = {
   'vendor.apply.stallAlreadyPendingMsg': 'This stall already has a pending application.',
   'vendor.apply.stallUnavailableMsg': 'This stall was just claimed by someone else.',
   'vendor.apply.backToLogin': '← Back',
+
+  // Vendor — pitch (public, pre-auth discovery entry point)
+  'vendor.pitch.title': 'Sell on Eatzy',
+  'vendor.pitch.subtitle': 'Reach students across campus and manage your stall from one place.',
+  'vendor.pitch.benefit1': 'Get discovered by students browsing for their next meal',
+  'vendor.pitch.benefit2': 'Manage your menu, queue, and orders from a simple dashboard',
+  'vendor.pitch.benefit3': 'No separate account — sign in with the same Google account',
+  'vendor.pitch.reviewNote': 'You\'ll sign in with Google and fill out a short application. An admin reviews it before your stall goes live.',
+  'vendor.pitch.cta': 'Continue with Google',
+  'vendor.pitch.backToLogin': '← Back to login',
 
   // Admin — login
   'admin.login.brand': 'Eatzy',

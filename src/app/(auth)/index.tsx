@@ -1,15 +1,10 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, Platform, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as WebBrowser from 'expo-web-browser';
-import * as ExpoLinking from 'expo-linking';
+import { router } from 'expo-router';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { supabase } from '@/lib/supabase';
-import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
-
-WebBrowser.maybeCompleteAuthSession();
+import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
 
 // Exact paths from the Figma export — the real 4-color Google "G", not an
 // icon-font approximation.
@@ -42,68 +37,9 @@ function GlowBlob({ color, maxOpacity, id }: { color: string; maxOpacity: number
   );
 }
 
-// PKCE puts the auth code and any error in the ?query string, but check the
-// #fragment too in case a provider/platform combination ever redirects there.
-function extractAuthParams(url: string): Record<string, string> {
-  const params = new URLSearchParams();
-  const [beforeHash, hash] = url.split('#');
-  const queryIndex = beforeHash.indexOf('?');
-  if (queryIndex !== -1) {
-    new URLSearchParams(beforeHash.slice(queryIndex + 1)).forEach((v, k) => params.set(k, v));
-  }
-  if (hash) {
-    new URLSearchParams(hash).forEach((v, k) => params.set(k, v));
-  }
-  return Object.fromEntries(params.entries());
-}
-
 export default function LoginScreen() {
   const { t } = useI18n();
-  const [loading, setLoading] = useState(false);
-
-  async function signInWithGoogle() {
-    setLoading(true);
-    try {
-      const redirectTo = ExpoLinking.createURL('/');
-
-      if (Platform.OS === 'web') {
-        // Full-page redirect — no popup involved, so there's nothing for a
-        // popup blocker to kill. The page navigates away here; when Google
-        // sends it back with ?code=..., detectSessionInUrl (supabase.ts)
-        // completes the PKCE exchange automatically on reload.
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo },
-        });
-        if (error) throw error;
-        return;
-      }
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo, skipBrowserRedirect: true },
-      });
-      if (error) throw error;
-      if (!data.url) throw new Error('No auth URL returned');
-
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-      if (result.type !== 'success') throw new Error('Browser flow cancelled');
-
-      const params = extractAuthParams(result.url);
-      if (params.error) throw new Error(params.error_description || params.error);
-      if (!params.code) throw new Error('No authorization code returned');
-
-      // PKCE: exchange the single-use code for a session using the code
-      // verifier signInWithOAuth stashed locally — never transmitted over
-      // the redirect URL, so an intercepted callback alone is useless.
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
-      if (exchangeError) throw exchangeError;
-    } catch (e: any) {
-      showAlert(t('auth.signInFailedTitle'), e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { signIn, loading } = useGoogleSignIn();
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FFF8F6' }}>
@@ -188,7 +124,7 @@ export default function LoginScreen() {
 
             {/* Google button */}
             <TouchableOpacity
-              onPress={signInWithGoogle}
+              onPress={() => signIn(false)}
               disabled={loading}
               style={{
                 flexDirection: 'row',
@@ -211,6 +147,10 @@ export default function LoginScreen() {
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>
                 {loading ? t('auth.signingIn') : t('auth.continueWithGoogle')}
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.push('/become-vendor' as any)} style={{ alignItems: 'center' }}>
+              <Text style={{ color: '#5a4136', fontSize: 13 }}>{t('auth.becomeVendorCta')}</Text>
             </TouchableOpacity>
           </View>
         </View>
