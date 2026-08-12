@@ -58,28 +58,18 @@ export default function AdminApplicationsScreen() {
     }
     closeModal();
     void load();
-    showAlert(
-      t('admin.applications.approvedTitle'),
-      t('admin.applications.approvedMsg', { password: data.temp_password }),
-    );
+    showAlert(t('admin.applications.approvedTitle'), t('admin.applications.approvedMsg'));
   }
 
   async function handleReject() {
     if (!selected) return;
     setBusy(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from('vendor_applications')
-      .update({
-        status: 'rejected',
-        reviewer_note: rejectNote.trim() || null,
-        reviewed_by: user?.id ?? null,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', selected.id);
+    const { data, error } = await supabase.functions.invoke('reject-vendor-application', {
+      body: { application_id: selected.id, reviewer_note: rejectNote.trim() || undefined },
+    });
     setBusy(false);
-    if (error) {
-      showAlert(t('admin.applications.errorTitle'), error.message);
+    if (error || data?.error) {
+      showAlert(t('admin.applications.errorTitle'), data?.error ?? error?.message ?? 'Unknown error');
       return;
     }
     closeModal();
