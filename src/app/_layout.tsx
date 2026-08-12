@@ -44,7 +44,13 @@ export default function RootLayout() {
     // leaves the stale, still-mounted Login screen reachable one back-tap
     // away post-auth. Collapse any such pre-auth history first so every
     // destination below lands on a clean, single-frame stack.
-    if (router.canGoBack()) router.dismissAll();
+    // canGoBack() checks any ancestor navigator (tabs included), which can
+    // be true even when there's no actual Stack history to pop — dismissAll
+    // then dispatches POP_TO_TOP to a Stack with only one route and logs
+    // "not handled by any navigator". canDismiss() checks specifically for
+    // a Stack-type navigator with routes.length > 1, matching what
+    // dismissAll's POP_TO_TOP actually needs.
+    if (router.canDismiss()) router.dismissAll();
 
     const { data: profile } = await supabase
       .from('users')
