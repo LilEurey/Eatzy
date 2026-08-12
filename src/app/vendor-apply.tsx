@@ -11,24 +11,26 @@ import { invokeEdgeFunction } from '@/lib/edge-function';
 type UnclaimedStall = { id: string; name: string; stall_number: string | null };
 
 const ERROR_CODE_KEYS: Record<string, TranslationKey> = {
-  EMAIL_IN_USE: 'vendor.apply.emailInUseMsg',
+  NOT_STUDENT: 'vendor.apply.notStudentMsg',
+  ALREADY_APPLIED: 'vendor.apply.alreadyAppliedMsg',
   STALL_ALREADY_PENDING: 'vendor.apply.stallAlreadyPendingMsg',
   STALL_UNAVAILABLE: 'vendor.apply.stallUnavailableMsg',
-  PASSWORD_TOO_WEAK: 'vendor.apply.passwordTooShortMsg',
 };
 
 export default function VendorApplyScreen() {
   const { t } = useI18n();
+  const [email, setEmail] = useState('');
   const [stalls, setStalls] = useState<UnclaimedStall[]>([]);
   const [stallsLoading, setStallsLoading] = useState(true);
   const [vendorId, setVendorId] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [bio, setBio] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setEmail(user?.email ?? ''));
+  }, []);
 
   useEffect(() => {
     // Unclaimed = no owner yet. A stall with a pending application is still
@@ -47,22 +49,13 @@ export default function VendorApplyScreen() {
     void loadStalls();
   }, []);
 
-  const canSubmit =
-    !!vendorId && !!fullName.trim() && !!email.trim() && !!phone.trim() &&
-    password.length >= 8 && password === confirmPassword && !submitting;
+  const canSubmit = !!vendorId && !!fullName.trim() && !!phone.trim() && !submitting;
 
   async function handleSubmit() {
     if (!canSubmit) return;
     setSubmitting(true);
     const { error } = await invokeEdgeFunction('apply-vendor-application', {
-      body: {
-        vendor_id: vendorId,
-        full_name: fullName.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        bio: bio.trim() || null,
-        password,
-      },
+      body: { vendor_id: vendorId, full_name: fullName.trim(), phone: phone.trim(), bio: bio.trim() || null },
     });
     setSubmitting(false);
     if (error) {
@@ -83,6 +76,12 @@ export default function VendorApplyScreen() {
           <Text style={{ fontSize: 14, color: Brand.textSecondary, marginBottom: 28 }}>
             {t('vendor.apply.subtitle')}
           </Text>
+
+          {!!email && (
+            <Text style={{ fontSize: 13, color: Brand.textSecondary, marginBottom: 18 }}>
+              {email}
+            </Text>
+          )}
 
           <Field label={t('vendor.apply.stallLabel')}>
             {stallsLoading ? null : stalls.length === 0 ? (
@@ -117,41 +116,8 @@ export default function VendorApplyScreen() {
             <TextInput value={fullName} onChangeText={setFullName} style={inputStyle} placeholderTextColor="#B0B4BF" />
           </Field>
 
-          <Field label={t('vendor.apply.emailLabel')}>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              style={inputStyle}
-              placeholderTextColor="#B0B4BF"
-            />
-          </Field>
-
           <Field label={t('vendor.apply.phoneLabel')}>
             <TextInput value={phone} onChangeText={setPhone} keyboardType="phone-pad" style={inputStyle} placeholderTextColor="#B0B4BF" />
-          </Field>
-
-          <Field label={t('vendor.apply.passwordLabel')}>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder={t('vendor.apply.passwordPlaceholder')}
-              placeholderTextColor="#B0B4BF"
-              secureTextEntry
-              style={inputStyle}
-            />
-          </Field>
-
-          <Field label={t('vendor.apply.confirmPasswordLabel')}>
-            <TextInput
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder={t('vendor.apply.confirmPasswordPlaceholder')}
-              placeholderTextColor="#B0B4BF"
-              secureTextEntry
-              style={inputStyle}
-            />
           </Field>
 
           <Field label={t('vendor.apply.bioLabel')}>
