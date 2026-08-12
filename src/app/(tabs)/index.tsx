@@ -140,7 +140,7 @@ export default function HomeScreen() {
           }}>
             {avatarUrl
               ? <Image source={{ uri: avatarUrl }} style={{ width: 40, height: 40 }} />
-              : <Text style={{ fontSize: 18 }}>👤</Text>}
+              : <Text style={{ fontSize: 16, fontWeight: '800', color: Brand.orange }}>{firstName.charAt(0).toUpperCase() || '?'}</Text>}
           </View>
         </TouchableOpacity>
         <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -1.2 }}>
