@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Image, Modal } from 'react-native';
+import { View, Text, TextInput, Image, Modal, ScrollView } from 'react-native';
 import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
 import * as ImagePicker from 'expo-image-picker';
@@ -267,16 +267,18 @@ export default function AddMenuItemScreen() {
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 }}>
               {t('vendor.menuNew.categoryLabel')}
             </Text>
-            {CATEGORIES.map(c => (
-              <Tap
-                key={c}
-                onPress={() => { setCategory(c); setCategoryPickerOpen(false); }}
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 13 }}
-              >
-                <Text style={{ fontSize: 15, color: Brand.textPrimary, fontWeight: category === c ? '700' : '500' }}>{c}</Text>
-                {category === c && <Ionicons name="checkmark" size={16} color={Brand.vendorAccent} />}
-              </Tap>
-            ))}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {CATEGORIES.map(c => (
+                <Tap
+                  key={c}
+                  onPress={() => { setCategory(c); setCategoryPickerOpen(false); }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 13 }}
+                >
+                  <Text style={{ fontSize: 15, color: Brand.textPrimary, fontWeight: category === c ? '700' : '500' }}>{c}</Text>
+                  {category === c && <Ionicons name="checkmark" size={16} color={Brand.vendorAccent} />}
+                </Tap>
+              ))}
+            </ScrollView>
           </View>
         </Tap>
       </Modal>

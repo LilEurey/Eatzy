@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, TextInput, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Modal, ActivityIndicator, ScrollView } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
@@ -119,9 +119,10 @@ export default function AdminApplicationsScreen() {
 
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={closeModal}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, maxWidth: 420, width: '100%', alignSelf: 'center' }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, maxWidth: 420, width: '100%', maxHeight: '85%', alignSelf: 'center' }}>
             {selected && (
               <>
+                <ScrollView showsVerticalScrollIndicator={false}>
                 <DetailRow label={t('admin.applications.fullNameLabel')} value={selected.full_name} />
                 <DetailRow label={t('admin.applications.emailLabel')} value={selected.email} />
                 <DetailRow label={t('admin.applications.phoneLabel')} value={selected.phone} />
@@ -175,6 +176,7 @@ export default function AdminApplicationsScreen() {
                 <Tap onPress={closeModal} disabled={busy} style={{ alignItems: 'center', marginTop: 14 }}>
                   <Text style={{ fontSize: 12, color: Brand.textSecondary }}>{t('admin.applications.cancel')}</Text>
                 </Tap>
+                </ScrollView>
               </>
             )}
           </View>

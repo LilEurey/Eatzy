@@ -1,4 +1,4 @@
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, ScrollView } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -59,7 +59,11 @@ export default function LoginScreen() {
         <GlowBlob id="blueGlow" color="#9CCAFF" maxOpacity={0.3} />
       </View>
 
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20 }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 24 }}
+          showsVerticalScrollIndicator={false}
+        >
         <View style={{ maxWidth: 448, width: '100%', alignSelf: 'center', gap: 24 }}>
           {/* Header / Logo Area */}
           <View style={{ gap: 8 }}>
@@ -155,6 +159,7 @@ export default function LoginScreen() {
             </Tap>
           </View>
         </View>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
