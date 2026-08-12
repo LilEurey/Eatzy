@@ -63,16 +63,7 @@ export default function VendorApplyScreen() {
       showAlert(t('vendor.apply.errorTitle'), messageKey ? t(messageKey) : error.message);
       return;
     }
-    showAlert(t('vendor.apply.submittedTitle'), t('vendor.apply.submittedMsg'), () => goBackOrHome());
-  }
-
-  // Reached both via router.push (profile entry, has a back-stack) and via
-  // router.replace (post-auth vendor-intent redirect, no back-stack at all —
-  // router.back() there throws "GO_BACK not handled"). Fall back to the
-  // student home in the latter case.
-  function goBackOrHome() {
-    if (router.canGoBack()) router.back();
-    else router.replace('/(tabs)');
+    showAlert(t('vendor.apply.submittedTitle'), t('vendor.apply.submittedMsg'), () => router.back());
   }
 
   return (
@@ -154,7 +145,7 @@ export default function VendorApplyScreen() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={goBackOrHome} style={{ alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center' }}>
             <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>{t('vendor.apply.backToLogin')}</Text>
           </TouchableOpacity>
         </View>
