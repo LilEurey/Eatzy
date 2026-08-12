@@ -10,16 +10,19 @@ import {
   setStoreOpen, initVendorSession, signOutVendor,
 } from '@/lib/vendor-store';
 import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
+import { showAlert } from '@/lib/alert';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-type NavLabelKey = 'vendor.nav.overview' | 'vendor.nav.orders' | 'vendor.nav.menu' | 'vendor.nav.analytics';
+type NavLabelKey = 'vendor.nav.overview' | 'vendor.nav.orders' | 'vendor.nav.menu' | 'vendor.nav.finance';
 type NavItem = { href: string; match: string; icon: IoniconsName; labelKey: NavLabelKey };
 
 const NAV: NavItem[] = [
   { href: '/(vendor)/overview', match: '/overview', icon: 'grid-outline', labelKey: 'vendor.nav.overview' },
   { href: '/(vendor)/orders', match: '/orders', icon: 'cart-outline', labelKey: 'vendor.nav.orders' },
   { href: '/(vendor)/menu', match: '/menu', icon: 'cut-outline', labelKey: 'vendor.nav.menu' },
-  { href: '/(vendor)/analytics', match: '/analytics', icon: 'bar-chart-outline', labelKey: 'vendor.nav.analytics' },
+  // Route path stays /analytics; the screen itself is finance content
+  // (revenue, payment history, withdraw) — only the nav label changes.
+  { href: '/(vendor)/analytics', match: '/analytics', icon: 'bar-chart-outline', labelKey: 'vendor.nav.finance' },
 ];
 
 // Below this width the fixed 220px sidebar leaves too little room for
@@ -82,6 +85,7 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
 
       <View style={{ borderTopWidth: 1, borderTopColor: '#EEF0F5', paddingTop: 8 }}>
         <Tap
+          onPress={() => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'))}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
         >
           <Ionicons name="help-circle-outline" size={18} color="#8A8F9B" />

@@ -224,6 +224,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.nav.orders': 'คำสั่งซื้อ',
   'vendor.nav.menu': 'เมนู',
   'vendor.nav.analytics': 'วิเคราะห์',
+  'vendor.nav.finance': 'การเงิน',
   'vendor.nav.helpCenter': 'ศูนย์ช่วยเหลือ',
   'vendor.nav.logOut': 'ออกจากระบบ',
   'vendor.topbar.storeOpen': 'ร้านเปิด',

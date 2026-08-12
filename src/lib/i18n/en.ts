@@ -222,6 +222,7 @@ export const en = {
   'vendor.nav.orders': 'Orders',
   'vendor.nav.menu': 'Menu',
   'vendor.nav.analytics': 'Analytics',
+  'vendor.nav.finance': 'Finance',
   'vendor.nav.helpCenter': 'Help Center',
   'vendor.nav.logOut': 'Log Out',
   'vendor.topbar.storeOpen': 'Store Open',
