@@ -4,10 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 
 type UnclaimedStall = { id: string; name: string; stall_number: string | null };
+
+const ERROR_CODE_KEYS: Record<string, TranslationKey> = {
+  EMAIL_IN_USE: 'vendor.apply.emailInUseMsg',
+  STALL_ALREADY_PENDING: 'vendor.apply.stallAlreadyPendingMsg',
+  STALL_UNAVAILABLE: 'vendor.apply.stallUnavailableMsg',
+  PASSWORD_TOO_WEAK: 'vendor.apply.passwordTooShortMsg',
+};
 
 export default function VendorApplyScreen() {
   const { t } = useI18n();
@@ -17,6 +24,8 @@ export default function VendorApplyScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [bio, setBio] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,26 +46,32 @@ export default function VendorApplyScreen() {
     void loadStalls();
   }, []);
 
+  const canSubmit =
+    !!vendorId && !!fullName.trim() && !!email.trim() && !!phone.trim() &&
+    password.length >= 8 && password === confirmPassword && !submitting;
+
   async function handleSubmit() {
-    if (!vendorId || !fullName.trim() || !email.trim() || !phone.trim()) return;
+    if (!canSubmit) return;
     setSubmitting(true);
-    const { error } = await supabase.from('vendor_applications').insert({
-      vendor_id: vendorId,
-      full_name: fullName.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      bio: bio.trim() || null,
+    const { data, error } = await supabase.functions.invoke('apply-vendor-application', {
+      body: {
+        vendor_id: vendorId,
+        full_name: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        bio: bio.trim() || null,
+        password,
+      },
     });
     setSubmitting(false);
-    if (error) {
-      const duplicate = error.code === '23505';
-      showAlert(t('vendor.apply.errorTitle'), duplicate ? t('vendor.apply.duplicateMsg') : error.message);
+    if (error || data?.error) {
+      const code = data?.code as string | undefined;
+      const messageKey = code ? ERROR_CODE_KEYS[code] : undefined;
+      showAlert(t('vendor.apply.errorTitle'), messageKey ? t(messageKey) : (data?.error ?? error?.message ?? 'Unknown error'));
       return;
     }
     showAlert(t('vendor.apply.submittedTitle'), t('vendor.apply.submittedMsg'), () => router.back());
   }
-
-  const canSubmit = !!vendorId && !!fullName.trim() && !!email.trim() && !!phone.trim() && !submitting;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F5F9' }}>
@@ -115,6 +130,28 @@ export default function VendorApplyScreen() {
 
           <Field label={t('vendor.apply.phoneLabel')}>
             <TextInput value={phone} onChangeText={setPhone} keyboardType="phone-pad" style={inputStyle} placeholderTextColor="#B0B4BF" />
+          </Field>
+
+          <Field label={t('vendor.apply.passwordLabel')}>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder={t('vendor.apply.passwordPlaceholder')}
+              placeholderTextColor="#B0B4BF"
+              secureTextEntry
+              style={inputStyle}
+            />
+          </Field>
+
+          <Field label={t('vendor.apply.confirmPasswordLabel')}>
+            <TextInput
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder={t('vendor.apply.confirmPasswordPlaceholder')}
+              placeholderTextColor="#B0B4BF"
+              secureTextEntry
+              style={inputStyle}
+            />
           </Field>
 
           <Field label={t('vendor.apply.bioLabel')}>
