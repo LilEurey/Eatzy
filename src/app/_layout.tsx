@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Slot, router, usePathname } from 'expo-router';
+import { Stack, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from '@/lib/supabase';
 import { I18nProvider } from '@/lib/i18n';
@@ -99,7 +99,7 @@ export default function RootLayout() {
   return (
     <I18nProvider>
       <StatusBar style="dark" />
-      <Slot />
+      <Stack screenOptions={{ headerShown: false }} />
     </I18nProvider>
   );
 }
