@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
+import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -137,9 +138,9 @@ export default function OnboardingScreen() {
           {/* Dot 3: small, inactive */}
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#DDD' }} />
         </View>
-        <TouchableOpacity onPress={handleSkip} disabled={saving}>
+        <Tap onPress={handleSkip} disabled={saving}>
           <Text style={{ color: Brand.orange, fontWeight: '600', fontSize: 15 }}>{t('onboarding.skip')}</Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
 
       <ScrollView
@@ -174,7 +175,7 @@ export default function OnboardingScreen() {
             {DIETARY_OPTIONS.map(item => {
               const selected = dietary.has(item);
               return (
-                <TouchableOpacity
+                <Tap
                   key={item}
                   onPress={() => toggleDietary(item)}
                   style={{
@@ -201,7 +202,7 @@ export default function OnboardingScreen() {
                   >
                     {t(DIETARY_LABELS[item])}
                   </Text>
-                </TouchableOpacity>
+                </Tap>
               );
             })}
           </View>
@@ -224,7 +225,7 @@ export default function OnboardingScreen() {
             {ALLERGY_OPTIONS.map(item => {
               const selected = allergies.has(item);
               return (
-                <TouchableOpacity
+                <Tap
                   key={item}
                   onPress={() => toggleAllergy(item)}
                   style={{
@@ -249,7 +250,7 @@ export default function OnboardingScreen() {
                   >
                     {t(ALLERGY_LABELS[item])}
                   </Text>
-                </TouchableOpacity>
+                </Tap>
               );
             })}
           </View>
@@ -330,7 +331,7 @@ export default function OnboardingScreen() {
           backgroundColor: Brand.bg,
         }}
       >
-        <TouchableOpacity
+        <Tap
           onPress={handleContinue}
           disabled={saving}
           style={{
@@ -348,7 +349,7 @@ export default function OnboardingScreen() {
             {saving ? t('onboarding.saving') : t('onboarding.continue')}
           </Text>
           <Text style={{ color: '#fff', fontSize: 16 }}>→</Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
     </SafeAreaView>
   );

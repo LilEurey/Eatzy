@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
+import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -120,9 +121,9 @@ export default function EditPreferencesScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       {/* Nav */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16, gap: 12 }}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <Tap onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={Brand.textPrimary} />
-        </TouchableOpacity>
+        </Tap>
         <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary, flex: 1 }}>
           {t('profile.accountDetails')}
         </Text>
@@ -145,7 +146,7 @@ export default function EditPreferencesScreen() {
             {DIETARY_OPTIONS.map(item => {
               const selected = dietary.has(item);
               return (
-                <TouchableOpacity
+                <Tap
                   key={item}
                   onPress={() => toggleDietary(item)}
                   style={{
@@ -159,7 +160,7 @@ export default function EditPreferencesScreen() {
                   <Text style={{ color: selected ? '#fff' : Brand.textPrimary, fontWeight: '600', fontSize: 15 }}>
                     {t(DIETARY_LABELS[item])}
                   </Text>
-                </TouchableOpacity>
+                </Tap>
               );
             })}
           </View>
@@ -180,7 +181,7 @@ export default function EditPreferencesScreen() {
             {ALLERGY_OPTIONS.map(item => {
               const selected = allergies.has(item);
               return (
-                <TouchableOpacity
+                <Tap
                   key={item}
                   onPress={() => toggleAllergy(item)}
                   style={{
@@ -194,7 +195,7 @@ export default function EditPreferencesScreen() {
                   <Text style={{ color: selected ? '#E04040' : Brand.textPrimary, fontWeight: '600', fontSize: 15 }}>
                     {t(ALLERGY_LABELS[item])}
                   </Text>
-                </TouchableOpacity>
+                </Tap>
               );
             })}
           </View>
@@ -235,7 +236,7 @@ export default function EditPreferencesScreen() {
         position: 'absolute', bottom: 0, left: 0, right: 0,
         backgroundColor: Brand.bg, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36,
       }}>
-        <TouchableOpacity
+        <Tap
           onPress={handleSave}
           disabled={saving || loading}
           style={{
@@ -246,7 +247,7 @@ export default function EditPreferencesScreen() {
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
             {saving ? t('editPreferences.saving') : t('editPreferences.saveChanges')}
           </Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
     </SafeAreaView>
   );

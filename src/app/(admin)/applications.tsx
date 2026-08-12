@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Modal, ActivityIndicator } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
@@ -93,7 +94,7 @@ export default function AdminApplicationsScreen() {
       ) : (
         <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#E2E4EC', overflow: 'hidden' }}>
           {applications.map((app, i) => (
-            <TouchableOpacity
+            <Tap
               key={app.id}
               onPress={() => setSelected(app)}
               style={{
@@ -111,7 +112,7 @@ export default function AdminApplicationsScreen() {
               <Text style={{ fontSize: 12, color: Brand.adminAccent, fontWeight: '600' }}>
                 {t('admin.applications.viewLabel')}
               </Text>
-            </TouchableOpacity>
+            </Tap>
           ))}
         </View>
       )}
@@ -148,32 +149,32 @@ export default function AdminApplicationsScreen() {
                       }}
                     />
                     <View style={{ flexDirection: 'row', gap: 10 }}>
-                      <TouchableOpacity onPress={() => setRejecting(false)} disabled={busy} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 50, borderWidth: 1, borderColor: '#E2E4EC' }}>
+                      <Tap onPress={() => setRejecting(false)} disabled={busy} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 50, borderWidth: 1, borderColor: '#E2E4EC' }}>
                         <Text style={{ fontWeight: '600', color: Brand.textPrimary }}>{t('admin.applications.cancel')}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={handleReject} disabled={busy} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 50, backgroundColor: '#E04040', opacity: busy ? 0.7 : 1 }}>
+                      </Tap>
+                      <Tap onPress={handleReject} disabled={busy} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 50, backgroundColor: '#E04040', opacity: busy ? 0.7 : 1 }}>
                         <Text style={{ fontWeight: '700', color: '#fff' }}>
                           {busy ? t('admin.applications.rejecting') : t('admin.applications.confirmReject')}
                         </Text>
-                      </TouchableOpacity>
+                      </Tap>
                     </View>
                   </>
                 ) : (
                   <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-                    <TouchableOpacity onPress={() => setRejecting(true)} disabled={busy} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 50, borderWidth: 1, borderColor: '#E04040' }}>
+                    <Tap onPress={() => setRejecting(true)} disabled={busy} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 50, borderWidth: 1, borderColor: '#E04040' }}>
                       <Text style={{ fontWeight: '700', color: '#E04040' }}>{t('admin.applications.reject')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={handleApprove} disabled={busy} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 50, backgroundColor: Brand.adminAccent, opacity: busy ? 0.7 : 1 }}>
+                    </Tap>
+                    <Tap onPress={handleApprove} disabled={busy} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 50, backgroundColor: Brand.adminAccent, opacity: busy ? 0.7 : 1 }}>
                       <Text style={{ fontWeight: '700', color: '#fff' }}>
                         {busy ? t('admin.applications.approving') : t('admin.applications.approve')}
                       </Text>
-                    </TouchableOpacity>
+                    </Tap>
                   </View>
                 )}
 
-                <TouchableOpacity onPress={closeModal} disabled={busy} style={{ alignItems: 'center', marginTop: 14 }}>
+                <Tap onPress={closeModal} disabled={busy} style={{ alignItems: 'center', marginTop: 14 }}>
                   <Text style={{ fontSize: 12, color: Brand.textSecondary }}>{t('admin.applications.cancel')}</Text>
-                </TouchableOpacity>
+                </Tap>
               </>
             )}
           </View>

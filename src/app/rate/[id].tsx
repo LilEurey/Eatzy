@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -53,9 +54,9 @@ export default function RateScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <Tap onPress={() => router.back()}>
             <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 40 }}>🧾</Text>
@@ -94,9 +95,9 @@ export default function RateScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       {/* Nav */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, gap: 12 }}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
-        </TouchableOpacity>
+        </Tap>
         <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('rate.title')}</Text>
       </View>
 
@@ -114,9 +115,9 @@ export default function RateScreen() {
         <View style={{ alignItems: 'center', marginBottom: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {[1, 2, 3, 4, 5].map(n => (
-              <TouchableOpacity key={n} onPress={() => setScore(n)} activeOpacity={0.7}>
+              <Tap key={n} onPress={() => setScore(n)} activeOpacity={0.7}>
                 <Text style={{ fontSize: 40, opacity: n <= score ? 1 : 0.25 }}>⭐</Text>
-              </TouchableOpacity>
+              </Tap>
             ))}
           </View>
           <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.orange, height: 22, marginTop: 10 }}>
@@ -148,7 +149,7 @@ export default function RateScreen() {
         backgroundColor: Brand.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 36,
         borderTopWidth: 1, borderTopColor: Brand.border,
       }}>
-        <TouchableOpacity
+        <Tap
           activeOpacity={0.85}
           disabled={score === 0 || submitting}
           onPress={submit}
@@ -160,7 +161,7 @@ export default function RateScreen() {
           <Text style={{ color: score === 0 ? Brand.textSecondary : '#fff', fontSize: 16, fontWeight: '700' }}>
             {t('rate.submit')}
           </Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
     </SafeAreaView>
   );

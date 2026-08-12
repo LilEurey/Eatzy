@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, Modal, Pressable, useWindowDimensions } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 
@@ -36,7 +37,7 @@ export function PillDropdown<T extends string>({
 
   return (
     <>
-      <TouchableOpacity
+      <Tap
         ref={anchorRef}
         onPress={openMenu}
         style={{
@@ -48,7 +49,7 @@ export function PillDropdown<T extends string>({
         <Ionicons name={icon} size={compact ? 12 : 14} color={Brand.textPrimary} />
         <Text style={{ fontSize: compact ? 12 : 13, fontWeight: '600', color: Brand.textPrimary }}>{label}</Text>
         <Ionicons name="chevron-down" size={compact ? 11 : 12} color="#8A8F9B" />
-      </TouchableOpacity>
+      </Tap>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)}>
@@ -61,7 +62,7 @@ export function PillDropdown<T extends string>({
             }}
           >
             {options.map(opt => (
-              <TouchableOpacity
+              <Tap
                 key={opt.key}
                 onPress={() => { onSelect(opt.key); setOpen(false); }}
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10 }}
@@ -70,7 +71,7 @@ export function PillDropdown<T extends string>({
                   {opt.label}
                 </Text>
                 {opt.key === selected && <Ionicons name="checkmark" size={15} color={Brand.vendorAccent} />}
-              </TouchableOpacity>
+              </Tap>
             ))}
           </View>
         </Pressable>

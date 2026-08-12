@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Brand } from '@/constants/theme';
@@ -20,9 +21,9 @@ export default function NotificationsScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       {/* Nav */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, gap: 12 }}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
-        </TouchableOpacity>
+        </Tap>
         <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('notifications.title')}</Text>
       </View>
 

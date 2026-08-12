@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone } from '@/lib/vendor-store';
@@ -112,12 +113,12 @@ function IncomingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof u
       }
       footer={
         <>
-          <TouchableOpacity onPress={() => rejectOrder(order.id)} style={{ flex: 1, backgroundColor: '#F0F1F5', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+          <Tap onPress={() => rejectOrder(order.id)} style={{ flex: 1, backgroundColor: '#F0F1F5', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#4B4F58' }}>{t('vendor.orders.reject')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => acceptOrder(order.id)} style={{ flex: 1, backgroundColor: Brand.orange, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+          </Tap>
+          <Tap onPress={() => acceptOrder(order.id)} style={{ flex: 1, backgroundColor: Brand.orange, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#fff' }}>{t('vendor.orders.confirmStart')}</Text>
-          </TouchableOpacity>
+          </Tap>
         </>
       }
     >
@@ -144,18 +145,18 @@ function PreparingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof 
       }
       footer={
         <>
-          <TouchableOpacity onPress={comingSoon} style={{ flex: 1, backgroundColor: '#F0F1F5', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+          <Tap onPress={comingSoon} style={{ flex: 1, backgroundColor: '#F0F1F5', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#4B4F58' }}>{t('vendor.orders.issue')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => markReady(order.id)} style={{ flex: 1, backgroundColor: Brand.vendorAccent, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+          </Tap>
+          <Tap onPress={() => markReady(order.id)} style={{ flex: 1, backgroundColor: Brand.vendorAccent, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#fff' }}>{t('vendor.orders.markReady')}</Text>
-          </TouchableOpacity>
+          </Tap>
         </>
       }
     >
       <View style={{ gap: 6 }}>
         {order.items.map((it, i) => (
-          <TouchableOpacity key={i} onPress={() => toggleItemDone(order.id, i)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Tap key={i} onPress={() => toggleItemDone(order.id, i)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{
               width: 16, height: 16, borderRadius: 4, borderWidth: 1.5,
               borderColor: it.done ? Brand.vendorAccent : '#C9CCD6',
@@ -167,7 +168,7 @@ function PreparingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof 
             <Text style={{ fontSize: 13, color: Brand.textPrimary, textDecorationLine: it.done ? 'line-through' : 'none' }}>
               {it.quantity}x {it.name}
             </Text>
-          </TouchableOpacity>
+          </Tap>
         ))}
       </View>
       {order.special_request && <SpecialBanner text={order.special_request} t={t} />}
@@ -187,9 +188,9 @@ function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI
         </View>
       }
       footer={
-        <TouchableOpacity onPress={() => handOff(order.id)} style={{ flex: 1, backgroundColor: Brand.vendorAccentLight, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+        <Tap onPress={() => handOff(order.id)} style={{ flex: 1, backgroundColor: Brand.vendorAccentLight, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
           <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.orders.handedToCustomer')}</Text>
-        </TouchableOpacity>
+        </Tap>
       }
     >
       <Text style={{ fontSize: 12.5, color: Brand.textSecondary }}>

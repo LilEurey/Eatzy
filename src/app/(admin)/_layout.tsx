@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -53,10 +54,10 @@ export default function AdminLayout() {
           <Ionicons name="shield-checkmark" size={18} color={Brand.adminAccent} />
           <Text style={{ fontSize: 14, fontWeight: '800', color: Brand.textPrimary }}>{t('admin.portalLabel')}</Text>
         </View>
-        <TouchableOpacity onPress={logOut} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Tap onPress={logOut} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Ionicons name="log-out-outline" size={18} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('admin.nav.logOut')}</Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
         <Slot />

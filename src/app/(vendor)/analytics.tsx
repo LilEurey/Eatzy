@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, useWindowDimensions } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { getVendorPayments } from '@/lib/vendor-store';
@@ -66,9 +67,9 @@ export default function VendorFinanceScreen() {
             {t('vendor.finance.availableToWithdraw')}
           </Text>
           <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14 }}>฿{availableToWithdraw.toLocaleString()}.00</Text>
-          <TouchableOpacity onPress={comingSoon} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
+          <Tap onPress={comingSoon} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.withdraw')}</Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
       </View>
 
@@ -84,10 +85,10 @@ export default function VendorFinanceScreen() {
               selected={historyFilter}
               onSelect={setHistoryFilter}
             />
-            <TouchableOpacity onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }}>
+            <Tap onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }}>
               <Ionicons name="download-outline" size={12} color={Brand.textPrimary} />
               <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.finance.export')}</Text>
-            </TouchableOpacity>
+            </Tap>
           </View>
         </View>
 
@@ -119,9 +120,9 @@ export default function VendorFinanceScreen() {
                 ))}
               </View>
             </ScrollView>
-            <TouchableOpacity onPress={comingSoon} style={{ alignItems: 'center', paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
+            <Tap onPress={comingSoon} style={{ alignItems: 'center', paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
               <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.viewAll')}</Text>
-            </TouchableOpacity>
+            </Tap>
           </>
         )}
       </View>

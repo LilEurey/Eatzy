@@ -1,4 +1,5 @@
-import { View, TouchableOpacity, Text } from 'react-native';
+import { View, Text } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
@@ -96,7 +97,7 @@ export default function TabsLayout() {
 
       {/* Floating cart button — only when cart has items */}
       {count > 0 && (
-        <TouchableOpacity
+        <Tap
           onPress={() => router.push('/cart')}
           style={{
             position: 'absolute',
@@ -124,7 +125,7 @@ export default function TabsLayout() {
           }}>
             <Text style={{ fontSize: 11, fontWeight: '800', color: '#FE6B00' }}>{count}</Text>
           </View>
-        </TouchableOpacity>
+        </Tap>
       )}
     </View>
   );

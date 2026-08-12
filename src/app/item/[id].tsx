@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -50,9 +51,9 @@ export default function ItemDetailScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <Tap onPress={() => router.back()}>
             <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 40 }}>🍽️</Text>
@@ -74,7 +75,7 @@ export default function ItemDetailScreen() {
             : <Text style={{ fontSize: 90 }}>🍽️</Text>
           }
           {/* Back button */}
-          <TouchableOpacity
+          <Tap
             onPress={() => router.back()}
             style={{
               position: 'absolute', top: 16, left: 16,
@@ -86,7 +87,7 @@ export default function ItemDetailScreen() {
             }}
           >
             <Text style={{ fontSize: 18, color: Brand.textPrimary }}>←</Text>
-          </TouchableOpacity>
+          </Tap>
 
           {/* Featured badge */}
           {item.is_featured && (
@@ -107,11 +108,11 @@ export default function ItemDetailScreen() {
           <Text style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5, marginBottom: 4 }}>
             {item.name}
           </Text>
-          <TouchableOpacity onPress={() => router.push(`/store/${item.vendor_id}`)}>
+          <Tap onPress={() => router.push(`/store/${item.vendor_id}`)}>
             <Text style={{ fontSize: 14, color: Brand.orange, fontWeight: '600', marginBottom: 14 }}>
               {vendorName} ›
             </Text>
-          </TouchableOpacity>
+          </Tap>
 
           {/* Dietary badges */}
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -217,25 +218,25 @@ export default function ItemDetailScreen() {
             flexDirection: 'row', alignItems: 'center', gap: 0,
             backgroundColor: Brand.orangeLight, borderRadius: 14, overflow: 'hidden',
           }}>
-            <TouchableOpacity
+            <Tap
               onPress={() => setQty(q => Math.max(1, q - 1))}
               style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}
             >
               <Text style={{ fontSize: 20, color: Brand.orange, fontWeight: '700', lineHeight: 22 }}>−</Text>
-            </TouchableOpacity>
+            </Tap>
             <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, minWidth: 28, textAlign: 'center' }}>
               {qty}
             </Text>
-            <TouchableOpacity
+            <Tap
               onPress={() => setQty(q => q + 1)}
               style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}
             >
               <Text style={{ fontSize: 20, color: Brand.orange, fontWeight: '700', lineHeight: 22 }}>+</Text>
-            </TouchableOpacity>
+            </Tap>
           </View>
 
           {/* Add to cart button */}
-          <TouchableOpacity
+          <Tap
             activeOpacity={0.85}
             onPress={() => {
               addToCart(item, qty);
@@ -252,7 +253,7 @@ export default function ItemDetailScreen() {
             <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
               {t('item.addToCart', { total })}
             </Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
       </View>
     </SafeAreaView>

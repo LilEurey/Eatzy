@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -132,7 +133,7 @@ export default function HomeScreen() {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 20, height: 64,
       }}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+        <Tap onPress={() => router.push('/(tabs)/profile')}>
           <View style={{
             width: 40, height: 40, borderRadius: 20, overflow: 'hidden',
             backgroundColor: Brand.orangeLight, borderWidth: 2, borderColor: Brand.card,
@@ -142,14 +143,14 @@ export default function HomeScreen() {
               ? <Image source={{ uri: avatarUrl }} style={{ width: 40, height: 40 }} />
               : <Text style={{ fontSize: 16, fontWeight: '800', color: Brand.orange }}>{firstName.charAt(0).toUpperCase() || '?'}</Text>}
           </View>
-        </TouchableOpacity>
+        </Tap>
         <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -1.2 }}>
           <Text style={{ color: '#020202' }}>Eat</Text>
           <Text style={{ color: Brand.orange }}>zy</Text>
         </Text>
-        <TouchableOpacity onPress={() => router.push('/notifications')}>
+        <Tap onPress={() => router.push('/notifications')}>
           <BellIcon size={18} />
-        </TouchableOpacity>
+        </Tap>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
@@ -159,7 +160,7 @@ export default function HomeScreen() {
         </Text>
 
         {/* Search bar */}
-        <TouchableOpacity
+        <Tap
           activeOpacity={0.8}
           onPress={comingSoon}
           style={{
@@ -171,7 +172,7 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 16 }}>🔍</Text>
           </View>
           <Text style={{ color: '#5a4136', fontSize: 16 }}>{t('home.searchPlaceholder')}</Text>
-        </TouchableOpacity>
+        </Tap>
 
         {/* Queue banner */}
         {topVendor && (
@@ -204,9 +205,9 @@ export default function HomeScreen() {
                 </View>
               </View>
             </View>
-            <TouchableOpacity onPress={() => router.push(`/store/${topVendor.id}`)}>
+            <Tap onPress={() => router.push(`/store/${topVendor.id}`)}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>{t('home.view')}</Text>
-            </TouchableOpacity>
+            </Tap>
           </View>
         )}
 
@@ -249,7 +250,7 @@ export default function HomeScreen() {
                         <Text style={{ fontSize: 20, fontWeight: '700', color: '#a04100' }}>
                           ฿{featured.price}
                         </Text>
-                        <TouchableOpacity
+                        <Tap
                           onPress={() => router.push(`/item/${featured.id}`)}
                           style={{
                             backgroundColor: '#a04100', borderRadius: 16,
@@ -259,7 +260,7 @@ export default function HomeScreen() {
                           }}
                         >
                           <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{t('home.addToCart')}</Text>
-                        </TouchableOpacity>
+                        </Tap>
                       </View>
                     </View>
                     {/* Food image */}
@@ -293,7 +294,7 @@ export default function HomeScreen() {
               const item = trending[i];
               const emojis = ['🥤', '🍚'];
               return (
-                <TouchableOpacity
+                <Tap
                   key={i}
                   onPress={() => item && router.push(`/item/${item.id}`)}
                   activeOpacity={0.85}
@@ -340,7 +341,7 @@ export default function HomeScreen() {
                       </View>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </Tap>
               );
             })}
           </View>
@@ -353,7 +354,7 @@ export default function HomeScreen() {
           </Text>
           <View style={{ gap: 12 }}>
             {vendors.slice(0, 6).map(vendor => (
-              <TouchableOpacity
+              <Tap
                 key={vendor.id}
                 onPress={() => router.push(`/store/${vendor.id}`)}
                 activeOpacity={0.85}
@@ -390,7 +391,7 @@ export default function HomeScreen() {
                     </View>
                   )}
                 </View>
-              </TouchableOpacity>
+              </Tap>
             ))}
             {vendors.length === 0 && (
               <View style={{ alignItems: 'center', paddingVertical: 32 }}>

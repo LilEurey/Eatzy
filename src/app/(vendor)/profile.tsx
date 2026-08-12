@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, TextInput, Switch } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -39,10 +40,10 @@ export default function VendorProfileScreen() {
     <View style={{ gap: 20 }}>
       <View>
         <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.profile.title')}</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+        <Tap onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
           <Ionicons name="arrow-back" size={14} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#8A8F9B' }}>{t('vendor.profile.backCaption')}</Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
 
       <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5', gap: 14, maxWidth: 480 }}>
@@ -125,12 +126,12 @@ export default function VendorProfileScreen() {
       </View>
 
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}>
+        <Tap onPress={() => router.back()} style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}>
           <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.profile.cancel')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={save} disabled={saving} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11, opacity: saving ? 0.7 : 1 }}>
+        </Tap>
+        <Tap onPress={save} disabled={saving} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11, opacity: saving ? 0.7 : 1 }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{saving ? t('vendor.profile.saving') : t('vendor.profile.save')}</Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
     </View>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -113,7 +114,7 @@ export default function OrdersScreen() {
         {tabs.map(filterTab => {
           const active = filterTab === tab;
           return (
-            <TouchableOpacity
+            <Tap
               key={filterTab}
               onPress={() => setTab(filterTab)}
               style={{
@@ -126,7 +127,7 @@ export default function OrdersScreen() {
               <Text style={{ fontSize: 13, fontWeight: '600', color: active ? '#fff' : Brand.textSecondary }}>
                 {t(FILTER_LABELS[filterTab])}
               </Text>
-            </TouchableOpacity>
+            </Tap>
           );
         })}
         </ScrollView>
@@ -224,7 +225,7 @@ export default function OrdersScreen() {
 
                 {/* Action button */}
                 {isActive && (
-                  <TouchableOpacity
+                  <Tap
                     onPress={() => router.push(`/track/${order.id}`)}
                     style={{
                       marginTop: 12, backgroundColor: order.status === 'ready' ? Brand.orange : Brand.orangeLight,
@@ -237,11 +238,11 @@ export default function OrdersScreen() {
                     }}>
                       {order.status === 'ready' ? t('orders.readyForPickup') : t('orders.trackOrder')}
                     </Text>
-                  </TouchableOpacity>
+                  </Tap>
                 )}
 
                 {order.status === 'completed' && (
-                  <TouchableOpacity
+                  <Tap
                     onPress={() => router.push(`/rate/${order.id}`)}
                     style={{
                       marginTop: 12, borderWidth: 1.5, borderColor: Brand.border,
@@ -251,7 +252,7 @@ export default function OrdersScreen() {
                     <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textSecondary }}>
                       {t('orders.rateOrder')}
                     </Text>
-                  </TouchableOpacity>
+                  </Tap>
                 )}
               </View>
             );

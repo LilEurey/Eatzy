@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator, Switch } from 'react-native';
+import { View, Text, ScrollView, Modal, Image, ActivityIndicator, Switch } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -203,9 +204,9 @@ export default function ProfileScreen() {
           <Text style={{ color: '#020202' }}>Eat</Text>
           <Text style={{ color: '#e76106' }}>zy</Text>
         </Text>
-        <TouchableOpacity onPress={() => router.push('/notifications')}>
+        <Tap onPress={() => router.push('/notifications')}>
           <BellIcon size={16} />
-        </TouchableOpacity>
+        </Tap>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
@@ -217,7 +218,7 @@ export default function ProfileScreen() {
         }}>
           <CornerGlow />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <TouchableOpacity onPress={pickAvatar} disabled={uploadingAvatar} activeOpacity={0.8} style={{ position: 'relative' }}>
+            <Tap onPress={pickAvatar} disabled={uploadingAvatar} activeOpacity={0.8} style={{ position: 'relative' }}>
               <View style={{
                 width: 80, height: 80, borderRadius: 20, overflow: 'hidden',
                 borderWidth: 2, borderColor: '#F8DDD2',
@@ -242,7 +243,7 @@ export default function ProfileScreen() {
               }}>
                 <Ionicons name="camera" size={11} color={Brand.orange} />
               </View>
-            </TouchableOpacity>
+            </Tap>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 24, fontWeight: '800', color: '#261812', letterSpacing: -0.32 }} numberOfLines={1}>{name}</Text>
               <Text style={{ fontSize: 14, color: '#5A4136', marginTop: 4 }} numberOfLines={1}>
@@ -290,16 +291,16 @@ export default function ProfileScreen() {
         <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.04, shadowRadius: 15, elevation: 1 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: '#261812' }}>{t('profile.recentOrders')}</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/orders')}>
+            <Tap onPress={() => router.push('/(tabs)/orders')}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#A04100' }}>{t('profile.viewAll')}</Text>
-            </TouchableOpacity>
+            </Tap>
           </View>
           {recentOrder === undefined ? (
             <ActivityIndicator color={Brand.orange} size="small" />
           ) : recentOrder === null ? (
             <Text style={{ fontSize: 13, color: '#5A4136' }}>{t('profile.noOrdersYet')}</Text>
           ) : (
-            <TouchableOpacity
+            <Tap
               onPress={() => router.push(`/track/${recentOrder.id}`)}
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
             >
@@ -320,27 +321,27 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
-            </TouchableOpacity>
+            </Tap>
           )}
         </View>
 
         {/* Account settings links */}
         <View style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.04, shadowRadius: 30, elevation: 2 }}>
-          <TouchableOpacity onPress={() => router.push('/edit-preferences')} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
+          <Tap onPress={() => router.push('/edit-preferences')} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
               <Ionicons name="person-circle-outline" size={20} color="#261812" />
               <Text style={{ fontSize: 16, color: '#261812' }}>{t('profile.accountDetails')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={14} color="#5A4136" />
-          </TouchableOpacity>
+          </Tap>
 
-          <TouchableOpacity onPress={() => setLanguagePickerOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
+          <Tap onPress={() => setLanguagePickerOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
               <Ionicons name="globe-outline" size={20} color="#261812" />
               <Text style={{ fontSize: 16, color: '#261812' }}>{t('profile.language')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={14} color="#5A4136" />
-          </TouchableOpacity>
+          </Tap>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
@@ -355,24 +356,24 @@ export default function ProfileScreen() {
             />
           </View>
 
-          <TouchableOpacity onPress={() => router.push('/vendor-apply' as any)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
+          <Tap onPress={() => router.push('/vendor-apply' as any)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F8DDD2' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
               <Ionicons name="storefront-outline" size={20} color="#261812" />
               <Text style={{ fontSize: 16, color: '#261812' }}>{t('profile.applyVendor')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={14} color="#5A4136" />
-          </TouchableOpacity>
+          </Tap>
 
-          <TouchableOpacity onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 }}>
+          <Tap onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
               <Ionicons name="help-circle-outline" size={20} color="#261812" />
               <Text style={{ fontSize: 16, color: '#261812' }}>{t('profile.help')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={14} color="#5A4136" />
-          </TouchableOpacity>
+          </Tap>
         </View>
 
-        <TouchableOpacity
+        <Tap
           onPress={signOut}
           style={{
             flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -385,7 +386,7 @@ export default function ProfileScreen() {
           <Text style={{ color: '#A04100', fontWeight: '600', fontSize: 14 }}>
             {t('profile.logout')}
           </Text>
-        </TouchableOpacity>
+        </Tap>
       </ScrollView>
 
       <Modal
@@ -394,7 +395,7 @@ export default function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => setLanguagePickerOpen(false)}
       >
-        <TouchableOpacity
+        <Tap
           activeOpacity={1}
           onPress={() => setLanguagePickerOpen(false)}
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
@@ -407,7 +408,7 @@ export default function ProfileScreen() {
               {t('profile.languagePickerTitle')}
             </Text>
             {(Object.keys(LOCALE_LABELS) as Locale[]).map((code) => (
-              <TouchableOpacity
+              <Tap
                 key={code}
                 onPress={() => {
                   setLocale(code);
@@ -422,10 +423,10 @@ export default function ProfileScreen() {
                   {LOCALE_LABELS[code]}
                 </Text>
                 {locale === code && <Text style={{ color: Brand.orange, fontSize: 16, fontWeight: '700' }}>✓</Text>}
-              </TouchableOpacity>
+              </Tap>
             ))}
           </View>
-        </TouchableOpacity>
+        </Tap>
       </Modal>
     </SafeAreaView>
   );

@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, Image } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
@@ -123,7 +124,7 @@ export default function LoginScreen() {
             </Text>
 
             {/* Google button */}
-            <TouchableOpacity
+            <Tap
               onPress={() => signIn(false)}
               disabled={loading}
               style={{
@@ -147,11 +148,11 @@ export default function LoginScreen() {
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>
                 {loading ? t('auth.signingIn') : t('auth.continueWithGoogle')}
               </Text>
-            </TouchableOpacity>
+            </Tap>
 
-            <TouchableOpacity onPress={() => router.push('/become-vendor' as any)} style={{ alignItems: 'center' }}>
+            <Tap onPress={() => router.push('/become-vendor' as any)} style={{ alignItems: 'center' }}>
               <Text style={{ color: '#5a4136', fontSize: 13 }}>{t('auth.becomeVendorCta')}</Text>
-            </TouchableOpacity>
+            </Tap>
           </View>
         </View>
       </SafeAreaView>

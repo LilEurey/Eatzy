@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -57,9 +58,9 @@ export default function StoreDetailScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <Tap onPress={() => router.back()}>
             <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 40 }}>🏪</Text>
@@ -81,7 +82,7 @@ export default function StoreDetailScreen() {
             : <Text style={{ fontSize: 72 }}>🏪</Text>
           }
           {/* Back button */}
-          <TouchableOpacity
+          <Tap
             onPress={() => router.back()}
             style={{
               position: 'absolute', top: 16, left: 16,
@@ -93,7 +94,7 @@ export default function StoreDetailScreen() {
             }}
           >
             <Text style={{ fontSize: 18, color: Brand.textPrimary }}>←</Text>
-          </TouchableOpacity>
+          </Tap>
 
           {/* Open badge */}
           <View style={{
@@ -185,7 +186,7 @@ export default function StoreDetailScreen() {
               {categories.map(cat => {
                 const active = cat === activeCategory;
                 return (
-                  <TouchableOpacity
+                  <Tap
                     key={cat}
                     onPress={() => setActiveCategory(cat)}
                     style={{
@@ -201,7 +202,7 @@ export default function StoreDetailScreen() {
                     }}>
                       {cat === 'All' ? t('store.all') : cat}
                     </Text>
-                  </TouchableOpacity>
+                  </Tap>
                 );
               })}
             </View>
@@ -210,7 +211,7 @@ export default function StoreDetailScreen() {
           {/* Menu items */}
           <View style={{ gap: 12 }}>
             {filteredItems.map(item => (
-              <TouchableOpacity
+              <Tap
                 key={item.id}
                 onPress={() => router.push(`/item/${item.id}`)}
                 activeOpacity={0.85}
@@ -273,7 +274,7 @@ export default function StoreDetailScreen() {
                     </View>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </Tap>
             ))}
 
             {filteredItems.length === 0 && (

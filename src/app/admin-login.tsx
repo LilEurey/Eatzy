@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -90,7 +91,7 @@ export default function AdminLoginScreen() {
             />
           </View>
 
-          <TouchableOpacity
+          <Tap
             onPress={signIn}
             disabled={loading}
             style={{
@@ -103,11 +104,11 @@ export default function AdminLoginScreen() {
               {loading ? t('admin.login.signingIn') : t('admin.login.signIn')}
             </Text>
             {!loading && <Ionicons name="arrow-forward" size={16} color="#fff" />}
-          </TouchableOpacity>
+          </Tap>
 
-          <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center' }}>
+          <Tap onPress={() => router.back()} style={{ alignItems: 'center' }}>
             <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>← Back</Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
       </View>
     </SafeAreaView>

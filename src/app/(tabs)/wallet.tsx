@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
@@ -114,7 +115,7 @@ export default function WalletScreen() {
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {TOP_UP_AMOUNTS.map(amount => (
-                <TouchableOpacity
+                <Tap
                   key={amount}
                   onPress={() => topUp(amount)}
                   disabled={toppingUp}
@@ -125,7 +126,7 @@ export default function WalletScreen() {
                   }}
                 >
                   <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>+฿{amount}</Text>
-                </TouchableOpacity>
+                </Tap>
               ))}
             </View>
           </View>
@@ -138,7 +139,7 @@ export default function WalletScreen() {
             { icon: '⇄', label: t('wallet.transfer'), onPress: comingSoon },
             { icon: '📄', label: t('wallet.statement'), onPress: comingSoon },
           ].map(({ icon, label, onPress }) => (
-            <TouchableOpacity
+            <Tap
               key={label}
               onPress={onPress}
               style={{
@@ -155,7 +156,7 @@ export default function WalletScreen() {
                 <Text style={{ fontSize: 18, color: Brand.orange }}>{icon}</Text>
               </View>
               <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textSecondary }}>{label}</Text>
-            </TouchableOpacity>
+            </Tap>
           ))}
         </View>
 

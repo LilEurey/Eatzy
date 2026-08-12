@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions, Modal, Pressable } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, useWindowDimensions, Modal, Pressable } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot, router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,7 +34,7 @@ const DESKTOP_BREAKPOINT = 1024;
 function NavRow({ item, active, badge, onPress }: { item: NavItem; active: boolean; badge: number; onPress: () => void }) {
   const { t } = useI18n();
   return (
-    <TouchableOpacity
+    <Tap
       onPress={onPress}
       style={{
         flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -50,7 +51,7 @@ function NavRow({ item, active, badge, onPress }: { item: NavItem; active: boole
           <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{badge}</Text>
         </View>
       )}
-    </TouchableOpacity>
+    </Tap>
   );
 }
 
@@ -80,19 +81,19 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
       </View>
 
       <View style={{ borderTopWidth: 1, borderTopColor: '#EEF0F5', paddingTop: 8 }}>
-        <TouchableOpacity
+        <Tap
           style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
         >
           <Ionicons name="help-circle-outline" size={18} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.helpCenter')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Tap>
+        <Tap
           onPress={() => signOutVendor().then(() => router.replace('/(auth)' as any))}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
         >
           <Ionicons name="log-out-outline" size={18} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.logOut')}</Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
     </View>
   );
@@ -106,7 +107,7 @@ function BottomTabBar({ pathname, badge }: { pathname: string; badge: number }) 
         {NAV.map(item => {
           const active = pathname === item.match || pathname.startsWith(item.match + '/');
           return (
-            <TouchableOpacity
+            <Tap
               key={item.href}
               onPress={() => router.push(item.href as any)}
               style={{ flex: 1, alignItems: 'center', gap: 3, paddingVertical: 6 }}
@@ -125,7 +126,7 @@ function BottomTabBar({ pathname, badge }: { pathname: string; badge: number }) 
               <Text style={{ fontSize: 10.5, fontWeight: active ? '700' : '500', color: active ? Brand.vendorAccent : '#8A8F9B' }}>
                 {t(item.labelKey)}
               </Text>
-            </TouchableOpacity>
+            </Tap>
           );
         })}
       </View>
@@ -171,17 +172,17 @@ export default function VendorLayout() {
       paddingHorizontal: isTablet ? 24 : 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#EEF0F5', backgroundColor: '#fff',
     }}>
       {isTablet && !isDesktop && (
-        <TouchableOpacity
+        <Tap
           onPress={() => setDrawerOpen(true)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={{ marginRight: 14 }}
         >
           <Ionicons name="menu-outline" size={24} color={Brand.textPrimary} />
-        </TouchableOpacity>
+        </Tap>
       )}
       <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{vendor?.name ?? ''}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: isTablet ? 14 : 10 }}>
-        <TouchableOpacity
+        <Tap
           onPress={() => setLangPickerOpen(true)}
           style={{
             flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -194,8 +195,8 @@ export default function VendorLayout() {
               {LOCALE_LABELS[locale]}
             </Text>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Tap>
+        <Tap
           onPress={() => setStoreOpen(!storeOpen)}
           style={{
             flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -209,22 +210,22 @@ export default function VendorLayout() {
             </Text>
           )}
           <Ionicons name="chevron-down" size={12} color="#8A8F9B" />
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Tap>
+        <Tap
           onPress={() => router.push('/(vendor)/profile' as any)}
           style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: Brand.vendorAccent, alignItems: 'center', justifyContent: 'center' }}
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
             {(vendor?.name ?? 'V').charAt(0).toUpperCase()}
           </Text>
-        </TouchableOpacity>
+        </Tap>
         {!isDesktop && (
-          <TouchableOpacity
+          <Tap
             onPress={() => signOutVendor().then(() => router.replace('/(auth)' as any))}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="log-out-outline" size={20} color="#8A8F9B" />
-          </TouchableOpacity>
+          </Tap>
         )}
       </View>
     </View>
@@ -238,7 +239,7 @@ export default function VendorLayout() {
 
   const langPickerModal = (
     <Modal visible={langPickerOpen} transparent animationType="fade" onRequestClose={() => setLangPickerOpen(false)}>
-      <TouchableOpacity
+      <Tap
         activeOpacity={1}
         onPress={() => setLangPickerOpen(false)}
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
@@ -251,7 +252,7 @@ export default function VendorLayout() {
             {t('profile.languagePickerTitle')}
           </Text>
           {(Object.keys(LOCALE_LABELS) as Locale[]).map((code) => (
-            <TouchableOpacity
+            <Tap
               key={code}
               onPress={() => { setLocale(code); setLangPickerOpen(false); }}
               style={{
@@ -263,10 +264,10 @@ export default function VendorLayout() {
                 {LOCALE_LABELS[code]}
               </Text>
               {locale === code && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
-            </TouchableOpacity>
+            </Tap>
           ))}
         </View>
-      </TouchableOpacity>
+      </Tap>
     </Modal>
   );
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Modal } from 'react-native';
+import { View, Text, TextInput, Image, Modal } from 'react-native';
+import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -93,10 +94,10 @@ export default function AddMenuItemScreen() {
     <View style={{ gap: 20 }}>
       <View>
         <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.menuNew.title')}</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+        <Tap onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
           <Ionicons name="arrow-back" size={14} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#8A8F9B' }}>{t('vendor.menuNew.backCaption')}</Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
 
       <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -146,7 +147,7 @@ export default function AddMenuItemScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.categoryLabel')}</Text>
-                <TouchableOpacity
+                <Tap
                   onPress={() => setCategoryPickerOpen(true)}
                   style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
                 >
@@ -154,14 +155,14 @@ export default function AddMenuItemScreen() {
                     {category || t('vendor.menuNew.categoryPlaceholder')}
                   </Text>
                   <Ionicons name="chevron-down" size={14} color="#8A8F9B" />
-                </TouchableOpacity>
+                </Tap>
               </View>
             </View>
           </View>
 
           <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5', gap: 12 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.menuNew.imageTitle')}</Text>
-            <TouchableOpacity
+            <Tap
               onPress={pickImage}
               style={{
                 borderWidth: 1.5, borderColor: '#D6D9E2', borderStyle: 'dashed', borderRadius: 12,
@@ -179,7 +180,7 @@ export default function AddMenuItemScreen() {
                   <Text style={{ fontSize: 11, color: '#8A8F9B' }}>{t('vendor.menuNew.imageDropHint')}</Text>
                 </>
               )}
-            </TouchableOpacity>
+            </Tap>
           </View>
         </View>
 
@@ -227,7 +228,7 @@ export default function AddMenuItemScreen() {
           <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5', gap: 10 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, marginBottom: 4 }}>{t('vendor.menuNew.sensitiveIngredients')}</Text>
             {ALLERGENS.map(a => (
-              <TouchableOpacity key={a.key} onPress={() => toggleAllergen(a.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Tap key={a.key} onPress={() => toggleAllergen(a.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{
                   width: 17, height: 17, borderRadius: 4, borderWidth: 1.5,
                   borderColor: allergens.has(a.key) ? Brand.vendorAccent : '#C9CCD6',
@@ -237,7 +238,7 @@ export default function AddMenuItemScreen() {
                   {allergens.has(a.key) && <Ionicons name="checkmark" size={12} color="#fff" />}
                 </View>
                 <Text style={{ fontSize: 13, color: Brand.textPrimary }}>{t(a.labelKey)}</Text>
-              </TouchableOpacity>
+              </Tap>
             ))}
             <TextInput
               value={otherAllergen}
@@ -252,32 +253,32 @@ export default function AddMenuItemScreen() {
 
       {/* Actions */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}>
+        <Tap onPress={() => router.back()} style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}>
           <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.menuNew.cancel')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={saveItem} disabled={saving} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11, opacity: saving ? 0.7 : 1 }}>
+        </Tap>
+        <Tap onPress={saveItem} disabled={saving} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11, opacity: saving ? 0.7 : 1 }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{saving ? t('vendor.menuNew.saving') : t('vendor.menuNew.saveItem')}</Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
 
       <Modal visible={categoryPickerOpen} transparent animationType="fade" onRequestClose={() => setCategoryPickerOpen(false)}>
-        <TouchableOpacity activeOpacity={1} onPress={() => setCategoryPickerOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}>
+        <Tap activeOpacity={1} onPress={() => setCategoryPickerOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}>
           <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8, maxHeight: 420 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 }}>
               {t('vendor.menuNew.categoryLabel')}
             </Text>
             {CATEGORIES.map(c => (
-              <TouchableOpacity
+              <Tap
                 key={c}
                 onPress={() => { setCategory(c); setCategoryPickerOpen(false); }}
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 13 }}
               >
                 <Text style={{ fontSize: 15, color: Brand.textPrimary, fontWeight: category === c ? '700' : '500' }}>{c}</Text>
                 {category === c && <Ionicons name="checkmark" size={16} color={Brand.vendorAccent} />}
-              </TouchableOpacity>
+              </Tap>
             ))}
           </View>
-        </TouchableOpacity>
+        </Tap>
       </Modal>
     </View>
   );

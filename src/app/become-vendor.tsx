@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,7 +39,7 @@ export default function BecomeVendorScreen() {
             {t('vendor.pitch.reviewNote')}
           </Text>
 
-          <TouchableOpacity
+          <Tap
             onPress={() => signIn(true)}
             disabled={loading}
             style={{
@@ -49,11 +50,11 @@ export default function BecomeVendorScreen() {
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
               {loading ? t('auth.signingIn') : t('vendor.pitch.cta')}
             </Text>
-          </TouchableOpacity>
+          </Tap>
 
-          <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center' }}>
+          <Tap onPress={() => router.back()} style={{ alignItems: 'center' }}>
             <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>{t('vendor.pitch.backToLogin')}</Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
       </ScrollView>
     </SafeAreaView>

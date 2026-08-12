@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorOrders, useVendorProfile } from '@/lib/vendor-store';
@@ -87,9 +88,9 @@ export default function VendorOverviewScreen() {
             selected={range}
             onSelect={setRange}
           />
-          <TouchableOpacity onPress={comingSoon} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }}>
+          <Tap onPress={comingSoon} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{t('vendor.overview.downloadReport')}</Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
       </View>
 
@@ -119,10 +120,10 @@ export default function VendorOverviewScreen() {
         <View style={{ flex: 2, minWidth: 320, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#EEF0F5' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.overview.salesVelocity')}</Text>
-            <TouchableOpacity onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+            <Tap onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
               <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.overview.today')}</Text>
               <Ionicons name="chevron-down" size={11} color="#8A8F9B" />
-            </TouchableOpacity>
+            </Tap>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 140 }}>
             {SALES_VELOCITY.map(bar => (

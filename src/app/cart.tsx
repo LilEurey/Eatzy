@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -90,9 +91,9 @@ export default function CartScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <Tap onPress={() => router.back()}>
             <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
-          </TouchableOpacity>
+          </Tap>
           <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('cart.title')}</Text>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -103,7 +104,7 @@ export default function CartScreen() {
           <Text style={{ fontSize: 14, color: Brand.textSecondary, marginBottom: 28 }}>
             {t('cart.addSomething')}
           </Text>
-          <TouchableOpacity
+          <Tap
             onPress={() => router.push('/(tabs)')}
             style={{
               backgroundColor: Brand.orange, borderRadius: 14,
@@ -111,7 +112,7 @@ export default function CartScreen() {
             }}
           >
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('cart.browseMenu')}</Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
       </SafeAreaView>
     );
@@ -121,9 +122,9 @@ export default function CartScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       {/* Nav */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, gap: 12 }}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
-        </TouchableOpacity>
+        </Tap>
         <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('cart.title')}</Text>
       </View>
 
@@ -167,21 +168,21 @@ export default function CartScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 0,
                   backgroundColor: Brand.orangeLight, borderRadius: 12, overflow: 'hidden',
                 }}>
-                  <TouchableOpacity
+                  <Tap
                     onPress={() => setQty(item.menu_item_id, -1)}
                     style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>−</Text>
-                  </TouchableOpacity>
+                  </Tap>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, minWidth: 22, textAlign: 'center' }}>
                     {item.quantity}
                   </Text>
-                  <TouchableOpacity
+                  <Tap
                     onPress={() => setQty(item.menu_item_id, 1)}
                     style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>+</Text>
-                  </TouchableOpacity>
+                  </Tap>
                 </View>
 
                 <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, minWidth: 52, textAlign: 'right' }}>
@@ -200,7 +201,7 @@ export default function CartScreen() {
           {slots.map((slot, i) => {
             const active = i === selectedIndex;
             return (
-              <TouchableOpacity
+              <Tap
                 key={slot.start.toISOString()}
                 onPress={() => setSelectedIndex(i)}
                 style={{
@@ -214,7 +215,7 @@ export default function CartScreen() {
                 <Text style={{ fontSize: 13, fontWeight: '600', color: active ? '#fff' : Brand.textSecondary }}>
                   {slot.label}
                 </Text>
-              </TouchableOpacity>
+              </Tap>
             );
           })}
         </View>
@@ -252,7 +253,7 @@ export default function CartScreen() {
         shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.06, shadowRadius: 12, elevation: 10,
       }}>
-        <TouchableOpacity
+        <Tap
           activeOpacity={0.85}
           onPress={placeOrder}
           disabled={placing}
@@ -275,7 +276,7 @@ export default function CartScreen() {
               </Text>
             </>
           )}
-        </TouchableOpacity>
+        </Tap>
       </View>
     </SafeAreaView>
   );

@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Image, Switch } from 'react-native';
+import { View, Text, Image, Switch } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -19,12 +20,12 @@ export default function VendorMenuScreen() {
           <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.menu.title')}</Text>
           <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>{t('vendor.menu.subtitle')}</Text>
         </View>
-        <TouchableOpacity
+        <Tap
           onPress={() => router.push('/(vendor)/menu/new' as any)}
           style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10 }}
         >
           <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{t('vendor.menu.addNewItem')}</Text>
-        </TouchableOpacity>
+        </Tap>
       </View>
 
       <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#EEF0F5' }}>
@@ -44,12 +45,12 @@ export default function VendorMenuScreen() {
                   ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                   : <Text style={{ fontSize: 44 }}>🍽️</Text>
                 }
-                <TouchableOpacity
+                <Tap
                   onPress={comingSoon}
                   style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Ionicons name="ellipsis-vertical" size={14} color={Brand.textPrimary} />
-                </TouchableOpacity>
+                </Tap>
               </View>
               <View style={{ padding: 14, gap: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>

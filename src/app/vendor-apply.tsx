@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, ScrollView } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Brand } from '@/constants/theme';
@@ -93,7 +94,7 @@ export default function VendorApplyScreen() {
                 {stalls.map(s => {
                   const selected = vendorId === s.id;
                   return (
-                    <TouchableOpacity
+                    <Tap
                       key={s.id}
                       onPress={() => setVendorId(s.id)}
                       style={{
@@ -105,7 +106,7 @@ export default function VendorApplyScreen() {
                       <Text style={{ color: selected ? '#fff' : Brand.textPrimary, fontWeight: '600', fontSize: 13 }}>
                         {s.name}{s.stall_number ? ` (${s.stall_number})` : ''}
                       </Text>
-                    </TouchableOpacity>
+                    </Tap>
                   );
                 })}
               </View>
@@ -132,7 +133,7 @@ export default function VendorApplyScreen() {
             />
           </Field>
 
-          <TouchableOpacity
+          <Tap
             onPress={handleSubmit}
             disabled={!canSubmit}
             style={{
@@ -143,11 +144,11 @@ export default function VendorApplyScreen() {
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
               {submitting ? t('vendor.apply.submitting') : t('vendor.apply.submit')}
             </Text>
-          </TouchableOpacity>
+          </Tap>
 
-          <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center' }}>
+          <Tap onPress={() => router.back()} style={{ alignItems: 'center' }}>
             <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>{t('vendor.apply.backToLogin')}</Text>
-          </TouchableOpacity>
+          </Tap>
         </View>
       </ScrollView>
     </SafeAreaView>
