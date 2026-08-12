@@ -11,25 +11,6 @@ import { showAlert } from '@/lib/alert';
 import { useI18n, LOCALE_LABELS, type Locale, type TranslationKey } from '@/lib/i18n';
 import { formatBangkokClock, isBangkokToday, formatBangkokDate } from '@/lib/time';
 
-const DEV_ROUTES: { label: string; route: string }[] = [
-  { label: '🔐 Login screen', route: '/(auth)' },
-  { label: '🥗 Onboarding / Preferences', route: '/(auth)/onboarding' },
-  { label: '🏠 Home', route: '/(tabs)' },
-  { label: '📋 Orders tab', route: '/(tabs)/orders' },
-  { label: '💰 Wallet tab', route: '/(tabs)/wallet' },
-  { label: '🛒 Cart', route: '/cart' },
-  { label: '🏪 Store detail (Malee\'s Thai Kitchen)', route: '/store/f87c67e2-51cd-40a9-abdc-74c4bc5250ce' },
-  { label: '🍛 Food item detail (Pad Thai)', route: '/item/030d7f8e-8cca-4f50-88c3-83681e72b9ce' },
-  // Track/Rate sample links removed — real orders are RLS-scoped to their
-  // own student, so a sample id only resolves for whoever placed it.
-  { label: '🧑‍🍳 Vendor login', route: '/vendor-login' },
-  { label: '🧑‍🍳 Vendor Overview', route: '/(vendor)/overview' },
-  { label: '🧑‍🍳 Vendor Orders (KDS)', route: '/(vendor)/orders' },
-  { label: '🧑‍🍳 Vendor Menu', route: '/(vendor)/menu' },
-  { label: '🧑‍🍳 Vendor Add Item', route: '/(vendor)/menu/new' },
-  { label: '🧑‍🍳 Vendor Finance', route: '/(vendor)/analytics' },
-];
-
 // Exact bell path from the Figma export (see (tabs)/index.tsx for the same
 // fix applied to the home header) — an emoji renders with baked-in colors.
 function BellIcon({ size = 18 }: { size?: number }) {
@@ -382,38 +363,6 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={14} color="#5A4136" />
           </TouchableOpacity>
         </View>
-
-        {__DEV__ && (
-          <View style={{ marginBottom: 12 }}>
-            <Text style={{
-              fontSize: 11, fontWeight: '700', letterSpacing: 1.2,
-              color: Brand.textSecondary, marginBottom: 12,
-            }}>
-              DEV — NAVIGATE TO PAGE
-            </Text>
-            <View style={{ gap: 8 }}>
-              {DEV_ROUTES.map(({ label, route }) => (
-                <TouchableOpacity
-                  key={route}
-                  onPress={() => router.push(route as any)}
-                  style={{
-                    backgroundColor: Brand.card, borderRadius: 12,
-                    paddingHorizontal: 16, paddingVertical: 12,
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.04, shadowRadius: 6, elevation: 1,
-                  }}
-                >
-                  <Text style={{ color: Brand.textPrimary, fontSize: 14, fontWeight: '500' }}>
-                    {label}
-                  </Text>
-                  <Text style={{ color: Brand.textSecondary, fontSize: 11, marginTop: 2 }}>
-                    {route}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
 
         <TouchableOpacity
           onPress={signOut}

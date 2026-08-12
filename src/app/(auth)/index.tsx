@@ -224,16 +224,6 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Dev-only bypass */}
-          {__DEV__ && (
-            <TouchableOpacity
-              onPress={() => router.replace('/(tabs)')}
-              style={{ alignItems: 'center' }}
-            >
-              <Text style={{ color: '#CCC', fontSize: 12 }}>{t('auth.skipLoginDev')}</Text>
-            </TouchableOpacity>
-          )}
         </View>
       </SafeAreaView>
     </View>

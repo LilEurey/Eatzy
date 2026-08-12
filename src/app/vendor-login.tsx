@@ -154,15 +154,6 @@ export default function VendorLoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {__DEV__ && (
-              <TouchableOpacity
-                onPress={() => { setEmail('manager@maleethai.eatzy.app'); setPassword('jzWQpIYhiY3!Aa1'); }}
-                style={{ marginTop: 20, alignItems: 'center' }}
-              >
-                <Text style={{ color: '#CCC', fontSize: 12 }}>⚙ Fill demo vendor credentials (dev only)</Text>
-              </TouchableOpacity>
-            )}
-
             <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16, alignItems: 'center' }}>
               <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>← Back to student login</Text>
             </TouchableOpacity>

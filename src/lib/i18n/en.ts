@@ -38,7 +38,6 @@ export const en = {
   'auth.forVendor': 'For Vendor ',
   'auth.clickHere': 'Click Here',
   'auth.vendorSignupMsg': 'Vendor sign-up isn’t available yet.',
-  'auth.skipLoginDev': '⚙ Skip login (dev only)',
   'auth.signInFailedTitle': 'Sign in failed',
 
   // Onboarding

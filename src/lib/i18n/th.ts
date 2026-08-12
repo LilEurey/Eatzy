@@ -40,7 +40,6 @@ export const th: Record<TranslationKey, string> = {
   'auth.forVendor': 'สำหรับผู้ขาย ',
   'auth.clickHere': 'คลิกที่นี่',
   'auth.vendorSignupMsg': 'การสมัครสำหรับผู้ขายยังไม่เปิดให้ใช้งาน',
-  'auth.skipLoginDev': '⚙ ข้ามการเข้าสู่ระบบ (สำหรับนักพัฒนา)',
   'auth.signInFailedTitle': 'เข้าสู่ระบบไม่สำเร็จ',
 
   // Onboarding
