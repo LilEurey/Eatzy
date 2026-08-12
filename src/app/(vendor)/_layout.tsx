@@ -23,8 +23,7 @@ const NAV: NavItem[] = [
 
 // Below this width the fixed 220px sidebar leaves too little room for
 // content (cards min-width 200-320 start overflowing/overlapping), so
-// phones get a bottom tab bar instead — same breakpoint vendor-login.tsx
-// uses to decide when there's room for its side-by-side hero panel.
+// phones get a bottom tab bar instead.
 const TABLET_BREAKPOINT = 760;
 // Between TABLET_BREAKPOINT and this width there's room for a bottom tab
 // bar's worth of nav but not a permanent 220px sidebar without squeezing
@@ -88,7 +87,7 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
           <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.helpCenter')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => signOutVendor().then(() => router.replace('/vendor-login' as any))}
+          onPress={() => signOutVendor().then(() => router.replace('/(auth)' as any))}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
         >
           <Ionicons name="log-out-outline" size={18} color="#8A8F9B" />
@@ -152,7 +151,7 @@ export default function VendorLayout() {
     if (initStarted.current) return;
     initStarted.current = true;
     initVendorSession().then(result => {
-      if (result !== 'ok') router.replace('/vendor-login' as any);
+      if (result !== 'ok') router.replace('/(auth)' as any);
     });
   }, []);
 
@@ -221,7 +220,7 @@ export default function VendorLayout() {
         </TouchableOpacity>
         {!isDesktop && (
           <TouchableOpacity
-            onPress={() => signOutVendor().then(() => router.replace('/vendor-login' as any))}
+            onPress={() => signOutVendor().then(() => router.replace('/(auth)' as any))}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="log-out-outline" size={20} color="#8A8F9B" />

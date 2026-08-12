@@ -8,8 +8,10 @@ import type { Session } from '@supabase/supabase-js';
 // Standalone entry points meant to be reached directly (typed URL, bookmark,
 // QR code) while signed out — not just via an in-app link from (auth). The
 // redirect-to-(auth) effect below must not clobber a hard/first load of one
-// of these.
-const PUBLIC_ROUTES = ['/vendor-login', '/admin-login', '/vendor-apply'];
+// of these. vendor-apply is deliberately NOT here anymore — applying is now
+// an authenticated in-app action (see (tabs)/profile.tsx), so an
+// unauthenticated visit should bounce to (auth) like any other protected route.
+const PUBLIC_ROUTES = ['/admin-login'];
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);

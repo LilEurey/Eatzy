@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as ExpoLinking from 'expo-linking';
-import { router } from 'expo-router';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
@@ -213,16 +212,6 @@ export default function LoginScreen() {
                 {loading ? t('auth.signingIn') : t('auth.continueWithGoogle')}
               </Text>
             </TouchableOpacity>
-
-            {/* Vendor link */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
-              <Text style={{ color: '#5a4136', fontSize: 16 }}>{t('auth.forVendor')}</Text>
-              <TouchableOpacity onPress={() => router.push('/vendor-login' as any)}>
-                <Text style={{ color: '#4648d4', fontWeight: '600', fontSize: 14 }}>
-                  {t('auth.clickHere')}
-                </Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </SafeAreaView>
