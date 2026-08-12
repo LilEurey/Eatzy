@@ -138,14 +138,19 @@ This is the DB-level backstop behind the Edge Function's `ALREADY_APPLIED` pre-c
 asked for directly, but it falls out naturally once applications are tied to a persistent identity
 instead of a throwaway one, and costs nothing to add now.
 
-### Existing vendor account cleanup
+### Existing vendor account — left alone
 
-`manager@maleethai.eatzy.app` (the one real approved vendor, from earlier manual testing this
-session) gets freed the same way the two test stalls were freed in
-`20260812010000_free_test_claimed_stalls.sql` — `owner_user_id` and `role` reset back to
-unclaimed/student, in the same migration that adds the new index above. This is a deliberate task in
-the implementation plan, not something that happens silently — whoever runs that stall re-applies
-through the new Google-based flow once it ships.
+`manager@maleethai.eatzy.app` is **not** test residue from this session — it's the original
+Phase-1 seed vendor (Malee's Thai Kitchen, `20260804020000_seed_demo_data.sql`), with seeded
+demo orders/payments the vendor dashboard, KDS, and finance screens have shown data from since
+early in the build. It is left completely untouched: no migration, no reset of `owner_user_id` or
+`role`. Its data and password login continue to work exactly as they do today at the DB level.
+
+The one real consequence: once `vendor-login.tsx` is deleted, there's no UI path left to sign into
+this account (its password still works via `supabase.auth.signInWithPassword`, there's just no
+screen left that calls it). That's an accepted tradeoff, not an oversight — this account was already
+being used as a click-through demo shortcut (the hardcoded-credentials dev button removed earlier
+this session), not a real user's account.
 
 ### i18n
 
@@ -174,10 +179,8 @@ session.
 
 One new migration file:
 - `create unique index vendor_applications_one_pending_per_applicant ...`
-- The `manager@maleethai.eatzy.app` stall-freeing `do $$ ... $$` block (same
-  `set_config('app.bypass_role_guard', 'on', true)` pattern as the prior cleanup migration).
 
-No changes to `approve_vendor_application` or any other existing SQL function.
+No changes to `approve_vendor_application`, any other existing SQL function, or any seed data.
 
 ## Out of scope
 
