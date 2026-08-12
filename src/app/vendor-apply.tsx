@@ -6,6 +6,7 @@ import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { invokeEdgeFunction } from '@/lib/edge-function';
 
 type UnclaimedStall = { id: string; name: string; stall_number: string | null };
 
@@ -53,7 +54,7 @@ export default function VendorApplyScreen() {
   async function handleSubmit() {
     if (!canSubmit) return;
     setSubmitting(true);
-    const { data, error } = await supabase.functions.invoke('apply-vendor-application', {
+    const { error } = await invokeEdgeFunction('apply-vendor-application', {
       body: {
         vendor_id: vendorId,
         full_name: fullName.trim(),
@@ -64,10 +65,9 @@ export default function VendorApplyScreen() {
       },
     });
     setSubmitting(false);
-    if (error || data?.error) {
-      const code = data?.code as string | undefined;
-      const messageKey = code ? ERROR_CODE_KEYS[code] : undefined;
-      showAlert(t('vendor.apply.errorTitle'), messageKey ? t(messageKey) : (data?.error ?? error?.message ?? 'Unknown error'));
+    if (error) {
+      const messageKey = error.code ? ERROR_CODE_KEYS[error.code] : undefined;
+      showAlert(t('vendor.apply.errorTitle'), messageKey ? t(messageKey) : error.message);
       return;
     }
     showAlert(t('vendor.apply.submittedTitle'), t('vendor.apply.submittedMsg'), () => router.back());

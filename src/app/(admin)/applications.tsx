@@ -4,6 +4,7 @@ import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { invokeEdgeFunction } from '@/lib/edge-function';
 
 type Application = {
   id: string;
@@ -48,12 +49,12 @@ export default function AdminApplicationsScreen() {
   async function handleApprove() {
     if (!selected) return;
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke('approve-vendor-application', {
+    const { error } = await invokeEdgeFunction('approve-vendor-application', {
       body: { application_id: selected.id },
     });
     setBusy(false);
-    if (error || data?.error) {
-      showAlert(t('admin.applications.errorTitle'), data?.error ?? error?.message ?? 'Unknown error');
+    if (error) {
+      showAlert(t('admin.applications.errorTitle'), error.message);
       return;
     }
     closeModal();
@@ -64,12 +65,12 @@ export default function AdminApplicationsScreen() {
   async function handleReject() {
     if (!selected) return;
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke('reject-vendor-application', {
+    const { error } = await invokeEdgeFunction('reject-vendor-application', {
       body: { application_id: selected.id, reviewer_note: rejectNote.trim() || undefined },
     });
     setBusy(false);
-    if (error || data?.error) {
-      showAlert(t('admin.applications.errorTitle'), data?.error ?? error?.message ?? 'Unknown error');
+    if (error) {
+      showAlert(t('admin.applications.errorTitle'), error.message);
       return;
     }
     closeModal();
