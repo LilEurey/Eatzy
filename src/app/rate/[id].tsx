@@ -151,7 +151,7 @@ export default function RateScreen() {
       }}>
         <Tap
           activeOpacity={0.85}
-          disabled={score === 0 || submitting}
+          disabled={score === 0 || submitting || !order.primary_menu_item_id}
           onPress={submit}
           style={{
             backgroundColor: score === 0 ? Brand.border : Brand.orange,

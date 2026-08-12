@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput } from 'react-native';
+import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -36,7 +36,12 @@ export default function AdminLoginScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F5F9' }}>
-      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 40 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 40, paddingVertical: 24 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={{ maxWidth: 380, width: '100%', alignSelf: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 40 }}>
             <Ionicons name="shield-checkmark" size={20} color={Brand.adminAccent} />
@@ -106,11 +111,15 @@ export default function AdminLoginScreen() {
             {!loading && <Ionicons name="arrow-forward" size={16} color="#fff" />}
           </Tap>
 
-          <Tap onPress={() => router.back()} style={{ alignItems: 'center' }}>
+          <Tap
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(auth)'))}
+            style={{ alignItems: 'center' }}
+          >
             <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>← Back</Text>
           </Tap>
         </View>
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

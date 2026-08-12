@@ -146,7 +146,10 @@ export default function VendorApplyScreen() {
             </Text>
           </Tap>
 
-          <Tap onPress={() => router.back()} style={{ alignItems: 'center' }}>
+          <Tap
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+            style={{ alignItems: 'center' }}
+          >
             <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>{t('vendor.apply.backToLogin')}</Text>
           </Tap>
         </View>

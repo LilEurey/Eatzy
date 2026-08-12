@@ -52,7 +52,10 @@ export default function BecomeVendorScreen() {
             </Text>
           </Tap>
 
-          <Tap onPress={() => router.back()} style={{ alignItems: 'center' }}>
+          <Tap
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(auth)'))}
+            style={{ alignItems: 'center' }}
+          >
             <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>{t('vendor.pitch.backToLogin')}</Text>
           </Tap>
         </View>
