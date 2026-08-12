@@ -38,6 +38,14 @@ export default function RootLayout() {
     // ends up being acted on below — a one-time flag must never accumulate.
     const hadVendorIntent = await consumeVendorIntent();
 
+    // router.replace() below only swaps the current stack frame — it doesn't
+    // clear frames underneath. Login -> "Become a Vendor" pushes a second
+    // pre-auth screen on top of Login, so replacing just that top frame
+    // leaves the stale, still-mounted Login screen reachable one back-tap
+    // away post-auth. Collapse any such pre-auth history first so every
+    // destination below lands on a clean, single-frame stack.
+    if (router.canGoBack()) router.dismissAll();
+
     const { data: profile } = await supabase
       .from('users')
       .select('role')
