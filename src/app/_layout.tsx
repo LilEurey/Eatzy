@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { Stack, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from '@/lib/supabase';
@@ -96,7 +97,15 @@ export default function RootLayout() {
     if (session === undefined) return; // still loading
     if (!session) {
       routedUserId.current = null;
-      if (!PUBLIC_ROUTES.includes(pathname)) router.replace('/(auth)');
+      // usePathname() can still report the previous/default path on a hard
+      // web reload — the router hook hasn't hydrated from the real URL yet
+      // even though session has already resolved. window.location is the
+      // synchronous source of truth there; native has no equivalent lag
+      // (no hard-reload concept), so pathname alone is correct off-web.
+      const currentPath = Platform.OS === 'web' && typeof window !== 'undefined'
+        ? window.location.pathname
+        : pathname;
+      if (!PUBLIC_ROUTES.includes(currentPath)) router.replace('/(auth)');
     } else {
       if (session.user.id === routedUserId.current) return; // token refresh, not a new sign-in
       routedUserId.current = session.user.id;
