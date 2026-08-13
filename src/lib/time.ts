@@ -19,6 +19,19 @@ export function formatBangkokDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { timeZone: BANGKOK_TZ, day: 'numeric', month: 'short' });
 }
 
+export function formatBangkokClock12(iso: string | null) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-US', { timeZone: BANGKOK_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+// "Today, 3:45 PM" or "12 Aug, 3:45 PM" — shared by every screen that lists
+// timestamped rows (vendor orders, vendor finance) with a friendly date.
+export function formatFriendlyDateTime(iso: string | null, todayLabel: string) {
+  if (!iso) return '';
+  const time = formatBangkokClock12(iso);
+  return isBangkokToday(iso) ? `${todayLabel}, ${time}` : `${formatBangkokDate(iso)}, ${time}`;
+}
+
 // en-CA formats as YYYY-MM-DD, giving a string that sorts/compares like a date.
 function bangkokDayKey(d: Date) {
   return d.toLocaleDateString('en-CA', { timeZone: BANGKOK_TZ });

@@ -4,14 +4,14 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorMenu, toggleAvailability } from '@/lib/vendor-store';
-import { showAlert } from '@/lib/alert';
+import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 
 export default function VendorMenuScreen() {
   const { t } = useI18n();
   const items = useVendorMenu();
 
-  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
+  const comingSoon = () => comingSoonAlert(t);
 
   return (
     <View style={{ gap: 20 }}>

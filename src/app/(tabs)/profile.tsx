@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { showAlert } from '@/lib/alert';
+import { showAlert, comingSoonAlert } from '@/lib/alert';
 import { useI18n, LOCALE_LABELS, type Locale, type TranslationKey } from '@/lib/i18n';
 import { formatBangkokClock, isBangkokToday, formatBangkokDate } from '@/lib/time';
 
@@ -119,7 +119,7 @@ export default function ProfileScreen() {
     }, [t]),
   );
 
-  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
+  const comingSoon = () => comingSoonAlert(t);
 
   async function pickAvatar() {
     const { data: { user } } = await supabase.auth.getUser();

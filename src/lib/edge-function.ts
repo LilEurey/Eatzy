@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 // `{ error, code }` body only reachable via `error.context.json()`. Callers
 // that only checked `data?.error` never saw it — this normalizes both
 // shapes into one place.
-export type EdgeFunctionError = { message: string; code?: string };
+type EdgeFunctionError = { message: string; code?: string };
 
 export async function invokeEdgeFunction<T = any>(
   name: string,

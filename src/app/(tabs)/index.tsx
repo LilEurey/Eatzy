@@ -7,7 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { MOCK_VENDORS, MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
-import { showAlert } from '@/lib/alert';
+import { comingSoonAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
@@ -124,7 +124,7 @@ export default function HomeScreen() {
 
   const topVendor = vendors[0] ?? null;
   const queue = queueStatus(topVendor?.current_queue_count ?? null);
-  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
+  const comingSoon = () => comingSoonAlert(t);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>

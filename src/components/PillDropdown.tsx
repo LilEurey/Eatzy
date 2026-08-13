@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-export type DropdownOption<T extends string> = { key: T; label: string };
+type DropdownOption<T extends string> = { key: T; label: string };
 
 // Anchored popover pill: measures its own on-screen position on open, then
 // renders the menu in a Modal positioned just below it, since RN has no

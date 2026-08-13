@@ -22,7 +22,7 @@ type VendorProfile = {
   close_time: string | null;
 };
 
-export type MenuItem = {
+type MenuItem = {
   id: string;
   vendor_id: string;
   name: string;
@@ -38,7 +38,7 @@ export type MenuItem = {
 };
 
 type OrderItem = { menu_item_id: string; name: string; quantity: number; unit_price: number; done: boolean };
-export type VendorOrder = {
+type VendorOrder = {
   id: string;
   queue_number: number | null;
   status: OrderStatus;

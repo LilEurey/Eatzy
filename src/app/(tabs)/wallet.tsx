@@ -4,7 +4,7 @@ import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { showAlert } from '@/lib/alert';
+import { showAlert, comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ } from '@/lib/time';
 
@@ -55,7 +55,7 @@ export default function WalletScreen() {
 
   async function topUp(amount: number) {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg')); return; }
+    if (!user) { comingSoonAlert(t); return; }
     setToppingUp(true);
     const { error } = await supabase.rpc('topup_wallet', { p_user_id: user.id, p_amount: amount });
     if (error) {
@@ -66,7 +66,7 @@ export default function WalletScreen() {
     setToppingUp(false);
   }
 
-  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
+  const comingSoon = () => comingSoonAlert(t);
 
   if (loading) {
     return (

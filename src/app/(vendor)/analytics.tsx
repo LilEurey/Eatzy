@@ -4,15 +4,10 @@ import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { getVendorPayments } from '@/lib/vendor-store';
-import { showAlert } from '@/lib/alert';
+import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
-import { BANGKOK_TZ, isBangkokToday, formatBangkokDate, isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
+import { isBangkokToday, isBangkokDateInRange, formatFriendlyDateTime, type DateRangeFilter } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
-
-function formatDateTime(iso: string, t: ReturnType<typeof useI18n>['t']) {
-  const time = new Date(iso).toLocaleTimeString('en-US', { timeZone: BANGKOK_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
-  return isBangkokToday(iso) ? `${t('common.today')}, ${time}` : `${formatBangkokDate(iso)}, ${time}`;
-}
 
 const TABLE_MIN_WIDTH = 560;
 
@@ -35,7 +30,7 @@ export default function VendorFinanceScreen() {
     { key: 'month', label: t('common.thisMonth') },
   ];
 
-  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
+  const comingSoon = () => comingSoonAlert(t);
 
   return (
     <View style={{ gap: 20 }}>
@@ -107,7 +102,7 @@ export default function VendorFinanceScreen() {
                 </View>
                 {visiblePayments.map(p => (
                   <View key={p.order_id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
-                    <Text style={{ flex: 2, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{formatDateTime(p.created_at, t)}</Text>
+                    <Text style={{ flex: 2, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{formatFriendlyDateTime(p.created_at, t('common.today'))}</Text>
                     <Text style={{ flex: 1.4, fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{p.display_id}</Text>
                     <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>฿{p.amount.toFixed(2)}</Text>
                     <Text style={{ flex: 1.6, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{t('vendor.finance.campusWallet')}</Text>

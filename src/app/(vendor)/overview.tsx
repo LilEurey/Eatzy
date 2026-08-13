@@ -4,7 +4,7 @@ import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorOrders, useVendorProfile } from '@/lib/vendor-store';
-import { showAlert } from '@/lib/alert';
+import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
@@ -70,7 +70,7 @@ export default function VendorOverviewScreen() {
   const avgPrep = vendor?.estimated_wait_min ?? 0;
   const rangeSub = range === 'today' ? t('vendor.overview.vsYesterday') : rangeOptions.find(o => o.key === range)!.label;
 
-  const comingSoon = () => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
+  const comingSoon = () => comingSoonAlert(t);
 
   return (
     <View style={{ gap: 20 }}>
