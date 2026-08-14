@@ -40,19 +40,27 @@ Deno.serve(async (req) => {
     .eq('id', caller.id)
     .maybeSingle();
   if (callerProfile?.role !== 'student') {
-    return json({ error: "This account can't apply for a vendor stall", code: 'NOT_STUDENT' }, 409);
+    return json({ error: "This account can't apply for a vendor account", code: 'NOT_STUDENT' }, 409);
   }
 
-  let body: { vendor_id?: string; full_name?: string; phone?: string; bio?: string | null };
+  let body: {
+    business_name?: string;
+    is_on_campus?: boolean;
+    stall_number?: string | null;
+    address?: string | null;
+    full_name?: string;
+    phone?: string;
+    bio?: string | null;
+  };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'Invalid JSON body', code: 'MISSING_FIELDS' }, 400);
   }
 
-  const { vendor_id, full_name, phone } = body;
-  if (!vendor_id || !full_name || !phone) {
-    return json({ error: 'vendor_id, full_name, and phone are required', code: 'MISSING_FIELDS' }, 400);
+  const { business_name, full_name, phone } = body;
+  if (!business_name || !full_name || !phone) {
+    return json({ error: 'business_name, full_name, and phone are required', code: 'MISSING_FIELDS' }, 400);
   }
 
   const { data: existingPending } = await adminClient
@@ -65,17 +73,11 @@ Deno.serve(async (req) => {
     return json({ error: 'You already have a pending application', code: 'ALREADY_APPLIED' }, 409);
   }
 
-  const { data: vendor } = await adminClient
-    .from('vendors')
-    .select('id, owner_user_id')
-    .eq('id', vendor_id)
-    .maybeSingle();
-  if (!vendor || vendor.owner_user_id !== null) {
-    return json({ error: 'This stall is no longer available', code: 'STALL_UNAVAILABLE' }, 409);
-  }
-
   const { error: insertError } = await adminClient.from('vendor_applications').insert({
-    vendor_id,
+    business_name,
+    is_on_campus: body.is_on_campus ?? true,
+    stall_number: body.stall_number || null,
+    address: body.address || null,
     full_name,
     email: caller.email,
     phone,
@@ -84,9 +86,6 @@ Deno.serve(async (req) => {
   });
   if (insertError) {
     const msg = insertError.message ?? '';
-    if (msg.includes('vendor_applications_one_pending_per_vendor')) {
-      return json({ error: 'This stall already has a pending application', code: 'STALL_ALREADY_PENDING' }, 409);
-    }
     if (msg.includes('vendor_applications_one_pending_per_applicant')) {
       return json({ error: 'You already have a pending application', code: 'ALREADY_APPLIED' }, 409);
     }

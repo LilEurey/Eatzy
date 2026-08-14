@@ -1,7 +1,7 @@
 // Approves a pending vendor_applications row: the applicant's auth account
-// already exists (created at apply time, with the password they chose) —
-// this just links them to the claimed stall and flips their role, via the
-// approve_vendor_application RPC.
+// already exists (their real, persistent Google-signed-in identity) — this
+// creates their vendors row from the application's own business details and
+// flips their role, via the approve_vendor_application RPC.
 //
 // Deploy: supabase functions deploy approve-vendor-application
 
@@ -58,9 +58,7 @@ Deno.serve(async (req) => {
     const msg = approveError.message;
     const code = msg.includes('application_not_found_or_already_reviewed')
       ? 'APPLICATION_ALREADY_REVIEWED'
-      : msg.includes('stall_already_claimed')
-        ? 'STALL_UNAVAILABLE'
-        : 'APPROVE_FAILED';
+      : 'APPROVE_FAILED';
     return json({ error: msg, code }, 409);
   }
 
