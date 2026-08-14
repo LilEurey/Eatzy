@@ -151,6 +151,7 @@ export default function VendorLayout() {
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [langPickerOpen, setLangPickerOpen] = useState(false);
+  const [storePickerOpen, setStorePickerOpen] = useState(false);
 
   useEffect(() => {
     if (initStarted.current) return;
@@ -201,7 +202,7 @@ export default function VendorLayout() {
           )}
         </Tap>
         <Tap
-          onPress={() => setStoreOpen(!storeOpen)}
+          onPress={() => setStorePickerOpen(true)}
           style={{
             flexDirection: 'row', alignItems: 'center', gap: 6,
             borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 50, paddingHorizontal: 12, paddingVertical: 7,
@@ -275,6 +276,37 @@ export default function VendorLayout() {
     </Modal>
   );
 
+  const storePickerModal = (
+    <Modal visible={storePickerOpen} transparent animationType="fade" onRequestClose={() => setStorePickerOpen(false)}>
+      <Tap
+        activeOpacity={1}
+        onPress={() => setStorePickerOpen(false)}
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
+      >
+        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>
+          {[true, false].map((open) => (
+            <Tap
+              key={String(open)}
+              onPress={() => { setStoreOpen(open); setStorePickerOpen(false); }}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'space-between',
+                paddingHorizontal: 16, paddingVertical: 14,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: open ? '#22c55e' : '#ef4444' }} />
+                <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: storeOpen === open ? '700' : '500' }}>
+                  {open ? t('vendor.topbar.storeOpen') : t('vendor.topbar.storeClosed')}
+                </Text>
+              </View>
+              {storeOpen === open && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
+            </Tap>
+          ))}
+        </View>
+      </Tap>
+    </Modal>
+  );
+
   if (!isTablet) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F5F9' }} edges={['top']}>
@@ -284,6 +316,7 @@ export default function VendorLayout() {
           <BottomTabBar pathname={pathname} badge={activeCount} />
         </View>
         {langPickerModal}
+        {storePickerModal}
       </SafeAreaView>
     );
   }
@@ -310,6 +343,7 @@ export default function VendorLayout() {
           </View>
         </Modal>
         {langPickerModal}
+        {storePickerModal}
       </SafeAreaView>
     );
   }
@@ -329,6 +363,7 @@ export default function VendorLayout() {
         </View>
       </View>
       {langPickerModal}
+      {storePickerModal}
     </SafeAreaView>
   );
 }
