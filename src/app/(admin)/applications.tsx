@@ -10,9 +10,7 @@ import { invokeEdgeFunction } from '@/lib/edge-function';
 type Application = {
   id: string;
   business_name: string;
-  is_on_campus: boolean;
-  stall_number: string | null;
-  address: string | null;
+  cuisine_tags: string[];
   full_name: string;
   email: string;
   phone: string;
@@ -33,7 +31,7 @@ export default function AdminApplicationsScreen() {
     setLoading(true);
     const { data } = await supabase
       .from('vendor_applications')
-      .select('id,business_name,is_on_campus,stall_number,address,full_name,email,phone,bio,submitted_at')
+      .select('id,business_name,cuisine_tags,full_name,email,phone,bio,submitted_at')
       .eq('status', 'pending')
       .order('submitted_at', { ascending: true });
     setApplications((data as any[] as Application[]) ?? []);
@@ -108,7 +106,7 @@ export default function AdminApplicationsScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{app.full_name}</Text>
                 <Text style={{ fontSize: 12, color: Brand.textSecondary, marginTop: 2 }}>
-                  {formatBusinessLocation(app)} · {app.email}
+                  {app.business_name} · {app.email}
                 </Text>
               </View>
               <Text style={{ fontSize: 12, color: Brand.adminAccent, fontWeight: '600' }}>
@@ -128,10 +126,10 @@ export default function AdminApplicationsScreen() {
                 <DetailRow label={t('admin.applications.fullNameLabel')} value={selected.full_name} />
                 <DetailRow label={t('admin.applications.emailLabel')} value={selected.email} />
                 <DetailRow label={t('admin.applications.phoneLabel')} value={selected.phone} />
-                <DetailRow
-                  label={t('admin.applications.businessLabel')}
-                  value={formatBusinessLocation(selected)}
-                />
+                <DetailRow label={t('admin.applications.businessLabel')} value={selected.business_name} />
+                {selected.cuisine_tags.length > 0 && (
+                  <DetailRow label={t('admin.applications.cuisineTagsLabel')} value={selected.cuisine_tags.join(', ')} />
+                )}
                 {!!selected.bio && <DetailRow label={t('admin.applications.bioLabel')} value={selected.bio} />}
 
                 {rejecting ? (
@@ -186,13 +184,6 @@ export default function AdminApplicationsScreen() {
       </Modal>
     </View>
   );
-}
-
-function formatBusinessLocation(app: Application): string {
-  const location = app.is_on_campus
-    ? (app.stall_number ? `On-campus, ${app.stall_number}` : 'On-campus')
-    : (app.address ?? 'Off-campus');
-  return `${app.business_name} (${location})`;
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {

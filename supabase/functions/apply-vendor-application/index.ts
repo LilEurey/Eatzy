@@ -45,9 +45,7 @@ Deno.serve(async (req) => {
 
   let body: {
     business_name?: string;
-    is_on_campus?: boolean;
-    stall_number?: string | null;
-    address?: string | null;
+    cuisine_tags?: string[];
     full_name?: string;
     phone?: string;
     bio?: string | null;
@@ -75,9 +73,7 @@ Deno.serve(async (req) => {
 
   const { error: insertError } = await adminClient.from('vendor_applications').insert({
     business_name,
-    is_on_campus: body.is_on_campus ?? true,
-    stall_number: body.stall_number || null,
-    address: body.address || null,
+    cuisine_tags: body.cuisine_tags ?? [],
     full_name,
     email: caller.email,
     phone,

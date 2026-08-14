@@ -514,6 +514,7 @@ export type Database = {
           applicant_user_id: string | null
           bio: string | null
           business_name: string
+          cuisine_tags: string[]
           email: string
           full_name: string
           id: string
@@ -532,6 +533,7 @@ export type Database = {
           applicant_user_id?: string | null
           bio?: string | null
           business_name: string
+          cuisine_tags?: string[]
           email: string
           full_name: string
           id?: string
@@ -550,6 +552,7 @@ export type Database = {
           applicant_user_id?: string | null
           bio?: string | null
           business_name?: string
+          cuisine_tags?: string[]
           email?: string
           full_name?: string
           id?: string

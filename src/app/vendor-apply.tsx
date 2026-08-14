@@ -18,9 +18,7 @@ export default function VendorApplyScreen() {
   const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [businessName, setBusinessName] = useState('');
-  const [isOnCampus, setIsOnCampus] = useState(true);
-  const [stallNumber, setStallNumber] = useState('');
-  const [address, setAddress] = useState('');
+  const [cuisineTags, setCuisineTags] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [bio, setBio] = useState('');
@@ -38,9 +36,7 @@ export default function VendorApplyScreen() {
     const { error } = await invokeEdgeFunction('apply-vendor-application', {
       body: {
         business_name: businessName.trim(),
-        is_on_campus: isOnCampus,
-        stall_number: isOnCampus ? stallNumber.trim() || null : null,
-        address: isOnCampus ? null : address.trim() || null,
+        cuisine_tags: cuisineTags.split(',').map(tag => tag.trim()).filter(Boolean),
         full_name: fullName.trim(),
         phone: phone.trim(),
         bio: bio.trim() || null,
@@ -76,41 +72,16 @@ export default function VendorApplyScreen() {
             <TextInput value={businessName} onChangeText={setBusinessName} style={inputStyle} placeholderTextColor="#B0B4BF" />
           </Field>
 
-          <Field label={t('vendor.apply.locationTypeLabel')}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {([
-                { value: true, label: t('vendor.apply.onCampusOption') },
-                { value: false, label: t('vendor.apply.offCampusOption') },
-              ] as const).map(option => {
-                const selected = isOnCampus === option.value;
-                return (
-                  <Tap
-                    key={String(option.value)}
-                    onPress={() => setIsOnCampus(option.value)}
-                    style={{
-                      flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 50,
-                      backgroundColor: selected ? Brand.vendorAccent : '#fff',
-                      borderWidth: 1.5, borderColor: selected ? Brand.vendorAccent : '#E2E4EC',
-                    }}
-                  >
-                    <Text style={{ color: selected ? '#fff' : Brand.textPrimary, fontWeight: '600', fontSize: 13 }}>
-                      {option.label}
-                    </Text>
-                  </Tap>
-                );
-              })}
-            </View>
+          <Field label={t('vendor.apply.cuisineTagsLabel')}>
+            <TextInput
+              value={cuisineTags}
+              onChangeText={setCuisineTags}
+              placeholder={t('vendor.apply.cuisineTagsPlaceholder')}
+              style={inputStyle}
+              placeholderTextColor="#B0B4BF"
+            />
+            <Text style={{ fontSize: 11, color: '#8A8F9B', marginTop: 4 }}>{t('vendor.apply.cuisineTagsHint')}</Text>
           </Field>
-
-          {isOnCampus ? (
-            <Field label={t('vendor.apply.stallNumberLabel')}>
-              <TextInput value={stallNumber} onChangeText={setStallNumber} style={inputStyle} placeholderTextColor="#B0B4BF" />
-            </Field>
-          ) : (
-            <Field label={t('vendor.apply.addressLabel')}>
-              <TextInput value={address} onChangeText={setAddress} style={inputStyle} placeholderTextColor="#B0B4BF" />
-            </Field>
-          )}
 
           <Field label={t('vendor.apply.fullNameLabel')}>
             <TextInput value={fullName} onChangeText={setFullName} style={inputStyle} placeholderTextColor="#B0B4BF" />
