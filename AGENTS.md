@@ -126,14 +126,6 @@ Keep schema consistent with this ERD for all SQL/migrations/types. Field names a
 
 Discover → Onboarding (Google login, preferences/allergies/budget) → Explore (AI recs, filters) → Order (details, customize, pickup time) → Payment (Campus Wallet) → Track (real-time queue) → Pickup → Review
 
-## Git Workflow
-
-Use the `git-workflow` skill for git mechanics (staging, atomicity, commit messages, branching, safety rules, PRs). Project-specific overrides on top of the skill:
-
-- Commit after every discrete change, without waiting to be asked — a standing exception to the skill's default judgment-based cadence. The goal is a safety net: if an AI-made change turns out wrong, there should always be a recent commit to roll back to. Commit at minimum after each individual file/feature edit that leaves the project compiling cleanly, after each **Phase** in the build plan completes, after fixing a **bug or error** that was blocking progress, and after applying **database migrations**.
-- Tag phase-based feature commits accordingly: `feat(phase-3): home screen with vendor list and recommendations`.
-- Always run `npx tsc --noEmit` before committing. Never commit with TypeScript errors.
-
 ## Build Status
 
 - [x] Phase 1 — App shell (auth gate, tab navigator, Supabase + DB migrations)
