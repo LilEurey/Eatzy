@@ -26,6 +26,8 @@ npx expo start --android
 npm run lint            # ESLint
 npx supabase db push    # Apply pending migrations (requires Supabase CLI)
 npx supabase gen types typescript --local > src/types/database.types.ts  # Regenerate DB types
+eas build --platform ios --profile preview   # EAS build (see eas.json: development/preview/production)
+eas submit --platform ios --profile production
 ```
 
 ## Project Structure
@@ -34,13 +36,26 @@ npx supabase gen types typescript --local > src/types/database.types.ts  # Regen
 Eatzy/
 ├── src/
 │   ├── app/              # Expo Router pages (file-based routing)
-│   ├── components/       # Reusable RN components
+│   │   ├── (tabs)/       # Student tabs — home, orders, wallet, profile
+│   │   ├── (vendor)/     # Vendor dashboard — orders, menu, analytics, profile (real Supabase, not mock)
+│   │   ├── (admin)/      # Admin portal — vendor application review (email/password auth, not Google)
+│   │   ├── (auth)/       # Login/onboarding stack
+│   │   ├── admin-login.tsx, become-vendor.tsx, vendor-apply.tsx  # Public entry points outside the tab groups
+│   │   └── store/, item/, track/, rate/  # Detail screens
+│   ├── components/       # Reusable RN components (Tap, PillDropdown)
+│   ├── hooks/            # useGoogleSignIn, etc.
+│   ├── constants/        # theme.ts (Brand colors/tokens)
 │   ├── lib/
-│   │   └── supabase.ts   # Supabase client singleton
+│   │   ├── supabase.ts   # Supabase client singleton
+│   │   ├── i18n/         # Translation strings, useI18n hook
+│   │   ├── cart-store.ts, vendor-store.ts  # useSyncExternalStore-based client state
+│   │   ├── vendor-intent.ts  # Post-OAuth redirect flag for "Become a Vendor" flow
+│   │   └── edge-function.ts  # Supabase Edge Function invocation helper
 │   └── types/
 │       └── database.types.ts  # Generated Supabase types
 ├── supabase/
 │   └── migrations/       # SQL migration files (timestamp-prefixed)
+├── eas.json               # EAS build/submit profiles (iOS-first)
 ├── global.css            # Tailwind directives (imported in app/_layout)
 └── tailwind.config.js
 ```
@@ -69,9 +84,9 @@ Default to TF-IDF + cosine for content-based and collaborative filtering for "be
 
 ### User Roles
 
-- **Student** — browse, order, pre-order with pickup time, pay via Campus Wallet, track, rate
-- **Vendor** — manage menu, accept/reject/complete orders, view earnings
-- **Admin** — manage users, monitor transactions & reports
+- **Student** — browse, order, pre-order with pickup time, pay via Campus Wallet, track, rate. Google-only auth ([[project_vendor_google_only_auth]]).
+- **Vendor** — manage menu, accept/reject/complete orders, view earnings. Google-only auth, same post-incident policy as student. Onboarding: public `/become-vendor` pitch screen → `/vendor-apply` form → row in `vendor_applications` → admin approval flips `users.role` to `vendor`. `vendor-intent.ts` carries the "wants to become a vendor" flag through the OAuth redirect.
+- **Admin** — manage users, monitor transactions & reports; reviews/approves-or-rejects pending vendor applications at `/admin-login` → `(admin)/applications`. Deliberately **not** Google-only — `signInWithPassword`, separate from the student/vendor policy.
 
 ### Payment Flow
 
@@ -93,6 +108,7 @@ Keep schema consistent with this ERD for all SQL/migrations/types. Field names a
 - **ml_interactions** — id, user_id, menu_item_id, action (view|click|order|skip), view_duration_sec, was_recommended, created_at
 - **recommendation_log** — id, user_id, row_type, recommendation_type, item_ids (uuid[]), match_score, served_at
 - **promotions** — id, vendor_id, title, description, discount_pct, target_category, valid_from, valid_until, is_active
+- **vendor_applications** — id, vendor_id, full_name, email, phone, bio, status (pending|approved|rejected), submitted_at
 
 ## Coding Conventions
 
@@ -108,22 +124,11 @@ Discover → Onboarding (Google login, preferences/allergies/budget) → Explore
 
 ## Git Workflow
 
-Commit after every discrete change, without waiting to be asked — this is a standing exception to the
-default "only commit when explicitly asked" behavior. The goal is a safety net: if an AI-made change
-turns out wrong, there should always be a recent commit to roll back to. Commit at minimum:
-- After each individual file/feature edit that leaves the project compiling cleanly (don't batch unrelated edits into one commit)
-- After each **Phase** in the build plan completes
-- After fixing a **bug or error** that was blocking progress
-- After applying **database migrations**
+Use the `git-workflow` skill for git mechanics (staging, atomicity, commit messages, branching, safety rules, PRs). Project-specific overrides on top of the skill:
 
-Use conventional commits:
-```
-feat(phase-3): home screen with vendor list and recommendations
-fix(auth): remove unused Linking import causing TS error
-chore(db): apply escrow RPC migration
-```
-
-Always run `npx tsc --noEmit` before committing. Never commit with TypeScript errors.
+- Commit after every discrete change, without waiting to be asked — a standing exception to the skill's default judgment-based cadence. The goal is a safety net: if an AI-made change turns out wrong, there should always be a recent commit to roll back to. Commit at minimum after each individual file/feature edit that leaves the project compiling cleanly, after each **Phase** in the build plan completes, after fixing a **bug or error** that was blocking progress, and after applying **database migrations**.
+- Tag phase-based feature commits accordingly: `feat(phase-3): home screen with vendor list and recommendations`.
+- Always run `npx tsc --noEmit` before committing. Never commit with TypeScript errors.
 
 ## Build Status
 
@@ -135,12 +140,14 @@ Always run `npx tsc --noEmit` before committing. Never commit with TypeScript er
 - [x] Phase 6 — Order tracking (`/track/[id].tsx`) + Rating screen (`/rate/[id].tsx`)
 - [x] Phase 7 — Orders tab, Wallet tab (balance + local top-up), Profile tab (initials avatar, settings list, dev nav, logout)
 - [x] ML pipeline — `ml/recommend.py`: TF-IDF food vectors, user vector, cosine ranking with allergy/budget/dietary filters, co-occurrence "because you ordered"; runs on CSV fixtures in `ml/data/` (swap loader to Supabase when live). `cd ml && ./.venv/bin/python recommend.py` runs demo + self-checks.
+- [x] Vendor onboarding — `/become-vendor` pitch → `/vendor-apply` form → `vendor_applications` row → admin approval. Google-only auth carried through OAuth via `vendor-intent.ts`.
+- [x] Vendor dashboard — `(vendor)/` group: orders, menu (with image upload TODO), analytics, profile. Backed by real Supabase queries + Realtime via `vendor-store.ts`, not mock fixtures.
+- [x] Admin portal — `/admin-login` (email/password) + `(admin)/applications` to approve/reject pending vendor applications via an edge function (`edge-function.ts`).
+- [x] EAS build setup — `eas.json` with development/preview/production profiles, iOS-first ([[project_ios_first_priority]]).
 
 ### Data strategy (current)
 
-The DB is empty during development, so screens run on **mock fixtures** in `src/lib/mock-data.ts`.
-Home (`/(tabs)/index.tsx`) queries Supabase and falls back to mock when the DB returns nothing; other
-screens read mock directly. Client-side state uses `src/lib/cart-store.ts` (cart) and local component
-state (wallet). Points wired to mock that need a real backend when the DB is live — search for `ponytail:`
-comments — are: track-screen status progression (→ Supabase Realtime on `orders.status`), rating submit
-(→ `ratings` insert), and wallet top-up (→ `topup_wallet` RPC).
+Split by surface, not uniform:
+- **Student side** — DB is sparsely seeded during development, so screens lean on **mock fixtures** in `src/lib/mock-data.ts`. Home (`/(tabs)/index.tsx`) queries Supabase and falls back to mock when the DB returns nothing; other student screens read mock directly. Client-side state: `src/lib/cart-store.ts` (cart, single-vendor-per-cart rule) and local component state (wallet).
+- **Vendor & admin side** — already real Supabase, not mock: `vendor-store.ts` (orders/menu/profile, with Realtime) and the admin applications flow both hit live tables.
+- Remaining mock-to-real TODOs are marked with `ponytail:` comments — currently: menu-item image upload in `(vendor)/menu/new.tsx` (needs Supabase Storage `menu-item-images` bucket) and the single-active-vendor-per-cart note in `cart-store.ts`. Grep `ponytail:` before trusting this list — it drifts as TODOs get resolved.
