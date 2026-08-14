@@ -23,7 +23,9 @@ Eatzy is a campus food ordering & recommendation app ("Fuel your day the easy wa
 npx expo start          # Start dev server (scan QR with Expo Go)
 npx expo start --ios    # Open in iOS Simulator
 npx expo start --android
+npx expo start --web    # Web preview
 npm run lint            # ESLint
+npm run reset-project    # Reset to blank starter app/ (scripts/reset-project.js)
 npx supabase db push    # Apply pending migrations (requires Supabase CLI)
 npx supabase gen types typescript --local > src/types/database.types.ts  # Regenerate DB types
 eas build --platform ios --profile preview   # EAS build (see eas.json: development/preview/production)
@@ -37,10 +39,10 @@ Eatzy/
 ├── src/
 │   ├── app/              # Expo Router pages (file-based routing)
 │   │   ├── (tabs)/       # Student tabs — home, orders, wallet, profile
-│   │   ├── (vendor)/     # Vendor dashboard — orders, menu, analytics, profile (real Supabase, not mock)
-│   │   ├── (admin)/      # Admin portal — vendor application review (email/password auth, not Google)
+│   │   ├── (vendor)/     # Vendor dashboard — index.tsx redirects to overview; orders, menu, analytics, profile (real Supabase, not mock)
+│   │   ├── (admin)/      # Admin portal — vendor application review + vendor store monitoring/force open-close (email/password auth, not Google)
 │   │   ├── (auth)/       # Login/onboarding stack
-│   │   ├── admin-login.tsx, become-vendor.tsx, vendor-apply.tsx  # Public entry points outside the tab groups
+│   │   ├── admin-login.tsx, become-vendor.tsx, vendor-apply.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx  # Public entry points outside the tab groups
 │   │   └── store/, item/, track/, rate/  # Detail screens
 │   ├── components/       # Reusable RN components (Tap, PillDropdown)
 │   ├── hooks/            # useGoogleSignIn, etc.
@@ -50,7 +52,9 @@ Eatzy/
 │   │   ├── i18n/         # Translation strings, useI18n hook
 │   │   ├── cart-store.ts, vendor-store.ts  # useSyncExternalStore-based client state
 │   │   ├── vendor-intent.ts  # Post-OAuth redirect flag for "Become a Vendor" flow
-│   │   └── edge-function.ts  # Supabase Edge Function invocation helper
+│   │   ├── edge-function.ts  # Supabase Edge Function invocation helper
+│   │   ├── alert.ts      # Cross-platform alert helper
+│   │   └── time.ts       # Bangkok timezone formatting / pickup-slot helpers
 │   └── types/
 │       └── database.types.ts  # Generated Supabase types
 ├── supabase/
@@ -85,8 +89,8 @@ Default to TF-IDF + cosine for content-based and collaborative filtering for "be
 ### User Roles
 
 - **Student** — browse, order, pre-order with pickup time, pay via Campus Wallet, track, rate. Google-only auth ([[project_vendor_google_only_auth]]).
-- **Vendor** — manage menu, accept/reject/complete orders, view earnings. Google-only auth, same post-incident policy as student. Onboarding: public `/become-vendor` pitch screen → `/vendor-apply` form → row in `vendor_applications` → admin approval flips `users.role` to `vendor`. `vendor-intent.ts` carries the "wants to become a vendor" flag through the OAuth redirect.
-- **Admin** — manage users, monitor transactions & reports; reviews/approves-or-rejects pending vendor applications at `/admin-login` → `(admin)/applications`. Deliberately **not** Google-only — `signInWithPassword`, separate from the student/vendor policy.
+- **Vendor** — manage menu, accept/reject/complete orders, view earnings. Google-only auth, same post-incident policy as student. Onboarding is self-serve, not stall-claiming: public `/become-vendor` pitch screen → `/vendor-apply` form (business name, phone, bio, cuisine tags — no location) → row in `vendor_applications` (`vendor_id` stays null until reviewed) → admin approval runs `approve_vendor_application()`, which creates the `vendors` row (owner_user_id set, is_on_campus/address default) and flips `users.role` to `vendor`. Location is set afterward from the vendor profile screen. `vendor-intent.ts` carries the "wants to become a vendor" flag through the OAuth redirect.
+- **Admin** — manage users, monitor transactions & reports; reviews/approves-or-rejects pending vendor applications at `/admin-login` → `(admin)/applications`; monitors every vendor stall and can force one open/closed at `(admin)/vendors` (writes `vendors.is_open` directly, bypassing the owner). Deliberately **not** Google-only — `signInWithPassword`, separate from the student/vendor policy.
 
 ### Payment Flow
 
@@ -96,9 +100,9 @@ Escrow: student payment held → on completion, transferred to vendor wallet (re
 
 Keep schema consistent with this ERD for all SQL/migrations/types. Field names are authoritative.
 
-- **users** — id (uuid, references auth.users), name, email, university_id, role (student|vendor|admin), department, language, wallet_balance, created_at
+- **users** — id (uuid, references auth.users), name, email, university_id, role (student|vendor|admin), department, language, wallet_balance, avatar_url, notifications_enabled, created_at
 - **user_preferences** — user_id, is_halal, is_vegetarian, is_jay, spice_level, budget_max, allergies (text[]), liked_cuisines (text[]), favorite_categories (text[])
-- **vendors** — id, name, stall_number, is_halal_certified, open_time, close_time, is_open, bio, cuisine_tags (text[]), estimated_wait_min, cover_image_url, current_queue_count, created_at
+- **vendors** — id, name, stall_number, is_on_campus, address, is_halal_certified, open_time, close_time, is_open, bio, cuisine_tags (text[]), estimated_wait_min, cover_image_url, current_queue_count, owner_user_id, created_at
 - **menu_items** — id, vendor_id, name, description, price, category, spice_level, is_available, is_halal, is_vegetarian, is_jay, allergens (text[]), tags (text[]), ingredients (text[]), calories, preparation_time_min, image_url, is_featured, available_time_segment (breakfast|lunch|dinner|all), release_date, updated_at
 - **orders** — id, user_id, vendor_id, queue_number, status (pending|accepted|rejected|ready|completed|cancelled), subtotal, packaging_fee, total_amount, payment_method, pickup_start, pickup_end, estimated_prep_minutes, time_segment, created_at
 - **order_items** — id, order_id, menu_item_id, quantity, unit_price, special_instructions
@@ -108,11 +112,11 @@ Keep schema consistent with this ERD for all SQL/migrations/types. Field names a
 - **ml_interactions** — id, user_id, menu_item_id, action (view|click|order|skip), view_duration_sec, was_recommended, created_at
 - **recommendation_log** — id, user_id, row_type, recommendation_type, item_ids (uuid[]), match_score, served_at
 - **promotions** — id, vendor_id, title, description, discount_pct, target_category, valid_from, valid_until, is_active
-- **vendor_applications** — id, vendor_id, full_name, email, phone, bio, status (pending|approved|rejected), submitted_at
+- **vendor_applications** — id, vendor_id (null until approved), applicant_user_id, business_name, full_name, email, phone, bio, cuisine_tags (text[]), is_on_campus, stall_number, address, status (pending|approved|rejected), reviewed_by, reviewed_at, reviewer_note, submitted_at
 
 ## Coding Conventions
 
-- Plain TS is fine; don't enforce strict mode unless asked
+- `tsconfig.json` has `strict: true` — write proper types, don't silence errors with `any`
 - NativeWind v4 utility classes for all RN styling
 - Supabase RPC/database functions for server-side business logic (escrow, queue numbers, wallet mutations)
 - ML scripts (in `/ml`): keep pandas/scikit-learn code readable and commented — capstone demo, not production scale
@@ -142,7 +146,7 @@ Use the `git-workflow` skill for git mechanics (staging, atomicity, commit messa
 - [x] ML pipeline — `ml/recommend.py`: TF-IDF food vectors, user vector, cosine ranking with allergy/budget/dietary filters, co-occurrence "because you ordered"; runs on CSV fixtures in `ml/data/` (swap loader to Supabase when live). `cd ml && ./.venv/bin/python recommend.py` runs demo + self-checks.
 - [x] Vendor onboarding — `/become-vendor` pitch → `/vendor-apply` form → `vendor_applications` row → admin approval. Google-only auth carried through OAuth via `vendor-intent.ts`.
 - [x] Vendor dashboard — `(vendor)/` group: orders, menu (with image upload TODO), analytics, profile. Backed by real Supabase queries + Realtime via `vendor-store.ts`, not mock fixtures.
-- [x] Admin portal — `/admin-login` (email/password) + `(admin)/applications` to approve/reject pending vendor applications via an edge function (`edge-function.ts`).
+- [x] Admin portal — `/admin-login` (email/password) + `(admin)/applications` to approve/reject pending vendor applications via an edge function (`edge-function.ts`) + `(admin)/vendors` to monitor every stall and force one open/closed.
 - [x] EAS build setup — `eas.json` with development/preview/production profiles, iOS-first ([[project_ios_first_priority]]).
 
 ### Data strategy (current)
