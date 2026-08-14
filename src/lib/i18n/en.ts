@@ -415,6 +415,27 @@ export const en = {
   'admin.applications.approvedTitle': 'Vendor approved',
   'admin.applications.approvedMsg': 'They’ll get vendor access on their existing account the next time they sign in.',
   'admin.applications.errorTitle': 'Action failed',
+
+  'admin.nav.vendors': 'Vendors',
+  'admin.vendors.title': 'Vendor Stores',
+  'admin.vendors.subtitle': 'Monitor every stall and force it open or closed.',
+  'admin.vendors.empty': 'No vendor stores yet.',
+  'admin.vendors.unclaimed': 'Unclaimed',
+  'admin.vendors.onCampus': 'On campus',
+  'admin.vendors.offCampus': 'Off campus',
+  'admin.vendors.halalBadge': 'Halal certified',
+  'admin.vendors.hoursLabel': 'Hours',
+  'admin.vendors.createdLabel': 'Registered',
+  'admin.vendors.queueLabel': 'Current Queue Count',
+  'admin.vendors.waitLabel': 'Estimated Wait (min)',
+  'admin.vendors.staticDataNote': 'Not live — this value is not updated automatically.',
+  'admin.vendors.ownerLabel': 'Owner',
+  'admin.vendors.forceOpen': 'Force Open',
+  'admin.vendors.forceClose': 'Force Close',
+  'admin.vendors.confirmForceOpenMsg': 'This will mark {name} as open to customers immediately.',
+  'admin.vendors.confirmForceCloseMsg': 'This will mark {name} as closed to customers immediately.',
+  'admin.vendors.cancel': 'Cancel',
+  'admin.vendors.errorTitle': 'Could not update store status',
 } as const;
 
 export type TranslationKey = keyof typeof en;

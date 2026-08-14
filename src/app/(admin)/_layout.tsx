@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Slot, router } from 'expo-router';
+import { Slot, router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
@@ -13,6 +13,7 @@ export default function AdminLayout() {
   const [loading, setLoading] = useState(true);
   const [ok, setOk] = useState(false);
   const initStarted = useRef(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (initStarted.current) return;
@@ -59,9 +60,40 @@ export default function AdminLayout() {
           <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('admin.nav.logOut')}</Text>
         </Tap>
       </View>
+      <View style={{
+        flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingTop: 14,
+        backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E4EC',
+      }}>
+        <NavTab
+          label={t('admin.nav.applications')}
+          active={pathname === '/applications'}
+          onPress={() => router.push('/(admin)/applications' as any)}
+        />
+        <NavTab
+          label={t('admin.nav.vendors')}
+          active={pathname === '/vendors'}
+          onPress={() => router.push('/(admin)/vendors' as any)}
+        />
+      </View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
         <Slot />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function NavTab({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Tap
+      onPress={onPress}
+      style={{
+        paddingVertical: 8, paddingHorizontal: 14, borderRadius: 50,
+        backgroundColor: active ? Brand.adminAccentLight : 'transparent',
+      }}
+    >
+      <Text style={{ fontSize: 13, fontWeight: '600', color: active ? Brand.adminAccent : '#8A8F9B' }}>
+        {label}
+      </Text>
+    </Tap>
   );
 }
