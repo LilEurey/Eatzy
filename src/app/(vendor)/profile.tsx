@@ -13,7 +13,9 @@ export default function VendorProfileScreen() {
   const vendor = useVendorProfile();
 
   const [name, setName] = useState(vendor?.name ?? '');
+  const [isOnCampus, setIsOnCampus] = useState(vendor?.is_on_campus ?? true);
   const [stallNumber, setStallNumber] = useState(vendor?.stall_number ?? '');
+  const [address, setAddress] = useState(vendor?.address ?? '');
   const [bio, setBio] = useState(vendor?.bio ?? '');
   const [cuisineTags, setCuisineTags] = useState((vendor?.cuisine_tags ?? []).join(', '));
   const [halalCertified, setHalalCertified] = useState(vendor?.is_halal_certified ?? false);
@@ -25,7 +27,9 @@ export default function VendorProfileScreen() {
     setSaving(true);
     const ok = await updateVendorProfile({
       name: name.trim(),
-      stall_number: stallNumber.trim() || null,
+      is_on_campus: isOnCampus,
+      stall_number: isOnCampus ? stallNumber.trim() || null : null,
+      address: isOnCampus ? null : address.trim() || null,
       bio: bio.trim() || null,
       cuisine_tags: cuisineTags.split(',').map(tag => tag.trim()).filter(Boolean),
       is_halal_certified: halalCertified,
@@ -58,14 +62,53 @@ export default function VendorProfileScreen() {
         </View>
 
         <View>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.stallNumberLabel')}</Text>
-          <TextInput
-            value={stallNumber}
-            onChangeText={setStallNumber}
-            placeholderTextColor="#B0B4BF"
-            style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-          />
+          <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.locationTypeLabel')}</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {([
+              { value: true, label: t('vendor.profile.onCampusOption') },
+              { value: false, label: t('vendor.profile.offCampusOption') },
+            ] as const).map(option => {
+              const selected = isOnCampus === option.value;
+              return (
+                <Tap
+                  key={String(option.value)}
+                  onPress={() => setIsOnCampus(option.value)}
+                  style={{
+                    flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10,
+                    backgroundColor: selected ? Brand.vendorAccent : '#fff',
+                    borderWidth: 1, borderColor: selected ? Brand.vendorAccent : '#E2E4EC',
+                  }}
+                >
+                  <Text style={{ color: selected ? '#fff' : Brand.textPrimary, fontWeight: '600', fontSize: 13 }}>
+                    {option.label}
+                  </Text>
+                </Tap>
+              );
+            })}
+          </View>
         </View>
+
+        {isOnCampus ? (
+          <View>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.stallNumberLabel')}</Text>
+            <TextInput
+              value={stallNumber}
+              onChangeText={setStallNumber}
+              placeholderTextColor="#B0B4BF"
+              style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
+            />
+          </View>
+        ) : (
+          <View>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.addressLabel')}</Text>
+            <TextInput
+              value={address}
+              onChangeText={setAddress}
+              placeholderTextColor="#B0B4BF"
+              style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
+            />
+          </View>
+        )}
 
         <View>
           <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.bioLabel')}</Text>

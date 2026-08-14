@@ -14,7 +14,9 @@ type VendorProfile = {
   name: string;
   estimated_wait_min: number;
   current_queue_count: number;
+  is_on_campus: boolean;
   stall_number: string | null;
+  address: string | null;
   bio: string | null;
   cuisine_tags: string[];
   is_halal_certified: boolean;
@@ -145,7 +147,7 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
 
   const { data: vendor } = await supabase
     .from('vendors')
-    .select('id,name,estimated_wait_min,current_queue_count,is_open,stall_number,bio,cuisine_tags,is_halal_certified,open_time,close_time')
+    .select('id,name,estimated_wait_min,current_queue_count,is_open,is_on_campus,stall_number,address,bio,cuisine_tags,is_halal_certified,open_time,close_time')
     .eq('owner_user_id', user.id)
     .maybeSingle();
   if (!vendor) { loading = false; emit(); return 'not-vendor'; }
@@ -155,7 +157,9 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
     name: vendor.name,
     estimated_wait_min: vendor.estimated_wait_min,
     current_queue_count: vendor.current_queue_count,
+    is_on_campus: vendor.is_on_campus,
     stall_number: vendor.stall_number,
+    address: vendor.address,
     bio: vendor.bio,
     cuisine_tags: vendor.cuisine_tags ?? [],
     is_halal_certified: vendor.is_halal_certified,
@@ -286,7 +290,7 @@ export async function setStoreOpen(open: boolean) {
 // ─── Profile ────────────────────────────────────────────────────────────────
 
 type VendorProfilePatch = Partial<Pick<VendorProfile,
-  'name' | 'stall_number' | 'bio' | 'cuisine_tags' | 'is_halal_certified' | 'open_time' | 'close_time'
+  'name' | 'is_on_campus' | 'stall_number' | 'address' | 'bio' | 'cuisine_tags' | 'is_halal_certified' | 'open_time' | 'close_time'
 >>;
 
 export async function updateVendorProfile(patch: VendorProfilePatch): Promise<boolean> {

@@ -9,21 +9,18 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 
-type UnclaimedStall = { id: string; name: string; stall_number: string | null };
-
 const ERROR_CODE_KEYS: Record<string, TranslationKey> = {
   NOT_STUDENT: 'vendor.apply.notStudentMsg',
   ALREADY_APPLIED: 'vendor.apply.alreadyAppliedMsg',
-  STALL_ALREADY_PENDING: 'vendor.apply.stallAlreadyPendingMsg',
-  STALL_UNAVAILABLE: 'vendor.apply.stallUnavailableMsg',
 };
 
 export default function VendorApplyScreen() {
   const { t } = useI18n();
   const [email, setEmail] = useState('');
-  const [stalls, setStalls] = useState<UnclaimedStall[]>([]);
-  const [stallsLoading, setStallsLoading] = useState(true);
-  const [vendorId, setVendorId] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState('');
+  const [isOnCampus, setIsOnCampus] = useState(true);
+  const [stallNumber, setStallNumber] = useState('');
+  const [address, setAddress] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [bio, setBio] = useState('');
@@ -33,30 +30,21 @@ export default function VendorApplyScreen() {
     supabase.auth.getUser().then(({ data: { user } }) => setEmail(user?.email ?? ''));
   }, []);
 
-  useEffect(() => {
-    // Unclaimed = no owner yet. A stall with a pending application is still
-    // technically unclaimed here — the DB's partial unique index is the real
-    // gate against double-claims — but showing it would just invite a
-    // doomed submit, so also fetch which stalls already have one pending.
-    async function loadStalls() {
-      const [{ data: vendors }, { data: pending }] = await Promise.all([
-        supabase.from('vendors').select('id,name,stall_number').is('owner_user_id', null).order('name'),
-        supabase.rpc('pending_vendor_application_ids'),
-      ]);
-      const pendingIds = new Set((pending ?? []).map(p => p.vendor_id));
-      setStalls((vendors ?? []).filter(v => !pendingIds.has(v.id)));
-      setStallsLoading(false);
-    }
-    void loadStalls();
-  }, []);
-
-  const canSubmit = !!vendorId && !!fullName.trim() && !!phone.trim() && !submitting;
+  const canSubmit = !!businessName.trim() && !!fullName.trim() && !!phone.trim() && !submitting;
 
   async function handleSubmit() {
     if (!canSubmit) return;
     setSubmitting(true);
     const { error } = await invokeEdgeFunction('apply-vendor-application', {
-      body: { vendor_id: vendorId, full_name: fullName.trim(), phone: phone.trim(), bio: bio.trim() || null },
+      body: {
+        business_name: businessName.trim(),
+        is_on_campus: isOnCampus,
+        stall_number: isOnCampus ? stallNumber.trim() || null : null,
+        address: isOnCampus ? null : address.trim() || null,
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+        bio: bio.trim() || null,
+      },
     });
     setSubmitting(false);
     if (error) {
@@ -84,34 +72,45 @@ export default function VendorApplyScreen() {
             </Text>
           )}
 
-          <Field label={t('vendor.apply.stallLabel')}>
-            {stallsLoading ? null : stalls.length === 0 ? (
-              <Text style={{ fontSize: 13, color: Brand.textSecondary, paddingVertical: 8 }}>
-                {t('vendor.apply.noStalls')}
-              </Text>
-            ) : (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {stalls.map(s => {
-                  const selected = vendorId === s.id;
-                  return (
-                    <Tap
-                      key={s.id}
-                      onPress={() => setVendorId(s.id)}
-                      style={{
-                        paddingHorizontal: 14, paddingVertical: 9, borderRadius: 50,
-                        backgroundColor: selected ? Brand.vendorAccent : '#fff',
-                        borderWidth: 1.5, borderColor: selected ? Brand.vendorAccent : '#E2E4EC',
-                      }}
-                    >
-                      <Text style={{ color: selected ? '#fff' : Brand.textPrimary, fontWeight: '600', fontSize: 13 }}>
-                        {s.name}{s.stall_number ? ` (${s.stall_number})` : ''}
-                      </Text>
-                    </Tap>
-                  );
-                })}
-              </View>
-            )}
+          <Field label={t('vendor.apply.businessNameLabel')}>
+            <TextInput value={businessName} onChangeText={setBusinessName} style={inputStyle} placeholderTextColor="#B0B4BF" />
           </Field>
+
+          <Field label={t('vendor.apply.locationTypeLabel')}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {([
+                { value: true, label: t('vendor.apply.onCampusOption') },
+                { value: false, label: t('vendor.apply.offCampusOption') },
+              ] as const).map(option => {
+                const selected = isOnCampus === option.value;
+                return (
+                  <Tap
+                    key={String(option.value)}
+                    onPress={() => setIsOnCampus(option.value)}
+                    style={{
+                      flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 50,
+                      backgroundColor: selected ? Brand.vendorAccent : '#fff',
+                      borderWidth: 1.5, borderColor: selected ? Brand.vendorAccent : '#E2E4EC',
+                    }}
+                  >
+                    <Text style={{ color: selected ? '#fff' : Brand.textPrimary, fontWeight: '600', fontSize: 13 }}>
+                      {option.label}
+                    </Text>
+                  </Tap>
+                );
+              })}
+            </View>
+          </Field>
+
+          {isOnCampus ? (
+            <Field label={t('vendor.apply.stallNumberLabel')}>
+              <TextInput value={stallNumber} onChangeText={setStallNumber} style={inputStyle} placeholderTextColor="#B0B4BF" />
+            </Field>
+          ) : (
+            <Field label={t('vendor.apply.addressLabel')}>
+              <TextInput value={address} onChangeText={setAddress} style={inputStyle} placeholderTextColor="#B0B4BF" />
+            </Field>
+          )}
 
           <Field label={t('vendor.apply.fullNameLabel')}>
             <TextInput value={fullName} onChangeText={setFullName} style={inputStyle} placeholderTextColor="#B0B4BF" />

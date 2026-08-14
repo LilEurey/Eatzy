@@ -510,46 +510,58 @@ export type Database = {
       }
       vendor_applications: {
         Row: {
+          address: string | null
           applicant_user_id: string | null
           bio: string | null
+          business_name: string
           email: string
           full_name: string
           id: string
+          is_on_campus: boolean
           phone: string
           reviewed_at: string | null
           reviewed_by: string | null
           reviewer_note: string | null
+          stall_number: string | null
           status: string
           submitted_at: string
-          vendor_id: string
+          vendor_id: string | null
         }
         Insert: {
+          address?: string | null
           applicant_user_id?: string | null
           bio?: string | null
+          business_name: string
           email: string
           full_name: string
           id?: string
+          is_on_campus?: boolean
           phone: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           reviewer_note?: string | null
+          stall_number?: string | null
           status?: string
           submitted_at?: string
-          vendor_id: string
+          vendor_id?: string | null
         }
         Update: {
+          address?: string | null
           applicant_user_id?: string | null
           bio?: string | null
+          business_name?: string
           email?: string
           full_name?: string
           id?: string
+          is_on_campus?: boolean
           phone?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           reviewer_note?: string | null
+          stall_number?: string | null
           status?: string
           submitted_at?: string
-          vendor_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -577,6 +589,7 @@ export type Database = {
       }
       vendors: {
         Row: {
+          address: string | null
           bio: string | null
           close_time: string | null
           cover_image_url: string | null
@@ -586,6 +599,7 @@ export type Database = {
           estimated_wait_min: number
           id: string
           is_halal_certified: boolean
+          is_on_campus: boolean
           is_open: boolean
           name: string
           open_time: string | null
@@ -593,6 +607,7 @@ export type Database = {
           stall_number: string | null
         }
         Insert: {
+          address?: string | null
           bio?: string | null
           close_time?: string | null
           cover_image_url?: string | null
@@ -602,6 +617,7 @@ export type Database = {
           estimated_wait_min?: number
           id?: string
           is_halal_certified?: boolean
+          is_on_campus?: boolean
           is_open?: boolean
           name: string
           open_time?: string | null
@@ -609,6 +625,7 @@ export type Database = {
           stall_number?: string | null
         }
         Update: {
+          address?: string | null
           bio?: string | null
           close_time?: string | null
           cover_image_url?: string | null
@@ -618,6 +635,7 @@ export type Database = {
           estimated_wait_min?: number
           id?: string
           is_halal_certified?: boolean
+          is_on_campus?: boolean
           is_open?: boolean
           name?: string
           open_time?: string | null
