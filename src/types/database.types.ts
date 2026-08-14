@@ -695,10 +695,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_vendor_application: {
+        Args: { p_admin_id: string; p_application_id: string }
+        Returns: undefined
+      }
+      bootstrap_admin: { Args: { p_user_id: string }; Returns: undefined }
       next_queue_number: { Args: { p_vendor_id: string }; Returns: number }
       pending_vendor_application_ids: {
-        Args: Record<PropertyKey, never>
-        Returns: { vendor_id: string }[]
+        Args: never
+        Returns: {
+          vendor_id: string
+        }[]
       }
       place_order_escrow: {
         Args: { p_amount: number; p_order_id: string; p_user_id: string }
