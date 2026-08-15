@@ -40,8 +40,15 @@ export default function CartScreen() {
     if (!cart.vendor_id) return;
     setPlacing(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not signed in');
+      // getSession() (not getUser()) because it's the session whose
+      // access_token actually rides along on the inserts below — reading
+      // identity from a separate getUser() call risks acting on a user
+      // whose token isn't the one the request will carry. getSession()
+      // refreshes an expired-but-refreshable token in place; a missing
+      // access_token past that point means the session is truly gone.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error(t('cart.signInAgainMsg'));
+      const user = session.user;
 
       const { data: queueNumber, error: queueError } = await supabase
         .rpc('next_queue_number', { p_vendor_id: cart.vendor_id });

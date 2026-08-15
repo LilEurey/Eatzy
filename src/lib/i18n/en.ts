@@ -130,6 +130,7 @@ export const en = {
   'cart.orderPlacedMsg': 'Pickup at {slot}. Total ฿{total}.',
   'cart.orderFailedTitle': 'Couldn’t place order',
   'cart.insufficientBalanceMsg': 'Your Campus Wallet balance is too low for this order. Top up in the Wallet tab and try again.',
+  'cart.signInAgainMsg': 'Your session expired. Please sign in again.',
 
   // Item detail
   'item.notFound': 'Item not found',

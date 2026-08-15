@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import 'react-native-get-random-values';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import * as aesjs from 'aes-js';
@@ -79,3 +79,17 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     flowType: 'pkce',
   },
 });
+
+// autoRefreshToken alone doesn't reliably fire on native — RN throttles/
+// suspends JS timers while backgrounded, so the scheduled refresh can miss
+// its window and the session is stale by the time the app resumes (e.g. a
+// student backgrounds mid-order, comes back, checkout fails with an RLS
+// error because the stale token no longer resolves to their auth.uid()).
+// Supabase's docs call this out explicitly for RN: drive refresh off
+// AppState instead. No web equivalent needed — browsers keep timers alive.
+if (Platform.OS !== 'web') {
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') supabase.auth.startAutoRefresh();
+    else supabase.auth.stopAutoRefresh();
+  });
+}
