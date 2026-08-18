@@ -49,7 +49,6 @@ export default function AdminVendorsScreen() {
     setLoading(false);
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount
   useEffect(() => { void load(); }, [load]);
 
   function closeModal() {

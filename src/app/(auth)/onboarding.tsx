@@ -63,7 +63,6 @@ export default function OnboardingScreen() {
     setBudget(data.budget_max ?? 150);
   }
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount to pre-fill previously saved preferences
   useEffect(() => { void loadPreferences(); }, []);
 
   function toggleDietary(item: Dietary) {

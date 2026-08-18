@@ -112,7 +112,6 @@ export default function HomeScreen() {
     setLoading(false);
   }
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount; loadData guards its own setLoading(false)
   useEffect(() => { void loadData(); }, []);
 
   useFocusEffect(

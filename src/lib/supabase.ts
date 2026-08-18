@@ -3,9 +3,34 @@ import 'react-native-get-random-values';
 import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import * as ExpoCrypto from 'expo-crypto';
 import * as aesjs from 'aes-js';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+
+// Hermes has no WebCrypto `crypto.subtle`, so PKCE's code_challenge falls
+// back to the weaker "plain" method and (per a known supabase-js issue) the
+// OAuth code exchange can hang waiting on a digest that never resolves.
+// expo-crypto's native digest() fills the gap with the same signature as
+// SubtleCrypto#digest, so route SHA digests through it.
+const cryptoDigestAlgorithms: Record<string, ExpoCrypto.CryptoDigestAlgorithm> = {
+  'SHA-1': ExpoCrypto.CryptoDigestAlgorithm.SHA1,
+  'SHA-256': ExpoCrypto.CryptoDigestAlgorithm.SHA256,
+  'SHA-384': ExpoCrypto.CryptoDigestAlgorithm.SHA384,
+  'SHA-512': ExpoCrypto.CryptoDigestAlgorithm.SHA512,
+};
+
+if (typeof globalThis.crypto?.subtle === 'undefined') {
+  // @ts-expect-error partial SubtleCrypto polyfill, only digest() is needed by supabase-js
+  globalThis.crypto.subtle = {
+    digest: (algorithm: AlgorithmIdentifier, data: BufferSource) => {
+      const name = typeof algorithm === 'string' ? algorithm : algorithm.name;
+      const expoAlgorithm = cryptoDigestAlgorithms[name.toUpperCase()];
+      if (!expoAlgorithm) throw new Error(`Unsupported digest algorithm: ${name}`);
+      return ExpoCrypto.digest(expoAlgorithm, data);
+    },
+  };
+}
 
 // Expo's SecureStore can't hold values over 2048 bytes (a Supabase session
 // exceeds that), so a per-key AES-256 key lives in SecureStore (iOS Keychain /
