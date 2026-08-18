@@ -44,8 +44,7 @@
         }
       ],
       "expo-secure-store",
-      "expo-web-browser",
-      "expo-image"
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Expo SDK 56** is in use — always check versioned docs at https://docs.expo.dev/versions/v56.0.0/ before writing Expo/RN code.
+> **Expo SDK 54** is in use — always check versioned docs at https://docs.expo.dev/versions/v54.0.0/ before writing Expo/RN code.
 
 ## Project Overview
 
@@ -12,7 +12,7 @@ Eatzy is a campus food ordering & recommendation app ("Fuel your day the easy wa
 
 ## Tech Stack
 
-- **Frontend:** React Native + Expo (SDK 56), Expo Router, NativeWind v4 (Tailwind CSS)
+- **Frontend:** React Native + Expo (SDK 54), Expo Router, NativeWind v4 (Tailwind CSS)
 - **Backend:** Supabase (Postgres, Auth, Storage, Realtime, RPC/database functions)
 - **ML:** Python, pandas, scikit-learn (TF-IDF + cosine similarity for content-based; collaborative filtering for "because you ordered")
 - **Infra:** GitHub, Expo EAS
