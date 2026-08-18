@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
@@ -64,6 +64,7 @@ export default function HomeScreen() {
   const [featured, setFeatured] = useState<MenuItem | null>(null);
   const [trending, setTrending] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   async function loadData() {
     try {
@@ -114,6 +115,20 @@ export default function HomeScreen() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount; loadData guards its own setLoading(false)
   useEffect(() => { void loadData(); }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      supabase.auth.getUser().then(async ({ data: { user } }) => {
+        if (!user) { setHasUnreadNotifications(false); return; }
+        const { count } = await supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('read', false);
+        setHasUnreadNotifications(!!count);
+      });
+    }, [])
+  );
+
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -149,7 +164,15 @@ export default function HomeScreen() {
           <Text style={{ color: Brand.orange }}>zy</Text>
         </Text>
         <Tap onPress={() => router.push('/notifications')}>
-          <BellIcon size={18} />
+          <View style={{ position: 'relative' }}>
+            <BellIcon size={18} />
+            {hasUnreadNotifications && (
+              <View style={{
+                position: 'absolute', top: -1, right: -1, width: 8, height: 8, borderRadius: 4,
+                backgroundColor: Brand.orange, borderWidth: 1.5, borderColor: Brand.bg,
+              }} />
+            )}
+          </View>
         </Tap>
       </View>
 
