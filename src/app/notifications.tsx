@@ -29,11 +29,12 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<NotificationRow[] | undefined>(undefined);
 
   useEffect(() => {
+    let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | undefined;
 
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setNotifications([]); return; }
+      if (!user) { if (!cancelled) setNotifications([]); return; }
 
       const { data } = await supabase
         .from('notifications')
@@ -41,12 +42,14 @@ export default function NotificationsScreen() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       const rows = data ?? [];
+      if (cancelled) return;
       setNotifications(rows);
 
       const unreadIds = rows.filter(r => !r.read).map(r => r.id);
       if (unreadIds.length) {
         await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
       }
+      if (cancelled) return;
 
       channel = supabase
         .channel(`notifications-${user.id}`)
@@ -57,7 +60,10 @@ export default function NotificationsScreen() {
     }
     void load();
 
-    return () => { void channel?.unsubscribe(); };
+    return () => {
+      cancelled = true;
+      void channel?.unsubscribe();
+    };
   }, []);
 
   if (notifications === undefined) {
