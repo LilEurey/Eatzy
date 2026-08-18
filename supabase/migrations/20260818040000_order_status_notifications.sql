@@ -54,7 +54,8 @@ declare
   v_queue       text;
 begin
   if new.status is distinct from old.status
-     and new.status in ('accepted', 'ready', 'rejected', 'completed') then
+     and new.status in ('accepted', 'ready', 'rejected', 'completed')
+     and (select notifications_enabled from public.users where id = new.user_id) then
 
     select name into v_vendor_name from public.vendors where id = new.vendor_id;
     v_queue := coalesce(new.queue_number::text, '—');
@@ -90,3 +91,15 @@ create trigger order_status_notify
   after update on public.orders
   for each row
   execute function public.notify_order_status_change();
+
+-- Realtime: notifications.tsx subscribes to postgres_changes INSERT events on
+-- this table, so it must be in the publication Realtime watches. Guarded for
+-- idempotency in case the project's supabase_realtime publication is already
+-- FOR ALL TABLES (which would make an explicit ADD TABLE redundant/error).
+do $$
+begin
+  alter publication supabase_realtime add table public.notifications;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end $$;
