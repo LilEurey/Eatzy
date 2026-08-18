@@ -160,6 +160,7 @@ export const th: Record<TranslationKey, string> = {
   'track.queueNumber': 'หมายเลขคิว',
   'track.order': 'คำสั่งซื้อ',
   'track.pickedItUp': 'รับอาหารแล้ว',
+  'track.waitingOnVendorConfirm': 'ยืนยันแล้ว! รอร้านค้ายืนยันการส่งมอบ',
   'track.rateYourOrder': 'ให้คะแนนคำสั่งซื้อของคุณ',
   'track.stepPlacedLabel': 'สั่งซื้อแล้ว',
   'track.stepPlacedHint': 'กำลังรอร้านค้ายืนยัน',
@@ -266,6 +267,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.orders.itemsPaid': '{n} รายการ · ชำระแล้ว',
   'vendor.orders.itemsCount': '{n} รายการ',
   'vendor.orders.handedToCustomer': 'ส่งมอบแล้ว',
+  'vendor.orders.waitingOnCustomerConfirm': 'รอลูกค้ายืนยันการรับอาหาร',
   'vendor.orders.emptyColumn': 'ยังไม่มีรายการ',
 
   // Vendor — menu catalog

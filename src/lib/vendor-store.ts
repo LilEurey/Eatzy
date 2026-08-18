@@ -50,6 +50,7 @@ type VendorOrder = {
   created_at: string;
   prep_seconds: number | null;
   special_request: string | null;
+  vendor_handed_off_at: string | null;
   items: OrderItem[];
 };
 
@@ -98,6 +99,7 @@ function mapOrder(row: any): VendorOrder {
     created_at: row.created_at,
     prep_seconds: row.estimated_prep_minutes ? row.estimated_prep_minutes * 60 : null,
     special_request: specialNotes.length ? specialNotes.join('; ') : null,
+    vendor_handed_off_at: row.vendor_handed_off_at,
     items,
   };
 }
@@ -114,7 +116,7 @@ async function fetchMenu(vendorId: string) {
 async function fetchOrders(vendorId: string) {
   const { data } = await supabase
     .from('orders')
-    .select('id,queue_number,status,total_amount,pickup_start,payment_method,created_at,estimated_prep_minutes,order_items(menu_item_id,quantity,unit_price,special_instructions,menu_items(name))')
+    .select('id,queue_number,status,total_amount,pickup_start,payment_method,created_at,estimated_prep_minutes,vendor_handed_off_at,order_items(menu_item_id,quantity,unit_price,special_instructions,menu_items(name))')
     .eq('vendor_id', vendorId)
     .order('created_at', { ascending: true });
   orders = ((data as any[] | null) ?? []).map(mapOrder);
@@ -214,10 +216,8 @@ export async function markReady(id: string) {
 }
 
 export async function handOff(id: string) {
-  const { error } = await supabase.from('orders').update({ status: 'completed' }).eq('id', id);
-  if (error) { showAlert('Could not update order', error.message); return; }
-  const { error: releaseError } = await supabase.rpc('release_escrow_to_vendor', { p_order_id: id });
-  if (releaseError) showAlert('Order completed, but payout failed', releaseError.message);
+  const { error } = await supabase.rpc('vendor_confirm_handoff', { p_order_id: id });
+  if (error) { showAlert('Could not confirm hand-off', error.message); return; }
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }

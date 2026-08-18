@@ -192,10 +192,12 @@ export type Database = {
           pickup_start: string | null
           queue_number: number | null
           status: string
+          student_picked_up_at: string | null
           subtotal: number
           time_segment: string | null
           total_amount: number
           user_id: string
+          vendor_handed_off_at: string | null
           vendor_id: string
         }
         Insert: {
@@ -208,10 +210,12 @@ export type Database = {
           pickup_start?: string | null
           queue_number?: number | null
           status?: string
+          student_picked_up_at?: string | null
           subtotal: number
           time_segment?: string | null
           total_amount: number
           user_id: string
+          vendor_handed_off_at?: string | null
           vendor_id: string
         }
         Update: {
@@ -224,10 +228,12 @@ export type Database = {
           pickup_start?: string | null
           queue_number?: number | null
           status?: string
+          student_picked_up_at?: string | null
           subtotal?: number
           time_segment?: string | null
           total_amount?: number
           user_id?: string
+          vendor_handed_off_at?: string | null
           vendor_id?: string
         }
         Relationships: [
@@ -702,7 +708,13 @@ export type Database = {
         Args: { p_admin_id: string; p_application_id: string }
         Returns: undefined
       }
+      auto_finalize_stale_handoffs: { Args: never; Returns: undefined }
       bootstrap_admin: { Args: { p_user_id: string }; Returns: undefined }
+      finalize_order_handoff: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
+      is_admin: { Args: never; Returns: boolean }
       next_queue_number: { Args: { p_vendor_id: string }; Returns: number }
       pending_vendor_application_ids: {
         Args: never
@@ -719,8 +731,16 @@ export type Database = {
         Args: { p_order_id: string }
         Returns: undefined
       }
+      student_confirm_pickup: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
       topup_wallet: {
         Args: { p_amount: number; p_user_id: string }
+        Returns: undefined
+      }
+      vendor_confirm_handoff: {
+        Args: { p_order_id: string }
         Returns: undefined
       }
     }

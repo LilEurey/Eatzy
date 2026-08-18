@@ -163,6 +163,7 @@ function PreparingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof 
 }
 
 function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t'] }) {
+  const confirmed = !!order.vendor_handed_off_at;
   return (
     <CardShell
       header={
@@ -174,9 +175,15 @@ function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI
         </View>
       }
       footer={
-        <Tap onPress={() => handOff(order.id)} style={{ flex: 1, backgroundColor: Brand.vendorAccentLight, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-          <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.orders.handedToCustomer')}</Text>
-        </Tap>
+        confirmed ? (
+          <View style={{ flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.orders.waitingOnCustomerConfirm')}</Text>
+          </View>
+        ) : (
+          <Tap onPress={() => handOff(order.id)} style={{ flex: 1, backgroundColor: Brand.vendorAccentLight, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.orders.handedToCustomer')}</Text>
+          </Tap>
+        )
       }
     >
       <Text style={{ fontSize: 12.5, color: Brand.textSecondary }}>

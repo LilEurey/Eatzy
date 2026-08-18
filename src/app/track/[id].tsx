@@ -18,6 +18,7 @@ type TrackOrder = {
   pickup_end: string | null;
   total_amount: number;
   vendor_name: string;
+  student_picked_up_at: string | null;
   items: { name: string; quantity: number; unit_price: number }[];
 };
 
@@ -40,7 +41,7 @@ export default function TrackScreen() {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,vendors(name),order_items(quantity,unit_price,menu_items(name))')
+        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),order_items(quantity,unit_price,menu_items(name))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
@@ -51,6 +52,7 @@ export default function TrackScreen() {
         pickup_end: data.pickup_end,
         total_amount: data.total_amount,
         vendor_name: (data as any).vendors?.name ?? '',
+        student_picked_up_at: data.student_picked_up_at,
         items: ((data as any).order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', quantity: oi.quantity, unit_price: oi.unit_price })),
       });
       setStatus(data.status as Status);
@@ -68,13 +70,9 @@ export default function TrackScreen() {
 
   async function markPickedUp() {
     if (!order) return;
-    const { error } = await supabase.from('orders').update({ status: 'completed' }).eq('id', order.id);
+    const { error } = await supabase.rpc('student_confirm_pickup', { p_order_id: order.id });
     if (error) { showAlert(t('common.orderNotFound'), error.message); return; }
-    const { error: releaseError } = await supabase.rpc('release_escrow_to_vendor', { p_order_id: order.id });
-    if (releaseError && releaseError.message !== 'order_not_found_or_already_settled') {
-      showAlert(t('common.orderNotFound'), releaseError.message);
-    }
-    setStatus('completed');
+    setOrder({ ...order, student_picked_up_at: new Date().toISOString() });
   }
 
   if (order === undefined) {
@@ -208,13 +206,19 @@ export default function TrackScreen() {
           backgroundColor: Brand.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 36,
           borderTopWidth: 1, borderTopColor: Brand.border,
         }}>
-          <Tap
-            activeOpacity={0.85}
-            onPress={markPickedUp}
-            style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
-          >
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.pickedItUp')}</Text>
-          </Tap>
+          {order.student_picked_up_at ? (
+            <View style={{ borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}>
+              <Text style={{ color: Brand.textSecondary, fontSize: 14, fontWeight: '600' }}>{t('track.waitingOnVendorConfirm')}</Text>
+            </View>
+          ) : (
+            <Tap
+              activeOpacity={0.85}
+              onPress={markPickedUp}
+              style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.pickedItUp')}</Text>
+            </Tap>
+          )}
         </View>
       )}
 
