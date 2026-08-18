@@ -230,6 +230,11 @@ export const en = {
   'vendor.topbar.storeOpen': 'Store Open',
   'vendor.topbar.storeClosed': 'Store Closed',
 
+  // Vendor — notifications
+  'vendor.notifications.title': 'Notifications',
+  'vendor.notifications.empty': 'No notifications yet',
+  'vendor.notifications.backCaption': 'Back',
+
   // Vendor — overview
   'vendor.overview.title': 'Dashboard Overview',
   'vendor.overview.subtitle': 'ภาพรวมร้านค้า',

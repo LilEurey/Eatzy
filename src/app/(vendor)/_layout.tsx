@@ -6,7 +6,7 @@ import { Slot, router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import {
-  useVendorOrders, useVendorProfile, useVendorLoading, useStoreOpen,
+  useVendorOrders, useVendorProfile, useVendorLoading, useStoreOpen, useVendorUnreadNotifications,
   setStoreOpen, initVendorSession, signOutVendor,
 } from '@/lib/vendor-store';
 import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
@@ -143,6 +143,7 @@ export default function VendorLayout() {
   const pathname = usePathname();
   const orders = useVendorOrders();
   const storeOpen = useStoreOpen();
+  const hasUnreadNotifications = useVendorUnreadNotifications();
   const vendor = useVendorProfile();
   const loading = useVendorLoading();
   const initStarted = useRef(false);
@@ -187,6 +188,20 @@ export default function VendorLayout() {
       )}
       <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{vendor?.name ?? ''}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: isTablet ? 14 : 10 }}>
+        <Tap
+          onPress={() => router.push('/(vendor)/notifications' as any)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <View style={{ position: 'relative' }}>
+            <Ionicons name="notifications-outline" size={20} color={Brand.textPrimary} />
+            {hasUnreadNotifications && (
+              <View style={{
+                position: 'absolute', top: -1, right: -1, width: 8, height: 8, borderRadius: 4,
+                backgroundColor: Brand.orange, borderWidth: 1.5, borderColor: '#fff',
+              }} />
+            )}
+          </View>
+        </Tap>
         <Tap
           onPress={() => setLangPickerOpen(true)}
           style={{

@@ -232,6 +232,11 @@ export const th: Record<TranslationKey, string> = {
   'vendor.topbar.storeOpen': 'ร้านเปิด',
   'vendor.topbar.storeClosed': 'ร้านปิด',
 
+  // Vendor — notifications
+  'vendor.notifications.title': 'การแจ้งเตือน',
+  'vendor.notifications.empty': 'ยังไม่มีการแจ้งเตือน',
+  'vendor.notifications.backCaption': 'ย้อนกลับ',
+
   // Vendor — overview
   'vendor.overview.title': 'ภาพรวมแดชบอร์ด',
   'vendor.overview.subtitle': 'ภาพรวมร้านค้า',

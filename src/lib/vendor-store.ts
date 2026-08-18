@@ -39,6 +39,16 @@ type MenuItem = {
   preparation_time_min: number | null;
 };
 
+type VendorNotification = {
+  id: string;
+  order_id: string;
+  icon: string;
+  title: string;
+  body: string;
+  read: boolean;
+  created_at: string;
+};
+
 type OrderItem = { menu_item_id: string; name: string; quantity: number; unit_price: number; done: boolean };
 type VendorOrder = {
   id: string;
@@ -59,12 +69,14 @@ let storeOpen = false;
 let loading = true;
 let menuItems: MenuItem[] = [];
 let orders: VendorOrder[] = [];
+let notifications: VendorNotification[] = [];
 let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
 const listeners = new Set<() => void>();
 function emit() {
   menuItems = [...menuItems];
   orders = [...orders];
+  notifications = [...notifications];
   listeners.forEach(l => l());
 }
 function subscribe(cb: () => void) {
@@ -77,6 +89,14 @@ export function useVendorLoading() { return useSyncExternalStore(subscribe, () =
 export function useVendorOrders() { return useSyncExternalStore(subscribe, () => orders, () => orders); }
 export function useVendorMenu() { return useSyncExternalStore(subscribe, () => menuItems, () => menuItems); }
 export function useStoreOpen() { return useSyncExternalStore(subscribe, () => storeOpen, () => storeOpen); }
+export function useVendorNotifications() { return useSyncExternalStore(subscribe, () => notifications, () => notifications); }
+export function useVendorUnreadNotifications() {
+  return useSyncExternalStore(
+    subscribe,
+    () => notifications.some(n => !n.read),
+    () => notifications.some(n => !n.read),
+  );
+}
 
 function mapOrder(row: any): VendorOrder {
   const items: OrderItem[] = (row.order_items ?? []).map((oi: any) => ({
@@ -122,7 +142,26 @@ async function fetchOrders(vendorId: string) {
   orders = ((data as any[] | null) ?? []).map(mapOrder);
 }
 
-function subscribeRealtime(vendorId: string) {
+async function fetchNotifications(userId: string) {
+  const { data } = await supabase
+    .from('notifications')
+    .select('id,order_id,icon,title,body,read,created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  notifications = (data as VendorNotification[] | null) ?? [];
+}
+
+/** Called from (vendor)/notifications.tsx on mount — marks whatever's
+ * currently unread as read, same as the student notifications screen. */
+export async function markNotificationsRead() {
+  const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+  if (!unreadIds.length) return;
+  notifications = notifications.map(n => unreadIds.includes(n.id) ? { ...n, read: true } : n); // optimistic
+  emit();
+  await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
+}
+
+function subscribeRealtime(vendorId: string, userId: string) {
   realtimeChannel?.unsubscribe();
   realtimeChannel = supabase
     .channel(`vendor-${vendorId}`)
@@ -131,6 +170,10 @@ function subscribeRealtime(vendorId: string) {
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items', filter: `vendor_id=eq.${vendorId}` }, () => {
       void fetchMenu(vendorId).then(emit);
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (payload) => {
+      notifications = [payload.new as VendorNotification, ...notifications];
+      emit();
     })
     .subscribe();
 }
@@ -170,8 +213,8 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
   };
   storeOpen = vendor.is_open;
 
-  await Promise.all([fetchMenu(vendor.id), fetchOrders(vendor.id)]);
-  subscribeRealtime(vendor.id);
+  await Promise.all([fetchMenu(vendor.id), fetchOrders(vendor.id), fetchNotifications(user.id)]);
+  subscribeRealtime(vendor.id, user.id);
 
   loading = false;
   emit();
@@ -184,6 +227,7 @@ export async function signOutVendor() {
   vendorProfile = null;
   menuItems = [];
   orders = [];
+  notifications = [];
   storeOpen = false;
   loading = true;
   emit();
