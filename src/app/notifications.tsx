@@ -9,6 +9,7 @@ import { useI18n } from '@/lib/i18n';
 
 type NotificationRow = {
   id: string;
+  order_id: string;
   icon: string;
   title: string;
   body: string;
@@ -38,7 +39,7 @@ export default function NotificationsScreen() {
 
       const { data } = await supabase
         .from('notifications')
-        .select('id,icon,title,body,read,created_at')
+        .select('id,order_id,icon,title,body,read,created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       const rows = data ?? [];
@@ -93,8 +94,9 @@ export default function NotificationsScreen() {
         ) : (
           <View style={{ gap: 10 }}>
             {notifications.map(n => (
-              <View
+              <Tap
                 key={n.id}
+                onPress={() => router.push(`/track/${n.order_id}`)}
                 style={{
                   flexDirection: 'row', gap: 12,
                   backgroundColor: Brand.card, borderRadius: 18, padding: 14,
@@ -122,7 +124,7 @@ export default function NotificationsScreen() {
                   <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 2 }}>{n.body}</Text>
                   <Text style={{ fontSize: 11, color: Brand.textSecondary, marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>
                 </View>
-              </View>
+              </Tap>
             ))}
           </View>
         )}
