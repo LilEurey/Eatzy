@@ -87,7 +87,7 @@ export default function CartScreen() {
     } catch (e: any) {
       const message = e.message === 'insufficient_wallet_balance'
         ? t('cart.insufficientBalanceMsg')
-        : e.message;
+        : `${e.message}${e.code ? ` [${e.code}]` : ''}${e.details ? `\n${e.details}` : ''}${e.hint ? `\n${e.hint}` : ''}`;
       showAlert(t('cart.orderFailedTitle'), message);
     } finally {
       setPlacing(false);
