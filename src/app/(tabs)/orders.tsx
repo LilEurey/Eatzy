@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -59,33 +59,35 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
+  useFocusEffect(
+    useCallback(() => {
+      async function load() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setLoading(false); return; }
 
-      const { data } = await supabase
-        .from('orders')
-        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th))')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        const { data } = await supabase
+          .from('orders')
+          .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th))')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-      setOrders(((data as any[] | null) ?? []).map(o => ({
-        id: o.id,
-        vendor_id: o.vendor_id,
-        queue_number: o.queue_number,
-        status: o.status,
-        total_amount: o.total_amount,
-        pickup_start: o.pickup_start,
-        pickup_end: o.pickup_end,
-        created_at: o.created_at,
-        vendor_name: o.vendors?.name ?? '',
-        items: (o.order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity })),
-      })));
-      setLoading(false);
-    }
-    void load();
-  }, []);
+        setOrders(((data as any[] | null) ?? []).map(o => ({
+          id: o.id,
+          vendor_id: o.vendor_id,
+          queue_number: o.queue_number,
+          status: o.status,
+          total_amount: o.total_amount,
+          pickup_start: o.pickup_start,
+          pickup_end: o.pickup_end,
+          created_at: o.created_at,
+          vendor_name: o.vendors?.name ?? '',
+          items: (o.order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity })),
+        })));
+        setLoading(false);
+      }
+      void load();
+    }, [])
+  );
 
   const filtered = orders.filter(o => {
     if (tab === 'All') return true;
