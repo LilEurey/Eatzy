@@ -46,11 +46,15 @@ type VendorNotification = {
   icon: string;
   title: string;
   body: string;
+  event: string | null;
+  vendor_name: string | null;
+  queue_number: number | null;
+  total_amount: number | null;
   read: boolean;
   created_at: string;
 };
 
-type OrderItem = { menu_item_id: string; name: string; quantity: number; unit_price: number; done: boolean };
+type OrderItem = { menu_item_id: string; name: string; name_th: string | null; quantity: number; unit_price: number; done: boolean };
 type VendorOrder = {
   id: string;
   queue_number: number | null;
@@ -103,6 +107,7 @@ function mapOrder(row: any): VendorOrder {
   const items: OrderItem[] = (row.order_items ?? []).map((oi: any) => ({
     menu_item_id: oi.menu_item_id,
     name: oi.menu_items?.name ?? '',
+    name_th: oi.menu_items?.name_th ?? null,
     quantity: oi.quantity,
     unit_price: oi.unit_price,
     done: false,
@@ -137,7 +142,7 @@ async function fetchMenu(vendorId: string) {
 async function fetchOrders(vendorId: string) {
   const { data } = await supabase
     .from('orders')
-    .select('id,queue_number,status,total_amount,pickup_start,payment_method,created_at,estimated_prep_minutes,vendor_handed_off_at,order_items(menu_item_id,quantity,unit_price,special_instructions,menu_items(name))')
+    .select('id,queue_number,status,total_amount,pickup_start,payment_method,created_at,estimated_prep_minutes,vendor_handed_off_at,order_items(menu_item_id,quantity,unit_price,special_instructions,menu_items(name,name_th))')
     .eq('vendor_id', vendorId)
     .order('created_at', { ascending: true });
   orders = ((data as any[] | null) ?? []).map(mapOrder);
@@ -146,7 +151,7 @@ async function fetchOrders(vendorId: string) {
 async function fetchNotifications(userId: string) {
   const { data } = await supabase
     .from('notifications')
-    .select('id,order_id,icon,title,body,read,created_at')
+    .select('id,order_id,icon,title,body,event,vendor_name,queue_number,total_amount,read,created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   notifications = (data as VendorNotification[] | null) ?? [];

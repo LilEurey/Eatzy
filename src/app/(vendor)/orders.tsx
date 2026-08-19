@@ -6,6 +6,7 @@ import { Brand } from '@/constants/theme';
 import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone } from '@/lib/vendor-store';
 import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 import { formatBangkokClock12, formatFriendlyDateTime } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
 
@@ -82,7 +83,7 @@ function SpecialBanner({ text, t }: { text: string; t: ReturnType<typeof useI18n
   );
 }
 
-function IncomingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t'] }) {
+function IncomingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t']; locale: ReturnType<typeof useI18n>['locale'] }) {
   return (
     <CardShell
       accent="#ef4444"
@@ -110,7 +111,7 @@ function IncomingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof u
     >
       <View style={{ gap: 3 }}>
         {order.items.map((it, i) => (
-          <Text key={i} style={{ fontSize: 13, color: Brand.textPrimary }}>{it.quantity}x {it.name}</Text>
+          <Text key={i} style={{ fontSize: 13, color: Brand.textPrimary }}>{it.quantity}x {localizedText(it.name, it.name_th, locale)}</Text>
         ))}
       </View>
       {order.special_request && <SpecialBanner text={order.special_request} t={t} />}
@@ -118,7 +119,7 @@ function IncomingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof u
   );
 }
 
-function PreparingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t'] }) {
+function PreparingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t']; locale: ReturnType<typeof useI18n>['locale'] }) {
   const comingSoon = () => comingSoonAlert(t);
   return (
     <CardShell
@@ -152,7 +153,7 @@ function PreparingCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof 
               {it.done && <Ionicons name="checkmark" size={11} color="#fff" />}
             </View>
             <Text style={{ fontSize: 13, color: Brand.textPrimary, textDecorationLine: it.done ? 'line-through' : 'none' }}>
-              {it.quantity}x {it.name}
+              {it.quantity}x {localizedText(it.name, it.name_th, locale)}
             </Text>
           </Tap>
         ))}
@@ -224,7 +225,7 @@ function CountBadge({ n }: { n: number }) {
 }
 
 export default function VendorOrdersScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const orders = useVendorOrders();
   const [columnFilter, setColumnFilter] = useState<ColumnFilter>('all');
 
@@ -245,8 +246,8 @@ export default function VendorOrdersScreen() {
   ];
 
   const allColumns: { key: ColumnFilter; dot: string; titleKey: 'vendor.orders.incoming' | 'vendor.orders.preparing' | 'vendor.orders.readyForPickup' | 'vendor.orders.completed'; data: VendorOrder[]; render: (o: VendorOrder) => React.ReactNode; ghosted?: boolean }[] = [
-    { key: 'incoming', dot: '#ef4444', titleKey: 'vendor.orders.incoming', data: incoming, render: o => <IncomingCard key={o.id} order={o} t={t} /> },
-    { key: 'preparing', dot: '#f59e0b', titleKey: 'vendor.orders.preparing', data: preparing, render: o => <PreparingCard key={o.id} order={o} t={t} /> },
+    { key: 'incoming', dot: '#ef4444', titleKey: 'vendor.orders.incoming', data: incoming, render: o => <IncomingCard key={o.id} order={o} t={t} locale={locale} /> },
+    { key: 'preparing', dot: '#f59e0b', titleKey: 'vendor.orders.preparing', data: preparing, render: o => <PreparingCard key={o.id} order={o} t={t} locale={locale} /> },
     { key: 'ready', dot: '#22c55e', titleKey: 'vendor.orders.readyForPickup', data: ready, render: o => <ReadyCard key={o.id} order={o} t={t} /> },
     { key: 'completed', dot: '#8A8F9B', titleKey: 'vendor.orders.completed', data: completed, render: o => <CompletedTicket key={o.id} order={o} t={t} />, ghosted: true },
   ];
