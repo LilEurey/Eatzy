@@ -111,6 +111,10 @@ export const en = {
   'wallet.statement': 'Statement',
   'wallet.recentTransactions': 'Recent Transactions',
   'wallet.topUpFailedTitle': 'Top-up failed',
+  'wallet.txn.topup': 'Wallet top-up',
+  'wallet.txn.payment': 'Order payment held in escrow',
+  'wallet.txn.transfer': 'Escrow released for completed order',
+  'wallet.txn.refund': 'Escrow refunded — order cancelled/rejected',
 
   // Cart
   'cart.title': 'Your Cart',

@@ -113,6 +113,10 @@ export const th: Record<TranslationKey, string> = {
   'wallet.statement': 'รายการเดินบัญชี',
   'wallet.recentTransactions': 'รายการล่าสุด',
   'wallet.topUpFailedTitle': 'เติมเงินไม่สำเร็จ',
+  'wallet.txn.topup': 'เติมเงินเข้ากระเป๋า',
+  'wallet.txn.payment': 'ชำระเงินค่าออเดอร์ (พักไว้ในระบบ)',
+  'wallet.txn.transfer': 'โอนเงินให้ร้านค้าเมื่อออเดอร์เสร็จสิ้น',
+  'wallet.txn.refund': 'คืนเงิน — ออเดอร์ถูกยกเลิก/ปฏิเสธ',
 
   // Cart
   'cart.title': 'ตะกร้าของคุณ',

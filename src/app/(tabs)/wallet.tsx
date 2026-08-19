@@ -191,7 +191,7 @@ export default function WalletScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.textPrimary, marginBottom: 2 }}
                         numberOfLines={1}>
-                        {tx.description}
+                        {t(`wallet.txn.${tx.type}` as const)}
                       </Text>
                       <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
                         {formatDate(tx.created_at, t)}
