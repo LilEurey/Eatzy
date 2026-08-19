@@ -132,6 +132,11 @@ export const en = {
   'cart.insufficientBalanceMsg': 'Your Campus Wallet balance is too low for this order. Top up in the Wallet tab and try again.',
   'cart.signInAgainMsg': 'Your session expired. Please sign in again.',
 
+  // Search
+  'search.placeholder': 'Search dishes, cuisine, ingredients…',
+  'search.resultsCount': '{n} dishes found',
+  'search.noResults': 'No dishes match your search.\nTry a different name or filter.',
+
   // Item detail
   'item.notFound': 'Item not found',
   'item.featured': 'Featured',

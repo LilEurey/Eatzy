@@ -7,7 +7,6 @@ import Svg, { Path } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { MOCK_VENDORS, MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
-import { comingSoonAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
@@ -138,7 +137,6 @@ export default function HomeScreen() {
 
   const topVendor = vendors[0] ?? null;
   const queue = queueStatus(topVendor?.current_queue_count ?? null);
-  const comingSoon = () => comingSoonAlert(t);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -184,7 +182,7 @@ export default function HomeScreen() {
         {/* Search bar */}
         <Tap
           activeOpacity={0.8}
-          onPress={comingSoon}
+          onPress={() => router.push('/search')}
           style={{
             backgroundColor: 'rgba(248,221,210,0.5)', borderRadius: 16,
             paddingVertical: 18, paddingLeft: 48, paddingRight: 16, marginBottom: 20,

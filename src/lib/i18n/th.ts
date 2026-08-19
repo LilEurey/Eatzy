@@ -134,6 +134,11 @@ export const th: Record<TranslationKey, string> = {
   'cart.insufficientBalanceMsg': 'ยอดเงินใน Campus Wallet ไม่พอสำหรับคำสั่งซื้อนี้ กรุณาเติมเงินที่แท็บกระเป๋าเงินแล้วลองใหม่อีกครั้ง',
   'cart.signInAgainMsg': 'เซสชันของคุณหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
 
+  // Search
+  'search.placeholder': 'ค้นหาเมนู ประเภทอาหาร วัตถุดิบ…',
+  'search.resultsCount': 'พบ {n} เมนู',
+  'search.noResults': 'ไม่พบเมนูที่ค้นหา\nลองชื่ออื่นหรือเปลี่ยนตัวกรอง',
+
   // Item detail
   'item.notFound': 'ไม่พบเมนูนี้',
   'item.featured': 'เมนูแนะนำ',
