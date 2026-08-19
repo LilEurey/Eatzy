@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { addToCart } from '@/lib/cart-store';
 import { useI18n } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 import type { Database } from '@/types/database.types';
 
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
@@ -24,7 +25,7 @@ function SpiceIndicator({ level }: { level: number }) {
 }
 
 export default function ItemDetailScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
@@ -106,7 +107,7 @@ export default function ItemDetailScreen() {
         <View style={{ padding: 20 }}>
           {/* Name + vendor */}
           <Text style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5, marginBottom: 4 }}>
-            {item.name}
+            {localizedText(item.name, item.name_th, locale)}
           </Text>
           <Tap onPress={() => router.push(`/store/${item.vendor_id}`)}>
             <Text style={{ fontSize: 14, color: Brand.orange, fontWeight: '600', marginBottom: 14 }}>
@@ -141,7 +142,7 @@ export default function ItemDetailScreen() {
 
           {/* Description */}
           <Text style={{ fontSize: 15, color: Brand.textSecondary, lineHeight: 22, marginBottom: 20 }}>
-            {item.description}
+            {localizedText(item.description ?? '', item.description_th, locale)}
           </Text>
 
           {/* Stats row */}

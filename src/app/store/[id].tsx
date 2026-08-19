@@ -6,6 +6,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 import type { Database } from '@/types/database.types';
 
 type Vendor = Database['public']['Tables']['vendors']['Row'];
@@ -23,7 +24,7 @@ function spiceLabel(level: number, t: ReturnType<typeof useI18n>['t']) {
 }
 
 export default function StoreDetailScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeCategory, setActiveCategory] = useState('All');
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
@@ -237,10 +238,10 @@ export default function StoreDetailScreen() {
                 {/* Info */}
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, marginBottom: 3 }}>
-                    {item.name}
+                    {localizedText(item.name, item.name_th, locale)}
                   </Text>
                   <Text style={{ fontSize: 12, color: Brand.textSecondary, marginBottom: 6 }} numberOfLines={2}>
-                    {item.description}
+                    {localizedText(item.description ?? '', item.description_th, locale)}
                   </Text>
 
                   {/* Dietary badges */}

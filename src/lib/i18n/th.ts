@@ -299,6 +299,8 @@ export const th: Record<TranslationKey, string> = {
   'vendor.menuNew.basicInfo': 'ข้อมูลพื้นฐาน',
   'vendor.menuNew.nameLabel': 'ชื่อเมนู',
   'vendor.menuNew.namePlaceholder': 'เช่น ข้าวผัดกะเพราไก่',
+  'vendor.menuNew.nameThLabel': 'ชื่อภาษาไทย (ไม่บังคับ)',
+  'vendor.menuNew.nameThPlaceholder': 'เช่น ข้าวผัดกะเพราไก่',
   'vendor.menuNew.descLabel': 'คำอธิบาย',
   'vendor.menuNew.descPlaceholder': 'อธิบายส่วนผสมและรสชาติของเมนู...',
   'vendor.menuNew.priceLabel': 'ราคา',

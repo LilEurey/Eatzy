@@ -297,6 +297,8 @@ export const en = {
   'vendor.menuNew.basicInfo': 'Basic Information',
   'vendor.menuNew.nameLabel': 'Menu Item Name',
   'vendor.menuNew.namePlaceholder': 'e.g. Spicy Chicken Rice',
+  'vendor.menuNew.nameThLabel': 'Thai Name (optional)',
+  'vendor.menuNew.nameThPlaceholder': 'e.g. ข้าวผัดกะเพราไก่',
   'vendor.menuNew.descLabel': 'Description',
   'vendor.menuNew.descPlaceholder': 'Describe the dish ingredients and flavor profile...',
   'vendor.menuNew.priceLabel': 'Price',

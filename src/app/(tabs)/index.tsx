@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { MOCK_VENDORS, MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
 // its own baked-in colors on most platforms instead of a clean flat icon.
@@ -35,6 +36,7 @@ type Vendor = {
 type MenuItem = {
   id: string;
   name: string;
+  name_th: string | null;
   price: number;
   category: string | null;
   image_url: string | null;
@@ -56,7 +58,7 @@ function queueStatus(count: number | null): { labelKey: TranslationKey; color: s
 }
 
 export default function HomeScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [firstName, setFirstName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -73,8 +75,8 @@ export default function HomeScreen() {
           ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
         supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url').eq('is_open', true).order('current_queue_count', { ascending: true }),
-        supabase.from('menu_items').select('id,name,price,category,image_url,vendor_id,vendors(name)').eq('is_featured', true).eq('is_available', true).limit(1),
-        supabase.from('menu_items').select('id,name,price,category,image_url,vendor_id,vendors(name)').eq('is_available', true).limit(2),
+        supabase.from('menu_items').select('id,name,name_th,price,category,image_url,vendor_id,vendors(name)').eq('is_featured', true).eq('is_available', true).limit(1),
+        supabase.from('menu_items').select('id,name,name_th,price,category,image_url,vendor_id,vendors(name)').eq('is_available', true).limit(2),
       ]);
 
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
@@ -261,7 +263,7 @@ export default function HomeScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                     <View style={{ flex: 1, marginRight: 12 }}>
                       <Text style={{ fontSize: 22, fontWeight: '700', color: '#261812', lineHeight: 29, marginBottom: 4 }}>
-                        {featured.name}
+                        {localizedText(featured.name, featured.name_th, locale)}
                       </Text>
                       <Text style={{ fontSize: 15, color: '#5a4136', marginBottom: 14 }}>
                         {featured.category ?? t('home.thaiFood')}
@@ -344,7 +346,7 @@ export default function HomeScreen() {
                   {/* Info */}
                   <View style={{ padding: 12 }}>
                     <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }} numberOfLines={2}>
-                      {item?.name ?? '—'}
+                      {item ? localizedText(item.name, item.name_th, locale) : '—'}
                     </Text>
                     <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 8 }} numberOfLines={1}>
                       {item?.vendors?.name ?? '—'}

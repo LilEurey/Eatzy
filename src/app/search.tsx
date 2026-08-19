@@ -8,12 +8,15 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 
 type SearchItem = {
   id: string;
   vendor_id: string;
   name: string;
+  name_th: string | null;
   description: string | null;
+  description_th: string | null;
   price: number;
   category: string | null;
   spice_level: number;
@@ -47,9 +50,10 @@ const DIET_FIELD: Record<DietFilter, keyof SearchItem> = {
 function matchScore(item: SearchItem, needle: string): number {
   if (!needle) return 1;
   const name = item.name.toLowerCase();
-  if (name === needle) return 100;
-  if (name.startsWith(needle)) return 90;
-  if (name.includes(needle)) return 70;
+  const nameTh = item.name_th?.toLowerCase() ?? '';
+  if (name === needle || nameTh === needle) return 100;
+  if (name.startsWith(needle) || (nameTh && nameTh.startsWith(needle))) return 90;
+  if (name.includes(needle) || (nameTh && nameTh.includes(needle))) return 70;
   if (item.category?.toLowerCase().includes(needle)) return 50;
   if (item.tags.some(tag => tag.toLowerCase().includes(needle))) return 45;
   if (item.vendorName.toLowerCase().includes(needle)) return 40;
@@ -63,7 +67,7 @@ function spiceDots(level: number) {
 }
 
 export default function SearchScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [items, setItems] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -73,7 +77,7 @@ export default function SearchScreen() {
     async function load() {
       const { data } = await supabase
         .from('menu_items')
-        .select('id,vendor_id,name,description,price,category,spice_level,is_available,is_halal,is_vegetarian,is_jay,allergens,tags,ingredients,image_url,vendors(name)')
+        .select('id,vendor_id,name,name_th,description,description_th,price,category,spice_level,is_available,is_halal,is_vegetarian,is_jay,allergens,tags,ingredients,image_url,vendors(name)')
         .eq('is_available', true);
 
       const dbItems = (data ?? []) as unknown as (SearchItem & { vendors: { name: string } | null })[];
@@ -196,7 +200,7 @@ export default function SearchScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 15, fontWeight: '600', color: '#261812' }} numberOfLines={1}>
-                    {item.name}
+                    {localizedText(item.name, item.name_th, locale)}
                   </Text>
                   <Text style={{ fontSize: 12, color: '#5a4136', marginTop: 2 }} numberOfLines={1}>
                     {item.vendorName}{item.category ? ` · ${item.category}` : ''}{spiceDots(item.spice_level)}

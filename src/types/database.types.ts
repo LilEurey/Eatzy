@@ -21,6 +21,7 @@ export type Database = {
           calories: number | null
           category: string | null
           description: string | null
+          description_th: string | null
           id: string
           image_url: string | null
           ingredients: string[]
@@ -30,6 +31,7 @@ export type Database = {
           is_jay: boolean
           is_vegetarian: boolean
           name: string
+          name_th: string | null
           preparation_time_min: number | null
           price: number
           release_date: string
@@ -44,6 +46,7 @@ export type Database = {
           calories?: number | null
           category?: string | null
           description?: string | null
+          description_th?: string | null
           id?: string
           image_url?: string | null
           ingredients?: string[]
@@ -53,6 +56,7 @@ export type Database = {
           is_jay?: boolean
           is_vegetarian?: boolean
           name: string
+          name_th?: string | null
           preparation_time_min?: number | null
           price: number
           release_date?: string
@@ -67,6 +71,7 @@ export type Database = {
           calories?: number | null
           category?: string | null
           description?: string | null
+          description_th?: string | null
           id?: string
           image_url?: string | null
           ingredients?: string[]
@@ -76,6 +81,7 @@ export type Database = {
           is_jay?: boolean
           is_vegetarian?: boolean
           name?: string
+          name_th?: string | null
           preparation_time_min?: number | null
           price?: number
           release_date?: string

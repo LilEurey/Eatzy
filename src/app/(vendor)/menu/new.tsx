@@ -24,6 +24,7 @@ const ALLERGENS: { key: string; labelKey: TranslationKey }[] = [
 export default function AddMenuItemScreen() {
   const { t } = useI18n();
   const [name, setName] = useState('');
+  const [nameTh, setNameTh] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
@@ -73,6 +74,7 @@ export default function AddMenuItemScreen() {
 
     const ok = await addMenuItem({
       name: trimmedName,
+      name_th: nameTh.trim() || null,
       description: description.trim(),
       price: parsedPrice,
       category: category || 'Other',
@@ -112,6 +114,17 @@ export default function AddMenuItemScreen() {
                 value={name}
                 onChangeText={setName}
                 placeholder={t('vendor.menuNew.namePlaceholder')}
+                placeholderTextColor="#B0B4BF"
+                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
+              />
+            </View>
+
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.nameThLabel')}</Text>
+              <TextInput
+                value={nameTh}
+                onChangeText={setNameTh}
+                placeholder={t('vendor.menuNew.nameThPlaceholder')}
                 placeholderTextColor="#B0B4BF"
                 style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
               />

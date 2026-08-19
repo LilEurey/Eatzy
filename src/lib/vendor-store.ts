@@ -28,6 +28,7 @@ type MenuItem = {
   id: string;
   vendor_id: string;
   name: string;
+  name_th: string | null;
   description: string | null;
   price: number;
   category: string | null;
@@ -127,7 +128,7 @@ function mapOrder(row: any): VendorOrder {
 async function fetchMenu(vendorId: string) {
   const { data } = await supabase
     .from('menu_items')
-    .select('id,vendor_id,name,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
+    .select('id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
     .eq('vendor_id', vendorId)
     .order('name');
   menuItems = (data as MenuItem[] | null) ?? [];
@@ -292,6 +293,7 @@ export async function toggleAvailability(itemId: string) {
 
 type NewMenuItemInput = {
   name: string;
+  name_th: string | null;
   description: string;
   price: number;
   category: string;
@@ -306,7 +308,7 @@ export async function addMenuItem(input: NewMenuItemInput): Promise<boolean> {
   const { data, error } = await supabase
     .from('menu_items')
     .insert({ ...input, vendor_id: vendorProfile.id })
-    .select('id,vendor_id,name,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
+    .select('id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
     .single();
   if (error || !data) {
     showAlert('Could not save item', error?.message ?? 'Unknown error');

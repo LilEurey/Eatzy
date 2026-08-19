@@ -6,9 +6,10 @@ import { Brand } from '@/constants/theme';
 import { useVendorMenu, toggleAvailability } from '@/lib/vendor-store';
 import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 
 export default function VendorMenuScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const items = useVendorMenu();
 
   const comingSoon = () => comingSoonAlert(t);
@@ -54,7 +55,7 @@ export default function VendorMenuScreen() {
               </View>
               <View style={{ padding: 14, gap: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                  <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={2}>{item.name}</Text>
+                  <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={2}>{localizedText(item.name, item.name_th, locale)}</Text>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: Brand.vendorAccent }}>{item.price}฿</Text>
                 </View>
                 {item.is_halal && (
