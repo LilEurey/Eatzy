@@ -202,6 +202,9 @@ export const th: Record<TranslationKey, string> = {
 
   // Edit Preferences & Allergies (Account Details)
   'editPreferences.subtitle': 'ปรับแต่งคำแนะนำ AI ของคุณด้วยการบอกความต้องการด้านอาหาร',
+  'editPreferences.name': 'ชื่อ',
+  'editPreferences.namePlaceholder': 'ชื่อของคุณ',
+  'editPreferences.nameRequired': 'กรุณากรอกชื่อของคุณ',
   'editPreferences.dietaryType': 'ประเภทอาหาร',
   'editPreferences.foodAllergies': 'อาการแพ้อาหาร',
   'editPreferences.saveChanges': 'บันทึกการเปลี่ยนแปลง',

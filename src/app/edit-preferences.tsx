@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,6 +37,7 @@ const ALLERGY_LABELS: Record<Allergy, TranslationKey> = {
 // step dots + Continue).
 export default function EditPreferencesScreen() {
   const { t } = useI18n();
+  const [name, setName] = useState('');
   const [dietary, setDietary] = useState<Set<Dietary>>(new Set());
   const [allergies, setAllergies] = useState<Set<Allergy>>(new Set());
   const [budget, setBudget] = useState(60);
@@ -48,11 +49,21 @@ export default function EditPreferencesScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('is_halal,is_vegetarian,is_jay,allergies,budget_max')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const [{ data: userRow }, { data }] = await Promise.all([
+        supabase.from('users').select('name').eq('id', user.id).maybeSingle(),
+        supabase
+          .from('user_preferences')
+          .select('is_halal,is_vegetarian,is_jay,allergies,budget_max')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+      ]);
+
+      setName(
+        userRow?.name ??
+        (user.user_metadata?.full_name as string) ??
+        user.email?.split('@')[0] ??
+        '',
+      );
 
       if (data) {
         const nextDietary = new Set<Dietary>();
@@ -92,10 +103,19 @@ export default function EditPreferencesScreen() {
   }
 
   async function handleSave() {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      showAlert(t('onboarding.errorSavingTitle'), t('editPreferences.nameRequired'));
+      return;
+    }
+
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      const { error: nameError } = await supabase.from('users').update({ name: trimmedName }).eq('id', user.id);
+      if (nameError) throw nameError;
 
       const { error } = await supabase.from('user_preferences').upsert({
         user_id: user.id,
@@ -133,6 +153,27 @@ export default function EditPreferencesScreen() {
         <Text style={{ color: Brand.textSecondary, fontSize: 15, lineHeight: 22, marginBottom: 20 }}>
           {t('editPreferences.subtitle')}
         </Text>
+
+        {/* Name card */}
+        <View style={{
+          backgroundColor: Brand.card, borderRadius: 24, padding: 20, marginBottom: 16,
+          shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.04, shadowRadius: 15, elevation: 1,
+        }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
+            {t('editPreferences.name')}
+          </Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder={t('editPreferences.namePlaceholder')}
+            placeholderTextColor={Brand.textSecondary}
+            style={{
+              fontSize: 16, fontWeight: '600', color: Brand.textPrimary,
+              borderWidth: 1.5, borderColor: '#DDD', borderRadius: 14,
+              paddingHorizontal: 16, paddingVertical: 12,
+            }}
+          />
+        </View>
 
         {/* Dietary Type card */}
         <View style={{

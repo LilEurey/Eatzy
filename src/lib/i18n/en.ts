@@ -200,6 +200,9 @@ export const en = {
 
   // Edit Preferences & Allergies (Account Details)
   'editPreferences.subtitle': 'Customize your AI recommendations by letting us know your dietary needs.',
+  'editPreferences.name': 'Name',
+  'editPreferences.namePlaceholder': 'Your name',
+  'editPreferences.nameRequired': 'Please enter your name.',
   'editPreferences.dietaryType': 'Dietary Type',
   'editPreferences.foodAllergies': 'Food Allergies',
   'editPreferences.saveChanges': 'Save Changes',

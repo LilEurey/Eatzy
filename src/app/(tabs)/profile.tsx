@@ -79,14 +79,9 @@ export default function ProfileScreen() {
       supabase.auth.getUser().then(async ({ data: { user } }) => {
         if (!user) { setRecentOrder(null); return; } // dev skip-login: keep defaults
         setEmail(user.email ?? '');
-        setName(
-          (user.user_metadata?.full_name as string) ??
-          user.email?.split('@')[0] ??
-          'Student',
-        );
 
         const [profileRes, prefsRes, orderRes] = await Promise.all([
-          supabase.from('users').select('avatar_url,notifications_enabled').eq('id', user.id).maybeSingle(),
+          supabase.from('users').select('name,avatar_url,notifications_enabled').eq('id', user.id).maybeSingle(),
           supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle(),
           supabase
             .from('orders')
@@ -99,6 +94,12 @@ export default function ProfileScreen() {
 
         if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
         if (profileRes.data) setNotificationsEnabled(profileRes.data.notifications_enabled);
+        setName(
+          profileRes.data?.name ??
+          (user.user_metadata?.full_name as string) ??
+          user.email?.split('@')[0] ??
+          'Student',
+        );
 
         const prefs = prefsRes.data;
         const dietary: string[] = [];
