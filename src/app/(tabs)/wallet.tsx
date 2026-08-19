@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert, comingSoonAlert } from '@/lib/alert';
@@ -46,12 +47,14 @@ export default function WalletScreen() {
     setTxns((txnsRes.data ?? []) as WalletTxn[]);
   }
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setLoading(false); return; }
-      loadWallet(user.id).then(() => setLoading(false));
-    });
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) { setLoading(false); return; }
+        loadWallet(user.id).then(() => setLoading(false));
+      });
+    }, [])
+  );
 
   async function topUp(amount: number) {
     const { data: { user } } = await supabase.auth.getUser();
