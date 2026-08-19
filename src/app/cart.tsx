@@ -8,13 +8,14 @@ import { Brand } from '@/constants/theme';
 import { useCart, setQty, clearCart, cartSubtotal } from '@/lib/cart-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 import { nextPickupSlots, timeSegmentForBangkok } from '@/lib/time';
 import type { Database } from '@/types/database.types';
 
 type Vendor = Database['public']['Tables']['vendors']['Row'];
 
 export default function CartScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const cart = useCart();
   const items = cart.items;
   // Computed once per visit (not on every render) so the offered windows
@@ -165,7 +166,7 @@ export default function CartScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.textPrimary, marginBottom: 2 }}>
-                    {item.name}
+                    {localizedText(item.name, item.name_th, locale)}
                   </Text>
                   <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.unitPrice', { price: item.unit_price })}</Text>
                 </View>

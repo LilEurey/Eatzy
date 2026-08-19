@@ -9,6 +9,7 @@ const PACKAGING_FEE = 5;
 type CartItem = {
   menu_item_id: string;
   name: string;
+  name_th: string | null;
   unit_price: number;
   quantity: number;
 };
@@ -28,7 +29,7 @@ function emit() {
 }
 
 export function addToCart(
-  item: { id: string; vendor_id: string; name: string; price: number },
+  item: { id: string; vendor_id: string; name: string; name_th?: string | null; price: number },
   qty = 1,
 ) {
   if (cart.vendor_id && cart.vendor_id !== item.vendor_id) {
@@ -40,7 +41,7 @@ export function addToCart(
   if (existing) {
     existing.quantity += qty;
   } else {
-    cart.items.push({ menu_item_id: item.id, name: item.name, unit_price: item.price, quantity: qty });
+    cart.items.push({ menu_item_id: item.id, name: item.name, name_th: item.name_th ?? null, unit_price: item.price, quantity: qty });
   }
   emit();
 }
