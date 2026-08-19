@@ -226,6 +226,16 @@ export const en = {
   // Notifications
   'notifications.title': 'Notifications',
   'notifications.empty': 'No notifications yet',
+  'notif.orderAccepted.title': 'Order accepted!',
+  'notif.orderAccepted.body': '{vendor} is preparing your order · Queue #{queue}',
+  'notif.orderReady.title': 'Order ready for pickup!',
+  'notif.orderReady.body': '{vendor} · Queue #{queue}',
+  'notif.orderRejected.title': 'Order rejected',
+  'notif.orderRejected.body': "{vendor} couldn't accept your order — refund processing",
+  'notif.orderCompleted.title': 'Order picked up',
+  'notif.orderCompleted.body': 'Enjoy your meal from {vendor}!',
+  'notif.vendorNewOrder.title': 'New order!',
+  'notif.vendorNewOrder.body': 'Queue #{queue} · ฿{amount}',
 
   // Vendor — login
   'vendor.login.brand': 'Eatzy',

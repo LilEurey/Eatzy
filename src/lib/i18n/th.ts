@@ -228,6 +228,16 @@ export const th: Record<TranslationKey, string> = {
   // Notifications
   'notifications.title': 'การแจ้งเตือน',
   'notifications.empty': 'ยังไม่มีการแจ้งเตือน',
+  'notif.orderAccepted.title': 'ออเดอร์ได้รับการยืนยันแล้ว!',
+  'notif.orderAccepted.body': '{vendor} กำลังเตรียมออเดอร์ของคุณ · คิว #{queue}',
+  'notif.orderReady.title': 'ออเดอร์พร้อมรับแล้ว!',
+  'notif.orderReady.body': '{vendor} · คิว #{queue}',
+  'notif.orderRejected.title': 'ออเดอร์ถูกปฏิเสธ',
+  'notif.orderRejected.body': '{vendor} ไม่สามารถรับออเดอร์ได้ — กำลังดำเนินการคืนเงิน',
+  'notif.orderCompleted.title': 'รับออเดอร์เรียบร้อยแล้ว',
+  'notif.orderCompleted.body': 'ขอให้อร่อยกับมื้ออาหารจาก {vendor}!',
+  'notif.vendorNewOrder.title': 'มีออเดอร์ใหม่!',
+  'notif.vendorNewOrder.body': 'คิว #{queue} · ฿{amount}',
 
   // Vendor — login
   'vendor.login.brand': 'Eatzy',

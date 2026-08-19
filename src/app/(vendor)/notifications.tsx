@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorNotifications, markNotificationsRead } from '@/lib/vendor-store';
 import { useI18n } from '@/lib/i18n';
+import { notificationText } from '@/lib/localize';
 
 function timeAgo(iso: string, t: ReturnType<typeof useI18n>['t']) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -38,33 +39,36 @@ export default function VendorNotificationsScreen() {
         </View>
       ) : (
         <View style={{ gap: 10, maxWidth: 480 }}>
-          {notifications.map(n => (
-            <Tap
-              key={n.id}
-              onPress={() => router.push('/(vendor)/orders' as any)}
-              style={{
-                flexDirection: 'row', gap: 12,
-                backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14,
-                borderLeftWidth: n.read ? 1 : 3,
-                borderLeftColor: n.read ? '#EEF0F5' : Brand.orange,
-              }}
-            >
-              <View style={{
-                width: 36, height: 36, borderRadius: 18,
-                backgroundColor: Brand.vendorAccentLight, alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Text style={{ fontSize: 16 }}>{n.icon}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{n.title}</Text>
-                  {!n.read && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.orange }} />}
+          {notifications.map(n => {
+            const { title, body } = notificationText(n, t);
+            return (
+              <Tap
+                key={n.id}
+                onPress={() => router.push('/(vendor)/orders' as any)}
+                style={{
+                  flexDirection: 'row', gap: 12,
+                  backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14,
+                  borderLeftWidth: n.read ? 1 : 3,
+                  borderLeftColor: n.read ? '#EEF0F5' : Brand.orange,
+                }}
+              >
+                <View style={{
+                  width: 36, height: 36, borderRadius: 18,
+                  backgroundColor: Brand.vendorAccentLight, alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Text style={{ fontSize: 16 }}>{n.icon}</Text>
                 </View>
-                <Text style={{ fontSize: 13, color: '#4B4F58', marginTop: 2 }}>{n.body}</Text>
-                <Text style={{ fontSize: 11, color: '#8A8F9B', marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>
-              </View>
-            </Tap>
-          ))}
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{title}</Text>
+                    {!n.read && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.orange }} />}
+                  </View>
+                  <Text style={{ fontSize: 13, color: '#4B4F58', marginTop: 2 }}>{body}</Text>
+                  <Text style={{ fontSize: 11, color: '#8A8F9B', marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>
+                </View>
+              </Tap>
+            );
+          })}
         </View>
       )}
     </View>

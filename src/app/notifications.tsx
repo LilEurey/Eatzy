@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
+import { notificationText } from '@/lib/localize';
 
 type NotificationRow = {
   id: string;
@@ -13,6 +14,10 @@ type NotificationRow = {
   icon: string;
   title: string;
   body: string;
+  event: string | null;
+  vendor_name: string | null;
+  queue_number: number | null;
+  total_amount: number | null;
   read: boolean;
   created_at: string;
 };
@@ -39,7 +44,7 @@ export default function NotificationsScreen() {
 
       const { data } = await supabase
         .from('notifications')
-        .select('id,order_id,icon,title,body,read,created_at')
+        .select('id,order_id,icon,title,body,event,vendor_name,queue_number,total_amount,read,created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       const rows = data ?? [];
@@ -93,39 +98,42 @@ export default function NotificationsScreen() {
           </View>
         ) : (
           <View style={{ gap: 10 }}>
-            {notifications.map(n => (
-              <Tap
-                key={n.id}
-                onPress={() => router.push(`/track/${n.order_id}`)}
-                style={{
-                  flexDirection: 'row', gap: 12,
-                  backgroundColor: Brand.card, borderRadius: 18, padding: 14,
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
-                  borderLeftWidth: n.read ? 0 : 3,
-                  borderLeftColor: n.read ? 'transparent' : Brand.orange,
-                }}
-              >
-                <View style={{
-                  width: 40, height: 40, borderRadius: 20,
-                  backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Text style={{ fontSize: 18 }}>{n.icon}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>
-                      {n.title}
-                    </Text>
-                    {!n.read && (
-                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.orange }} />
-                    )}
+            {notifications.map(n => {
+              const { title, body } = notificationText(n, t);
+              return (
+                <Tap
+                  key={n.id}
+                  onPress={() => router.push(`/track/${n.order_id}`)}
+                  style={{
+                    flexDirection: 'row', gap: 12,
+                    backgroundColor: Brand.card, borderRadius: 18, padding: 14,
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
+                    borderLeftWidth: n.read ? 0 : 3,
+                    borderLeftColor: n.read ? 'transparent' : Brand.orange,
+                  }}
+                >
+                  <View style={{
+                    width: 40, height: 40, borderRadius: 20,
+                    backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Text style={{ fontSize: 18 }}>{n.icon}</Text>
                   </View>
-                  <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 2 }}>{n.body}</Text>
-                  <Text style={{ fontSize: 11, color: Brand.textSecondary, marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>
-                </View>
-              </Tap>
-            ))}
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>
+                        {title}
+                      </Text>
+                      {!n.read && (
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.orange }} />
+                      )}
+                    </View>
+                    <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 2 }}>{body}</Text>
+                    <Text style={{ fontSize: 11, color: Brand.textSecondary, marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>
+                  </View>
+                </Tap>
+              );
+            })}
           </View>
         )}
       </ScrollView>

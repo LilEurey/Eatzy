@@ -149,35 +149,47 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          event: string | null
           icon: string
           id: string
           order_id: string
+          queue_number: number | null
           read: boolean
           title: string
+          total_amount: number | null
           type: string
           user_id: string
+          vendor_name: string | null
         }
         Insert: {
           body: string
           created_at?: string
+          event?: string | null
           icon: string
           id?: string
           order_id: string
+          queue_number?: number | null
           read?: boolean
           title: string
+          total_amount?: number | null
           type?: string
           user_id: string
+          vendor_name?: string | null
         }
         Update: {
           body?: string
           created_at?: string
+          event?: string | null
           icon?: string
           id?: string
           order_id?: string
+          queue_number?: number | null
           read?: boolean
           title?: string
+          total_amount?: number | null
           type?: string
           user_id?: string
+          vendor_name?: string | null
         }
         Relationships: [
           {
