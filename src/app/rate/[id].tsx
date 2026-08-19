@@ -7,16 +7,22 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 
 // Index 1–5 maps to a star score; index 0 has no label (nothing selected yet).
 const LABEL_KEYS: (TranslationKey | null)[] = [
   null, 'rate.labelBad', 'rate.labelMeh', 'rate.labelGood', 'rate.labelGreat', 'rate.labelAmazing',
 ];
 
-type RateOrder = { id: string; vendor_name: string; item_names: string[]; primary_menu_item_id: string | null };
+type RateOrder = {
+  id: string;
+  vendor_name: string;
+  items: { name: string; name_th: string | null }[];
+  primary_menu_item_id: string | null;
+};
 
 export default function RateScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [order, setOrder] = useState<RateOrder | null | undefined>(undefined);
   const [score, setScore] = useState(0);
@@ -27,7 +33,7 @@ export default function RateScreen() {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,vendors(name),order_items(menu_item_id,menu_items(name))')
+        .select('id,vendors(name),order_items(menu_item_id,menu_items(name,name_th))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
@@ -35,7 +41,7 @@ export default function RateScreen() {
       setOrder({
         id: data.id,
         vendor_name: (data as any).vendors?.name ?? '',
-        item_names: orderItems.map((oi: any) => oi.menu_items?.name ?? ''),
+        items: orderItems.map((oi: any) => ({ name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null })),
         primary_menu_item_id: orderItems[0]?.menu_item_id ?? null,
       });
     }
@@ -107,7 +113,7 @@ export default function RateScreen() {
           <Text style={{ fontSize: 44, marginBottom: 8 }}>🍽️</Text>
           <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary }}>{vendor}</Text>
           <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' }}>
-            {order.item_names.join(', ')}
+            {order.items.map(i => localizedText(i.name, i.name_th, locale)).join(', ')}
           </Text>
         </View>
 

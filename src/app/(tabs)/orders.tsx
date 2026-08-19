@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
 import type { OrderStatus } from '@/lib/vendor-store';
 
@@ -21,7 +22,7 @@ type StudentOrder = {
   pickup_end: string | null;
   created_at: string;
   vendor_name: string;
-  items: { name: string; quantity: number }[];
+  items: { name: string; name_th: string | null; quantity: number }[];
 };
 
 const STATUS_CONFIG: Record<OrderStatus, { labelKey: TranslationKey; color: string; bg: string }> = {
@@ -53,7 +54,7 @@ function timeAgo(iso: string, t: ReturnType<typeof useI18n>['t']) {
 }
 
 export default function OrdersScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +66,7 @@ export default function OrdersScreen() {
 
       const { data } = await supabase
         .from('orders')
-        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name))')
+        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th))')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -79,7 +80,7 @@ export default function OrdersScreen() {
         pickup_end: o.pickup_end,
         created_at: o.created_at,
         vendor_name: o.vendors?.name ?? '',
-        items: (o.order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', quantity: oi.quantity })),
+        items: (o.order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity })),
       })));
       setLoading(false);
     }
@@ -151,7 +152,7 @@ export default function OrdersScreen() {
             const cfg = STATUS_CONFIG[order.status];
             const vendor = order.vendor_name;
             const isActive = ACTIVE.includes(order.status);
-            const itemSummary = order.items.map(i => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join(', ');
+            const itemSummary = order.items.map(i => `${localizedText(i.name, i.name_th, locale)}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join(', ');
 
             return (
               <View

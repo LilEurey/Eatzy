@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
 
 type Status = 'pending' | 'accepted' | 'ready' | 'completed';
@@ -19,7 +20,7 @@ type TrackOrder = {
   total_amount: number;
   vendor_name: string;
   student_picked_up_at: string | null;
-  items: { name: string; quantity: number; unit_price: number }[];
+  items: { name: string; name_th: string | null; quantity: number; unit_price: number }[];
 };
 
 const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: TranslationKey }[] = [
@@ -32,7 +33,7 @@ const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: Tra
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];
 
 export default function TrackScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [order, setOrder] = useState<TrackOrder | null | undefined>(undefined);
   const [status, setStatus] = useState<Status>('pending');
@@ -41,7 +42,7 @@ export default function TrackScreen() {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),order_items(quantity,unit_price,menu_items(name))')
+        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
@@ -53,7 +54,7 @@ export default function TrackScreen() {
         total_amount: data.total_amount,
         vendor_name: (data as any).vendors?.name ?? '',
         student_picked_up_at: data.student_picked_up_at,
-        items: ((data as any).order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', quantity: oi.quantity, unit_price: oi.unit_price })),
+        items: ((data as any).order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity, unit_price: oi.unit_price })),
       });
       setStatus(data.status as Status);
     }
@@ -186,7 +187,7 @@ export default function TrackScreen() {
           {order.items.map((it, i) => (
             <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Text style={{ fontSize: 14, color: Brand.textPrimary }}>
-                {it.quantity > 1 ? `${it.quantity}× ` : ''}{it.name}
+                {it.quantity > 1 ? `${it.quantity}× ` : ''}{localizedText(it.name, it.name_th, locale)}
               </Text>
               <Text style={{ fontSize: 14, color: Brand.textSecondary }}>฿{it.unit_price * it.quantity}</Text>
             </View>

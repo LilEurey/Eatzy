@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert, comingSoonAlert } from '@/lib/alert';
 import { useI18n, LOCALE_LABELS, type Locale, type TranslationKey } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 import { formatBangkokClock, isBangkokToday, formatBangkokDate } from '@/lib/time';
 
 // Exact bell path from the Figma export (see (tabs)/index.tsx for the same
@@ -85,7 +86,7 @@ export default function ProfileScreen() {
           supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle(),
           supabase
             .from('orders')
-            .select('id,status,total_amount,created_at,order_items(quantity,menu_items(name))')
+            .select('id,status,total_amount,created_at,order_items(quantity,menu_items(name,name_th))')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1)
@@ -113,11 +114,11 @@ export default function ProfileScreen() {
         if (!order) { setRecentOrder(null); return; }
         const items = order.order_items ?? [];
         const itemSummary = items.length
-          ? items[0].menu_items?.name + (items.length > 1 ? ` +${items.length - 1}` : '')
+          ? localizedText(items[0].menu_items?.name ?? '', items[0].menu_items?.name_th ?? null, locale) + (items.length > 1 ? ` +${items.length - 1}` : '')
           : '';
         setRecentOrder({ id: order.id, status: order.status, total_amount: order.total_amount, created_at: order.created_at, itemSummary });
       });
-    }, [t]),
+    }, [t, locale]),
   );
 
   const comingSoon = () => comingSoonAlert(t);
