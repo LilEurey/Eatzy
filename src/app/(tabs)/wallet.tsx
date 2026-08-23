@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,6 +37,7 @@ export default function WalletScreen() {
   const [txns, setTxns] = useState<WalletTxn[]>([]);
   const [loading, setLoading] = useState(true);
   const [toppingUp, setToppingUp] = useState(false);
+  const topUpCancelledRef = useRef(false);
 
   async function loadWallet(userId: string) {
     const [profileRes, txnsRes] = await Promise.all([
@@ -62,7 +63,11 @@ export default function WalletScreen() {
         setLoading(false);
       });
 
-      return () => { cancelled = true; };
+      topUpCancelledRef.current = false;
+      return () => {
+        cancelled = true;
+        topUpCancelledRef.current = true;
+      };
     }, [])
   );
 
@@ -71,10 +76,12 @@ export default function WalletScreen() {
     if (!user) { comingSoonAlert(t); return; }
     setToppingUp(true);
     const { error } = await supabase.rpc('topup_wallet', { p_user_id: user.id, p_amount: amount });
+    if (topUpCancelledRef.current) return;
     if (error) {
       showAlert(t('wallet.topUpFailedTitle'), error.message);
     } else {
       const { balance, txns } = await loadWallet(user.id);
+      if (topUpCancelledRef.current) return;
       setBalance(balance);
       setTxns(txns);
     }
