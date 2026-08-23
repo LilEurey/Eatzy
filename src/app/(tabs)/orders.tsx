@@ -61,9 +61,11 @@ export default function OrdersScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let cancelled = false;
+
       async function load() {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setLoading(false); return; }
+        if (!user) { if (!cancelled) setLoading(false); return; }
 
         const { data } = await supabase
           .from('orders')
@@ -71,6 +73,7 @@ export default function OrdersScreen() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
+        if (cancelled) return;
         setOrders(((data as any[] | null) ?? []).map(o => ({
           id: o.id,
           vendor_id: o.vendor_id,
@@ -86,6 +89,8 @@ export default function OrdersScreen() {
         setLoading(false);
       }
       void load();
+
+      return () => { cancelled = true; };
     }, [])
   );
 

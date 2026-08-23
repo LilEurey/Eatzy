@@ -43,16 +43,26 @@ export default function WalletScreen() {
       supabase.from('users').select('wallet_balance').eq('id', userId).maybeSingle(),
       supabase.from('wallet_transactions').select('id,type,amount,description,created_at').eq('user_id', userId).order('created_at', { ascending: false }),
     ]);
-    setBalance(profileRes.data?.wallet_balance ?? 0);
-    setTxns((txnsRes.data ?? []) as WalletTxn[]);
+    return {
+      balance: profileRes.data?.wallet_balance ?? 0,
+      txns: (txnsRes.data ?? []) as WalletTxn[],
+    };
   }
 
   useFocusEffect(
     useCallback(() => {
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (!user) { setLoading(false); return; }
-        loadWallet(user.id).then(() => setLoading(false));
+      let cancelled = false;
+
+      supabase.auth.getUser().then(async ({ data: { user } }) => {
+        if (!user) { if (!cancelled) setLoading(false); return; }
+        const { balance, txns } = await loadWallet(user.id);
+        if (cancelled) return;
+        setBalance(balance);
+        setTxns(txns);
+        setLoading(false);
       });
+
+      return () => { cancelled = true; };
     }, [])
   );
 
@@ -64,7 +74,9 @@ export default function WalletScreen() {
     if (error) {
       showAlert(t('wallet.topUpFailedTitle'), error.message);
     } else {
-      await loadWallet(user.id);
+      const { balance, txns } = await loadWallet(user.id);
+      setBalance(balance);
+      setTxns(txns);
     }
     setToppingUp(false);
   }
