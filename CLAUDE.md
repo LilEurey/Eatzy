@@ -39,10 +39,10 @@ Eatzy/
 ├── src/
 │   ├── app/              # Expo Router pages (file-based routing)
 │   │   ├── (tabs)/       # Student tabs — home, orders, wallet, profile
-│   │   ├── (vendor)/     # Vendor dashboard — index.tsx redirects to overview; orders, menu, analytics, profile (real Supabase, not mock)
+│   │   ├── (vendor)/     # Vendor dashboard — index.tsx redirects to overview; orders, menu, analytics, profile, notifications (real Supabase, not mock)
 │   │   ├── (admin)/      # Admin portal — vendor application review + vendor store monitoring/force open-close (email/password auth, not Google)
 │   │   ├── (auth)/       # Login/onboarding stack
-│   │   ├── admin-login.tsx, become-vendor.tsx, vendor-apply.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx  # Public entry points outside the tab groups
+│   │   ├── admin-login.tsx, become-vendor.tsx, vendor-apply.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx, search.tsx  # Public entry points outside the tab groups
 │   │   └── store/, item/, track/, rate/  # Detail screens
 │   ├── components/       # Reusable RN components (Tap, PillDropdown)
 │   ├── hooks/            # useGoogleSignIn, etc.
@@ -50,6 +50,7 @@ Eatzy/
 │   ├── lib/
 │   │   ├── supabase.ts   # Supabase client singleton
 │   │   ├── i18n/         # Translation strings, useI18n hook
+│   │   ├── localize.ts   # Thai dish-name fallback (name_th/description_th) + notification text rendering — see Localization below
 │   │   ├── cart-store.ts, vendor-store.ts  # useSyncExternalStore-based client state
 │   │   ├── vendor-intent.ts  # Post-OAuth redirect flag for "Become a Vendor" flow
 │   │   ├── edge-function.ts  # Supabase Edge Function invocation helper
@@ -96,6 +97,12 @@ Default to TF-IDF + cosine for content-based and collaborative filtering for "be
 
 Escrow: student payment held → on completion, transferred to vendor wallet (refunded if rejected/cancelled). Implement via Supabase RPC.
 
+### Localization
+
+- Menu item Thai names/descriptions are vendor-entered data, not app UI strings — they live in DB columns (`name_th`/`description_th`), not `lib/i18n/`. Falls back to the base (English) text when a vendor hasn't filled in the Thai column. Handled by `localizedText()` in `src/lib/localize.ts`.
+- Notification rows snapshot `event` + params (vendor, queue number, amount) at insert time in the DB triggers (`notify_order_status_change()`, `notify_vendor_new_order()`) instead of pre-rendered English text. `notificationText()` in `localize.ts` renders from that snapshot using whatever locale is active *now* — not whichever locale was active when the trigger fired.
+- Student-facing lists that poll live state (orders, wallet) refetch on tab focus (`useFocusEffect`), not just on mount — apply the same pattern to any new tab/screen showing data that can change server-side while the tab is backgrounded.
+
 ## Data Model
 
 Keep schema consistent with this ERD for all SQL/migrations/types. Field names are authoritative.
@@ -121,6 +128,7 @@ Keep schema consistent with this ERD for all SQL/migrations/types. Field names a
 - Supabase RPC/database functions for server-side business logic (escrow, queue numbers, wallet mutations)
 - ML scripts (in `/ml`): keep pandas/scikit-learn code readable and commented — capstone demo, not production scale
 - Prefer small incremental working pieces over large speculative scaffolding
+- PKCE/Google login on native needs a `crypto.subtle.digest` polyfill — RN has no native WebCrypto. Don't remove it while touching auth.
 
 ## User Journey
 
@@ -140,6 +148,8 @@ Discover → Onboarding (Google login, preferences/allergies/budget) → Explore
 - [x] Vendor dashboard — `(vendor)/` group: orders, menu (with image upload TODO), analytics, profile. Backed by real Supabase queries + Realtime via `vendor-store.ts`, not mock fixtures.
 - [x] Admin portal — `/admin-login` (email/password) + `(admin)/applications` to approve/reject pending vendor applications via an edge function (`edge-function.ts`) + `(admin)/vendors` to monitor every stall and force one open/closed.
 - [x] EAS build setup — `eas.json` with development/preview/production profiles, iOS-first ([[project_ios_first_priority]]).
+- [x] Search — `/search.tsx`: dish search wired to dietary filters.
+- [x] Thai localization pass — dish names (`name_th`/`description_th`), cart/order/wallet display, and notification text all render in Thai when locale is `th`; see Localization above.
 
 ### Data strategy (current)
 
