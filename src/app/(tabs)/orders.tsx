@@ -8,6 +8,7 @@ import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
+import { useFocusGuard } from '@/hooks/useFocusGuard';
 import type { OrderStatus } from '@/lib/vendor-store';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
@@ -58,14 +59,13 @@ export default function OrdersScreen() {
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const cancelledRef = useFocusGuard();
 
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-
       async function load() {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { if (!cancelled) setLoading(false); return; }
+        if (!user) { if (!cancelledRef.current) setLoading(false); return; }
 
         const { data } = await supabase
           .from('orders')
@@ -73,7 +73,7 @@ export default function OrdersScreen() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (cancelled) return;
+        if (cancelledRef.current) return;
         setOrders(((data as any[] | null) ?? []).map(o => ({
           id: o.id,
           vendor_id: o.vendor_id,
@@ -89,9 +89,7 @@ export default function OrdersScreen() {
         setLoading(false);
       }
       void load();
-
-      return () => { cancelled = true; };
-    }, [])
+    }, [cancelledRef])
   );
 
   const filtered = orders.filter(o => {

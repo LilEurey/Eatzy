@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { Brand } from '@/constants/theme';
 import { showAlert, comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ } from '@/lib/time';
+import { useFocusGuard } from '@/hooks/useFocusGuard';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
 type WalletTxn = { id: string; type: TxType; amount: number; description: string | null; created_at: string };
@@ -37,7 +38,7 @@ export default function WalletScreen() {
   const [txns, setTxns] = useState<WalletTxn[]>([]);
   const [loading, setLoading] = useState(true);
   const [toppingUp, setToppingUp] = useState(false);
-  const topUpCancelledRef = useRef(false);
+  const cancelledRef = useFocusGuard();
 
   async function loadWallet(userId: string) {
     const [profileRes, txnsRes] = await Promise.all([
@@ -52,23 +53,15 @@ export default function WalletScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-
       supabase.auth.getUser().then(async ({ data: { user } }) => {
-        if (!user) { if (!cancelled) setLoading(false); return; }
+        if (!user) { if (!cancelledRef.current) setLoading(false); return; }
         const { balance, txns } = await loadWallet(user.id);
-        if (cancelled) return;
+        if (cancelledRef.current) return;
         setBalance(balance);
         setTxns(txns);
         setLoading(false);
       });
-
-      topUpCancelledRef.current = false;
-      return () => {
-        cancelled = true;
-        topUpCancelledRef.current = true;
-      };
-    }, [])
+    }, [cancelledRef])
   );
 
   async function topUp(amount: number) {
@@ -76,12 +69,12 @@ export default function WalletScreen() {
     if (!user) { comingSoonAlert(t); return; }
     setToppingUp(true);
     const { error } = await supabase.rpc('topup_wallet', { p_user_id: user.id, p_amount: amount });
-    if (topUpCancelledRef.current) return;
+    if (cancelledRef.current) return;
     if (error) {
       showAlert(t('wallet.topUpFailedTitle'), error.message);
     } else {
       const { balance, txns } = await loadWallet(user.id);
-      if (topUpCancelledRef.current) return;
+      if (cancelledRef.current) return;
       setBalance(balance);
       setTxns(txns);
     }

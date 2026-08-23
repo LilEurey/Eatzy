@@ -7,6 +7,7 @@ import { Brand } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
 import { notificationText } from '@/lib/localize';
+import { useFocusGuard } from '@/hooks/useFocusGuard';
 
 type NotificationRow = {
   id: string;
@@ -33,15 +34,15 @@ function timeAgo(iso: string, t: ReturnType<typeof useI18n>['t']) {
 export default function NotificationsScreen() {
   const { t } = useI18n();
   const [notifications, setNotifications] = useState<NotificationRow[] | undefined>(undefined);
+  const cancelledRef = useFocusGuard();
 
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
       let channel: ReturnType<typeof supabase.channel> | undefined;
 
       async function load() {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { if (!cancelled) setNotifications([]); return; }
+        if (!user) { if (!cancelledRef.current) setNotifications([]); return; }
 
         const { data } = await supabase
           .from('notifications')
@@ -49,29 +50,26 @@ export default function NotificationsScreen() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         const rows = data ?? [];
-        if (cancelled) return;
+        if (cancelledRef.current) return;
         setNotifications(rows);
 
         const unreadIds = rows.filter(r => !r.read).map(r => r.id);
         if (unreadIds.length) {
           await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
         }
-        if (cancelled) return;
+        if (cancelledRef.current) return;
 
         channel = supabase
           .channel(`notifications-${user.id}`)
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
-            if (!cancelled) setNotifications(prev => [payload.new as NotificationRow, ...(prev ?? [])]);
+            if (!cancelledRef.current) setNotifications(prev => [payload.new as NotificationRow, ...(prev ?? [])]);
           })
           .subscribe();
       }
       void load();
 
-      return () => {
-        cancelled = true;
-        void channel?.unsubscribe();
-      };
-    }, [])
+      return () => { void channel?.unsubscribe(); };
+    }, [cancelledRef])
   );
 
   if (notifications === undefined) {
