@@ -796,10 +796,6 @@ export type Database = {
         Returns: undefined
       }
       refund_escrow: { Args: { p_order_id: string }; Returns: undefined }
-      release_escrow_to_vendor: {
-        Args: { p_order_id: string }
-        Returns: undefined
-      }
       student_confirm_pickup: {
         Args: { p_order_id: string }
         Returns: undefined
