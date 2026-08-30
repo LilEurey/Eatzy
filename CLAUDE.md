@@ -40,9 +40,9 @@ Eatzy/
 │   ├── app/              # Expo Router pages (file-based routing)
 │   │   ├── (tabs)/       # Student tabs — home, orders, wallet, profile
 │   │   ├── (vendor)/     # Vendor dashboard — index.tsx redirects to overview; orders, menu, analytics, profile, notifications (real Supabase, not mock)
-│   │   ├── (admin)/      # Admin portal — vendor application review + vendor store monitoring/force open-close (email/password auth, not Google)
+│   │   ├── (admin)/      # Admin portal — create vendor store accounts + vendor store monitoring/force open-close (email/password auth, not Google)
 │   │   ├── (auth)/       # Login/onboarding stack
-│   │   ├── admin-login.tsx, become-vendor.tsx, vendor-apply.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx, search.tsx  # Public entry points outside the tab groups
+│   │   ├── admin-login.tsx, vendor-login.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx, search.tsx  # Public entry points outside the tab groups
 │   │   └── store/, item/, track/, rate/  # Detail screens
 │   ├── components/       # Reusable RN components (Tap, PillDropdown)
 │   ├── hooks/            # useGoogleSignIn, useFocusGuard (blur/unmount race guard)
@@ -53,7 +53,6 @@ Eatzy/
 │   │   ├── localize.ts   # Thai dish-name fallback (name_th/description_th) + notification text rendering — see Localization below
 │   │   ├── mock-data.ts  # MOCK_VENDORS / MOCK_MENU_ITEMS — student-side fixtures (see Data Strategy)
 │   │   ├── cart-store.ts, vendor-store.ts  # useSyncExternalStore-based client state
-│   │   ├── vendor-intent.ts  # Post-OAuth redirect flag for "Become a Vendor" flow
 │   │   ├── edge-function.ts  # Supabase Edge Function invocation helper
 │   │   ├── alert.ts      # Cross-platform alert helper
 │   │   └── time.ts       # Bangkok timezone formatting / pickup-slot helpers
@@ -61,7 +60,7 @@ Eatzy/
 │       └── database.types.ts  # Generated Supabase types
 ├── supabase/
 │   ├── migrations/       # SQL migration files (timestamp-prefixed)
-│   └── functions/        # Edge fns: apply / approve / reject vendor application, bootstrap-admin
+│   └── functions/        # Edge fns: admin-create-vendor, bootstrap-admin
 ├── ml/                    # recommend.py (TF-IDF + cosine demo), data/*.csv fixtures
 ├── eas.json               # EAS build/submit profiles (iOS-first)
 ├── global.css            # Tailwind directives (imported in app/_layout)
@@ -89,8 +88,8 @@ Build a **User Vector** (taste profile) from behavior — order history, ratings
 ### User Roles
 
 - **Student** — browse, order, pre-order with pickup time, pay via Campus Wallet, track, rate. Google-only auth ([[project_vendor_google_only_auth]]).
-- **Vendor** — manage menu, accept/reject/complete orders, view earnings. Google-only auth, same post-incident policy as student. Onboarding is self-serve, not stall-claiming: public `/become-vendor` pitch screen → `/vendor-apply` form (business name, phone, bio, cuisine tags — no location) → row in `vendor_applications` (`vendor_id` stays null until reviewed) → admin approval runs `approve_vendor_application()`, which creates the `vendors` row (owner_user_id set, is_on_campus/address default) and flips `users.role` to `vendor`. Location is set afterward from the vendor profile screen. `vendor-intent.ts` carries the "wants to become a vendor" flag through the OAuth redirect.
-- **Admin** — manage users, monitor transactions & reports; reviews/approves-or-rejects pending vendor applications at `/admin-login` → `(admin)/applications`; monitors every vendor stall and can force one open/closed at `(admin)/vendors` (writes `vendors.is_open` directly, bypassing the owner). Deliberately **not** Google-only — `signInWithPassword`, separate from the student/vendor policy.
+- **Vendor** — manage menu, accept/reject/complete orders, view earnings. **Email/password auth** at `/vendor-login` (`signInWithPassword`, screen mirrors `admin-login.tsx`). Store accounts are created by an admin, not self-serve: `(admin)/new-vendor.tsx` form (store email, password, business name, cuisine tags) → `admin-create-vendor` edge function → `auth.admin.createUser({ email_confirm: true })` → `provision_vendor()` RPC creates the `vendors` row (`owner_user_id` set, `is_on_campus`/address default) and flips `users.role` to `vendor`. Location is set afterward from the vendor profile screen. The admin hands the credentials to the vendor; "Forgot Password?" on `/vendor-login` is a contact-admin stub. Changed 2026-08-30 (was Google-only + self-serve `vendor_applications`) — see [[project_vendor_google_only_auth]] and `docs/superpowers/specs/2026-08-30-vendor-email-password-auth-design.md`.
+- **Admin** — manage users, monitor transactions & reports; creates vendor store accounts at `/admin-login` → `(admin)/new-vendor`; monitors every vendor stall and can force one open/closed at `(admin)/vendors` (writes `vendors.is_open` directly, bypassing the owner). Email/password (`signInWithPassword`), bootstrapped once via the `bootstrap-admin` edge function.
 
 ### Payment Flow
 
@@ -119,7 +118,6 @@ Keep schema consistent with this ERD for all SQL/migrations/types. Field names a
 - **ml_interactions** — id, user_id, menu_item_id, action (view|click|order|skip), view_duration_sec, was_recommended, created_at
 - **recommendation_log** — id, user_id, row_type, recommendation_type, item_ids (uuid[]), match_score, served_at
 - **promotions** — id, vendor_id, title, description, discount_pct, target_category, valid_from, valid_until, is_active
-- **vendor_applications** — id, vendor_id (null until approved), applicant_user_id, business_name, full_name, email, phone, bio, cuisine_tags (text[]), is_on_campus, stall_number, address, status (pending|approved|rejected), reviewed_by, reviewed_at, reviewer_note, submitted_at
 
 ## Coding Conventions
 
@@ -138,5 +136,5 @@ Discover → Onboarding (Google login, preferences/allergies/budget) → Explore
 
 Split by surface, not uniform:
 - **Student side** — DB is sparsely seeded, so screens lean on **mock fixtures** in `src/lib/mock-data.ts`. Home (`/(tabs)/index.tsx`) queries Supabase and falls back to mock when the DB returns nothing; other student screens read mock directly. Client state: `cart-store.ts` (single-vendor-per-cart rule), local component state for wallet.
-- **Vendor & admin side** — real Supabase, not mock: `vendor-store.ts` (orders/menu/profile, with Realtime) and the admin applications flow hit live tables.
+- **Vendor & admin side** — real Supabase, not mock: `vendor-store.ts` (orders/menu/profile, with Realtime) and the admin new-vendor / store-monitoring screens hit live tables.
 - Remaining mock-to-real TODOs are `ponytail:` comments — currently menu-item image upload in `(vendor)/menu/new.tsx` (needs Supabase Storage `menu-item-images` bucket) and the single-vendor-per-cart note in `cart-store.ts`. Grep `ponytail:` before trusting this list — it drifts.
