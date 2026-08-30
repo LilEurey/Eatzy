@@ -10,6 +10,7 @@ import { MOCK_VENDORS, MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { getMealSegment } from '@/lib/time';
+import { invokeEdgeFunction } from '@/lib/edge-function';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
 // its own baked-in colors on most platforms instead of a clean flat icon.
@@ -45,6 +46,9 @@ type MenuItem = {
   vendors: { name: string } | null;
 };
 
+// recommend-for-you returns flat rows (no vendors() join — computed server-side).
+type PersonalizedItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
+
 function getGreetingKey(): TranslationKey {
   const h = new Date().getHours();
   if (h < 12) return 'home.greetingMorning';
@@ -66,6 +70,8 @@ export default function HomeScreen() {
   const [featured, setFeatured] = useState<MenuItem | null>(null);
   const [trending, setTrending] = useState<MenuItem[]>([]);
   const [latestRelease, setLatestRelease] = useState<MenuItem[]>([]);
+  const [recommendedForYou, setRecommendedForYou] = useState<PersonalizedItem[]>([]);
+  const [becauseYouOrdered, setBecauseYouOrdered] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
@@ -77,7 +83,7 @@ export default function HomeScreen() {
       const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name)';
 
       const { data: { user } } = await supabase.auth.getUser();
-      const [profileRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes] = await Promise.all([
+      const [profileRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes] = await Promise.all([
         user
           ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
@@ -88,6 +94,13 @@ export default function HomeScreen() {
         // Latest Release — newest items in the last 7 days, matching the current meal time.
         supabase.from('menu_items').select(menuFields).eq('is_available', true).or(timeFilter)
           .gte('release_date', sevenDaysAgo.slice(0, 10)).order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
+        // Because You Ordered — collaborative filtering off the caller's own order
+        // history (see get_because_you_ordered); anonymous or order-less users
+        // just get zero rows back, not an error.
+        user ? supabase.rpc('get_because_you_ordered', { limit_n: 10 }) : Promise.resolve({ data: null, error: null }),
+        // Recommended For You — personalized TF-IDF ranking, cold-started from
+        // user_preferences until real order history exists (see recommend-for-you).
+        invokeEdgeFunction<{ results: PersonalizedItem[] }>('recommend-for-you'),
       ]);
 
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
@@ -128,6 +141,22 @@ export default function HomeScreen() {
       }
 
       setLatestRelease((latestReleaseRes.data as unknown as MenuItem[] | null) ?? []);
+
+      // Because You Ordered — same id-rank → full-row pattern as Trending.
+      const byoRanked = becauseYouOrderedRankRes.data as { menu_item_id: string; co_orders: number }[] | null;
+      if (byoRanked?.length) {
+        const ids = byoRanked.map(r => r.menu_item_id);
+        const rank = new Map(ids.map((id, i) => [id, i]));
+        const { data: byoItems } = await supabase.from('menu_items').select(menuFields)
+          .in('id', ids).eq('is_available', true);
+        const ordered = (byoItems as unknown as MenuItem[] | null)
+          ?.slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? [];
+        setBecauseYouOrdered(ordered);
+      } else {
+        setBecauseYouOrdered([]);
+      }
+
+      setRecommendedForYou(recommendedRes.data?.results ?? []);
     } catch {
       // Full fallback if Supabase is unreachable
       const mockFeatured = MOCK_MENU_ITEMS.find(i => i.is_featured)!;
@@ -259,10 +288,10 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Recommended For You */}
+        {/* Promoted Foods — sponsored items (is_featured), not personalized */}
         <View style={{ marginBottom: 28 }}>
           <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
-            {t('home.recommendedForYou')}
+            {t('home.promoted')}
           </Text>
 
           {/* Featured card */}
@@ -394,6 +423,86 @@ export default function HomeScreen() {
             })}
           </View>
         </View>
+
+        {/* Recommended For You — personalized TF-IDF ranking (cold-started
+            from user_preferences until real order history exists) */}
+        {recommendedForYou.length > 0 && (
+          <View style={{ marginBottom: 28 }}>
+            <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+              {t('home.recommendedForYou')}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {recommendedForYou.map(item => (
+                <Tap
+                  key={item.id}
+                  onPress={() => router.push(`/item/${item.id}`)}
+                  activeOpacity={0.85}
+                  style={{
+                    width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                  }}
+                >
+                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                    {item.image_url
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      : <Text style={{ fontSize: 36 }}>💛</Text>
+                    }
+                  </View>
+                  <View style={{ padding: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>
+                      {localizedText(item.name, item.name_th, locale)}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
+                      {item.vendor_name}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
+                  </View>
+                </Tap>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Because You Ordered — collaborative filtering off the caller's
+            own order history; empty until real orders exist */}
+        {becauseYouOrdered.length > 0 && (
+          <View style={{ marginBottom: 28 }}>
+            <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+              {t('home.becauseYouOrdered')}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {becauseYouOrdered.map(item => (
+                <Tap
+                  key={item.id}
+                  onPress={() => router.push(`/item/${item.id}`)}
+                  activeOpacity={0.85}
+                  style={{
+                    width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                  }}
+                >
+                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                    {item.image_url
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      : <Text style={{ fontSize: 36 }}>🍽️</Text>
+                    }
+                  </View>
+                  <View style={{ padding: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>
+                      {localizedText(item.name, item.name_th, locale)}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
+                      {item.vendors?.name ?? ''}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
+                  </View>
+                </Tap>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Latest Release — newest items in the last 7 days */}
         {latestRelease.length > 0 && (

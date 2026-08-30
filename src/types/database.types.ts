@@ -697,6 +697,13 @@ export type Database = {
         Args: { p_order_id: string }
         Returns: undefined
       }
+      get_because_you_ordered: {
+        Args: { limit_n: number }
+        Returns: {
+          co_orders: number
+          menu_item_id: string
+        }[]
+      }
       get_trending_items: {
         Args: { limit_n: number; since: string }
         Returns: {

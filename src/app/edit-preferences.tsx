@@ -9,6 +9,8 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { getTopMenuCategories } from '@/lib/menu-categories';
+import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
 
 const DIETARY_OPTIONS = ['Halal', 'Vegetarian', 'Jay'] as const;
 type Dietary = (typeof DIETARY_OPTIONS)[number];
@@ -16,18 +18,6 @@ const DIETARY_LABELS: Record<Dietary, TranslationKey> = {
   Halal: 'onboarding.dietary.halal',
   Vegetarian: 'onboarding.dietary.vegetarian',
   Jay: 'onboarding.dietary.jay',
-};
-
-const ALLERGY_OPTIONS = ['Peanuts', 'Dairy', 'Gluten', 'Seafood', 'Beef', 'Egg', 'Other...'] as const;
-type Allergy = (typeof ALLERGY_OPTIONS)[number];
-const ALLERGY_LABELS: Record<Allergy, TranslationKey> = {
-  Peanuts: 'onboarding.allergy.peanuts',
-  Dairy: 'onboarding.allergy.dairy',
-  Gluten: 'onboarding.allergy.gluten',
-  Seafood: 'onboarding.allergy.seafood',
-  Beef: 'onboarding.allergy.beef',
-  Egg: 'onboarding.allergy.egg',
-  'Other...': 'onboarding.allergy.other',
 };
 
 // Same three sections/data as (auth)/onboarding.tsx (same user_preferences
@@ -41,11 +31,15 @@ export default function EditPreferencesScreen() {
   const [dietary, setDietary] = useState<Set<Dietary>>(new Set());
   const [allergies, setAllergies] = useState<Set<Allergy>>(new Set());
   const [budget, setBudget] = useState(60);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [favoriteCategories, setFavoriteCategories] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
+      void getTopMenuCategories().then(setCategoryOptions).catch(() => {});
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
@@ -53,7 +47,7 @@ export default function EditPreferencesScreen() {
         supabase.from('users').select('name').eq('id', user.id).maybeSingle(),
         supabase
           .from('user_preferences')
-          .select('is_halal,is_vegetarian,is_jay,allergies,budget_max')
+          .select('is_halal,is_vegetarian,is_jay,allergies,budget_max,favorite_categories')
           .eq('user_id', user.id)
           .maybeSingle(),
       ]);
@@ -74,12 +68,13 @@ export default function EditPreferencesScreen() {
 
         const nextAllergies = new Set<Allergy>();
         for (const saved of data.allergies ?? []) {
-          const option = ALLERGY_OPTIONS.find(o => o.toLowerCase() === saved);
+          const option = ALLERGY_OPTIONS.find(o => ALLERGY_VALUES[o] === saved);
           if (option) nextAllergies.add(option);
         }
         setAllergies(nextAllergies);
 
         setBudget(data.budget_max ?? 150);
+        setFavoriteCategories(new Set(data.favorite_categories ?? []));
       }
       setLoading(false);
     }
@@ -96,6 +91,14 @@ export default function EditPreferencesScreen() {
 
   function toggleAllergy(item: Allergy) {
     setAllergies(prev => {
+      const next = new Set(prev);
+      if (next.has(item)) next.delete(item); else next.add(item);
+      return next;
+    });
+  }
+
+  function toggleCategory(item: string) {
+    setFavoriteCategories(prev => {
       const next = new Set(prev);
       if (next.has(item)) next.delete(item); else next.add(item);
       return next;
@@ -124,8 +127,9 @@ export default function EditPreferencesScreen() {
         is_jay: dietary.has('Jay'),
         allergies: [...allergies]
           .filter(a => a !== 'Other...')
-          .map(a => a.toLowerCase()),
+          .map(a => ALLERGY_VALUES[a]),
         budget_max: budget >= 150 ? null : budget,
+        favorite_categories: [...favoriteCategories],
       });
       if (error) throw error;
 
@@ -241,6 +245,41 @@ export default function EditPreferencesScreen() {
             })}
           </View>
         </View>
+
+        {/* Favorite Categories card — feeds personalized "Recommended For
+            You" ranking */}
+        {categoryOptions.length > 0 && (
+          <View style={{
+            backgroundColor: Brand.card, borderRadius: 24, padding: 20, marginBottom: 16,
+            shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.04, shadowRadius: 15, elevation: 1,
+          }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
+              {t('editPreferences.favoriteCategories')}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              {categoryOptions.map(item => {
+                const selected = favoriteCategories.has(item);
+                return (
+                  <Tap
+                    key={item}
+                    onPress={() => toggleCategory(item)}
+                    style={{
+                      paddingHorizontal: 18, paddingVertical: 10, borderRadius: 50,
+                      backgroundColor: selected ? Brand.orange : Brand.card,
+                      borderWidth: 1.5, borderColor: selected ? Brand.orange : '#DDD',
+                      flexDirection: 'row', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    {selected && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>✓</Text>}
+                    <Text style={{ color: selected ? '#fff' : Brand.textPrimary, fontWeight: '600', fontSize: 15 }}>
+                      {item}
+                    </Text>
+                  </Tap>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Budget card */}
         <View style={{
