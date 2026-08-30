@@ -583,88 +583,6 @@ export type Database = {
         }
         Relationships: []
       }
-      vendor_applications: {
-        Row: {
-          address: string | null
-          applicant_user_id: string | null
-          bio: string | null
-          business_name: string
-          cuisine_tags: string[]
-          email: string
-          full_name: string
-          id: string
-          is_on_campus: boolean
-          phone: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          reviewer_note: string | null
-          stall_number: string | null
-          status: string
-          submitted_at: string
-          vendor_id: string | null
-        }
-        Insert: {
-          address?: string | null
-          applicant_user_id?: string | null
-          bio?: string | null
-          business_name: string
-          cuisine_tags?: string[]
-          email: string
-          full_name: string
-          id?: string
-          is_on_campus?: boolean
-          phone: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          reviewer_note?: string | null
-          stall_number?: string | null
-          status?: string
-          submitted_at?: string
-          vendor_id?: string | null
-        }
-        Update: {
-          address?: string | null
-          applicant_user_id?: string | null
-          bio?: string | null
-          business_name?: string
-          cuisine_tags?: string[]
-          email?: string
-          full_name?: string
-          id?: string
-          is_on_campus?: boolean
-          phone?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          reviewer_note?: string | null
-          stall_number?: string | null
-          status?: string
-          submitted_at?: string
-          vendor_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vendor_applications_applicant_user_id_fkey"
-            columns: ["applicant_user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vendor_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vendor_applications_vendor_id_fkey"
-            columns: ["vendor_id"]
-            isOneToOne: false
-            referencedRelation: "vendors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       vendors: {
         Row: {
           address: string | null
@@ -773,10 +691,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      approve_vendor_application: {
-        Args: { p_admin_id: string; p_application_id: string }
-        Returns: undefined
-      }
       auto_finalize_stale_handoffs: { Args: never; Returns: undefined }
       bootstrap_admin: { Args: { p_user_id: string }; Returns: undefined }
       finalize_order_handoff: {
@@ -785,15 +699,17 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       next_queue_number: { Args: { p_vendor_id: string }; Returns: number }
-      pending_vendor_application_ids: {
-        Args: never
-        Returns: {
-          vendor_id: string
-        }[]
-      }
       place_order_escrow: {
         Args: { p_amount: number; p_order_id: string; p_user_id: string }
         Returns: undefined
+      }
+      provision_vendor: {
+        Args: {
+          p_business_name: string
+          p_cuisine_tags: string[]
+          p_user_id: string
+        }
+        Returns: string
       }
       refund_escrow: { Args: { p_order_id: string }; Returns: undefined }
       student_confirm_pickup: {

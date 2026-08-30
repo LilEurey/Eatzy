@@ -14,6 +14,18 @@ Migrations via `supabase db push` (or Supabase MCP `apply_migration`); types via
 `supabase gen types typescript --linked > src/types/database.types.ts`; functions via
 `supabase functions deploy|delete`.
 
+**Status (2026-08-30):** Phases 0–7 implemented and committed on
+`feat/vendor-email-password-auth`. DB migrations `20260830140105_provision_vendor` and
+`20260830142206_drop_vendor_applications` applied to the linked project;
+`admin-create-vendor` deployed (v1). `provision_vendor` verified at the DB level
+(role flip + `23505` on repeat owner). `npx tsc --noEmit` clean. Outstanding manual
+steps: (a) `supabase functions delete apply-vendor-application
+approve-vendor-application reject-vendor-application` — CLI not available in the
+implementation environment, the three functions are deployed-but-dead until then;
+(b) Phase 8 Auth-config check on the dashboard; (c) Phase 9 in-app verification.
+`npm run lint` / `eslint` are both broken in this repo's toolchain (dotenv +
+ESLint-internal errors) independent of this change — could not run.
+
 ## Phase 0 — Branch + baseline
 - [x] Feature branch `feat/vendor-email-password-auth` off `main`.
 - [ ] Record clean `npx tsc --noEmit` + `npm run lint` baseline.
