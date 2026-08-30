@@ -27,11 +27,27 @@ The old `apply-/approve-/reject-vendor-application` functions were overwritten w
 a full `supabase functions delete` is still wanted (no CLI / access token in the
 implementation environment).
 
+**Verification run (2026-08-30, API-level against the live project):** with a
+throwaway admin, all passed — `admin-create-vendor` happy path → `{ok:true}` 200;
+the created store logs in via `/auth/v1/token?grant_type=password`; non-admin caller
+→ 403; duplicate email → 422 `CREATE_FAILED`; 3-char password → 400 `WEAK_PASSWORD`;
+old `apply-vendor-application` → 410 `GONE`. DB state of the created store:
+`users.role='vendor'`, `vendors` row with `owner_user_id` matching, `cuisine_tags`
+normalized (`["Thai"," Rice ",""]` → `["Thai","Rice"]`), `is_on_campus=true`,
+`is_open=false`, email confirmed — i.e. exactly what `initVendorSession()` needs to
+return `'ok'`. `provision_vendor` unit-checked earlier (role flip + `23505`).
+`npx tsc --noEmit` clean. Test users + the orphan `vendors` row cleaned up.
+
+NOT run: the literal RN screen click-through — no browser-automation tools here, and
+`expo start --web` / `expo lint` / `eslint` all crash on this machine (Node 25 +
+broken `node_modules`, unrelated to this change). The navigation logic is
+unchanged-pattern (mirrors `admin-login.tsx`) and every server precondition it
+branches on is verified above.
+
 Outstanding manual steps: (a) `supabase functions delete apply-vendor-application
-approve-vendor-application reject-vendor-application`; (b) Phase 8 Auth-config check
-on the dashboard; (c) Phase 9 in-app verification. `npm run lint` / `eslint` are both
-broken in this repo's toolchain (dotenv + ESLint-internal errors) independent of this
-change — could not run.
+approve-vendor-application reject-vendor-application` (currently 410 stubs); (b) Phase
+8 Auth-config check on the dashboard; (c) a real device/simulator pass of
+Verification A/B below through the actual UI.
 
 ## Phase 0 — Branch + baseline
 - [x] Feature branch `feat/vendor-email-password-auth` off `main`.
