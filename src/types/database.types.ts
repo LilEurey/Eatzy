@@ -697,6 +697,13 @@ export type Database = {
         Args: { p_order_id: string }
         Returns: undefined
       }
+      get_trending_items: {
+        Args: { limit_n: number; since: string }
+        Returns: {
+          menu_item_id: string
+          order_count: number
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       next_queue_number: { Args: { p_vendor_id: string }; Returns: number }
       place_order_escrow: {

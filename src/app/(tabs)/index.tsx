@@ -9,6 +9,7 @@ import { Brand } from '@/constants/theme';
 import { MOCK_VENDORS, MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+import { getMealSegment } from '@/lib/time';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
 // its own baked-in colors on most platforms instead of a clean flat icon.
@@ -64,19 +65,29 @@ export default function HomeScreen() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [featured, setFeatured] = useState<MenuItem | null>(null);
   const [trending, setTrending] = useState<MenuItem[]>([]);
+  const [latestRelease, setLatestRelease] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   async function loadData() {
     try {
+      const segment = getMealSegment();
+      const timeFilter = `available_time_segment.eq.${segment},available_time_segment.eq.all`;
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name)';
+
       const { data: { user } } = await supabase.auth.getUser();
-      const [profileRes, vendorsRes, featuredRes, trendingRes] = await Promise.all([
+      const [profileRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes] = await Promise.all([
         user
           ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
         supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url').eq('is_open', true).order('current_queue_count', { ascending: true }),
-        supabase.from('menu_items').select('id,name,name_th,price,category,image_url,vendor_id,vendors(name)').eq('is_featured', true).eq('is_available', true).limit(1),
-        supabase.from('menu_items').select('id,name,name_th,price,category,image_url,vendor_id,vendors(name)').eq('is_available', true).limit(2),
+        supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).limit(1),
+        // Trending Meals Today — real order volume, most-ordered first (see get_trending_items).
+        supabase.rpc('get_trending_items', { since: sevenDaysAgo, limit_n: 10 }),
+        // Latest Release — newest items in the last 7 days, matching the current meal time.
+        supabase.from('menu_items').select(menuFields).eq('is_available', true).or(timeFilter)
+          .gte('release_date', sevenDaysAgo.slice(0, 10)).order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
       ]);
 
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
@@ -84,7 +95,6 @@ export default function HomeScreen() {
 
       const dbVendors = vendorsRes.data as Vendor[] | null;
       const dbFeatured = featuredRes.data?.[0] as unknown as MenuItem | undefined;
-      const dbTrending = trendingRes.data as unknown as MenuItem[] | null;
 
       // Fall back to mock data when DB is empty
       setVendors(dbVendors?.length ? dbVendors : MOCK_VENDORS as unknown as Vendor[]);
@@ -96,12 +106,28 @@ export default function HomeScreen() {
         setFeatured({ ...mockFeatured, vendors: { name: getVendorName(mockFeatured.vendor_id) } });
       }
 
+      // Trending ids come ranked by order count from the RPC; re-fetch full
+      // rows (filtered to items still available now) and restore that order.
+      const trendingRanked = trendingRankRes.data as { menu_item_id: string; order_count: number }[] | null;
+      let dbTrending: MenuItem[] | null = null;
+      if (trendingRanked?.length) {
+        const ids = trendingRanked.map(r => r.menu_item_id);
+        const rank = new Map(ids.map((id, i) => [id, i]));
+        const { data: trendingItems } = await supabase.from('menu_items').select(menuFields)
+          .in('id', ids).eq('is_available', true).or(timeFilter);
+        dbTrending = (trendingItems as unknown as MenuItem[] | null)
+          ?.slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? null;
+      }
+
       if (dbTrending?.length) {
-        setTrending(dbTrending);
+        setTrending(dbTrending.slice(0, 2));
       } else {
+        // No real orders in the window yet — mock fallback, same pattern as featured.
         const mockTrending = MOCK_MENU_ITEMS.filter(i => !i.is_featured).slice(0, 2);
         setTrending(mockTrending.map(i => ({ ...i, vendors: { name: getVendorName(i.vendor_id) } })));
       }
+
+      setLatestRelease((latestReleaseRes.data as unknown as MenuItem[] | null) ?? []);
     } catch {
       // Full fallback if Supabase is unreachable
       const mockFeatured = MOCK_MENU_ITEMS.find(i => i.is_featured)!;
@@ -368,6 +394,52 @@ export default function HomeScreen() {
             })}
           </View>
         </View>
+
+        {/* Latest Release — newest items in the last 7 days */}
+        {latestRelease.length > 0 && (
+          <View style={{ marginBottom: 28 }}>
+            <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+              {t('home.latestRelease')}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {latestRelease.map(item => (
+                <Tap
+                  key={item.id}
+                  onPress={() => router.push(`/item/${item.id}`)}
+                  activeOpacity={0.85}
+                  style={{
+                    width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                  }}
+                >
+                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                    {item.image_url
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      : <Text style={{ fontSize: 36 }}>🍽️</Text>
+                    }
+                    <View style={{
+                      position: 'absolute', top: 8, right: 8,
+                      backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 99,
+                      paddingHorizontal: 8, paddingVertical: 4,
+                    }}>
+                      <Text style={{ fontSize: 9, fontWeight: '700', color: '#261812' }}>✨ {t('home.new')}</Text>
+                    </View>
+                  </View>
+                  <View style={{ padding: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>
+                      {localizedText(item.name, item.name_th, locale)}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
+                      {item.vendors?.name ?? ''}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
+                  </View>
+                </Tap>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Store Options */}
         <View>

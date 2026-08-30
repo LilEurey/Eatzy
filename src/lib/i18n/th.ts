@@ -82,6 +82,8 @@ export const th: Record<TranslationKey, string> = {
   'home.noFeaturedItems': 'วันนี้ยังไม่มีเมนูแนะนำ',
   'home.trending': 'กำลังฮิต',
   'home.storeOptions': 'ร้านค้า',
+  'home.latestRelease': 'เมนูใหม่ล่าสุด',
+  'home.new': 'ใหม่',
   'home.noStallsOpen': 'ยังไม่มีร้านเปิดตอนนี้',
 
   // Orders
@@ -151,6 +153,7 @@ export const th: Record<TranslationKey, string> = {
   'item.price': 'ราคา',
   'item.ingredients': 'ส่วนประกอบ',
   'item.allergens': '⚠️ สารก่อภูมิแพ้',
+  'item.similarFoods': 'เมนูใกล้เคียง',
   'item.addToCart': 'ใส่ตะกร้า · ฿{total}',
 
   // Store detail

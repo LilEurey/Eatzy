@@ -10,6 +10,17 @@ function bangkokHour(date: Date): number {
   return Number(parts.find(p => p.type === 'hour')!.value);
 }
 
+export type MealSegment = 'breakfast' | 'lunch' | 'dinner';
+
+// Matches menu_items.available_time_segment's breakfast/lunch/dinner buckets
+// (items tagged 'all' are always eligible regardless of this).
+export function getMealSegment(date: Date = new Date()): MealSegment {
+  const hour = bangkokHour(date);
+  if (hour < 11) return 'breakfast';
+  if (hour < 17) return 'lunch';
+  return 'dinner';
+}
+
 export function formatBangkokClock(iso: string | null) {
   if (!iso) return '';
   return new Date(iso).toLocaleTimeString('en-GB', { timeZone: BANGKOK_TZ, hour: '2-digit', minute: '2-digit' });

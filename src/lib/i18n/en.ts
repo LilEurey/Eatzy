@@ -80,6 +80,8 @@ export const en = {
   'home.noFeaturedItems': 'No featured items today',
   'home.trending': 'Trending',
   'home.storeOptions': 'Store Options',
+  'home.latestRelease': 'Latest Release',
+  'home.new': 'New',
   'home.noStallsOpen': 'No stalls open right now',
 
   // Orders
@@ -149,6 +151,7 @@ export const en = {
   'item.price': 'Price',
   'item.ingredients': 'Ingredients',
   'item.allergens': '⚠️ Allergens',
+  'item.similarFoods': 'Similar Foods',
   'item.addToCart': 'Add to Cart · ฿{total}',
 
   // Store detail

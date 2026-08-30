@@ -8,9 +8,11 @@ import { Brand } from '@/constants/theme';
 import { addToCart } from '@/lib/cart-store';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+import { invokeEdgeFunction } from '@/lib/edge-function';
 import type { Database } from '@/types/database.types';
 
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
+type SimilarItem = { id: string; name: string; price: number; image_url: string | null; vendor_name: string; score: number };
 
 function SpiceIndicator({ level }: { level: number }) {
   const { t } = useI18n();
@@ -30,6 +32,7 @@ export default function ItemDetailScreen() {
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
   const [vendorName, setVendorName] = useState('');
+  const [similar, setSimilar] = useState<SimilarItem[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -38,6 +41,12 @@ export default function ItemDetailScreen() {
       setVendorName((data as any)?.vendors?.name ?? '');
     }
     void load();
+
+    // Similar Foods — content-based, best-effort: hide the section on
+    // error rather than surface a broken state on the item page.
+    invokeEdgeFunction<{ results: SimilarItem[] }>('recommend-similar', { body: { item_id: id } })
+      .then(({ data }) => setSimilar(data?.results ?? []))
+      .catch(() => setSimilar([]));
   }, [id]);
 
   if (item === undefined) {
@@ -199,6 +208,41 @@ export default function ItemDetailScreen() {
               <Text style={{ fontSize: 13, color: '#9a3412' }}>
                 {item.allergens.join(', ')}
               </Text>
+            </View>
+          )}
+
+          {/* Similar Foods — content-based (TF-IDF + cosine over ingredients/tags/category) */}
+          {similar.length > 0 && (
+            <View style={{ marginTop: 24 }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: Brand.textPrimary, marginBottom: 12 }}>
+                {t('item.similarFoods')}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                {similar.map(s => (
+                  <Tap
+                    key={s.id}
+                    onPress={() => router.push(`/item/${s.id}`)}
+                    activeOpacity={0.85}
+                    style={{
+                      width: 140, borderRadius: 20, backgroundColor: Brand.card, overflow: 'hidden',
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+                      shadowOpacity: 0.04, shadowRadius: 16, elevation: 2,
+                    }}
+                  >
+                    <View style={{ height: 90, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                      {s.image_url
+                        ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                        : <Text style={{ fontSize: 32 }}>🍽️</Text>
+                      }
+                    </View>
+                    <View style={{ padding: 10 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>{s.name}</Text>
+                      <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>{s.vendor_name}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{s.price}</Text>
+                    </View>
+                  </Tap>
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>
