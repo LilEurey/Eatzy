@@ -9,11 +9,15 @@ import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 
-export default function AdminLoginScreen() {
+export default function VendorLoginScreen() {
   const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  function contactAdmin() {
+    showAlert(t('vendor.login.contactAdminTitle'), t('vendor.login.contactAdminMsg'));
+  }
 
   async function signIn() {
     setLoading(true);
@@ -22,12 +26,12 @@ export default function AdminLoginScreen() {
       if (error) throw error;
 
       const { data: profile } = await supabase.from('users').select('role').eq('id', data.user.id).maybeSingle();
-      if (profile?.role !== 'admin') {
+      if (profile?.role !== 'vendor') {
         await supabase.auth.signOut();
-        throw new Error('This account is not registered as an admin.');
+        throw new Error('This account is not registered as a vendor.');
       }
 
-      router.replace('/(admin)/new-vendor' as any);
+      router.replace('/(vendor)/overview' as any);
     } catch (e: any) {
       showAlert(t('auth.signInFailedTitle'), e.message);
       setLoading(false);
@@ -44,21 +48,21 @@ export default function AdminLoginScreen() {
       >
         <View style={{ maxWidth: 380, width: '100%', alignSelf: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 40 }}>
-            <Ionicons name="shield-checkmark" size={20} color={Brand.adminAccent} />
+            <Ionicons name="restaurant" size={20} color={Brand.vendorAccent} />
             <Text style={{ fontSize: 18, fontWeight: '800', color: Brand.textPrimary }}>
-              {t('admin.login.brand')}
+              {t('vendor.login.brand')}
             </Text>
           </View>
 
           <Text style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, marginBottom: 6 }}>
-            {t('admin.login.heading')}
+            {t('vendor.login.heading')}
           </Text>
           <Text style={{ fontSize: 14, color: Brand.textSecondary, marginBottom: 28 }}>
-            {t('admin.login.subtitle')}
+            {t('vendor.login.subtitle')}
           </Text>
 
           <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary, marginBottom: 6 }}>
-            {t('admin.login.emailLabel')}
+            {t('vendor.login.emailLabel')}
           </Text>
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -69,7 +73,7 @@ export default function AdminLoginScreen() {
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder={t('admin.login.emailPlaceholder')}
+              placeholder={t('vendor.login.emailPlaceholder')}
               placeholderTextColor="#B0B4BF"
               autoCapitalize="none"
               keyboardType="email-address"
@@ -77,13 +81,20 @@ export default function AdminLoginScreen() {
             />
           </View>
 
-          <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary, marginBottom: 6 }}>
-            {t('admin.login.passwordLabel')}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>
+              {t('vendor.login.passwordLabel')}
+            </Text>
+            <Tap onPress={contactAdmin}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.vendorAccent }}>
+                {t('vendor.login.forgotPassword')}
+              </Text>
+            </Tap>
+          </View>
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: 10,
             borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10,
-            paddingHorizontal: 14, paddingVertical: 12, marginBottom: 24,
+            paddingHorizontal: 14, paddingVertical: 12, marginBottom: 18,
           }}>
             <Ionicons name="lock-closed-outline" size={16} color="#9AA0AE" />
             <TextInput
@@ -96,26 +107,40 @@ export default function AdminLoginScreen() {
             />
           </View>
 
+          {/* Presentational only — sessions already persist via LargeSecureStore. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+            <Ionicons name="checkbox" size={18} color={Brand.vendorAccent} />
+            <Text style={{ fontSize: 13, color: Brand.textSecondary }}>
+              {t('vendor.login.rememberMe')}
+            </Text>
+          </View>
+
           <Tap
             onPress={signIn}
             disabled={loading}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-              backgroundColor: Brand.adminAccent, borderRadius: 50, paddingVertical: 14,
+              backgroundColor: Brand.orange, borderRadius: 50, paddingVertical: 14,
               opacity: loading ? 0.7 : 1, marginBottom: 20,
             }}
           >
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-              {loading ? t('admin.login.signingIn') : t('admin.login.signIn')}
+              {loading ? t('vendor.login.signingIn') : t('vendor.login.signIn')}
             </Text>
             {!loading && <Ionicons name="arrow-forward" size={16} color="#fff" />}
+          </Tap>
+
+          <Tap onPress={contactAdmin} style={{ alignItems: 'center', marginBottom: 20 }}>
+            <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>
+              {t('vendor.login.applyFooter')}
+            </Text>
           </Tap>
 
           <Tap
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/(auth)'))}
             style={{ alignItems: 'center' }}
           >
-            <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>← Back</Text>
+            <Text style={{ color: Brand.textSecondary, fontSize: 12 }}>{t('vendor.login.back')}</Text>
           </Tap>
         </View>
       </ScrollView>

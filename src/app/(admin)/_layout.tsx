@@ -65,9 +65,9 @@ export default function AdminLayout() {
         backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E4EC',
       }}>
         <NavTab
-          label={t('admin.nav.applications')}
-          active={pathname === '/applications'}
-          onPress={() => router.push('/(admin)/applications' as any)}
+          label={t('admin.nav.newVendor')}
+          active={pathname === '/new-vendor'}
+          onPress={() => router.push('/(admin)/new-vendor' as any)}
         />
         <NavTab
           label={t('admin.nav.vendors')}

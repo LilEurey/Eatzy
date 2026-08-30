@@ -5,7 +5,6 @@ import * as ExpoLinking from 'expo-linking';
 import { supabase } from '@/lib/supabase';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
-import { setVendorIntent, clearVendorIntent } from '@/lib/vendor-intent';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -28,11 +27,9 @@ export function useGoogleSignIn() {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
 
-  async function signIn(vendorIntent = false) {
+  async function signIn() {
     setLoading(true);
     try {
-      if (vendorIntent) await setVendorIntent();
-
       const redirectTo = ExpoLinking.createURL('/');
 
       if (Platform.OS === 'web') {
@@ -68,7 +65,6 @@ export function useGoogleSignIn() {
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
       if (exchangeError) throw exchangeError;
     } catch (e: any) {
-      if (vendorIntent) await clearVendorIntent();
       showAlert(t('auth.signInFailedTitle'), e.message);
     } finally {
       setLoading(false);

@@ -2,8 +2,8 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 // supabase-js only populates `data` when an Edge Function responds 2xx —
-// any non-2xx status (which is how apply/approve/reject-vendor-application
-// signal errors, via a real 400/403/409/500) surfaces as a thrown
+// any non-2xx status (which is how admin-create-vendor signals errors, via a
+// real 400/403/409/422/500) surfaces as a thrown
 // FunctionsHttpError instead, with `data` left null and the actual
 // `{ error, code }` body only reachable via `error.context.json()`. Callers
 // that only checked `data?.error` never saw it — this normalizes both

@@ -129,7 +129,7 @@ export default function LoginScreen() {
 
             {/* Google button */}
             <Tap
-              onPress={() => signIn(false)}
+              onPress={signIn}
               disabled={loading}
               style={{
                 flexDirection: 'row',
@@ -154,8 +154,8 @@ export default function LoginScreen() {
               </Text>
             </Tap>
 
-            <Tap onPress={() => router.push('/become-vendor' as any)} style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#5a4136', fontSize: 13 }}>{t('auth.becomeVendorCta')}</Text>
+            <Tap onPress={() => router.push('/vendor-login' as any)} style={{ alignItems: 'center' }}>
+              <Text style={{ color: '#5a4136', fontSize: 13, fontWeight: '600' }}>{t('auth.vendorLoginCta')}</Text>
             </Tap>
           </View>
         </View>

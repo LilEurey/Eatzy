@@ -129,7 +129,7 @@ export default function AdminVendorsScreen() {
                 <DetailRow label={t('admin.vendors.ownerLabel')} value={selected.owner ? `${selected.owner.name} · ${selected.owner.email}` : t('admin.vendors.unclaimed')} />
                 {!!selected.address && <DetailRow label={t('admin.vendors.title')} value={selected.address} />}
                 {selected.cuisine_tags.length > 0 && (
-                  <DetailRow label={t('admin.applications.cuisineTagsLabel')} value={selected.cuisine_tags.join(', ')} />
+                  <DetailRow label={t('vendor.profile.cuisineTagsLabel')} value={selected.cuisine_tags.join(', ')} />
                 )}
                 {!!(selected.open_time || selected.close_time) && (
                   <DetailRow
