@@ -122,6 +122,8 @@ export const th: Record<TranslationKey, string> = {
   'wallet.transfer': 'โอนเงิน',
   'wallet.statement': 'รายการเดินบัญชี',
   'wallet.recentTransactions': 'รายการล่าสุด',
+  'wallet.noTransactionsTitle': 'ยังไม่มีรายการ',
+  'wallet.noTransactionsSubtitle': 'เติมเงินหรือสั่งอาหารเพื่อดูรายการที่นี่',
   'wallet.topUpFailedTitle': 'เติมเงินไม่สำเร็จ',
   'wallet.txn.topup': 'เติมเงินเข้ากระเป๋า',
   'wallet.txn.payment': 'ชำระเงินค่าออเดอร์ (พักไว้ในระบบ)',

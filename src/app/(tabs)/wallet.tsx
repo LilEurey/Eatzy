@@ -22,6 +22,8 @@ const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
 
 const TOP_UP_AMOUNTS = [100, 200, 500];
 
+const baht = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 function formatDate(iso: string, t: ReturnType<typeof useI18n>['t']) {
   const d = new Date(iso);
   const now = new Date();
@@ -125,7 +127,7 @@ export default function WalletScreen() {
               {t('wallet.balanceLabel')}
             </Text>
             <Text style={{ fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1, marginBottom: 20 }}>
-              ฿{balance.toLocaleString()}.00
+              ฿{baht(balance)}
             </Text>
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -187,6 +189,17 @@ export default function WalletScreen() {
             shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
           }}>
+            {txns.length === 0 && (
+              <View style={{ alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
+                <Text style={{ fontSize: 36, marginBottom: 10 }}>🧾</Text>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.textPrimary, marginBottom: 4 }}>
+                  {t('wallet.noTransactionsTitle')}
+                </Text>
+                <Text style={{ fontSize: 13, color: Brand.textSecondary, textAlign: 'center' }}>
+                  {t('wallet.noTransactionsSubtitle')}
+                </Text>
+              </View>
+            )}
             {txns.map((tx, i) => {
               const cfg = TX_CONFIG[tx.type];
               const isPositive = tx.amount > 0;
@@ -215,7 +228,7 @@ export default function WalletScreen() {
 
                     {/* Amount */}
                     <Text style={{ fontSize: 15, fontWeight: '700', color: isPositive ? '#16a34a' : Brand.textPrimary }}>
-                      {isPositive ? '+' : ''}฿{Math.abs(tx.amount)}
+                      {isPositive ? '+' : ''}฿{baht(Math.abs(tx.amount))}
                     </Text>
                   </View>
                 </View>

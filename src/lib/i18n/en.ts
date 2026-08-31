@@ -120,6 +120,8 @@ export const en = {
   'wallet.transfer': 'Transfer',
   'wallet.statement': 'Statement',
   'wallet.recentTransactions': 'Recent Transactions',
+  'wallet.noTransactionsTitle': 'No transactions yet',
+  'wallet.noTransactionsSubtitle': 'Top up or place an order to see activity here',
   'wallet.topUpFailedTitle': 'Top-up failed',
   'wallet.txn.topup': 'Wallet top-up',
   'wallet.txn.payment': 'Order payment held in escrow',
