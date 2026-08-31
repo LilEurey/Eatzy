@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      menu_item_addon_groups: {
+        Row: {
+          created_at: string
+          id: string
+          max_select: number | null
+          menu_item_id: string
+          min_select: number
+          name: string
+          name_th: string | null
+          sort_order: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_select?: number | null
+          menu_item_id: string
+          min_select?: number
+          name: string
+          name_th?: string | null
+          sort_order?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_select?: number | null
+          menu_item_id?: string
+          min_select?: number
+          name?: string
+          name_th?: string | null
+          sort_order?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_addon_groups_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_item_addon_groups_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_item_addons: {
+        Row: {
+          group_id: string
+          id: string
+          is_available: boolean
+          name: string
+          name_th: string | null
+          price: number
+          sort_order: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          is_available?: boolean
+          name: string
+          name_th?: string | null
+          price?: number
+          sort_order?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          is_available?: boolean
+          name?: string
+          name_th?: string | null
+          price?: number
+          sort_order?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_addons_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "menu_item_addon_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_item_addons_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           allergens: string[]
@@ -204,6 +309,51 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_item_addons: {
+        Row: {
+          addon_id: string | null
+          created_at: string
+          id: string
+          name: string
+          name_th: string | null
+          order_item_id: string
+          price: number
+        }
+        Insert: {
+          addon_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          name_th?: string | null
+          order_item_id: string
+          price?: number
+        }
+        Update: {
+          addon_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          name_th?: string | null
+          order_item_id?: string
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_item_addons_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "menu_item_addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_addons_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
             referencedColumns: ["id"]
           },
         ]
