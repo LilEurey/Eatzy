@@ -4,15 +4,12 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorMenu, toggleAvailability } from '@/lib/vendor-store';
-import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 
 export default function VendorMenuScreen() {
   const { t, locale } = useI18n();
   const items = useVendorMenu();
-
-  const comingSoon = () => comingSoonAlert(t);
 
   return (
     <View style={{ gap: 20 }}>
@@ -47,10 +44,11 @@ export default function VendorMenuScreen() {
                   : <Text style={{ fontSize: 44 }}>🍽️</Text>
                 }
                 <Tap
-                  onPress={comingSoon}
-                  style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }}
+                  onPress={() => router.push(`/(vendor)/menu/${item.id}/addons` as any)}
+                  style={{ position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', gap: 4, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.92)', paddingHorizontal: 10 }}
                 >
-                  <Ionicons name="ellipsis-vertical" size={14} color={Brand.textPrimary} />
+                  <Ionicons name="options-outline" size={13} color={Brand.textPrimary} />
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.menu.manageAddons')}</Text>
                 </Tap>
               </View>
               <View style={{ padding: 14, gap: 8 }}>

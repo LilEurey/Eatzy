@@ -149,6 +149,8 @@ export const en = {
   'cart.orderFailedTitle': 'Couldn’t place order',
   'cart.insufficientBalanceMsg': 'Your Campus Wallet balance is too low for this order. Top up in the Wallet tab and try again.',
   'cart.signInAgainMsg': 'Your session expired. Please sign in again.',
+  'cart.addonRuleMsg': 'One of your items is missing a required choice. Go back and pick it, then try again.',
+  'cart.addonPlus': '+ {name}',
 
   // Search
   'search.placeholder': 'Search dishes, cuisine, ingredients…',
@@ -176,6 +178,11 @@ export const en = {
   'item.allergens': '⚠️ Allergens',
   'item.similarFoods': 'Similar Foods',
   'item.addToCart': 'Add to Cart · ฿{total}',
+  'item.addons.required': 'Required',
+  'item.addons.chooseUpTo': 'Choose up to {n}',
+  'item.addons.chooseOne': 'Choose 1',
+  'item.addons.plusPrice': '+฿{price}',
+  'item.addons.pickRequired': 'Pick the required options to continue',
 
   // Store detail
   'store.notFound': 'Store not found',
@@ -342,6 +349,35 @@ export const en = {
   'vendor.menu.empty': 'No menu items yet',
   'vendor.menu.edit': 'Edit',
   'vendor.menu.delete': 'Delete',
+  'vendor.menu.manageAddons': 'Add-ons',
+
+  // Vendor — add-on authoring
+  'vendor.addons.title': 'Add-ons',
+  'vendor.addons.subtitle': 'Groups & options for {name}',
+  'vendor.addons.back': 'Back to menu',
+  'vendor.addons.empty': 'No add-on groups yet',
+  'vendor.addons.addGroup': '+ Add group',
+  'vendor.addons.addOption': '+ Add option',
+  'vendor.addons.groupName': 'Group name',
+  'vendor.addons.groupNamePlaceholder': 'e.g. Extras',
+  'vendor.addons.groupNameTh': 'Thai name (optional)',
+  'vendor.addons.minSelect': 'Min',
+  'vendor.addons.maxSelect': 'Max',
+  'vendor.addons.maxSelectHint': 'blank = no limit',
+  'vendor.addons.required': 'Required',
+  'vendor.addons.optionName': 'Option name',
+  'vendor.addons.optionNamePlaceholder': 'e.g. Fried egg',
+  'vendor.addons.optionNameTh': 'Thai name (optional)',
+  'vendor.addons.optionPrice': 'Price',
+  'vendor.addons.optionAvailable': 'Available',
+  'vendor.addons.save': 'Save',
+  'vendor.addons.cancel': 'Cancel',
+  'vendor.addons.deleteGroupTitle': 'Delete group?',
+  'vendor.addons.deleteGroupMsg': 'This removes “{name}” and all its options.',
+  'vendor.addons.deleteOptionTitle': 'Delete option?',
+  'vendor.addons.deleteOptionMsg': 'This removes “{name}”.',
+  'vendor.addons.validationTitle': 'Missing info',
+  'vendor.addons.validationMsg': 'Please add a name.',
 
   // Vendor — add new menu item
   'vendor.menuNew.title': 'Add New Menu Item',

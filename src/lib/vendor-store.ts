@@ -54,7 +54,8 @@ type VendorNotification = {
   created_at: string;
 };
 
-type OrderItem = { menu_item_id: string; name: string; name_th: string | null; quantity: number; unit_price: number; done: boolean };
+type OrderItemAddon = { name: string; name_th: string | null; price: number };
+type OrderItem = { menu_item_id: string; name: string; name_th: string | null; quantity: number; unit_price: number; addons: OrderItemAddon[]; done: boolean };
 type VendorOrder = {
   id: string;
   queue_number: number | null;
@@ -110,6 +111,9 @@ function mapOrder(row: any): VendorOrder {
     name_th: oi.menu_items?.name_th ?? null,
     quantity: oi.quantity,
     unit_price: oi.unit_price,
+    addons: (oi.order_item_addons ?? []).map((a: any) => ({
+      name: a.name, name_th: a.name_th ?? null, price: a.price,
+    })),
     done: false,
   }));
   const specialNotes = (row.order_items ?? [])
@@ -142,7 +146,7 @@ async function fetchMenu(vendorId: string) {
 async function fetchOrders(vendorId: string) {
   const { data } = await supabase
     .from('orders')
-    .select('id,queue_number,status,total_amount,pickup_start,payment_method,created_at,estimated_prep_minutes,vendor_handed_off_at,order_items(menu_item_id,quantity,unit_price,special_instructions,menu_items(name,name_th))')
+    .select('id,queue_number,status,total_amount,pickup_start,payment_method,created_at,estimated_prep_minutes,vendor_handed_off_at,order_items(menu_item_id,quantity,unit_price,special_instructions,menu_items(name,name_th),order_item_addons(name,name_th,price))')
     .eq('vendor_id', vendorId)
     .order('created_at', { ascending: true });
   orders = ((data as any[] | null) ?? []).map(mapOrder);

@@ -14,6 +14,17 @@ import type { Database } from '@/types/database.types';
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
 type SimilarItem = { id: string; name: string; price: number; image_url: string | null; vendor_name: string; score: number };
 
+type AddonOption = { id: string; name: string; name_th: string | null; price: number; is_available: boolean; sort_order: number };
+type AddonGroup = {
+  id: string;
+  name: string;
+  name_th: string | null;
+  min_select: number;
+  max_select: number | null;
+  sort_order: number;
+  menu_item_addons: AddonOption[];
+};
+
 function SpiceIndicator({ level }: { level: number }) {
   const { t } = useI18n();
   if (level === 0) return <Text style={{ fontSize: 12, color: Brand.textSecondary }}>{t('common.noSpice')}</Text>;
@@ -33,6 +44,9 @@ export default function ItemDetailScreen() {
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
   const [vendorName, setVendorName] = useState('');
   const [similar, setSimilar] = useState<SimilarItem[]>([]);
+  const [groups, setGroups] = useState<AddonGroup[]>([]);
+  // groupId -> selected option ids
+  const [selected, setSelected] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     async function load() {
@@ -41,6 +55,23 @@ export default function ItemDetailScreen() {
       setVendorName((data as any)?.vendors?.name ?? '');
     }
     void load();
+
+    supabase
+      .from('menu_item_addon_groups')
+      .select('id,name,name_th,min_select,max_select,sort_order,menu_item_addons(id,name,name_th,price,is_available,sort_order)')
+      .eq('menu_item_id', id)
+      .order('sort_order')
+      .then(({ data }) => {
+        const rows = ((data ?? []) as AddonGroup[])
+          .map(g => ({
+            ...g,
+            menu_item_addons: (g.menu_item_addons ?? [])
+              .filter(o => o.is_available)
+              .sort((a, b) => a.sort_order - b.sort_order),
+          }))
+          .filter(g => g.menu_item_addons.length > 0);
+        setGroups(rows);
+      });
 
     // Similar Foods — content-based, best-effort: hide the section on
     // error rather than surface a broken state on the item page.
@@ -73,7 +104,36 @@ export default function ItemDetailScreen() {
     );
   }
 
-  const total = item.price * qty;
+  function toggleOption(group: AddonGroup, optionId: string) {
+    setSelected(prev => {
+      const current = prev[group.id] ?? [];
+      const has = current.includes(optionId);
+      let next: string[];
+      if (group.max_select === 1) {
+        next = has ? [] : [optionId]; // radio
+      } else if (has) {
+        next = current.filter(o => o !== optionId);
+      } else if (group.max_select != null && current.length >= group.max_select) {
+        return prev; // at the cap — ignore
+      } else {
+        next = [...current, optionId];
+      }
+      return { ...prev, [group.id]: next };
+    });
+  }
+
+  const selectedOptions: { id: string; name: string; name_th: string | null; price: number }[] = groups.flatMap(g =>
+    (selected[g.id] ?? [])
+      .map(oid => g.menu_item_addons.find(o => o.id === oid))
+      .filter((o): o is AddonOption => !!o)
+      .map(o => ({ id: o.id, name: o.name, name_th: o.name_th, price: o.price })),
+  );
+  const addonSum = selectedOptions.reduce((s, o) => s + o.price, 0);
+  const groupsValid = groups.every(g => {
+    const count = (selected[g.id] ?? []).length;
+    return count >= g.min_select && (g.max_select == null || count <= g.max_select);
+  });
+  const total = (item.price + addonSum) * qty;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -211,6 +271,69 @@ export default function ItemDetailScreen() {
             </View>
           )}
 
+          {/* Add-on groups */}
+          {groups.map(group => {
+            const chosen = selected[group.id] ?? [];
+            const ruleLabel = group.max_select === 1
+              ? t('item.addons.chooseOne')
+              : group.max_select != null
+                ? t('item.addons.chooseUpTo', { n: group.max_select })
+                : null;
+            return (
+              <View key={group.id} style={{ marginTop: 20 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary }}>
+                    {localizedText(group.name, group.name_th, locale)}
+                  </Text>
+                  {group.min_select >= 1 && (
+                    <View style={{ backgroundColor: '#fee2e2', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#b91c1c' }}>{t('item.addons.required')}</Text>
+                    </View>
+                  )}
+                  {ruleLabel && (
+                    <Text style={{ fontSize: 12, color: Brand.textSecondary }}>{ruleLabel}</Text>
+                  )}
+                </View>
+                <View style={{
+                  backgroundColor: Brand.card, borderRadius: 16, overflow: 'hidden',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
+                }}>
+                  {group.menu_item_addons.map((opt, oi) => {
+                    const isOn = chosen.includes(opt.id);
+                    return (
+                      <View key={opt.id}>
+                        {oi > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 14 }} />}
+                        <Tap
+                          onPress={() => toggleOption(group, opt.id)}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}
+                        >
+                          <View style={{
+                            width: 22, height: 22,
+                            borderRadius: group.max_select === 1 ? 11 : 6,
+                            borderWidth: 2, borderColor: isOn ? Brand.orange : Brand.border,
+                            backgroundColor: isOn ? Brand.orange : 'transparent',
+                            alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {isOn && <Text style={{ color: '#fff', fontSize: 13, fontWeight: '900', lineHeight: 15 }}>✓</Text>}
+                          </View>
+                          <Text style={{ flex: 1, fontSize: 15, color: Brand.textPrimary }}>
+                            {localizedText(opt.name, opt.name_th, locale)}
+                          </Text>
+                          {opt.price > 0 && (
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.textSecondary }}>
+                              {t('item.addons.plusPrice', { price: opt.price })}
+                            </Text>
+                          )}
+                        </Tap>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
+
           {/* Similar Foods — content-based (TF-IDF + cosine over ingredients/tags/category) */}
           {similar.length > 0 && (
             <View style={{ marginTop: 24 }}>
@@ -257,6 +380,11 @@ export default function ItemDetailScreen() {
         shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.06, shadowRadius: 12, elevation: 10,
       }}>
+        {!groupsValid && (
+          <Text style={{ fontSize: 12, color: '#b91c1c', marginBottom: 10, textAlign: 'center' }}>
+            {t('item.addons.pickRequired')}
+          </Text>
+        )}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {/* Qty controls */}
           <View style={{
@@ -283,14 +411,16 @@ export default function ItemDetailScreen() {
           {/* Add to cart button */}
           <Tap
             activeOpacity={0.85}
+            disabled={!groupsValid}
             onPress={() => {
-              addToCart(item, qty);
+              if (!groupsValid) return;
+              addToCart(item, qty, selectedOptions);
               router.push('/cart');
             }}
             style={{
               flex: 1, backgroundColor: Brand.orange, borderRadius: 14,
               height: 44, alignItems: 'center', justifyContent: 'center',
-              flexDirection: 'row', gap: 8,
+              flexDirection: 'row', gap: 8, opacity: groupsValid ? 1 : 0.5,
               shadowColor: Brand.orange, shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.35, shadowRadius: 8, elevation: 4,
             }}

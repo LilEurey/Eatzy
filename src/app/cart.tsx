@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { useCart, setQty, clearCart, cartSubtotal } from '@/lib/cart-store';
+import { useCart, setQty, clearCart, cartSubtotal, lineUnitTotal } from '@/lib/cart-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
@@ -40,6 +40,7 @@ export default function CartScreen() {
   async function placeOrder() {
     if (!cart.vendor_id) return;
     setPlacing(true);
+    let orderId: string | null = null;
     try {
       // getSession() (not getUser()) because it's the session whose
       // access_token actually rides along on the inserts below — reading
@@ -73,11 +74,27 @@ export default function CartScreen() {
         .select('id')
         .single();
       if (orderError) throw orderError;
+      orderId = order.id;
 
-      const { error: itemsError } = await supabase.from('order_items').insert(
-        items.map(i => ({ order_id: order.id, menu_item_id: i.menu_item_id, quantity: i.quantity, unit_price: i.unit_price })),
-      );
-      if (itemsError) throw itemsError;
+      // Insert line by line: two lines can share menu_item_id (different
+      // add-on configs), so a bulk insert can't be re-correlated to its
+      // cart line when attaching order_item_addons. unit_price / add-on
+      // name+price are force-set by DB triggers; we send only the refs.
+      for (const line of items) {
+        const { data: oi, error: itemError } = await supabase
+          .from('order_items')
+          .insert({ order_id: order.id, menu_item_id: line.menu_item_id, quantity: line.quantity, unit_price: line.unit_price })
+          .select('id')
+          .single();
+        if (itemError) throw itemError;
+
+        if (line.addons.length > 0) {
+          const { error: addonError } = await supabase
+            .from('order_item_addons')
+            .insert(line.addons.map(a => ({ order_item_id: oi.id, addon_id: a.id })));
+          if (addonError) throw addonError;
+        }
+      }
 
       const { error: escrowError } = await supabase
         .rpc('place_order_escrow', { p_user_id: user.id, p_order_id: order.id, p_amount: total });
@@ -86,9 +103,15 @@ export default function CartScreen() {
       clearCart();
       router.replace(`/track/${order.id}`);
     } catch (e: any) {
+      // Don't strand a pending order when checkout fails after the row was
+      // inserted (rule violation / low balance). Best-effort; RLS lets a
+      // student delete their own not-yet-paid order.
+      if (orderId) await supabase.from('orders').delete().eq('id', orderId);
       const message = e.message === 'insufficient_wallet_balance'
         ? t('cart.insufficientBalanceMsg')
-        : `${e.message}${e.code ? ` [${e.code}]` : ''}${e.details ? `\n${e.details}` : ''}${e.hint ? `\n${e.hint}` : ''}`;
+        : e.message === 'addon_rule_violation'
+          ? t('cart.addonRuleMsg')
+          : `${e.message}${e.code ? ` [${e.code}]` : ''}${e.details ? `\n${e.details}` : ''}${e.hint ? `\n${e.hint}` : ''}`;
       showAlert(t('cart.orderFailedTitle'), message);
     } finally {
       setPlacing(false);
@@ -161,7 +184,7 @@ export default function CartScreen() {
           shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
         }}>
           {items.map((item, i) => (
-            <View key={item.menu_item_id}>
+            <View key={item.line_id}>
               {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
               <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 }}>
                 <View style={{ flex: 1 }}>
@@ -169,6 +192,16 @@ export default function CartScreen() {
                     {localizedText(item.name, item.name_th, locale)}
                   </Text>
                   <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.unitPrice', { price: item.unit_price })}</Text>
+                  {item.addons.map(a => (
+                    <View key={a.id} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
+                      <Text style={{ fontSize: 13, color: Brand.textSecondary }}>
+                        {t('cart.addonPlus', { name: localizedText(a.name, a.name_th, locale) })}
+                      </Text>
+                      {a.price > 0 && (
+                        <Text style={{ fontSize: 13, color: Brand.textSecondary }}>{t('item.addons.plusPrice', { price: a.price })}</Text>
+                      )}
+                    </View>
+                  ))}
                 </View>
 
                 {/* Qty controls */}
@@ -177,7 +210,7 @@ export default function CartScreen() {
                   backgroundColor: Brand.orangeLight, borderRadius: 12, overflow: 'hidden',
                 }}>
                   <Tap
-                    onPress={() => setQty(item.menu_item_id, -1)}
+                    onPress={() => setQty(item.line_id, -1)}
                     style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>−</Text>
@@ -186,7 +219,7 @@ export default function CartScreen() {
                     {item.quantity}
                   </Text>
                   <Tap
-                    onPress={() => setQty(item.menu_item_id, 1)}
+                    onPress={() => setQty(item.line_id, 1)}
                     style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>+</Text>
@@ -194,7 +227,7 @@ export default function CartScreen() {
                 </View>
 
                 <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, minWidth: 52, textAlign: 'right' }}>
-                  ฿{item.unit_price * item.quantity}
+                  ฿{lineUnitTotal(item) * item.quantity}
                 </Text>
               </View>
             </View>

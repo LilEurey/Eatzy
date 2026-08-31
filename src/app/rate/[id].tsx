@@ -17,7 +17,7 @@ const LABEL_KEYS: (TranslationKey | null)[] = [
 type RateOrder = {
   id: string;
   vendor_name: string;
-  items: { name: string; name_th: string | null }[];
+  items: { name: string; name_th: string | null; addons: { name: string; name_th: string | null }[] }[];
   primary_menu_item_id: string | null;
 };
 
@@ -33,7 +33,7 @@ export default function RateScreen() {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,vendors(name),order_items(menu_item_id,menu_items(name,name_th))')
+        .select('id,vendors(name),order_items(menu_item_id,menu_items(name,name_th),order_item_addons(name,name_th))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
@@ -41,7 +41,10 @@ export default function RateScreen() {
       setOrder({
         id: data.id,
         vendor_name: (data as any).vendors?.name ?? '',
-        items: orderItems.map((oi: any) => ({ name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null })),
+        items: orderItems.map((oi: any) => ({
+          name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null,
+          addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null })),
+        })),
         primary_menu_item_id: orderItems[0]?.menu_item_id ?? null,
       });
     }
@@ -113,7 +116,10 @@ export default function RateScreen() {
           <Text style={{ fontSize: 44, marginBottom: 8 }}>🍽️</Text>
           <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary }}>{vendor}</Text>
           <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' }}>
-            {order.items.map(i => localizedText(i.name, i.name_th, locale)).join(', ')}
+            {order.items.map(i => {
+              const addons = i.addons.length ? ` (${i.addons.map(a => localizedText(a.name, a.name_th, locale)).join(', ')})` : '';
+              return `${localizedText(i.name, i.name_th, locale)}${addons}`;
+            }).join(', ')}
           </Text>
         </View>
 

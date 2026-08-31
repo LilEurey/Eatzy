@@ -20,7 +20,7 @@ type TrackOrder = {
   total_amount: number;
   vendor_name: string;
   student_picked_up_at: string | null;
-  items: { name: string; name_th: string | null; quantity: number; unit_price: number }[];
+  items: { name: string; name_th: string | null; quantity: number; unit_price: number; addons: { name: string; name_th: string | null; price: number }[] }[];
 };
 
 const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: TranslationKey }[] = [
@@ -42,7 +42,7 @@ export default function TrackScreen() {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th))')
+        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
@@ -54,7 +54,11 @@ export default function TrackScreen() {
         total_amount: data.total_amount,
         vendor_name: (data as any).vendors?.name ?? '',
         student_picked_up_at: data.student_picked_up_at,
-        items: ((data as any).order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity, unit_price: oi.unit_price })),
+        items: ((data as any).order_items ?? []).map((oi: any) => ({
+          name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null,
+          quantity: oi.quantity, unit_price: oi.unit_price,
+          addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null, price: a.price })),
+        })),
       });
       setStatus(data.status as Status);
     }
@@ -184,14 +188,24 @@ export default function TrackScreen() {
           shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
         }}>
-          {order.items.map((it, i) => (
-            <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 14, color: Brand.textPrimary }}>
-                {it.quantity > 1 ? `${it.quantity}× ` : ''}{localizedText(it.name, it.name_th, locale)}
-              </Text>
-              <Text style={{ fontSize: 14, color: Brand.textSecondary }}>฿{it.unit_price * it.quantity}</Text>
-            </View>
-          ))}
+          {order.items.map((it, i) => {
+            const addonSum = it.addons.reduce((s, a) => s + a.price, 0);
+            return (
+              <View key={i} style={{ gap: 2 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 14, color: Brand.textPrimary }}>
+                    {it.quantity > 1 ? `${it.quantity}× ` : ''}{localizedText(it.name, it.name_th, locale)}
+                  </Text>
+                  <Text style={{ fontSize: 14, color: Brand.textSecondary }}>฿{(it.unit_price + addonSum) * it.quantity}</Text>
+                </View>
+                {it.addons.map((a, ai) => (
+                  <Text key={ai} style={{ fontSize: 12, color: Brand.textSecondary, marginLeft: 12 }}>
+                    + {localizedText(a.name, a.name_th, locale)}
+                  </Text>
+                ))}
+              </View>
+            );
+          })}
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('common.total')}</Text>

@@ -23,7 +23,7 @@ type StudentOrder = {
   pickup_end: string | null;
   created_at: string;
   vendor_name: string;
-  items: { name: string; name_th: string | null; quantity: number }[];
+  items: { name: string; name_th: string | null; quantity: number; addons: { name: string; name_th: string | null }[] }[];
 };
 
 const STATUS_CONFIG: Record<OrderStatus, { labelKey: TranslationKey; color: string; bg: string }> = {
@@ -69,7 +69,7 @@ export default function OrdersScreen() {
 
         const { data } = await supabase
           .from('orders')
-          .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th))')
+          .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th),order_item_addons(name,name_th))')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -84,7 +84,10 @@ export default function OrdersScreen() {
           pickup_end: o.pickup_end,
           created_at: o.created_at,
           vendor_name: o.vendors?.name ?? '—',
-          items: (o.order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity })),
+          items: (o.order_items ?? []).map((oi: any) => ({
+            name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity,
+            addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null })),
+          })),
         })));
         setLoading(false);
       }
@@ -157,7 +160,10 @@ export default function OrdersScreen() {
             const cfg = STATUS_CONFIG[order.status];
             const vendor = order.vendor_name;
             const isActive = ACTIVE.includes(order.status);
-            const itemSummary = order.items.map(i => `${localizedText(i.name, i.name_th, locale)}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join(', ');
+            const itemSummary = order.items.map(i => {
+              const addons = i.addons.length ? ` (+${i.addons.map(a => localizedText(a.name, a.name_th, locale)).join(', ')})` : '';
+              return `${localizedText(i.name, i.name_th, locale)}${i.quantity > 1 ? ` ×${i.quantity}` : ''}${addons}`;
+            }).join(', ');
 
             return (
               <View

@@ -111,7 +111,14 @@ function IncomingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType<
     >
       <View style={{ gap: 3 }}>
         {order.items.map((it, i) => (
-          <Text key={i} style={{ fontSize: 13, color: Brand.textPrimary }}>{it.quantity}x {localizedText(it.name, it.name_th, locale)}</Text>
+          <View key={i}>
+            <Text style={{ fontSize: 13, color: Brand.textPrimary }}>{it.quantity}x {localizedText(it.name, it.name_th, locale)}</Text>
+            {it.addons.map((a, ai) => (
+              <Text key={ai} style={{ fontSize: 12, color: '#8A8F9B', marginLeft: 14 }}>
+                + {localizedText(a.name, a.name_th, locale)}
+              </Text>
+            ))}
+          </View>
         ))}
       </View>
       {order.special_request && <SpecialBanner text={order.special_request} t={t} />}
@@ -152,9 +159,16 @@ function PreparingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType
             }}>
               {it.done && <Ionicons name="checkmark" size={11} color="#fff" />}
             </View>
-            <Text style={{ fontSize: 13, color: Brand.textPrimary, textDecorationLine: it.done ? 'line-through' : 'none' }}>
-              {it.quantity}x {localizedText(it.name, it.name_th, locale)}
-            </Text>
+            <View>
+              <Text style={{ fontSize: 13, color: Brand.textPrimary, textDecorationLine: it.done ? 'line-through' : 'none' }}>
+                {it.quantity}x {localizedText(it.name, it.name_th, locale)}
+              </Text>
+              {it.addons.map((a, ai) => (
+                <Text key={ai} style={{ fontSize: 12, color: '#8A8F9B' }}>
+                  + {localizedText(a.name, a.name_th, locale)}
+                </Text>
+              ))}
+            </View>
           </Tap>
         ))}
       </View>

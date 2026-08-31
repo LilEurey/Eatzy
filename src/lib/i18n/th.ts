@@ -151,6 +151,8 @@ export const th: Record<TranslationKey, string> = {
   'cart.orderFailedTitle': 'สั่งซื้อไม่สำเร็จ',
   'cart.insufficientBalanceMsg': 'ยอดเงินใน Campus Wallet ไม่พอสำหรับคำสั่งซื้อนี้ กรุณาเติมเงินที่แท็บกระเป๋าเงินแล้วลองใหม่อีกครั้ง',
   'cart.signInAgainMsg': 'เซสชันของคุณหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
+  'cart.addonRuleMsg': 'มีรายการที่ยังไม่ได้เลือกตัวเลือกที่จำเป็น กรุณากลับไปเลือกแล้วลองใหม่อีกครั้ง',
+  'cart.addonPlus': '+ {name}',
 
   // Search
   'search.placeholder': 'ค้นหาเมนู ประเภทอาหาร วัตถุดิบ…',
@@ -178,6 +180,11 @@ export const th: Record<TranslationKey, string> = {
   'item.allergens': '⚠️ สารก่อภูมิแพ้',
   'item.similarFoods': 'เมนูใกล้เคียง',
   'item.addToCart': 'ใส่ตะกร้า · ฿{total}',
+  'item.addons.required': 'ต้องเลือก',
+  'item.addons.chooseUpTo': 'เลือกได้ไม่เกิน {n}',
+  'item.addons.chooseOne': 'เลือก 1 อย่าง',
+  'item.addons.plusPrice': '+฿{price}',
+  'item.addons.pickRequired': 'เลือกตัวเลือกที่จำเป็นก่อนดำเนินการต่อ',
 
   // Store detail
   'store.notFound': 'ไม่พบร้านนี้',
@@ -344,6 +351,35 @@ export const th: Record<TranslationKey, string> = {
   'vendor.menu.empty': 'ยังไม่มีเมนู',
   'vendor.menu.edit': 'แก้ไข',
   'vendor.menu.delete': 'ลบ',
+  'vendor.menu.manageAddons': 'ท็อปปิ้ง',
+
+  // Vendor — add-on authoring
+  'vendor.addons.title': 'ท็อปปิ้ง',
+  'vendor.addons.subtitle': 'กลุ่มและตัวเลือกสำหรับ {name}',
+  'vendor.addons.back': 'กลับไปที่เมนู',
+  'vendor.addons.empty': 'ยังไม่มีกลุ่มท็อปปิ้ง',
+  'vendor.addons.addGroup': '+ เพิ่มกลุ่ม',
+  'vendor.addons.addOption': '+ เพิ่มตัวเลือก',
+  'vendor.addons.groupName': 'ชื่อกลุ่ม',
+  'vendor.addons.groupNamePlaceholder': 'เช่น ท็อปปิ้งเพิ่ม',
+  'vendor.addons.groupNameTh': 'ชื่อภาษาไทย (ไม่บังคับ)',
+  'vendor.addons.minSelect': 'ต่ำสุด',
+  'vendor.addons.maxSelect': 'สูงสุด',
+  'vendor.addons.maxSelectHint': 'เว้นว่าง = ไม่จำกัด',
+  'vendor.addons.required': 'จำเป็น',
+  'vendor.addons.optionName': 'ชื่อตัวเลือก',
+  'vendor.addons.optionNamePlaceholder': 'เช่น ไข่ดาว',
+  'vendor.addons.optionNameTh': 'ชื่อภาษาไทย (ไม่บังคับ)',
+  'vendor.addons.optionPrice': 'ราคา',
+  'vendor.addons.optionAvailable': 'พร้อมขาย',
+  'vendor.addons.save': 'บันทึก',
+  'vendor.addons.cancel': 'ยกเลิก',
+  'vendor.addons.deleteGroupTitle': 'ลบกลุ่ม?',
+  'vendor.addons.deleteGroupMsg': 'จะลบ “{name}” และตัวเลือกทั้งหมด',
+  'vendor.addons.deleteOptionTitle': 'ลบตัวเลือก?',
+  'vendor.addons.deleteOptionMsg': 'จะลบ “{name}”',
+  'vendor.addons.validationTitle': 'ข้อมูลไม่ครบ',
+  'vendor.addons.validationMsg': 'กรุณากรอกชื่อ',
 
   // Vendor — add new menu item
   'vendor.menuNew.title': 'เพิ่มเมนูใหม่',
