@@ -40,7 +40,7 @@ export default function StoresScreen() {
         .order('current_queue_count', { ascending: true })
         .then(({ data, error }) => {
           if (cancelledRef.current) return;
-          setVendors(error || !data ? [] : (data as unknown as Vendor[]));
+          setVendors(error || !data ? [] : (data as Vendor[]));
           setLoading(false);
         });
     }, [cancelledRef])
@@ -147,10 +147,10 @@ export default function StoresScreen() {
                     : <Text style={{ fontSize: 28 }}>🏪</Text>}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }}>
                     {vendor.name}
                   </Text>
-                  <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 6 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 12, color: '#5a4136', marginBottom: 6 }}>
                     {vendor.cuisine_tags?.[0] ?? t('home.thaiFood')}
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 6 }}>
