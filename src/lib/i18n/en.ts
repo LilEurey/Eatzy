@@ -171,7 +171,6 @@ export const en = {
   'item.notFound': 'Item not found',
   'item.featured': 'Featured',
   'item.spice': 'Spice',
-  'item.calories': 'Calories',
   'item.prepTime': 'Prep time',
   'item.price': 'Price',
   'item.ingredients': 'Ingredients',

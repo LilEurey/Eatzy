@@ -173,7 +173,6 @@ export const th: Record<TranslationKey, string> = {
   'item.notFound': 'ไม่พบเมนูนี้',
   'item.featured': 'เมนูแนะนำ',
   'item.spice': 'ความเผ็ด',
-  'item.calories': 'แคลอรี่',
   'item.prepTime': 'เวลาเตรียม',
   'item.price': 'ราคา',
   'item.ingredients': 'ส่วนประกอบ',
