@@ -84,6 +84,7 @@ export const en = {
   'home.addToCart': 'Add to cart',
   'home.noFeaturedItems': 'No featured items today',
   'home.trending': 'Trending',
+  'home.noTrending': 'No trending meals yet',
   'home.storeOptions': 'Store Options',
   'home.latestRelease': 'Latest Release',
   'home.new': 'New',

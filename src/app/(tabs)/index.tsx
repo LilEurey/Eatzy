@@ -349,15 +349,13 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Trending small cards */}
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            {[0, 1].map(i => {
-              const item = trending[i];
-              const emojis = ['🥤', '🍚'];
-              return (
+          {/* Trending small cards — real order volume; own empty state when none */}
+          {trending.length > 0 ? (
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {trending.map(item => (
                 <Tap
-                  key={i}
-                  onPress={() => item && router.push(`/item/${item.id}`)}
+                  key={item.id}
+                  onPress={() => router.push(`/item/${item.id}`)}
                   activeOpacity={0.85}
                   style={{
                     flex: 1, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
@@ -367,9 +365,9 @@ export default function HomeScreen() {
                 >
                   {/* Image area */}
                   <View style={{ height: 120, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-                    {item?.image_url
+                    {item.image_url
                       ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                      : <Text style={{ fontSize: 40 }}>{emojis[i]}</Text>
+                      : <Text style={{ fontSize: 40 }}>🍽️</Text>
                     }
                     {/* Trending badge */}
                     <View style={{
@@ -385,14 +383,14 @@ export default function HomeScreen() {
                   {/* Info */}
                   <View style={{ padding: 12 }}>
                     <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }} numberOfLines={2}>
-                      {item ? localizedText(item.name, item.name_th, locale) : '—'}
+                      {localizedText(item.name, item.name_th, locale)}
                     </Text>
                     <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 8 }} numberOfLines={1}>
-                      {item?.vendors?.name ?? '—'}
+                      {item.vendors?.name ?? '—'}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>
-                        {item ? `฿${item.price}` : '—'}
+                        ฿{item.price}
                       </Text>
                       <View style={{
                         width: 32, height: 32, borderRadius: 16,
@@ -403,9 +401,17 @@ export default function HomeScreen() {
                     </View>
                   </View>
                 </Tap>
-              );
-            })}
-          </View>
+              ))}
+            </View>
+          ) : (
+            <View style={{
+              borderRadius: 24, backgroundColor: Brand.card, height: 120,
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
+            }}>
+              <Text style={{ color: Brand.textSecondary }}>{t('home.noTrending')}</Text>
+            </View>
+          )}
         </View>
 
         {/* Recommended For You — personalized TF-IDF ranking (cold-started

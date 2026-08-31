@@ -86,6 +86,7 @@ export const th: Record<TranslationKey, string> = {
   'home.addToCart': 'ใส่ตะกร้า',
   'home.noFeaturedItems': 'วันนี้ยังไม่มีเมนูแนะนำ',
   'home.trending': 'กำลังฮิต',
+  'home.noTrending': 'ยังไม่มีเมนูกำลังฮิต',
   'home.storeOptions': 'ร้านค้า',
   'home.latestRelease': 'เมนูใหม่ล่าสุด',
   'home.new': 'ใหม่',
