@@ -6,7 +6,6 @@ import { router, useFocusEffect } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { MOCK_VENDORS, MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { getMealSegment } from '@/lib/time';
@@ -109,15 +108,8 @@ export default function HomeScreen() {
       const dbVendors = vendorsRes.data as Vendor[] | null;
       const dbFeatured = featuredRes.data?.[0] as unknown as MenuItem | undefined;
 
-      // Fall back to mock data when DB is empty
-      setVendors(dbVendors?.length ? dbVendors : MOCK_VENDORS as unknown as Vendor[]);
-
-      if (dbFeatured) {
-        setFeatured(dbFeatured);
-      } else {
-        const mockFeatured = MOCK_MENU_ITEMS.find(i => i.is_featured)!;
-        setFeatured({ ...mockFeatured, vendors: { name: getVendorName(mockFeatured.vendor_id) } });
-      }
+      setVendors(dbVendors ?? []);
+      setFeatured(dbFeatured ?? null);
 
       // Trending ids come ranked by order count from the RPC; re-fetch full
       // rows (filtered to items still available now) and restore that order.
@@ -132,13 +124,7 @@ export default function HomeScreen() {
           ?.slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? null;
       }
 
-      if (dbTrending?.length) {
-        setTrending(dbTrending.slice(0, 2));
-      } else {
-        // No real orders in the window yet — mock fallback, same pattern as featured.
-        const mockTrending = MOCK_MENU_ITEMS.filter(i => !i.is_featured).slice(0, 2);
-        setTrending(mockTrending.map(i => ({ ...i, vendors: { name: getVendorName(i.vendor_id) } })));
-      }
+      setTrending(dbTrending?.slice(0, 2) ?? []);
 
       setLatestRelease((latestReleaseRes.data as unknown as MenuItem[] | null) ?? []);
 
@@ -158,12 +144,10 @@ export default function HomeScreen() {
 
       setRecommendedForYou(recommendedRes.data?.results ?? []);
     } catch {
-      // Full fallback if Supabase is unreachable
-      const mockFeatured = MOCK_MENU_ITEMS.find(i => i.is_featured)!;
-      setVendors(MOCK_VENDORS as unknown as Vendor[]);
-      setFeatured({ ...mockFeatured, vendors: { name: getVendorName(mockFeatured.vendor_id) } });
-      const mockTrending = MOCK_MENU_ITEMS.filter(i => !i.is_featured).slice(0, 2);
-      setTrending(mockTrending.map(i => ({ ...i, vendors: { name: getVendorName(i.vendor_id) } })));
+      // Supabase unreachable — show empty states, not fake data.
+      setVendors([]);
+      setFeatured(null);
+      setTrending([]);
     }
     setLoading(false);
   }

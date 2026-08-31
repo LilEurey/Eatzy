@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { MOCK_MENU_ITEMS, getVendorName } from '@/lib/mock-data';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 
@@ -81,16 +80,7 @@ export default function SearchScreen() {
         .eq('is_available', true);
 
       const dbItems = (data ?? []) as unknown as (SearchItem & { vendors: { name: string } | null })[];
-      if (dbItems.length) {
-        setItems(dbItems.map(i => ({ ...i, vendorName: i.vendors?.name ?? '' })));
-      } else {
-        setItems(
-          MOCK_MENU_ITEMS.filter(i => i.is_available).map(i => ({
-            ...i,
-            vendorName: getVendorName(i.vendor_id),
-          })),
-        );
-      }
+      setItems(dbItems.map(i => ({ ...i, vendorName: i.vendors?.name ?? '' })));
       setLoading(false);
     }
     void load();

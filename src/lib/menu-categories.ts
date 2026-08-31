@@ -1,8 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
-// Static fallback if the catalog query fails or the DB is empty (mirrors the
-// mock-data fallback pattern used elsewhere) — a reasonable default set for
-// a Thai campus food court.
+// Static fallback if the catalog query fails or the DB is empty — a
+// reasonable default set for a Thai campus food court.
 const FALLBACK_CATEGORIES = ['Noodles', 'Rice Dishes', 'Curry', 'Soup', 'Salads', 'Desserts', 'Drinks', 'Appetizers'];
 
 // Real distinct menu_items.category values, most common first. Used as the
