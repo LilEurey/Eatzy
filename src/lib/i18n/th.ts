@@ -89,6 +89,7 @@ export const th: Record<TranslationKey, string> = {
   'home.trending': 'กำลังฮิต',
   'home.noTrending': 'ยังไม่มีเมนูกำลังฮิต',
   'home.storeOptions': 'ร้านค้า',
+  'home.seeAll': 'ดูทั้งหมด',
   'home.latestRelease': 'เมนูใหม่ล่าสุด',
   'home.noLatestRelease': 'สัปดาห์นี้ยังไม่มีเมนูใหม่',
   'home.new': 'ใหม่',
@@ -155,6 +156,16 @@ export const th: Record<TranslationKey, string> = {
   'search.placeholder': 'ค้นหาเมนู ประเภทอาหาร วัตถุดิบ…',
   'search.resultsCount': 'พบ {n} เมนู',
   'search.noResults': 'ไม่พบเมนูที่ค้นหา\nลองชื่ออื่นหรือเปลี่ยนตัวกรอง',
+
+  // Stores
+  'stores.title': 'ร้านค้า',
+  'stores.searchPlaceholder': 'ค้นหาร้านค้า',
+  'stores.halalFilter': 'ฮาลาลรับรอง',
+  'stores.resultsCount': '{n} ร้านค้า',
+  'stores.closed': 'ปิด',
+  'stores.noQueue': 'ไม่มีคิว',
+  'stores.waitMin': 'รอ ~{n} นาที',
+  'stores.noneFound': 'ไม่พบร้านค้าที่ตรงกับการค้นหา',
 
   // Item detail
   'item.notFound': 'ไม่พบเมนูนี้',
