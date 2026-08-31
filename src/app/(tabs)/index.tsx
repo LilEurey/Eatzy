@@ -550,9 +550,21 @@ export default function HomeScreen() {
 
         {/* Store Options */}
         <View>
-          <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
-            {t('home.storeOptions')}
-          </Text>
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 16,
+          }}>
+            <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812' }}>
+              {t('home.storeOptions')}
+            </Text>
+            {vendors.length > 0 && (
+              <Tap onPress={() => router.push('/stores')} haptic={false}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.orange }}>
+                  {t('home.seeAll')} ›
+                </Text>
+              </Tap>
+            )}
+          </View>
           <View style={{ gap: 12 }}>
             {vendors.slice(0, 6).map(vendor => (
               <Tap

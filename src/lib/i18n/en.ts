@@ -87,6 +87,7 @@ export const en = {
   'home.trending': 'Trending',
   'home.noTrending': 'No trending meals yet',
   'home.storeOptions': 'Store Options',
+  'home.seeAll': 'See all',
   'home.latestRelease': 'Latest Release',
   'home.noLatestRelease': 'No new dishes this week',
   'home.new': 'New',
@@ -153,6 +154,16 @@ export const en = {
   'search.placeholder': 'Search dishes, cuisine, ingredients…',
   'search.resultsCount': '{n} dishes found',
   'search.noResults': 'No dishes match your search.\nTry a different name or filter.',
+
+  // Stores
+  'stores.title': 'Stores',
+  'stores.searchPlaceholder': 'Search stores',
+  'stores.halalFilter': 'Halal certified',
+  'stores.resultsCount': '{n} stores',
+  'stores.closed': 'Closed',
+  'stores.noQueue': 'No queue',
+  'stores.waitMin': '~{n} min wait',
+  'stores.noneFound': 'No stores match',
 
   // Item detail
   'item.notFound': 'Item not found',
