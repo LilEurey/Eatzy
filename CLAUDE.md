@@ -51,7 +51,6 @@ Eatzy/
 │   │   ├── supabase.ts   # Supabase client singleton
 │   │   ├── i18n/         # Translation strings, useI18n hook
 │   │   ├── localize.ts   # Thai dish-name fallback (name_th/description_th) + notification text rendering — see Localization below
-│   │   ├── mock-data.ts  # MOCK_VENDORS / MOCK_MENU_ITEMS — student-side fixtures (see Data Strategy)
 │   │   ├── cart-store.ts, vendor-store.ts  # useSyncExternalStore-based client state
 │   │   ├── edge-function.ts  # Supabase Edge Function invocation helper
 │   │   ├── alert.ts      # Cross-platform alert helper
@@ -134,7 +133,7 @@ Discover → Onboarding (Google login, preferences/allergies/budget) → Explore
 
 ## Data Strategy
 
-Split by surface, not uniform:
-- **Student side** — DB is sparsely seeded, so screens lean on **mock fixtures** in `src/lib/mock-data.ts`. Home (`/(tabs)/index.tsx`) queries Supabase and falls back to mock when the DB returns nothing; other student screens read mock directly. Client state: `cart-store.ts` (single-vendor-per-cart rule), local component state for wallet.
-- **Vendor & admin side** — real Supabase, not mock: `vendor-store.ts` (orders/menu/profile, with Realtime) and the admin new-vendor / store-monitoring screens hit live tables.
+All surfaces read real Supabase — the DB carries real seeded KMUTT data (16 stalls, ~500 menu items). Mock fixtures (`src/lib/mock-data.ts`) were removed 2026-08-31; screens now show their own empty states when a query returns nothing, not fake data.
+- **Student side** — Home (`/(tabs)/index.tsx`) and search query Supabase directly. Empty-state copy: `home.noStallsOpen`, `home.noFeaturedItems`, `search.noResults`. Client state: `cart-store.ts` (single-vendor-per-cart rule), local component state for wallet.
+- **Vendor & admin side** — `vendor-store.ts` (orders/menu/profile, with Realtime) and the admin new-vendor / store-monitoring screens hit live tables.
 - Remaining mock-to-real TODOs are `ponytail:` comments — currently menu-item image upload in `(vendor)/menu/new.tsx` (needs Supabase Storage `menu-item-images` bucket) and the single-vendor-per-cart note in `cart-store.ts`. Grep `ponytail:` before trusting this list — it drifts.
