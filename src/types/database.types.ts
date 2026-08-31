@@ -143,7 +143,6 @@ export type Database = {
         Row: {
           allergens: string[]
           available_time_segment: string
-          calories: number | null
           category: string | null
           description: string | null
           description_th: string | null
@@ -168,7 +167,6 @@ export type Database = {
         Insert: {
           allergens?: string[]
           available_time_segment?: string
-          calories?: number | null
           category?: string | null
           description?: string | null
           description_th?: string | null
@@ -193,7 +191,6 @@ export type Database = {
         Update: {
           allergens?: string[]
           available_time_segment?: string
-          calories?: number | null
           category?: string | null
           description?: string | null
           description_th?: string | null
