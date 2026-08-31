@@ -112,6 +112,8 @@ export const th: Record<TranslationKey, string> = {
   'orders.rateOrder': 'ให้คะแนนคำสั่งซื้อ',
   'orders.noOrdersTitle': 'ยังไม่มีคำสั่งซื้อ',
   'orders.noOrdersSubtitle': 'คำสั่งซื้อของคุณจะแสดงที่นี่',
+  'orders.noneInFilterTitle': 'ไม่มีในหมวด{filter}',
+  'orders.noneInFilterSubtitle': 'ยังไม่มีคำสั่งซื้อที่ตรงกับตัวกรองนี้',
 
   // Wallet
   'wallet.title': 'กระเป๋าเงิน',

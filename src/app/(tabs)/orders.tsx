@@ -83,7 +83,7 @@ export default function OrdersScreen() {
           pickup_start: o.pickup_start,
           pickup_end: o.pickup_end,
           created_at: o.created_at,
-          vendor_name: o.vendors?.name ?? '',
+          vendor_name: o.vendors?.name ?? '—',
           items: (o.order_items ?? []).map((oi: any) => ({ name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity })),
         })));
         setLoading(false);
@@ -268,10 +268,14 @@ export default function OrdersScreen() {
             <View style={{ alignItems: 'center', paddingVertical: 60 }}>
               <Text style={{ fontSize: 40, marginBottom: 12 }}>🧾</Text>
               <Text style={{ fontSize: 16, fontWeight: '600', color: Brand.textPrimary, marginBottom: 4 }}>
-                {t('orders.noOrdersTitle')}
+                {orders.length === 0
+                  ? t('orders.noOrdersTitle')
+                  : t('orders.noneInFilterTitle', { filter: t(FILTER_LABELS[tab]) })}
               </Text>
               <Text style={{ fontSize: 14, color: Brand.textSecondary }}>
-                {t('orders.noOrdersSubtitle')}
+                {orders.length === 0
+                  ? t('orders.noOrdersSubtitle')
+                  : t('orders.noneInFilterSubtitle')}
               </Text>
             </View>
           )}

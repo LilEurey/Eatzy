@@ -108,8 +108,10 @@ export const en = {
   'orders.readyForPickup': '🎉 Ready for Pickup!',
   'orders.trackOrder': 'Track Order',
   'orders.rateOrder': 'Rate order',
-  'orders.noOrdersTitle': 'No orders here',
+  'orders.noOrdersTitle': 'No orders yet',
   'orders.noOrdersSubtitle': 'Your orders will appear here',
+  'orders.noneInFilterTitle': 'Nothing in {filter}',
+  'orders.noneInFilterSubtitle': 'No orders match this filter right now',
 
   // Wallet
   'wallet.title': 'Wallet',
