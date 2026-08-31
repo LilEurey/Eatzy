@@ -222,7 +222,6 @@ export default function ItemDetailScreen() {
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
           }}>
             {[
-              { icon: '🔥', value: `${item.calories} kcal`, label: t('item.calories') },
               { icon: '⏱', value: `${item.preparation_time_min} min`, label: t('item.prepTime') },
               { icon: '🏷️', value: `฿${item.price}`, label: t('item.price') },
             ].map(({ icon, value, label }, i) => (
