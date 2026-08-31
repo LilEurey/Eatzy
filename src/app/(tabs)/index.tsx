@@ -332,7 +332,7 @@ export default function HomeScreen() {
                     }}>
                       {featured.image_url
                         ? <Image source={{ uri: featured.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                        : <Text style={{ fontSize: 44 }}>🍛</Text>
+                        : <Text style={{ fontSize: 44 }}>🍽️</Text>
                       }
                     </View>
                   </View>
@@ -436,7 +436,7 @@ export default function HomeScreen() {
                   <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
                       ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                      : <Text style={{ fontSize: 36 }}>💛</Text>
+                      : <Text style={{ fontSize: 36 }}>🍽️</Text>
                     }
                   </View>
                   <View style={{ padding: 10 }}>
@@ -494,12 +494,12 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Latest Release — newest items in the last 7 days */}
-        {latestRelease.length > 0 && (
-          <View style={{ marginBottom: 28 }}>
-            <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
-              {t('home.latestRelease')}
-            </Text>
+        {/* Latest Release — newest items in the last 7 days; own empty state when none */}
+        <View style={{ marginBottom: 28 }}>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+            {t('home.latestRelease')}
+          </Text>
+          {latestRelease.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
               {latestRelease.map(item => (
                 <Tap
@@ -537,8 +537,16 @@ export default function HomeScreen() {
                 </Tap>
               ))}
             </ScrollView>
-          </View>
-        )}
+          ) : (
+            <View style={{
+              borderRadius: 24, backgroundColor: Brand.card, height: 120,
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
+            }}>
+              <Text style={{ color: Brand.textSecondary }}>{t('home.noLatestRelease')}</Text>
+            </View>
+          )}
+        </View>
 
         {/* Store Options */}
         <View>

@@ -87,6 +87,7 @@ export const en = {
   'home.noTrending': 'No trending meals yet',
   'home.storeOptions': 'Store Options',
   'home.latestRelease': 'Latest Release',
+  'home.noLatestRelease': 'No new dishes this week',
   'home.new': 'New',
   'home.noStallsOpen': 'No stalls open right now',
 

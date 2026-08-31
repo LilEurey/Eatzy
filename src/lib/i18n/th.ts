@@ -89,6 +89,7 @@ export const th: Record<TranslationKey, string> = {
   'home.noTrending': 'ยังไม่มีเมนูกำลังฮิต',
   'home.storeOptions': 'ร้านค้า',
   'home.latestRelease': 'เมนูใหม่ล่าสุด',
+  'home.noLatestRelease': 'สัปดาห์นี้ยังไม่มีเมนูใหม่',
   'home.new': 'ใหม่',
   'home.noStallsOpen': 'ยังไม่มีร้านเปิดตอนนี้',
 
