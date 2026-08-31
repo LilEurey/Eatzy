@@ -79,7 +79,8 @@ export default function CartScreen() {
       // Insert line by line: two lines can share menu_item_id (different
       // add-on configs), so a bulk insert can't be re-correlated to its
       // cart line when attaching order_item_addons. unit_price / add-on
-      // name+price are force-set by DB triggers; we send only the refs.
+      // name+price are re-derived from the catalog by DB triggers; the
+      // values we send are the client's snapshot and get overwritten.
       for (const line of items) {
         const { data: oi, error: itemError } = await supabase
           .from('order_items')
@@ -91,7 +92,13 @@ export default function CartScreen() {
         if (line.addons.length > 0) {
           const { error: addonError } = await supabase
             .from('order_item_addons')
-            .insert(line.addons.map(a => ({ order_item_id: oi.id, addon_id: a.id })));
+            .insert(line.addons.map(a => ({
+              order_item_id: oi.id,
+              addon_id: a.id,
+              name: a.name,
+              name_th: a.name_th,
+              price: a.price,
+            })));
           if (addonError) throw addonError;
         }
       }

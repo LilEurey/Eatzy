@@ -39,20 +39,21 @@ export default function MenuItemAddonsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [itemName, setItemName] = useState('');
   const [itemNameTh, setItemNameTh] = useState<string | null>(null);
+  const [vendorId, setVendorId] = useState<string | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupDraft, setGroupDraft] = useState<GroupDraft | null>(null);
   const [optionDraft, setOptionDraft] = useState<OptionDraft | null>(null);
 
   const reload = useCallback(async () => {
     const [{ data: item }, { data: grps }] = await Promise.all([
-      supabase.from('menu_items').select('name,name_th').eq('id', id).maybeSingle(),
+      supabase.from('menu_items').select('name,name_th,vendor_id').eq('id', id).maybeSingle(),
       supabase
         .from('menu_item_addon_groups')
         .select('id,name,name_th,min_select,max_select,sort_order,menu_item_addons(id,name,name_th,price,is_available,sort_order)')
         .eq('menu_item_id', id)
         .order('sort_order'),
     ]);
-    if (item) { setItemName(item.name); setItemNameTh(item.name_th); }
+    if (item) { setItemName(item.name); setItemNameTh(item.name_th); setVendorId(item.vendor_id); }
     setGroups(
       ((grps ?? []) as Group[]).map(g => ({
         ...g,
@@ -65,7 +66,7 @@ export default function MenuItemAddonsScreen() {
 
   // ─── Group CRUD ───────────────────────────────────────────────────────────
   async function saveGroup() {
-    if (!groupDraft) return;
+    if (!groupDraft || !vendorId) return;
     const name = groupDraft.name.trim();
     if (!name) { showAlert(t('vendor.addons.validationTitle'), t('vendor.addons.validationMsg')); return; }
     const min = parseInt(groupDraft.min, 10) || 0;
@@ -82,6 +83,7 @@ export default function MenuItemAddonsScreen() {
       : await supabase.from('menu_item_addon_groups').insert({
           ...payload,
           menu_item_id: id,
+          vendor_id: vendorId, // DB trigger keeps this in lockstep with the dish
           sort_order: groups.length,
         });
     if (error) { showAlert(t('vendor.addons.validationTitle'), error.message); return; }
@@ -99,7 +101,7 @@ export default function MenuItemAddonsScreen() {
 
   // ─── Option CRUD ──────────────────────────────────────────────────────────
   async function saveOption() {
-    if (!optionDraft) return;
+    if (!optionDraft || !vendorId) return;
     const name = optionDraft.name.trim();
     if (!name) { showAlert(t('vendor.addons.validationTitle'), t('vendor.addons.validationMsg')); return; }
     const payload = {
@@ -114,6 +116,7 @@ export default function MenuItemAddonsScreen() {
       : await supabase.from('menu_item_addons').insert({
           ...payload,
           group_id: optionDraft.groupId,
+          vendor_id: vendorId, // DB trigger keeps this in lockstep with the dish
           sort_order: group?.menu_item_addons.length ?? 0,
         });
     if (error) { showAlert(t('vendor.addons.validationTitle'), error.message); return; }
