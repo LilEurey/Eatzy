@@ -31,6 +31,7 @@ export const th: Record<TranslationKey, string> = {
   'common.total': 'ยอดรวม',
   'common.pickupRange': 'รับที่ {start}–{end}',
   'common.permissionNeededTitle': 'ต้องได้รับอนุญาต',
+  'common.errorTitle': 'เกิดข้อผิดพลาด',
 
   // Auth / login
   'auth.tagline': 'ผู้ช่วยมื้ออาหารอัจฉริยะของคุณ',

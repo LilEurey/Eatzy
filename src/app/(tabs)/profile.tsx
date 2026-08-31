@@ -174,7 +174,7 @@ export default function ProfileScreen() {
     const { error } = await supabase.from('users').update({ notifications_enabled: next }).eq('id', user.id);
     if (error) {
       setNotificationsEnabled(!next);
-      showAlert(t('common.comingSoonTitle'), error.message);
+      showAlert(t('common.errorTitle'), error.message);
     }
   }
 

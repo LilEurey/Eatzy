@@ -29,6 +29,7 @@ export const en = {
   'common.total': 'Total',
   'common.pickupRange': 'Pickup {start}–{end}',
   'common.permissionNeededTitle': 'Permission needed',
+  'common.errorTitle': 'Something went wrong',
 
   // Auth / login
   'auth.tagline': 'Your smart dining companion.',
