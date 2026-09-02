@@ -98,6 +98,7 @@ export const en = {
   'home.timeBasedLunch': 'Lunch Picks',
   'home.timeBasedDinner': 'Dinner Picks',
   'home.noTimeBased': 'No picks for this time yet',
+  'home.similarFoodsTo': 'Similar to {name}',
 
   // Orders
   'orders.title': 'Orders',

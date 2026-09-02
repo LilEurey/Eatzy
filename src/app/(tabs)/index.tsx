@@ -48,6 +48,9 @@ type MenuItem = {
 // recommend-for-you returns flat rows (no vendors() join — computed server-side).
 type PersonalizedItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
 
+// recommend-similar's response shape (same as item/[id].tsx's SimilarItem) — no name_th, unlocalized.
+type SimilarToItem = { id: string; name: string; price: number; image_url: string | null; vendor_name: string; score: number };
+
 function getGreetingKey(): TranslationKey {
   const h = new Date().getHours();
   if (h < 12) return 'home.greetingMorning';
@@ -98,6 +101,7 @@ export default function HomeScreen() {
   const [becauseYouOrdered, setBecauseYouOrdered] = useState<MenuItem[]>([]);
   const [timeBasedItems, setTimeBasedItems] = useState<MenuItem[]>([]);
   const [mealSegment, setMealSegment] = useState<MealSegment>('lunch');
+  const [similarToFeatured, setSimilarToFeatured] = useState<SimilarToItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
@@ -188,6 +192,17 @@ export default function HomeScreen() {
   }
 
   useEffect(() => { void loadData(); }, []);
+
+  // Similar Foods — home page had no presence for this feature at all
+  // (item/[id].tsx is the only other place it renders); anchor it on
+  // today's Promoted item so the home feed gets one too. Best-effort:
+  // hide the section on error rather than surface a broken state.
+  useEffect(() => {
+    if (!featured) return;
+    invokeEdgeFunction<{ results: SimilarToItem[] }>('recommend-similar', { body: { item_id: featured.id } })
+      .then(({ data }) => setSimilarToFeatured(data?.results ?? []))
+      .catch(() => setSimilarToFeatured([]));
+  }, [featured]);
 
   useFocusEffect(
     useCallback(() => {
@@ -506,6 +521,49 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
+
+        {/* Similar Foods — content-based (TF-IDF + cosine over ingredients/
+            tags/category), anchored on today's Promoted item. The only other
+            place this renders is item/[id].tsx (anchored on whatever dish
+            the student is viewing); the home feed has no "current dish" to
+            anchor on, so Promoted stands in for that. */}
+        {featured && similarToFeatured.length > 0 && (
+          <View style={{ marginBottom: 28 }}>
+            <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+              {t('home.similarFoodsTo', { name: localizedText(featured.name, featured.name_th, locale) })}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {similarToFeatured.map(item => (
+                <Tap
+                  key={item.id}
+                  onPress={() => router.push(`/item/${item.id}`)}
+                  activeOpacity={0.85}
+                  style={{
+                    width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                  }}
+                >
+                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                    {item.image_url
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      : <Text style={{ fontSize: 36 }}>🍽️</Text>
+                    }
+                  </View>
+                  <View style={{ padding: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>
+                      {item.name}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
+                      {item.vendor_name}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
+                  </View>
+                </Tap>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Time-Based — items fitting the current meal segment by category
             (see getTimeBasedCategories). */}

@@ -100,6 +100,7 @@ export const th: Record<TranslationKey, string> = {
   'home.timeBasedLunch': 'เมนูมื้อเที่ยง',
   'home.timeBasedDinner': 'เมนูมื้อเย็น',
   'home.noTimeBased': 'ยังไม่มีเมนูสำหรับช่วงนี้',
+  'home.similarFoodsTo': 'คล้ายกับ {name}',
 
   // Orders
   'orders.title': 'คำสั่งซื้อ',
