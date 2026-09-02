@@ -71,6 +71,7 @@ export default function ProfileScreen() {
   const [allergyChips, setAllergyChips] = useState<string[]>([]);
   const [recentOrder, setRecentOrder] = useState<RecentOrder | null | undefined>(undefined);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   // useFocusEffect (not a mount-only effect) so returning from Edit
   // Preferences or Account Details shows the just-saved chips/data
@@ -78,10 +79,10 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       supabase.auth.getUser().then(async ({ data: { user } }) => {
-        if (!user) { setRecentOrder(null); return; } // dev skip-login: keep defaults
+        if (!user) { setRecentOrder(null); setHasUnreadNotifications(false); return; } // dev skip-login: keep defaults
         setEmail(user.email ?? '');
 
-        const [profileRes, prefsRes, orderRes] = await Promise.all([
+        const [profileRes, prefsRes, orderRes, notifRes] = await Promise.all([
           supabase.from('users').select('name,avatar_url,notifications_enabled').eq('id', user.id).maybeSingle(),
           supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle(),
           supabase
@@ -91,7 +92,10 @@ export default function ProfileScreen() {
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle(),
+          supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
         ]);
+
+        setHasUnreadNotifications(!!notifRes.count);
 
         if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
         if (profileRes.data) setNotificationsEnabled(profileRes.data.notifications_enabled);
@@ -195,19 +199,28 @@ export default function ProfileScreen() {
         paddingHorizontal: 20, height: 64,
       }}>
         <View style={{
-          width: 32, height: 32, borderRadius: 16, overflow: 'hidden',
-          backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
+          width: 40, height: 40, borderRadius: 20, overflow: 'hidden',
+          backgroundColor: Brand.orangeLight, borderWidth: 2, borderColor: Brand.card,
+          alignItems: 'center', justifyContent: 'center',
         }}>
           {avatarUrl
-            ? <Image source={{ uri: avatarUrl }} style={{ width: 32, height: 32 }} />
-            : <Text style={{ fontSize: 13, fontWeight: '800', color: Brand.orange }}>{name.charAt(0).toUpperCase()}</Text>}
+            ? <Image source={{ uri: avatarUrl }} style={{ width: 40, height: 40 }} />
+            : <Text style={{ fontSize: 16, fontWeight: '800', color: Brand.orange }}>{name.charAt(0).toUpperCase() || '?'}</Text>}
         </View>
         <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -1.2 }}>
           <Text style={{ color: '#020202' }}>Eat</Text>
           <Text style={{ color: '#e76106' }}>zy</Text>
         </Text>
         <Tap onPress={() => router.push('/notifications')}>
-          <BellIcon size={16} />
+          <View style={{ position: 'relative' }}>
+            <BellIcon size={18} />
+            {hasUnreadNotifications && (
+              <View style={{
+                position: 'absolute', top: -1, right: -1, width: 8, height: 8, borderRadius: 4,
+                backgroundColor: Brand.orange, borderWidth: 1.5, borderColor: '#F8F9FA',
+              }} />
+            )}
+          </View>
         </Tap>
       </View>
 
