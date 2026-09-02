@@ -54,12 +54,14 @@ Eatzy/
 │   │   ├── cart-store.ts, vendor-store.ts  # useSyncExternalStore-based client state
 │   │   ├── edge-function.ts  # Supabase Edge Function invocation helper
 │   │   ├── alert.ts      # Cross-platform alert helper
-│   │   └── time.ts       # Bangkok timezone formatting / pickup-slot helpers
+│   │   ├── time.ts       # Bangkok timezone formatting / pickup-slot helpers
+│   │   └── menu-categories.ts  # Drinks/Beverages category reconciliation + top-category picker (cold-start User Vector)
 │   └── types/
 │       └── database.types.ts  # Generated Supabase types
 ├── supabase/
 │   ├── migrations/       # SQL migration files (timestamp-prefixed)
-│   └── functions/        # Edge fns: admin-create-vendor, bootstrap-admin
+│   └── functions/        # Edge fns: admin-create-vendor, bootstrap-admin,
+│                         #   recommend-for-you, recommend-similar (ranking pipeline)
 ├── ml/                    # recommend.py (TF-IDF + cosine demo), data/*.csv fixtures
 ├── eas.json               # EAS build/submit profiles (iOS-first)
 ├── global.css            # Tailwind directives (imported in app/_layout)
@@ -80,6 +82,11 @@ Eatzy/
 
 Default to TF-IDF + cosine for content-based and collaborative filtering for "because you ordered" — don't introduce new ML approaches unless asked.
 
+### Dietary Filtering: hard filter vs. warn
+
+- **Halal / Vegetarian / Jay** — hard filters. Items the student cannot eat are excluded everywhere (home feed, search, `recommend-for-you`, `recommend-similar`).
+- **Allergies** — NOT a filter. Saved allergies never hide items. The gate is a `showConfirm` ("Add Anyway") popup on Add to Cart in `item/[id].tsx` — the single funnel every add-to-cart path goes through — fired when the dish's `allergens` intersect the user's saved `allergies`. Search results show a red '⚠️ Allergen' badge; the item page underlines the matched allergen. Changed 2026-09-02 (`4d2370e`, reverting the hide-from-search approach in `a1e9df9`).
+
 ### ML Pipeline (User Vector approach)
 
 Build a **User Vector** (taste profile) from behavior — order history, ratings, view/click, trending, time context — and **Food Vectors** via TF-IDF on ingredients/cuisine/dietary tags; rank by **cosine similarity**, then filter by dietary rules, allergies, budget, wait time, ratings → Top-N. Reference impl: `ml/recommend.py`.
@@ -96,7 +103,7 @@ Escrow: student payment held → on completion, transferred to vendor wallet (re
 
 ### Localization
 
-- Menu item Thai names/descriptions are vendor-entered data, not app UI strings — they live in DB columns (`name_th`/`description_th`), not `lib/i18n/`. Falls back to the base (English) text when a vendor hasn't filled in the Thai column. Handled by `localizedText()` in `src/lib/localize.ts`.
+- Menu item Thai names/descriptions (`name_th`/`description_th`) and vendor `bio_th` are vendor-entered data, not app UI strings — DB columns, not `lib/i18n/`. Fall back to the base (English) text when the Thai column is empty. Handled by `localizedText()` in `src/lib/localize.ts`.
 - Notification rows snapshot `event` + params (vendor, queue number, amount) at insert time in the DB triggers (`notify_order_status_change()`, `notify_vendor_new_order()`) instead of pre-rendered English text. `notificationText()` in `localize.ts` renders from that snapshot using whatever locale is active *now* — not whichever locale was active when the trigger fired.
 - Student-facing lists that poll live state (orders, wallet) refetch on tab focus (`useFocusEffect`), not just on mount — apply the same pattern to any new tab/screen showing data that can change server-side while the tab is backgrounded.
 
@@ -106,8 +113,8 @@ Keep schema consistent with this ERD for all SQL/migrations/types. Field names a
 
 - **users** — id (uuid, references auth.users), name, email, university_id, role (student|vendor|admin), department, language, wallet_balance, avatar_url, notifications_enabled, created_at
 - **user_preferences** — user_id, is_halal, is_vegetarian, is_jay, spice_level, budget_max, allergies (text[]), liked_cuisines (text[]), favorite_categories (text[])
-- **vendors** — id, name, stall_number, is_on_campus, address, is_halal_certified, open_time, close_time, is_open, bio, cuisine_tags (text[]), estimated_wait_min, cover_image_url, current_queue_count, owner_user_id, created_at
-- **menu_items** — id, vendor_id, name, description, price, category, spice_level, is_available, is_halal, is_vegetarian, is_jay, allergens (text[]), tags (text[]), ingredients (text[]), calories, preparation_time_min, image_url, is_featured, available_time_segment (breakfast|lunch|dinner|all), release_date, updated_at
+- **vendors** — id, name, stall_number, is_on_campus, address, is_halal_certified, open_time, close_time, is_open, bio, bio_th, cuisine_tags (text[]), estimated_wait_min, cover_image_url, current_queue_count, owner_user_id, created_at
+- **menu_items** — id, vendor_id, name, description, price, category, spice_level, is_available, is_halal, is_vegetarian, is_jay, allergens (text[]), tags (text[]), ingredients (text[]), preparation_time_min, image_url, is_featured, available_time_segment (breakfast|lunch|dinner|all), release_date, updated_at
 - **orders** — id, user_id, vendor_id, queue_number, status (pending|accepted|rejected|ready|completed|cancelled), subtotal, packaging_fee, total_amount, payment_method, pickup_start, pickup_end, estimated_prep_minutes, time_segment, vendor_handed_off_at, student_picked_up_at, created_at
 - **order_items** — id, order_id, menu_item_id, quantity, unit_price, special_instructions
 - **payments** — id, order_id, amount, method, status, promptpay_ref, qr_code_url, paid_at
