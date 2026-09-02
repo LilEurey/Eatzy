@@ -6,20 +6,9 @@
 // Deploy: supabase functions deploy recommend-similar
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/cors.ts';
 
 const TOP_K = 5;
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
 
 type MenuItemRow = {
   id: string;
@@ -99,7 +88,14 @@ function cosineSimilarity(a: Map<string, number>, b: Map<string, number>): numbe
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const cors = corsHeaders(req);
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   let body: { item_id?: string };
   try {

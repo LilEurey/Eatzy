@@ -9,20 +9,9 @@
 // Deploy: supabase functions deploy admin-create-vendor
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { corsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const MIN_PASSWORD_LENGTH = 6; // Supabase Auth global default; project may require more.
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
+const MIN_PASSWORD_LENGTH = 10; // Mirror auth.minimum_password_length in config.toml.
 
 function normalizeTags(input: unknown): string[] {
   const raw = Array.isArray(input)
@@ -36,7 +25,14 @@ function normalizeTags(input: unknown): string[] {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const cors = corsHeaders(req);
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return json({ error: 'Missing authorization header' }, 401);
