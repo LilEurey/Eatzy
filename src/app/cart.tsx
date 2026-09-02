@@ -29,7 +29,7 @@ export default function CartScreen() {
   const [placing, setPlacing] = useState(false);
 
   const subtotal = cartSubtotal(cart);
-  const total = subtotal + cart.packaging_fee;
+  const total = subtotal;
 
   useEffect(() => {
     if (!cart.vendor_id) return; // cart empty — the empty-state branch below renders instead
@@ -64,7 +64,6 @@ export default function CartScreen() {
           queue_number: queueNumber,
           status: 'pending',
           subtotal,
-          packaging_fee: cart.packaging_fee,
           total_amount: total,
           payment_method: 'wallet',
           pickup_start: selectedSlot.start.toISOString(),
@@ -280,10 +279,6 @@ export default function CartScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.subtotal')}</Text>
             <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{subtotal}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.packagingFee')}</Text>
-            <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{cart.packaging_fee}</Text>
           </View>
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

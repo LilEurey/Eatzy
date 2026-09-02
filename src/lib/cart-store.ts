@@ -4,8 +4,6 @@ import { useSyncExternalStore } from 'react';
 // ponytail: single active vendor per cart; adding from another vendor replaces it.
 // Multi-vendor carts would need per-vendor grouping — add when checkout supports it.
 
-const PACKAGING_FEE = 5;
-
 export type CartAddon = {
   id: string;
   name: string;
@@ -29,10 +27,9 @@ type CartItem = {
 type Cart = {
   vendor_id: string | null;
   items: CartItem[];
-  packaging_fee: number;
 };
 
-let cart: Cart = { vendor_id: null, items: [], packaging_fee: PACKAGING_FEE };
+let cart: Cart = { vendor_id: null, items: [] };
 let lineSeq = 0;
 
 const listeners = new Set<() => void>();
@@ -85,7 +82,7 @@ export function setQty(lineId: string, delta: number) {
 }
 
 export function clearCart() {
-  cart = { vendor_id: null, items: [], packaging_fee: PACKAGING_FEE };
+  cart = { vendor_id: null, items: [] };
   emit();
 }
 

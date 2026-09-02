@@ -150,7 +150,6 @@ export const en = {
   'cart.pickupTime': 'PICKUP TIME',
   'cart.summary': 'SUMMARY',
   'cart.subtotal': 'Subtotal',
-  'cart.packagingFee': 'Packaging fee',
   'cart.placeOrder': 'Place Order · ฿{total}',
   'cart.pickupAt': 'Pickup at {slot}',
   'cart.orderPlacedTitle': 'Order placed',
