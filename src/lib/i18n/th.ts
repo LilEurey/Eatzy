@@ -152,7 +152,6 @@ export const th: Record<TranslationKey, string> = {
   'cart.pickupTime': 'เวลารับอาหาร',
   'cart.summary': 'สรุปยอด',
   'cart.subtotal': 'ยอดรวมย่อย',
-  'cart.packagingFee': 'ค่าบรรจุภัณฑ์',
   'cart.placeOrder': 'สั่งซื้อ · ฿{total}',
   'cart.pickupAt': 'รับที่ {slot}',
   'cart.orderPlacedTitle': 'สั่งซื้อสำเร็จ',
