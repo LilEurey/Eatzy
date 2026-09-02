@@ -208,12 +208,17 @@ export default function HomeScreen() {
     useCallback(() => {
       supabase.auth.getUser().then(async ({ data: { user } }) => {
         if (!user) { setHasUnreadNotifications(false); return; }
-        const { count } = await supabase
-          .from('notifications')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('read', false);
-        setHasUnreadNotifications(!!count);
+
+        // Re-fetch name/avatar on every focus (not just mount) so a name/photo
+        // change saved in edit-preferences shows up immediately on return,
+        // instead of needing a full app reload — same pattern profile.tsx uses.
+        const [profileRes, notifRes] = await Promise.all([
+          supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle(),
+          supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
+        ]);
+        if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
+        setAvatarUrl(profileRes.data?.avatar_url ?? null);
+        setHasUnreadNotifications(!!notifRes.count);
       });
     }, [])
   );
