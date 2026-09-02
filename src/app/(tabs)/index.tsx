@@ -10,6 +10,7 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { getMealSegment, type MealSegment } from '@/lib/time';
 import { invokeEdgeFunction } from '@/lib/edge-function';
+import { isDrinkCategory } from '@/lib/menu-categories';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
 // its own baked-in colors on most platforms instead of a clean flat icon.
@@ -121,6 +122,7 @@ export default function HomeScreen() {
   const [featured, setFeatured] = useState<MenuItem | null>(null);
   const [trending, setTrending] = useState<MenuItem[]>([]);
   const [latestRelease, setLatestRelease] = useState<MenuItem[]>([]);
+  const [drinks, setDrinks] = useState<MenuItem[]>([]);
   const [recommendedForYou, setRecommendedForYou] = useState<PersonalizedItem[]>([]);
   const [becauseYouOrdered, setBecauseYouOrdered] = useState<MenuItem[]>([]);
   const [timeBasedItems, setTimeBasedItems] = useState<MenuItem[]>([]);
@@ -137,7 +139,7 @@ export default function HomeScreen() {
       const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name),is_halal,is_vegetarian,is_jay,allergens';
 
       const { data: { user } } = await supabase.auth.getUser();
-      const [profileRes, prefsRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes] = await Promise.all([
+      const [profileRes, prefsRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
         user
           ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
@@ -167,6 +169,11 @@ export default function HomeScreen() {
         // on every seeded row, so category is the real signal here).
         supabase.from('menu_items').select(menuFields).eq('is_available', true)
           .in('category', getTimeBasedCategories(segment)).order('name', { ascending: true }).limit(10),
+        // Drinks You Might Like — mirrors Latest Release's query, filtered to
+        // drink categories instead of excluding them (see isDrinkCategory).
+        supabase.from('menu_items').select(menuFields).eq('is_available', true)
+          .or('category.ilike.beverages,category.ilike.drinks')
+          .order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
       ]);
 
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
@@ -176,7 +183,7 @@ export default function HomeScreen() {
 
       const dbVendors = vendorsRes.data as Vendor[] | null;
       const featuredCandidates = (featuredRes.data as unknown as MenuItem[] | null) ?? [];
-      const dbFeatured = featuredCandidates.find(i => passesDietaryFilters(i, prefs));
+      const dbFeatured = featuredCandidates.find(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category));
 
       setVendors(dbVendors ?? []);
       setFeatured(dbFeatured ?? null);
@@ -191,14 +198,17 @@ export default function HomeScreen() {
         const { data: trendingItems } = await supabase.from('menu_items').select(menuFields)
           .in('id', ids).eq('is_available', true).or(timeFilter);
         dbTrending = (trendingItems as unknown as MenuItem[] | null)
-          ?.filter(i => passesDietaryFilters(i, prefs))
+          ?.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category))
           .slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? null;
       }
 
       setTrending(dbTrending?.slice(0, 2) ?? []);
 
       const dbLatestRelease = (latestReleaseRes.data as unknown as MenuItem[] | null) ?? [];
-      setLatestRelease(dbLatestRelease.filter(i => passesDietaryFilters(i, prefs)));
+      setLatestRelease(dbLatestRelease.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category)));
+
+      const dbDrinks = (drinksRes.data as unknown as MenuItem[] | null) ?? [];
+      setDrinks(dbDrinks.filter(i => passesDietaryFilters(i, prefs)));
 
       // Because You Ordered — same id-rank → full-row pattern as Trending.
       const byoRanked = becauseYouOrderedRankRes.data as { menu_item_id: string; co_orders: number }[] | null;
@@ -208,7 +218,7 @@ export default function HomeScreen() {
         const { data: byoItems } = await supabase.from('menu_items').select(menuFields)
           .in('id', ids).eq('is_available', true);
         const ordered = (byoItems as unknown as MenuItem[] | null)
-          ?.filter(i => passesDietaryFilters(i, prefs))
+          ?.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category))
           .slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? [];
         setBecauseYouOrdered(ordered);
       } else {
@@ -219,12 +229,13 @@ export default function HomeScreen() {
 
       setMealSegment(segment);
       const dbTimeBased = (timeBasedRes.data as unknown as MenuItem[] | null) ?? [];
-      setTimeBasedItems(dbTimeBased.filter(i => passesDietaryFilters(i, prefs)));
+      setTimeBasedItems(dbTimeBased.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category)));
     } catch {
       // Supabase unreachable — show empty states, not fake data.
       setVendors([]);
       setFeatured(null);
       setTrending([]);
+      setDrinks([]);
     }
     setLoading(false);
   }
@@ -786,6 +797,55 @@ export default function HomeScreen() {
               shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
             }}>
               <Text style={{ color: Brand.textSecondary }}>{t('home.noLatestRelease')}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Drinks You Might Like — same shape as Latest Release, filtered to
+            drink categories instead of excluding them (see isDrinkCategory) so
+            drinks get their own section instead of mixing into food lists. */}
+        <View style={{ marginBottom: 28 }}>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+            {t('home.drinksForYou')}
+          </Text>
+          {drinks.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {drinks.map(item => (
+                <Tap
+                  key={item.id}
+                  onPress={() => router.push(`/item/${item.id}`)}
+                  activeOpacity={0.85}
+                  style={{
+                    width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                  }}
+                >
+                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                    {item.image_url
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      : <Text style={{ fontSize: 36 }}>🥤</Text>
+                    }
+                  </View>
+                  <View style={{ padding: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>
+                      {localizedText(item.name, item.name_th, locale)}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
+                      {item.vendors?.name ?? ''}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
+                  </View>
+                </Tap>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={{
+              borderRadius: 24, backgroundColor: Brand.card, height: 120,
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
+            }}>
+              <Text style={{ color: Brand.textSecondary }}>{t('home.noDrinks')}</Text>
             </View>
           )}
         </View>

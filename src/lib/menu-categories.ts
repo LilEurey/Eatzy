@@ -4,6 +4,17 @@ import { supabase } from '@/lib/supabase';
 // reasonable default set for a Thai campus food court.
 const FALLBACK_CATEGORIES = ['Noodles', 'Rice Dishes', 'Curry', 'Soup', 'Salads', 'Desserts', 'Drinks', 'Appetizers'];
 
+// menu_items.category is free text with no DB constraint, and different
+// seeds/screens have written drinks under two different strings —
+// 'Beverages' (main KMUTT seed) and 'Drinks' (vendor add-item screen, other
+// seed data). Compare case-insensitively so home's food/drink split isn't
+// tripped up by that inconsistency.
+const DRINK_CATEGORIES = ['beverages', 'drinks'];
+
+export function isDrinkCategory(category: string | null): boolean {
+  return !!category && DRINK_CATEGORIES.includes(category.toLowerCase());
+}
+
 // Real distinct menu_items.category values, most common first. Used as the
 // "Favorite Categories" picker options in onboarding / edit-preferences —
 // these directly feed recommend-for-you's cold-start User Vector (see

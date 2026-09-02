@@ -92,6 +92,8 @@ export const th: Record<TranslationKey, string> = {
   'home.seeAll': 'ดูทั้งหมด',
   'home.latestRelease': 'เมนูใหม่ล่าสุด',
   'home.noLatestRelease': 'สัปดาห์นี้ยังไม่มีเมนูใหม่',
+  'home.drinksForYou': 'เครื่องดื่มแนะนำ',
+  'home.noDrinks': 'ยังไม่มีเครื่องดื่มตอนนี้',
   'home.new': 'ใหม่',
   'home.noStallsOpen': 'ยังไม่มีร้านเปิดตอนนี้',
   'home.noQueueRightNow': 'ไม่มีคิวตอนนี้',

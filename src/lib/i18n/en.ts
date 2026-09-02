@@ -90,6 +90,8 @@ export const en = {
   'home.seeAll': 'See all',
   'home.latestRelease': 'Latest Release',
   'home.noLatestRelease': 'No new dishes this week',
+  'home.drinksForYou': 'Drinks You Might Like',
+  'home.noDrinks': 'No drinks available right now',
   'home.new': 'New',
   'home.noStallsOpen': 'No stalls open right now',
   'home.noQueueRightNow': 'No Queue Right Now',
