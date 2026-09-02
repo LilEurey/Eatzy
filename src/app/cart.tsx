@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { useCart, setQty, clearCart, cartSubtotal, lineUnitTotal } from '@/lib/cart-store';
+import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, NOTE_MAX } from '@/lib/cart-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
@@ -83,7 +83,13 @@ export default function CartScreen() {
       for (const line of items) {
         const { data: oi, error: itemError } = await supabase
           .from('order_items')
-          .insert({ order_id: order.id, menu_item_id: line.menu_item_id, quantity: line.quantity, unit_price: line.unit_price })
+          .insert({
+            order_id: order.id,
+            menu_item_id: line.menu_item_id,
+            quantity: line.quantity,
+            unit_price: line.unit_price,
+            special_instructions: line.note.trim() || null,
+          })
           .select('id')
           .single();
         if (itemError) throw itemError;
@@ -192,7 +198,7 @@ export default function CartScreen() {
           {items.map((item, i) => (
             <View key={item.line_id}>
               {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
-              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, gap: 14 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.textPrimary, marginBottom: 2 }}>
                     {localizedText(item.name, item.name_th, locale)}
@@ -236,6 +242,21 @@ export default function CartScreen() {
                   ฿{lineUnitTotal(item) * item.quantity}
                 </Text>
               </View>
+
+              {/* Per-line message to the kitchen — written to order_items.special_instructions */}
+              <TextInput
+                value={item.note}
+                onChangeText={v => setNote(item.line_id, v)}
+                maxLength={NOTE_MAX}
+                multiline
+                placeholder={t('cart.noteToVendor')}
+                placeholderTextColor={Brand.textSecondary}
+                style={{
+                  marginHorizontal: 16, marginTop: 10, marginBottom: 16,
+                  backgroundColor: Brand.bg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
+                  fontSize: 13, color: Brand.textPrimary, minHeight: 40, textAlignVertical: 'top',
+                }}
+              />
             </View>
           ))}
         </View>

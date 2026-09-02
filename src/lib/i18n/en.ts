@@ -159,6 +159,7 @@ export const en = {
   'cart.signInAgainMsg': 'Your session expired. Please sign in again.',
   'cart.addonRuleMsg': 'One of your items is missing a required choice. Go back and pick it, then try again.',
   'cart.addonPlus': '+ {name}',
+  'cart.noteToVendor': 'Add a note for the kitchen',
 
   // Search
   'search.placeholder': 'Search dishes, cuisine, ingredients…',
@@ -188,6 +189,8 @@ export const en = {
   'item.allergyWarningMsg': 'This dish contains {allergens}, which you\'ve marked as an allergy. Add it to your cart anyway?',
   'item.addAnyway': 'Add Anyway',
   'item.similarFoods': 'Similar Foods',
+  'item.noteToVendor': 'Note for the kitchen',
+  'item.noteToVendorPlaceholder': 'e.g. no chili, no peanuts, extra rice',
   'item.addToCart': 'Add to Cart · ฿{total}',
   'item.addons.required': 'Required',
   'item.addons.chooseUpTo': 'Choose up to {n}',

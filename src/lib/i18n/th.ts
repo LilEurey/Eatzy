@@ -161,6 +161,7 @@ export const th: Record<TranslationKey, string> = {
   'cart.signInAgainMsg': 'เซสชันของคุณหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
   'cart.addonRuleMsg': 'มีรายการที่ยังไม่ได้เลือกตัวเลือกที่จำเป็น กรุณากลับไปเลือกแล้วลองใหม่อีกครั้ง',
   'cart.addonPlus': '+ {name}',
+  'cart.noteToVendor': 'เพิ่มโน้ตถึงร้าน',
 
   // Search
   'search.placeholder': 'ค้นหาเมนู ประเภทอาหาร วัตถุดิบ…',
@@ -190,6 +191,8 @@ export const th: Record<TranslationKey, string> = {
   'item.allergyWarningMsg': 'เมนูนี้มี {allergens} ซึ่งคุณระบุว่าแพ้ ต้องการใส่ตะกร้าต่อไปหรือไม่?',
   'item.addAnyway': 'ใส่ตะกร้าต่อไป',
   'item.similarFoods': 'เมนูใกล้เคียง',
+  'item.noteToVendor': 'โน้ตถึงครัว',
+  'item.noteToVendorPlaceholder': 'เช่น ไม่เผ็ด ไม่ใส่ถั่ว เพิ่มข้าว',
   'item.addToCart': 'ใส่ตะกร้า · ฿{total}',
   'item.addons.required': 'ต้องเลือก',
   'item.addons.chooseUpTo': 'เลือกได้ไม่เกิน {n}',

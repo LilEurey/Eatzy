@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, ActivityIndicator, TextInput } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { addToCart } from '@/lib/cart-store';
+import { addToCart, NOTE_MAX } from '@/lib/cart-store';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { showConfirm } from '@/lib/alert';
@@ -48,6 +48,7 @@ export default function ItemDetailScreen() {
   const [groups, setGroups] = useState<AddonGroup[]>([]);
   // groupId -> selected option ids
   const [selected, setSelected] = useState<Record<string, string[]>>({});
+  const [note, setNote] = useState('');
   const [myAllergies, setMyAllergies] = useState<string[]>([]);
 
   useEffect(() => {
@@ -152,12 +153,12 @@ export default function ItemDetailScreen() {
       showConfirm(
         t('item.allergyWarningTitle'),
         t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
-        () => { addToCart(item, qty, selectedOptions); router.push('/cart'); },
+        () => { addToCart(item, qty, selectedOptions, note); router.push('/cart'); },
         { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
       );
       return;
     }
-    addToCart(item, qty, selectedOptions);
+    addToCart(item, qty, selectedOptions, note);
     router.push('/cart');
   }
 
@@ -362,6 +363,31 @@ export default function ItemDetailScreen() {
               </View>
             );
           })}
+
+          {/* Note for the kitchen — free-text message that rides with this cart line */}
+          <View style={{ marginTop: 20 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, marginBottom: 10 }}>
+              {t('item.noteToVendor')}
+            </Text>
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              maxLength={NOTE_MAX}
+              multiline
+              placeholder={t('item.noteToVendorPlaceholder')}
+              placeholderTextColor={Brand.textSecondary}
+              style={{
+                backgroundColor: Brand.card, borderRadius: 16, padding: 14,
+                fontSize: 15, color: Brand.textPrimary, minHeight: 72,
+                textAlignVertical: 'top',
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
+              }}
+            />
+            <Text style={{ fontSize: 11, color: Brand.textSecondary, marginTop: 6, textAlign: 'right' }}>
+              {note.length}/{NOTE_MAX}
+            </Text>
+          </View>
 
           {/* Similar Foods — content-based (TF-IDF + cosine over ingredients/tags/category) */}
           {similar.length > 0 && (

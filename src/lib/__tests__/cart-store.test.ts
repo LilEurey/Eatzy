@@ -9,6 +9,7 @@ const line = (unit_price: number, quantity: number, addons: ReturnType<typeof ad
   unit_price,
   quantity,
   addons,
+  note: '',
 });
 
 describe('lineUnitTotal', () => {
