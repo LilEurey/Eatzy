@@ -222,7 +222,7 @@ export default function ItemDetailScreen() {
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
           }}>
             {[
-              { icon: '⏱', value: `${item.preparation_time_min} min`, label: t('item.prepTime') },
+              { icon: '⏱', value: item.preparation_time_min != null ? `${item.preparation_time_min} min` : '—', label: t('item.prepTime') },
               { icon: '🏷️', value: `฿${item.price}`, label: t('item.price') },
             ].map(({ icon, value, label }, i) => (
               <View key={label} style={{
