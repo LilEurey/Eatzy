@@ -106,16 +106,16 @@ export default function SearchScreen() {
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return items
-      // Allergies are a safety restriction, not an opt-in taste filter like
-      // the Halal/Vegetarian/Jay chips below — excluded unconditionally,
-      // same as recommend-for-you's hard filter.
-      .filter(item => !allergies.some(a => item.allergens.includes(a)))
+      // Allergies don't hide results here — a search is browsing, same as
+      // store/[id].tsx. The actual gate is the confirm popup on Add to
+      // Cart (item/[id].tsx), the moment the student commits to the dish;
+      // this only flags matches so the badge below can warn on sight too.
       .filter(item => [...diet].every(f => item[DIET_FIELD[f]] === true))
       .map(item => ({ item, score: matchScore(item, needle) }))
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score)
       .map(({ item }) => item);
-  }, [items, query, diet, allergies]);
+  }, [items, query, diet]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -217,6 +217,11 @@ export default function SearchScreen() {
                     {item.is_vegetarian && (
                       <View style={{ backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
                         <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.vegetarian')}</Text>
+                      </View>
+                    )}
+                    {allergies.some(a => item.allergens.includes(a)) && (
+                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
                       </View>
                     )}
                   </View>

@@ -8,6 +8,7 @@ import { Brand } from '@/constants/theme';
 import { addToCart } from '@/lib/cart-store';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+import { showConfirm } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import type { Database } from '@/types/database.types';
 
@@ -47,6 +48,7 @@ export default function ItemDetailScreen() {
   const [groups, setGroups] = useState<AddonGroup[]>([]);
   // groupId -> selected option ids
   const [selected, setSelected] = useState<Record<string, string[]>>({});
+  const [myAllergies, setMyAllergies] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -55,6 +57,14 @@ export default function ItemDetailScreen() {
       setVendorName((data as any)?.vendors?.name ?? '');
     }
     void load();
+
+    // Warn-before-add, not hide-from-search: this is the moment the student
+    // is actually committing to the dish, not just browsing it.
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from('user_preferences').select('allergies').eq('user_id', user.id).maybeSingle();
+      setMyAllergies(data?.allergies ?? []);
+    });
 
     supabase
       .from('menu_item_addon_groups')
@@ -134,6 +144,22 @@ export default function ItemDetailScreen() {
     return count >= g.min_select && (g.max_select == null || count <= g.max_select);
   });
   const total = (item.price + addonSum) * qty;
+  const matchedAllergens = item.allergens.filter(a => myAllergies.includes(a));
+
+  function confirmAddToCart() {
+    if (!groupsValid || !item) return;
+    if (matchedAllergens.length > 0) {
+      showConfirm(
+        t('item.allergyWarningTitle'),
+        t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
+        () => { addToCart(item, qty, selectedOptions); router.push('/cart'); },
+        { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
+      );
+      return;
+    }
+    addToCart(item, qty, selectedOptions);
+    router.push('/cart');
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -265,7 +291,11 @@ export default function ItemDetailScreen() {
                 {t('item.allergens')}
               </Text>
               <Text style={{ fontSize: 13, color: '#9a3412' }}>
-                {item.allergens.join(', ')}
+                {item.allergens.map((a, i) => (
+                  <Text key={a} style={matchedAllergens.includes(a) ? { fontWeight: '800', textDecorationLine: 'underline' } : undefined}>
+                    {a}{i < item.allergens.length - 1 ? ', ' : ''}
+                  </Text>
+                ))}
               </Text>
             </View>
           )}
@@ -411,11 +441,7 @@ export default function ItemDetailScreen() {
           <Tap
             activeOpacity={0.85}
             disabled={!groupsValid}
-            onPress={() => {
-              if (!groupsValid) return;
-              addToCart(item, qty, selectedOptions);
-              router.push('/cart');
-            }}
+            onPress={confirmAddToCart}
             style={{
               flex: 1, backgroundColor: Brand.orange, borderRadius: 14,
               height: 44, alignItems: 'center', justifyContent: 'center',

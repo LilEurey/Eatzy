@@ -98,13 +98,12 @@ function cosineSimilarity(a: Map<string, number>, b: Map<string, number>): numbe
   return dot / (normA * normB);
 }
 
-// Hard filters — safety and budget beat taste, same rule ml/recommend.py's
-// recommend_for_user() applies before ranking.
+// Hard filters — is_halal/is_vegetarian/is_jay/budget are "don't rank this
+// at all" rules. Allergies are NOT a hard filter here anymore: they're a
+// warn-before-add risk (the Add to Cart confirm in item/[id].tsx), not a
+// hide-from-recommendations rule, so a matching item can still surface —
+// same policy the home feed and search use.
 function passesHardFilters(item: MenuItemRow, prefs: UserPreferences): boolean {
-  if (prefs.allergies.length > 0) {
-    const itemAllergens = item.allergens ?? [];
-    if (prefs.allergies.some((a) => itemAllergens.includes(a))) return false;
-  }
   if (prefs.budget_max != null && item.price > prefs.budget_max) return false;
   if (prefs.is_halal && !item.is_halal) return false;
   if (prefs.is_vegetarian && !item.is_vegetarian) return false;

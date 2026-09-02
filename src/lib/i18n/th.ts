@@ -165,6 +165,7 @@ export const th: Record<TranslationKey, string> = {
   'search.placeholder': 'ค้นหาเมนู ประเภทอาหาร วัตถุดิบ…',
   'search.resultsCount': 'พบ {n} เมนู',
   'search.noResults': 'ไม่พบเมนูที่ค้นหา\nลองชื่ออื่นหรือเปลี่ยนตัวกรอง',
+  'search.containsAllergen': '⚠️ สารก่อภูมิแพ้',
 
   // Stores
   'stores.title': 'ร้านค้า',
@@ -184,6 +185,9 @@ export const th: Record<TranslationKey, string> = {
   'item.price': 'ราคา',
   'item.ingredients': 'ส่วนประกอบ',
   'item.allergens': '⚠️ สารก่อภูมิแพ้',
+  'item.allergyWarningTitle': '⚠️ คำเตือนภูมิแพ้',
+  'item.allergyWarningMsg': 'เมนูนี้มี {allergens} ซึ่งคุณระบุว่าแพ้ ต้องการใส่ตะกร้าต่อไปหรือไม่?',
+  'item.addAnyway': 'ใส่ตะกร้าต่อไป',
   'item.similarFoods': 'เมนูใกล้เคียง',
   'item.addToCart': 'ใส่ตะกร้า · ฿{total}',
   'item.addons.required': 'ต้องเลือก',

@@ -163,6 +163,7 @@ export const en = {
   'search.placeholder': 'Search dishes, cuisine, ingredients…',
   'search.resultsCount': '{n} dishes found',
   'search.noResults': 'No dishes match your search.\nTry a different name or filter.',
+  'search.containsAllergen': '⚠️ Allergen',
 
   // Stores
   'stores.title': 'Stores',
@@ -182,6 +183,9 @@ export const en = {
   'item.price': 'Price',
   'item.ingredients': 'Ingredients',
   'item.allergens': '⚠️ Allergens',
+  'item.allergyWarningTitle': '⚠️ Allergy Warning',
+  'item.allergyWarningMsg': 'This dish contains {allergens}, which you\'ve marked as an allergy. Add it to your cart anyway?',
+  'item.addAnyway': 'Add Anyway',
   'item.similarFoods': 'Similar Foods',
   'item.addToCart': 'Add to Cart · ฿{total}',
   'item.addons.required': 'Required',

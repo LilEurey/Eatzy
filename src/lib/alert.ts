@@ -18,3 +18,24 @@ export function showAlert(title: string, message?: string, onOk?: () => void) {
 export function comingSoonAlert(t: ReturnType<typeof useI18n>['t']) {
   showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'));
 }
+
+// Two-way confirm (Cancel vs. proceed) — same web/native split as showAlert,
+// since react-native-web's Alert.alert stub never fires button callbacks.
+// confirmLabel defaults to a plain "OK" wording; pass one for destructive/
+// warning actions (e.g. "Add Anyway") so the button reads as a choice, not
+// an acknowledgement.
+export function showConfirm(
+  title: string,
+  message: string | undefined,
+  onConfirm: () => void,
+  options?: { confirmLabel?: string; cancelLabel?: string; destructive?: boolean },
+) {
+  if (Platform.OS === 'web') {
+    if (window.confirm(message ? `${title}\n\n${message}` : title)) onConfirm();
+  } else {
+    Alert.alert(title, message, [
+      { text: options?.cancelLabel ?? 'Cancel', style: 'cancel' },
+      { text: options?.confirmLabel ?? 'OK', style: options?.destructive ? 'destructive' : 'default', onPress: onConfirm },
+    ]);
+  }
+}

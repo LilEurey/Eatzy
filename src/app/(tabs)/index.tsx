@@ -53,20 +53,19 @@ type DietaryPrefs = { is_halal: boolean; is_vegetarian: boolean; is_jay: boolean
 
 const DEFAULT_PREFS: DietaryPrefs = { is_halal: false, is_vegetarian: false, is_jay: false, allergies: [] };
 
-// Hard dietary filters — same rule recommend-for-you's passesHardFilters()
-// applies before ranking. Every home-page section pulling straight from
-// menu_items (Featured, Trending, Latest Release, Because You Ordered,
-// Time-Based) needs this too, not just the personalized section — a halal
-// student was seeing pork items in Latest Release/Trending because those
-// queries never looked at user_preferences at all.
+// Hard dietary filters — is_halal/is_vegetarian/is_jay are "cannot eat this
+// at all" rules, so they hide, same as recommend-for-you's server-side
+// passesHardFilters(). A halal student was seeing pork items in Latest
+// Release/Trending because those queries never looked at user_preferences
+// at all.
+//
+// Allergies are handled differently: they're a warn-before-add risk, not a
+// hide-from-view rule (see item/[id].tsx's Add to Cart confirm) — a browsed
+// list still shows the item, same as search.tsx.
 function passesDietaryFilters(item: MenuItem, prefs: DietaryPrefs): boolean {
   if (prefs.is_halal && !item.is_halal) return false;
   if (prefs.is_vegetarian && !item.is_vegetarian) return false;
   if (prefs.is_jay && !item.is_jay) return false;
-  if (prefs.allergies.length > 0) {
-    const itemAllergens = item.allergens ?? [];
-    if (prefs.allergies.some((a) => itemAllergens.includes(a))) return false;
-  }
   return true;
 }
 

@@ -46,12 +46,10 @@ type UserPreferences = {
 
 // Same hard filters recommend-for-you applies — a halal/vegetarian/jay
 // caller must not see a violating item surface as "similar", even when the
-// anchor item itself is something they can eat.
+// anchor item itself is something they can eat. Allergies are deliberately
+// NOT filtered here: they're a warn-before-add risk (the Add to Cart
+// confirm in item/[id].tsx), not a hide-from-recommendations rule.
 function passesHardFilters(item: MenuItemRow, prefs: UserPreferences): boolean {
-  if (prefs.allergies.length > 0) {
-    const itemAllergens = item.allergens ?? [];
-    if (prefs.allergies.some((a) => itemAllergens.includes(a))) return false;
-  }
   if (prefs.is_halal && !item.is_halal) return false;
   if (prefs.is_vegetarian && !item.is_vegetarian) return false;
   if (prefs.is_jay && !item.is_jay) return false;
