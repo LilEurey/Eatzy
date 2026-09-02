@@ -173,7 +173,7 @@ export default function StoreDetailScreen() {
 
           {/* Bio */}
           <Text style={{ fontSize: 14, color: Brand.textSecondary, lineHeight: 20, marginBottom: 24 }}>
-            {vendor.bio}
+            {localizedText(vendor.bio ?? '', vendor.bio_th, locale)}
           </Text>
 
           {/* Menu section */}
