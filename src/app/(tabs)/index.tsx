@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { getMealSegment } from '@/lib/time';
+import { getMealSegment, type MealSegment } from '@/lib/time';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
@@ -61,6 +61,31 @@ function queueStatus(count: number | null): { labelKey: TranslationKey; color: s
   return { labelKey: 'common.busy', color: '#ef4444' };
 }
 
+// No Queue Right Now — same "no queue" threshold queueStatus() uses for the
+// top banner, applied to the open-vendors list itself so it's a real,
+// dedicated section instead of just sort order buried in Store Options.
+const NO_QUEUE_THRESHOLD = 3;
+
+// Time-Based — menu_items.available_time_segment is 'all' on every seeded
+// row (a KMUTT stall's menu doesn't actually change by clock hour), so
+// filtering on that column would just return the full catalog. Category is
+// the real signal for "what fits this meal" instead.
+const BREAKFAST_CATEGORIES = ['Beverages', 'Desserts', 'Add-ons'];
+const LUNCH_CATEGORIES = ['Main Dishes (Rice)', 'Noodles', 'Main Dishes', 'Appetizers'];
+const DINNER_CATEGORIES = ['Main Dishes (Rice)', 'Noodles', 'Main Dishes'];
+
+function getTimeBasedCategories(segment: MealSegment): string[] {
+  if (segment === 'breakfast') return BREAKFAST_CATEGORIES;
+  if (segment === 'lunch') return LUNCH_CATEGORIES;
+  return DINNER_CATEGORIES;
+}
+
+function getTimeBasedHeaderKey(segment: MealSegment): TranslationKey {
+  if (segment === 'breakfast') return 'home.timeBasedBreakfast';
+  if (segment === 'lunch') return 'home.timeBasedLunch';
+  return 'home.timeBasedDinner';
+}
+
 export default function HomeScreen() {
   const { t, locale } = useI18n();
   const [firstName, setFirstName] = useState('');
@@ -71,6 +96,8 @@ export default function HomeScreen() {
   const [latestRelease, setLatestRelease] = useState<MenuItem[]>([]);
   const [recommendedForYou, setRecommendedForYou] = useState<PersonalizedItem[]>([]);
   const [becauseYouOrdered, setBecauseYouOrdered] = useState<MenuItem[]>([]);
+  const [timeBasedItems, setTimeBasedItems] = useState<MenuItem[]>([]);
+  const [mealSegment, setMealSegment] = useState<MealSegment>('lunch');
   const [loading, setLoading] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
@@ -82,7 +109,7 @@ export default function HomeScreen() {
       const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name)';
 
       const { data: { user } } = await supabase.auth.getUser();
-      const [profileRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes] = await Promise.all([
+      const [profileRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes] = await Promise.all([
         user
           ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
@@ -100,6 +127,11 @@ export default function HomeScreen() {
         // Recommended For You — personalized TF-IDF ranking, cold-started from
         // user_preferences until real order history exists (see recommend-for-you).
         invokeEdgeFunction<{ results: PersonalizedItem[] }>('recommend-for-you'),
+        // Time-Based — items fitting the current meal segment by category
+        // (see getTimeBasedCategories: available_time_segment itself is 'all'
+        // on every seeded row, so category is the real signal here).
+        supabase.from('menu_items').select(menuFields).eq('is_available', true)
+          .in('category', getTimeBasedCategories(segment)).order('name', { ascending: true }).limit(10),
       ]);
 
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
@@ -143,6 +175,9 @@ export default function HomeScreen() {
       }
 
       setRecommendedForYou(recommendedRes.data?.results ?? []);
+
+      setMealSegment(segment);
+      setTimeBasedItems((timeBasedRes.data as unknown as MenuItem[] | null) ?? []);
     } catch {
       // Supabase unreachable — show empty states, not fake data.
       setVendors([]);
@@ -178,6 +213,7 @@ export default function HomeScreen() {
 
   const topVendor = vendors[0] ?? null;
   const queue = queueStatus(topVendor?.current_queue_count ?? null);
+  const noQueueVendors = vendors.filter(v => (v.current_queue_count ?? 0) <= NO_QUEUE_THRESHOLD).slice(0, 6);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -271,6 +307,63 @@ export default function HomeScreen() {
             </Tap>
           </View>
         )}
+
+        {/* No Queue Right Now — open vendors under the same "no queue"
+            threshold queueStatus() uses for the banner above; a real
+            section instead of just Store Options' sort order. */}
+        <View style={{ marginBottom: 28 }}>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+            {t('home.noQueueRightNow')}
+          </Text>
+          {noQueueVendors.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {noQueueVendors.map(vendor => (
+                <Tap
+                  key={vendor.id}
+                  onPress={() => router.push(`/store/${vendor.id}`)}
+                  activeOpacity={0.85}
+                  style={{
+                    width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                  }}
+                >
+                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                    {vendor.cover_image_url
+                      ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      : <Text style={{ fontSize: 36 }}>🏪</Text>
+                    }
+                    <View style={{
+                      position: 'absolute', top: 8, right: 8,
+                      backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 99,
+                      paddingHorizontal: 8, paddingVertical: 4,
+                      flexDirection: 'row', alignItems: 'center', gap: 3,
+                    }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('common.noQueue')}</Text>
+                    </View>
+                  </View>
+                  <View style={{ padding: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={1}>
+                      {vendor.name}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#5a4136' }} numberOfLines={1}>
+                      {vendor.estimated_wait_min ?? 5}–{(vendor.estimated_wait_min ?? 5) + 3} min
+                    </Text>
+                  </View>
+                </Tap>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={{
+              borderRadius: 24, backgroundColor: Brand.card, height: 120,
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
+            }}>
+              <Text style={{ color: Brand.textSecondary }}>{t('home.noQueueEmpty')}</Text>
+            </View>
+          )}
+        </View>
 
         {/* Promoted Foods — sponsored items (is_featured), not personalized */}
         <View style={{ marginBottom: 28 }}>
@@ -410,6 +503,54 @@ export default function HomeScreen() {
               shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
             }}>
               <Text style={{ color: Brand.textSecondary }}>{t('home.noTrending')}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Time-Based — items fitting the current meal segment by category
+            (see getTimeBasedCategories). */}
+        <View style={{ marginBottom: 28 }}>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+            {t(getTimeBasedHeaderKey(mealSegment))}
+          </Text>
+          {timeBasedItems.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {timeBasedItems.map(item => (
+                <Tap
+                  key={item.id}
+                  onPress={() => router.push(`/item/${item.id}`)}
+                  activeOpacity={0.85}
+                  style={{
+                    width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                  }}
+                >
+                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                    {item.image_url
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      : <Text style={{ fontSize: 36 }}>🍽️</Text>
+                    }
+                  </View>
+                  <View style={{ padding: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>
+                      {localizedText(item.name, item.name_th, locale)}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
+                      {item.vendors?.name ?? ''}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
+                  </View>
+                </Tap>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={{
+              borderRadius: 24, backgroundColor: Brand.card, height: 120,
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
+            }}>
+              <Text style={{ color: Brand.textSecondary }}>{t('home.noTimeBased')}</Text>
             </View>
           )}
         </View>

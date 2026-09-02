@@ -92,6 +92,12 @@ export const en = {
   'home.noLatestRelease': 'No new dishes this week',
   'home.new': 'New',
   'home.noStallsOpen': 'No stalls open right now',
+  'home.noQueueRightNow': 'No Queue Right Now',
+  'home.noQueueEmpty': 'Every stall has a queue right now',
+  'home.timeBasedBreakfast': 'Breakfast Picks',
+  'home.timeBasedLunch': 'Lunch Picks',
+  'home.timeBasedDinner': 'Dinner Picks',
+  'home.noTimeBased': 'No picks for this time yet',
 
   // Orders
   'orders.title': 'Orders',

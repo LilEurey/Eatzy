@@ -94,6 +94,12 @@ export const th: Record<TranslationKey, string> = {
   'home.noLatestRelease': 'สัปดาห์นี้ยังไม่มีเมนูใหม่',
   'home.new': 'ใหม่',
   'home.noStallsOpen': 'ยังไม่มีร้านเปิดตอนนี้',
+  'home.noQueueRightNow': 'ไม่มีคิวตอนนี้',
+  'home.noQueueEmpty': 'ตอนนี้ทุกร้านมีคิว',
+  'home.timeBasedBreakfast': 'เมนูมื้อเช้า',
+  'home.timeBasedLunch': 'เมนูมื้อเที่ยง',
+  'home.timeBasedDinner': 'เมนูมื้อเย็น',
+  'home.noTimeBased': 'ยังไม่มีเมนูสำหรับช่วงนี้',
 
   // Orders
   'orders.title': 'คำสั่งซื้อ',
