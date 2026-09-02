@@ -25,7 +25,7 @@ export default function CartScreen() {
   const [slots] = useState(() => nextPickupSlots());
   const [selectedIndex, setSelectedIndex] = useState(1);
   const selectedSlot = slots[selectedIndex];
-  const [vendor, setVendor] = useState<Vendor | null>(null);
+  const [vendor, setVendor] = useState<Pick<Vendor, 'name' | 'stall_number'> | null>(null);
   const [placing, setPlacing] = useState(false);
 
   const subtotal = cartSubtotal(cart);
@@ -33,7 +33,7 @@ export default function CartScreen() {
 
   useEffect(() => {
     if (!cart.vendor_id) return; // cart empty — the empty-state branch below renders instead
-    supabase.from('vendors').select('*').eq('id', cart.vendor_id).maybeSingle()
+    supabase.from('vendors').select('name,stall_number').eq('id', cart.vendor_id).maybeSingle()
       .then(({ data }) => setVendor(data ?? null));
   }, [cart.vendor_id]);
 

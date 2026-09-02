@@ -188,21 +188,33 @@ export default function HomeScreen() {
       setVendors(dbVendors ?? []);
       setFeatured(dbFeatured ?? null);
 
-      // Trending ids come ranked by order count from the RPC; re-fetch full
-      // rows (filtered to items still available now) and restore that order.
+      // Trending and Because You Ordered both come back from their RPCs as
+      // ranked id lists; each needs a follow-up fetch for the full rows
+      // (filtered to what's still available now), then the RPC order restored.
+      // The two follow-ups are independent — run them together, not in series.
       const trendingRanked = trendingRankRes.data as { menu_item_id: string; order_count: number }[] | null;
-      let dbTrending: MenuItem[] | null = null;
-      if (trendingRanked?.length) {
-        const ids = trendingRanked.map(r => r.menu_item_id);
-        const rank = new Map(ids.map((id, i) => [id, i]));
-        const { data: trendingItems } = await supabase.from('menu_items').select(menuFields)
-          .in('id', ids).eq('is_available', true).or(timeFilter);
-        dbTrending = (trendingItems as unknown as MenuItem[] | null)
-          ?.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category))
-          .slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? null;
-      }
+      const byoRanked = becauseYouOrderedRankRes.data as { menu_item_id: string; co_orders: number }[] | null;
+      const trendingIds = trendingRanked?.map(r => r.menu_item_id) ?? [];
+      const byoIds = byoRanked?.map(r => r.menu_item_id) ?? [];
 
-      setTrending(dbTrending?.slice(0, 2) ?? []);
+      const [trendingRowsRes, byoRowsRes] = await Promise.all([
+        trendingIds.length
+          ? supabase.from('menu_items').select(menuFields).in('id', trendingIds).eq('is_available', true).or(timeFilter)
+          : Promise.resolve({ data: null }),
+        byoIds.length
+          ? supabase.from('menu_items').select(menuFields).in('id', byoIds).eq('is_available', true)
+          : Promise.resolve({ data: null }),
+      ]);
+
+      const byRank = (ids: string[]) => {
+        const rank = new Map(ids.map((id, i) => [id, i]));
+        return (rows: unknown) => (rows as MenuItem[] | null)
+          ?.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category))
+          .slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? [];
+      };
+
+      const dbTrending = byRank(trendingIds)(trendingRowsRes.data);
+      setTrending(dbTrending.slice(0, 2));
 
       const dbLatestRelease = (latestReleaseRes.data as unknown as MenuItem[] | null) ?? [];
       setLatestRelease(dbLatestRelease.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category)));
@@ -210,20 +222,7 @@ export default function HomeScreen() {
       const dbDrinks = (drinksRes.data as unknown as MenuItem[] | null) ?? [];
       setDrinks(dbDrinks.filter(i => passesDietaryFilters(i, prefs)));
 
-      // Because You Ordered — same id-rank → full-row pattern as Trending.
-      const byoRanked = becauseYouOrderedRankRes.data as { menu_item_id: string; co_orders: number }[] | null;
-      if (byoRanked?.length) {
-        const ids = byoRanked.map(r => r.menu_item_id);
-        const rank = new Map(ids.map((id, i) => [id, i]));
-        const { data: byoItems } = await supabase.from('menu_items').select(menuFields)
-          .in('id', ids).eq('is_available', true);
-        const ordered = (byoItems as unknown as MenuItem[] | null)
-          ?.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category))
-          .slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? [];
-        setBecauseYouOrdered(ordered);
-      } else {
-        setBecauseYouOrdered([]);
-      }
+      setBecauseYouOrdered(byRank(byoIds)(byoRowsRes.data));
 
       setRecommendedForYou(recommendedRes.data?.results ?? []);
 
