@@ -472,7 +472,7 @@ export default function HomeScreen() {
                   }}
                 >
                   {/* Image area */}
-                  <View style={{ height: 120, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ height: 150, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
                       ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                       : <Text style={{ fontSize: 40 }}>🍽️</Text>
