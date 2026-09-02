@@ -43,7 +43,32 @@ type MenuItem = {
   image_url: string | null;
   vendor_id: string;
   vendors: { name: string } | null;
+  is_halal: boolean;
+  is_vegetarian: boolean;
+  is_jay: boolean;
+  allergens: string[] | null;
 };
+
+type DietaryPrefs = { is_halal: boolean; is_vegetarian: boolean; is_jay: boolean; allergies: string[] };
+
+const DEFAULT_PREFS: DietaryPrefs = { is_halal: false, is_vegetarian: false, is_jay: false, allergies: [] };
+
+// Hard dietary filters — same rule recommend-for-you's passesHardFilters()
+// applies before ranking. Every home-page section pulling straight from
+// menu_items (Featured, Trending, Latest Release, Because You Ordered,
+// Time-Based) needs this too, not just the personalized section — a halal
+// student was seeing pork items in Latest Release/Trending because those
+// queries never looked at user_preferences at all.
+function passesDietaryFilters(item: MenuItem, prefs: DietaryPrefs): boolean {
+  if (prefs.is_halal && !item.is_halal) return false;
+  if (prefs.is_vegetarian && !item.is_vegetarian) return false;
+  if (prefs.is_jay && !item.is_jay) return false;
+  if (prefs.allergies.length > 0) {
+    const itemAllergens = item.allergens ?? [];
+    if (prefs.allergies.some((a) => itemAllergens.includes(a))) return false;
+  }
+  return true;
+}
 
 // recommend-for-you returns flat rows (no vendors() join — computed server-side).
 type PersonalizedItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
@@ -110,15 +135,22 @@ export default function HomeScreen() {
       const segment = getMealSegment();
       const timeFilter = `available_time_segment.eq.${segment},available_time_segment.eq.all`;
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name)';
+      const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name),is_halal,is_vegetarian,is_jay,allergens';
 
       const { data: { user } } = await supabase.auth.getUser();
-      const [profileRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes] = await Promise.all([
+      const [profileRes, prefsRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes] = await Promise.all([
         user
           ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
+        // Fetched once, applied to every raw menu_items section below —
+        // recommend-for-you already hard-filters on its own, server-side.
+        user
+          ? supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
         supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url').eq('is_open', true).order('current_queue_count', { ascending: true }),
-        supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).limit(1),
+        // Fetch a few candidates, not just 1 — the featured item can fail
+        // the caller's dietary filter, and we need another to fall back to.
+        supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).limit(10),
         // Trending Meals Today — real order volume, most-ordered first (see get_trending_items).
         supabase.rpc('get_trending_items', { since: sevenDaysAgo, limit_n: 10 }),
         // Latest Release — newest items in the last 7 days, matching the current meal time.
@@ -141,8 +173,11 @@ export default function HomeScreen() {
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
       if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
 
+      const prefs: DietaryPrefs = prefsRes.data ?? DEFAULT_PREFS;
+
       const dbVendors = vendorsRes.data as Vendor[] | null;
-      const dbFeatured = featuredRes.data?.[0] as unknown as MenuItem | undefined;
+      const featuredCandidates = (featuredRes.data as unknown as MenuItem[] | null) ?? [];
+      const dbFeatured = featuredCandidates.find(i => passesDietaryFilters(i, prefs));
 
       setVendors(dbVendors ?? []);
       setFeatured(dbFeatured ?? null);
@@ -157,12 +192,14 @@ export default function HomeScreen() {
         const { data: trendingItems } = await supabase.from('menu_items').select(menuFields)
           .in('id', ids).eq('is_available', true).or(timeFilter);
         dbTrending = (trendingItems as unknown as MenuItem[] | null)
-          ?.slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? null;
+          ?.filter(i => passesDietaryFilters(i, prefs))
+          .slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? null;
       }
 
       setTrending(dbTrending?.slice(0, 2) ?? []);
 
-      setLatestRelease((latestReleaseRes.data as unknown as MenuItem[] | null) ?? []);
+      const dbLatestRelease = (latestReleaseRes.data as unknown as MenuItem[] | null) ?? [];
+      setLatestRelease(dbLatestRelease.filter(i => passesDietaryFilters(i, prefs)));
 
       // Because You Ordered — same id-rank → full-row pattern as Trending.
       const byoRanked = becauseYouOrderedRankRes.data as { menu_item_id: string; co_orders: number }[] | null;
@@ -172,7 +209,8 @@ export default function HomeScreen() {
         const { data: byoItems } = await supabase.from('menu_items').select(menuFields)
           .in('id', ids).eq('is_available', true);
         const ordered = (byoItems as unknown as MenuItem[] | null)
-          ?.slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? [];
+          ?.filter(i => passesDietaryFilters(i, prefs))
+          .slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? [];
         setBecauseYouOrdered(ordered);
       } else {
         setBecauseYouOrdered([]);
@@ -181,7 +219,8 @@ export default function HomeScreen() {
       setRecommendedForYou(recommendedRes.data?.results ?? []);
 
       setMealSegment(segment);
-      setTimeBasedItems((timeBasedRes.data as unknown as MenuItem[] | null) ?? []);
+      const dbTimeBased = (timeBasedRes.data as unknown as MenuItem[] | null) ?? [];
+      setTimeBasedItems(dbTimeBased.filter(i => passesDietaryFilters(i, prefs)));
     } catch {
       // Supabase unreachable — show empty states, not fake data.
       setVendors([]);

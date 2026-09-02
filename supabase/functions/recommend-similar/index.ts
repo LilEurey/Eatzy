@@ -29,9 +29,34 @@ type MenuItemRow = {
   ingredients: string[] | null;
   tags: string[] | null;
   category: string | null;
+  allergens: string[] | null;
+  is_halal: boolean;
+  is_vegetarian: boolean;
+  is_jay: boolean;
   vendor_id: string;
   vendors: { name: string } | null;
 };
+
+type UserPreferences = {
+  is_halal: boolean;
+  is_vegetarian: boolean;
+  is_jay: boolean;
+  allergies: string[];
+};
+
+// Same hard filters recommend-for-you applies — a halal/vegetarian/jay
+// caller must not see a violating item surface as "similar", even when the
+// anchor item itself is something they can eat.
+function passesHardFilters(item: MenuItemRow, prefs: UserPreferences): boolean {
+  if (prefs.allergies.length > 0) {
+    const itemAllergens = item.allergens ?? [];
+    if (prefs.allergies.some((a) => itemAllergens.includes(a))) return false;
+  }
+  if (prefs.is_halal && !item.is_halal) return false;
+  if (prefs.is_vegetarian && !item.is_vegetarian) return false;
+  if (prefs.is_jay && !item.is_jay) return false;
+  return true;
+}
 
 // One text document per item: ingredients + tags + category, same fields
 // ml/recommend.py's build_food_vectors() uses.
@@ -88,11 +113,23 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const supabase = createClient(supabaseUrl, anonKey);
+  const authHeader = req.headers.get('Authorization') ?? '';
+  const supabase = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  // Best-effort: an anonymous caller (or one with no saved preferences yet)
+  // just gets the unfiltered ranking, same cold-start behavior as
+  // recommend-for-you.
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: prefsRow } = user
+    ? await supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle()
+    : { data: null };
+  const prefs: UserPreferences = prefsRow ?? { is_halal: false, is_vegetarian: false, is_jay: false, allergies: [] };
 
   const { data: items, error } = await supabase
     .from('menu_items')
-    .select('id,name,price,image_url,ingredients,tags,category,vendor_id,vendors(name)')
+    .select('id,name,price,image_url,ingredients,tags,category,allergens,is_halal,is_vegetarian,is_jay,vendor_id,vendors(name)')
     .eq('is_available', true);
 
   if (error) return json({ error: error.message }, 500);
@@ -101,12 +138,16 @@ Deno.serve(async (req) => {
   const targetIndex = catalog.findIndex((i) => i.id === body.item_id);
   if (targetIndex === -1) return json({ error: 'item not found or unavailable' }, 404);
 
+  // TF-IDF vectors computed over the full catalog (so IDF weights aren't
+  // skewed by dropping items first) — the dietary filter only trims which
+  // *results* can surface, same order as recommend-for-you.
   const vectors = buildTfidfVectors(catalog.map(toDoc));
   const targetVec = vectors[targetIndex];
 
   const scored = catalog
     .map((item, i) => ({ item, score: cosineSimilarity(targetVec, vectors[i]) }))
     .filter((_, i) => i !== targetIndex)
+    .filter(({ item }) => passesHardFilters(item, prefs))
     .sort((a, b) => b.score - a.score)
     .slice(0, TOP_K);
 
