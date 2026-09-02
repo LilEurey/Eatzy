@@ -351,7 +351,7 @@ export default function ItemDetailScreen() {
                       shadowOpacity: 0.04, shadowRadius: 16, elevation: 2,
                     }}
                   >
-                    <View style={{ height: 90, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ height: 120, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                       {s.image_url
                         ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                         : <Text style={{ fontSize: 32 }}>🍽️</Text>

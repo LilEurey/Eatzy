@@ -343,7 +343,7 @@ export default function HomeScreen() {
                     shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
                   }}
                 >
-                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {vendor.cover_image_url
                       ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                       : <Text style={{ fontSize: 36 }}>🏪</Text>
@@ -544,7 +544,7 @@ export default function HomeScreen() {
                     shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
                   }}
                 >
-                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
                       ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>
@@ -584,7 +584,7 @@ export default function HomeScreen() {
                     shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
                   }}
                 >
-                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
                       ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>
@@ -632,7 +632,7 @@ export default function HomeScreen() {
                     shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
                   }}
                 >
-                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
                       ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>
@@ -672,7 +672,7 @@ export default function HomeScreen() {
                     shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
                   }}
                 >
-                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
                       ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>
@@ -711,7 +711,7 @@ export default function HomeScreen() {
                     shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
                   }}
                 >
-                  <View style={{ height: 100, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
                       ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>

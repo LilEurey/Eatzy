@@ -38,7 +38,7 @@ export default function VendorMenuScreen() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
           {items.map(item => (
             <View key={item.id} style={{ width: 220, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#EEF0F5', overflow: 'hidden' }}>
-              <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ height: 160, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                 {item.image_url
                   ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                   : <Text style={{ fontSize: 44 }}>🍽️</Text>
