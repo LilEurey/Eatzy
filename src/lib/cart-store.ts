@@ -22,7 +22,10 @@ type CartItem = {
   unit_price: number; // bare menu price; add-ons are priced separately
   quantity: number;
   addons: CartAddon[];
+  note: string; // free-text message to the kitchen; '' means none
 };
+
+export const NOTE_MAX = 200;
 
 type Cart = {
   vendor_id: string | null;
@@ -38,24 +41,28 @@ function emit() {
   listeners.forEach(l => l());
 }
 
-// Two lines stack (quantity +) only when they're the same dish AND the same
-// set of add-ons; any difference makes a new line.
-function configSignature(menuItemId: string, addons: CartAddon[]) {
-  return `${menuItemId}|${addons.map(a => a.id).sort().join(',')}`;
+// Two lines stack (quantity +) only when they're the same dish, the same
+// set of add-ons AND the same kitchen note; any difference makes a new line.
+function configSignature(menuItemId: string, addons: CartAddon[], note: string) {
+  return `${menuItemId}|${addons.map(a => a.id).sort().join(',')}|${note}`;
 }
 
 export function addToCart(
   item: { id: string; vendor_id: string; name: string; name_th?: string | null; price: number },
   qty = 1,
   addons: CartAddon[] = [],
+  note = '',
 ) {
   if (cart.vendor_id && cart.vendor_id !== item.vendor_id) {
     cart.items = []; // switching vendors clears the cart
   }
   cart.vendor_id = item.vendor_id;
 
-  const sig = configSignature(item.id, addons);
-  const existing = cart.items.find(i => configSignature(i.menu_item_id, i.addons) === sig);
+  const trimmedNote = note.trim().slice(0, NOTE_MAX);
+  const sig = configSignature(item.id, addons, trimmedNote);
+  const existing = cart.items.find(
+    i => configSignature(i.menu_item_id, i.addons, i.note) === sig,
+  );
   if (existing) {
     existing.quantity += qty;
   } else {
@@ -67,8 +74,16 @@ export function addToCart(
       unit_price: item.price,
       quantity: qty,
       addons,
+      note: trimmedNote,
     });
   }
+  emit();
+}
+
+export function setNote(lineId: string, note: string) {
+  const it = cart.items.find(i => i.line_id === lineId);
+  if (!it) return;
+  it.note = note.slice(0, NOTE_MAX);
   emit();
 }
 
