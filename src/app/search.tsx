@@ -72,13 +72,22 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [diet, setDiet] = useState<Set<DietFilter>>(new Set());
 
+  const [allergies, setAllergies] = useState<string[]>([]);
+
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('menu_items')
-        .select('id,vendor_id,name,name_th,description,description_th,price,category,spice_level,is_available,is_halal,is_vegetarian,is_jay,allergens,tags,ingredients,image_url,vendors(name)')
-        .eq('is_available', true);
+      const { data: { user } } = await supabase.auth.getUser();
+      const [{ data }, prefsRes] = await Promise.all([
+        supabase
+          .from('menu_items')
+          .select('id,vendor_id,name,name_th,description,description_th,price,category,spice_level,is_available,is_halal,is_vegetarian,is_jay,allergens,tags,ingredients,image_url,vendors(name)')
+          .eq('is_available', true),
+        user
+          ? supabase.from('user_preferences').select('allergies').eq('user_id', user.id).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
 
+      setAllergies(prefsRes.data?.allergies ?? []);
       const dbItems = (data ?? []) as unknown as (SearchItem & { vendors: { name: string } | null })[];
       setItems(dbItems.map(i => ({ ...i, vendorName: i.vendors?.name ?? '' })));
       setLoading(false);
@@ -97,12 +106,16 @@ export default function SearchScreen() {
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return items
+      // Allergies are a safety restriction, not an opt-in taste filter like
+      // the Halal/Vegetarian/Jay chips below — excluded unconditionally,
+      // same as recommend-for-you's hard filter.
+      .filter(item => !allergies.some(a => item.allergens.includes(a)))
       .filter(item => [...diet].every(f => item[DIET_FIELD[f]] === true))
       .map(item => ({ item, score: matchScore(item, needle) }))
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score)
       .map(({ item }) => item);
-  }, [items, query, diet]);
+  }, [items, query, diet, allergies]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
