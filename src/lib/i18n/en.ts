@@ -445,6 +445,8 @@ export const en = {
   'vendor.profile.addressLabel': 'Address (optional)',
   'vendor.profile.bioLabel': 'Bio',
   'vendor.profile.bioPlaceholder': 'Tell students about your store...',
+  'vendor.profile.bioThLabel': 'Bio (Thai, optional)',
+  'vendor.profile.bioThPlaceholder': 'แนะนำร้านของคุณเป็นภาษาไทย...',
   'vendor.profile.cuisineTagsLabel': 'Cuisine Tags',
   'vendor.profile.cuisineTagsPlaceholder': 'e.g. Thai, Rice Dishes, Curry',
   'vendor.profile.cuisineTagsHint': 'Separate tags with commas',

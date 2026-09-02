@@ -447,6 +447,8 @@ export const th: Record<TranslationKey, string> = {
   'vendor.profile.addressLabel': 'ที่อยู่ (ไม่บังคับ)',
   'vendor.profile.bioLabel': 'แนะนำร้าน',
   'vendor.profile.bioPlaceholder': 'บอกนักศึกษาเกี่ยวกับร้านของคุณ...',
+  'vendor.profile.bioThLabel': 'แนะนำร้าน (ภาษาไทย, ไม่บังคับ)',
+  'vendor.profile.bioThPlaceholder': 'บอกนักศึกษาเกี่ยวกับร้านของคุณเป็นภาษาไทย...',
   'vendor.profile.cuisineTagsLabel': 'ประเภทอาหาร',
   'vendor.profile.cuisineTagsPlaceholder': 'เช่น ไทย, ข้าวราดแกง, แกง',
   'vendor.profile.cuisineTagsHint': 'คั่นแต่ละแท็กด้วยจุลภาค',

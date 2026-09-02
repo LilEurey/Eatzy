@@ -17,6 +17,7 @@ export default function VendorProfileScreen() {
   const [stallNumber, setStallNumber] = useState(vendor?.stall_number ?? '');
   const [address, setAddress] = useState(vendor?.address ?? '');
   const [bio, setBio] = useState(vendor?.bio ?? '');
+  const [bioTh, setBioTh] = useState(vendor?.bio_th ?? '');
   const [cuisineTags, setCuisineTags] = useState((vendor?.cuisine_tags ?? []).join(', '));
   const [halalCertified, setHalalCertified] = useState(vendor?.is_halal_certified ?? false);
   const [openTime, setOpenTime] = useState(vendor?.open_time ?? '');
@@ -31,6 +32,7 @@ export default function VendorProfileScreen() {
       stall_number: isOnCampus ? stallNumber.trim() || null : null,
       address: isOnCampus ? null : address.trim() || null,
       bio: bio.trim() || null,
+      bio_th: bioTh.trim() || null,
       cuisine_tags: cuisineTags.split(',').map(tag => tag.trim()).filter(Boolean),
       is_halal_certified: halalCertified,
       open_time: openTime.trim() || null,
@@ -116,6 +118,19 @@ export default function VendorProfileScreen() {
             value={bio}
             onChangeText={setBio}
             placeholder={t('vendor.profile.bioPlaceholder')}
+            placeholderTextColor="#B0B4BF"
+            multiline
+            numberOfLines={3}
+            style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary, minHeight: 70, textAlignVertical: 'top' }}
+          />
+        </View>
+
+        <View>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.bioThLabel')}</Text>
+          <TextInput
+            value={bioTh}
+            onChangeText={setBioTh}
+            placeholder={t('vendor.profile.bioThPlaceholder')}
             placeholderTextColor="#B0B4BF"
             multiline
             numberOfLines={3}
