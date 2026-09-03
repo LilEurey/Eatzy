@@ -166,9 +166,9 @@ After Statement 2, assert every target row has `cardinality(ingredients) >= 1` a
 ## Impact (validated locally in a `BEGIN … ROLLBACK` transaction, 2026-09-03)
 
 ~500 rows rewritten. Distinct `ingredients` terms across `menu_items` rises from ~20 to
-**104**; distinct `tags` to **41**. Every target row gains 2–6 tags. 19 rows match no
+**103**; distinct `tags` to **41**. Every target row gains 2–6 tags. ~19 rows match no
 ingredient keyword and keep their seed single-word `ingredients` (generic "Extra" /
-"choice of meat" add-on rows). The allergen re-derive (Statement 3) tags **99** additional
+"choice of meat" add-on rows). The allergen re-derive (Statement 3) tags **95** additional
 rows.
 
 ## Testing / verification
@@ -191,10 +191,10 @@ Data-only migration; verified by SQL, not a jest test.
    - `Coconut Smoothie` → `ingredients` = {coconut}; `tags` ⊇ {smoothie, beverages, mild};
      `allergens` = `{}`.
    - Any KMUTT `beef` dish → `beef` in `ingredients` and in `allergens`.
-5. Allergen coverage measured after replay: distinct-tag instance count strictly higher
-   than the pre-migration state (validated locally in a transaction on 2026-09-03: eggs 77,
-   dairy 63, shellfish 54, soy 18, beef 17, peanuts 8, sesame 2, gluten 1 — up from
-   eggs 23 / dairy 24 / shellfish 43 / soy 9 / beef 12 / peanuts 2 / sesame 1 / gluten 1).
+5. Allergen coverage measured after replay: per-tag row counts strictly higher than the
+   pre-migration state (validated locally in a transaction on 2026-09-03: eggs 77,
+   shellfish 54, dairy 52, soy 18, beef 17, peanuts 8, sesame 2, gluten 1 — up from
+   eggs 23 / shellfish 43 / dairy 24 / soy 9 / beef 12 / peanuts 2 / sesame 1 / gluten 1).
    Never regresses. The 10 demo rows (`Pad Thai` etc.) stay untouched.
 6. `npm test` (5 suites) unaffected — pure DB migration.
 
