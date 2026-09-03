@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Status: shipped (commit `52b9e27`).** Two review rounds changed the migration from the SQL below: statements are scoped to a `_regen_targets` temp table (not `tags = '{}'` re-evaluated per statement), `ingredients` floors to `array['other']` and the category `case` gains `else 'other'` for vendor-created rows, the `tea`/`apple` needles are space-anchored and `melon` dropped, Statement 3's `allergen_updated = 0` is a `notice` not an exception. See the spec's "Amendments during implementation" section and the migration file's header comment for the authoritative final form. Shipped numbers: 102 distinct ingredient terms, 41 tags, 97 rows allergen-re-derived.
+
 **Goal:** Add one migration that regenerates `menu_items.ingredients` and `.tags` for the ~500 KMUTT rows deterministically from each row's own text, then re-derives `allergens`, replacing the effect of the broken uuid-keyed `20260902010000`.
 
 **Architecture:** A single `DO $$ … $$` block with three set-based `UPDATE`s scoped to `WHERE tags = '{}'`: (1) `ingredients` from a `keyword(needle, term)` inline table substring-scanning `lower(name||' '||description||' '||category)`, with fallback to the existing value; (2) `tags` from dietary flags + `spice_level` + a `category` slug map + a `tagword(needle, term)` table; (3) the allergen `mappable` CTE `UPDATE` copied verbatim from `20260903030000`. A guard after (2) asserts every target row has ≥1 ingredient and ≥2 tags; (3) keeps its own `GET DIAGNOSTICS` + per-tag guards.

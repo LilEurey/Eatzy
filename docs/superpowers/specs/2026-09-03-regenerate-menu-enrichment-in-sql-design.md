@@ -166,10 +166,10 @@ After Statement 2, assert every target row has `cardinality(ingredients) >= 1` a
 ## Impact (validated locally in a `BEGIN … ROLLBACK` transaction, 2026-09-03)
 
 ~500 rows rewritten. Distinct `ingredients` terms across `menu_items` rises from ~20 to
-**103**; distinct `tags` to **41**. Every target row gains 2–6 tags. ~19 rows match no
+**~102**; distinct `tags` to **41**. Every target row gains 2–6 tags. ~19 rows match no
 ingredient keyword and keep their seed single-word `ingredients` (generic "Extra" /
-"choice of meat" add-on rows). The allergen re-derive (Statement 3) tags **95** additional
-rows.
+"choice of meat" add-on rows). The allergen re-derive (Statement 3) tags **~97** additional
+rows. (See "Amendments during implementation" below for the final shipped numbers.)
 
 ## Testing / verification
 
@@ -180,7 +180,7 @@ Data-only migration; verified by SQL, not a jest test.
    rows already had non-empty `tags` before this migration; every KMUTT row is now tagged
    too).
 3. `select count(distinct t) from (select unnest(ingredients) t from menu_items) x;` →
-   expect ≥ 90 (validated: 104).
+   expect ≥ 90 (shipped: 102 on a clean `db reset`).
 4. Spot-checks against **real KMUTT rows** (not the 10 demo rows, which keep `tags <> '{}'`
    and are skipped):
    - `Minced Pork Rice Soup with Egg` → `ingredients` ⊇ {egg, garlic, pork, rice};
@@ -192,18 +192,54 @@ Data-only migration; verified by SQL, not a jest test.
      `allergens` = `{}`.
    - Any KMUTT `beef` dish → `beef` in `ingredients` and in `allergens`.
 5. Allergen coverage measured after replay: per-tag row counts strictly higher than the
-   pre-migration state (validated locally in a transaction on 2026-09-03: eggs 77,
-   shellfish 54, dairy 52, soy 18, beef 17, peanuts 8, sesame 2, gluten 1 — up from
-   eggs 23 / shellfish 43 / dairy 24 / soy 9 / beef 12 / peanuts 2 / sesame 1 / gluten 1).
-   Never regresses. The 10 demo rows (`Pad Thai` etc.) stay untouched.
+   pre-migration state (shipped, clean `db reset`: eggs 77, shellfish 54, dairy 52, soy 20,
+   beef 17, peanuts 8, sesame 2, gluten 1 — up from eggs 23 / shellfish 43 / dairy 24 /
+   soy 9 / beef 12 / peanuts 2 / sesame 1 / gluten 1). Never regresses. The 10 demo rows
+   (`Pad Thai` etc.) stay untouched.
 6. `npm test` (5 suites) unaffected — pure DB migration.
 
 ## Files
 
 - **new:** `supabase/migrations/20260903040000_regenerate_menu_enrichment.sql`
 
+## Amendments during implementation
+
+The shipped migration (`supabase/migrations/20260903040000_regenerate_menu_enrichment.sql` —
+its header comment is authoritative) differs from the keyword/tagword tables sketched above:
+
+- `melon`, `tea`, `apple` false-friend fixes: `melon` dropped (every catalog "melon" is
+  "watermelon"/"cantaloupe"); `tea` → `' tea'` and `apple` → `' apple'` (space-anchored,
+  and the scan `doc` is now space-prefixed so a name starting "Tea"/"Apple" still matches);
+  `egg`/"eggplant" left unanchored and documented (0 catalog rows). `' ice'` from the
+  tagword sketch was dropped.
+- `('soy bean','soy sauce')` added.
+- Every `UPDATE` and the thin-row guard are scoped to a `_regen_targets` temp table
+  captured at the top of the `DO` block, not to `tags = '{}'` re-evaluated per statement.
+  Reason: `src/app/(vendor)/menu/new.tsx` inserts menu rows with `tags`/`ingredients`
+  defaulting to `'{}'`, so on the hosted DB those are target rows; an unscoped guard would
+  `RAISE` on a keyword-less one ("Set A", "Combo B") and abort the `supabase db push` —
+  taking `20260903030000` down with it. `ingredients` also floors to `array['other']` and
+  the category `case` gains `else 'other'` so such rows always clear the guard.
+- Statement 3's `allergen_updated = 0` check is `raise notice`, not `raise exception`:
+  it runs immediately after `20260903030000` (a byte-identical statement), so 0 rows is the
+  expected first-apply case, not drift. The per-tag coverage guard (Guard 2) stays
+  `raise exception`.
+- Measured on a clean `db reset`: 102 distinct `ingredients` terms, 41 distinct `tags`,
+  Statement 3 re-derives 97 rows; allergen row-counts eggs 77 / shellfish 54 / dairy 52 /
+  soy 20 / beef 17 / peanuts 8 / sesame 2 / gluten 1.
+
 ## Follow-up (out of scope, noted)
 
-`20260902010000_enrich_menu_item_ingredients_tags.sql` remains a dead no-op in history.
-This migration supersedes its effect; a later cleanup could add a comment to the old file
-pointing forward, but no code change is required.
+- `20260902010000_enrich_menu_item_ingredients_tags.sql` remains a dead no-op in history.
+  This migration supersedes its effect; a later cleanup could add a comment to the old file
+  pointing forward, but no code change is required.
+- **Recurrence:** `src/app/(vendor)/menu/new.tsx` inserts new menu items with `tags` and
+  `ingredients` left at their `'{}'` defaults, so every vendor-added dish re-introduces the
+  TF-IDF vocabulary gap this migration repairs (and lands with `allergens = '{}'`). This
+  migration is a one-shot backfill; the durable fix is a `BEFORE INSERT` trigger or an
+  insert RPC that derives `ingredients`/`tags`/`allergens` from the row's text using the
+  same keyword tables. Not done here.
+- ~5 rows ("Steamed Chinese Bun - Mantou", "Black Bean Bun", "Custard Cream Bun",
+  "Gotu Kola Herbal Juice", "Grass Jelly Smoothie") keep the KMUTT seed's hardcoded
+  `ingredients = '{tea}'` — they match no keyword and the fallback preserves the seed
+  value. `tea` maps to no allergen; harmless vocabulary noise.
