@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
 import type { OrderStatus } from '@/lib/vendor-store';
@@ -45,14 +46,6 @@ const FILTER_LABELS: Record<FilterTab, TranslationKey> = {
 const PROGRESS_STEPS: TranslationKey[] = ['track.stepPlacedLabel', 'orders.status.preparing', 'orders.status.ready'];
 
 const ACTIVE: OrderStatus[] = ['pending', 'accepted', 'ready'];
-
-function timeAgo(iso: string, t: ReturnType<typeof useI18n>['t']) {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return t('common.justNow');
-  if (diff < 3600) return t('common.minutesAgo', { n: Math.floor(diff / 60) });
-  if (diff < 86400) return t('common.hoursAgo', { n: Math.floor(diff / 3600) });
-  return t('common.daysAgo', { n: Math.floor(diff / 86400) });
-}
 
 export default function OrdersScreen() {
   const { t, locale } = useI18n();

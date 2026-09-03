@@ -19,6 +19,8 @@ export const en = {
   'common.minutesAgo': '{n}m ago',
   'common.hoursAgo': '{n}h ago',
   'common.daysAgo': '{n}d ago',
+  'common.weeksAgo': '{n}w ago',
+  'common.monthsAgo': '{n}mo ago',
   'common.today': 'Today',
   'common.yesterday': 'Yesterday',
   'common.thisWeek': 'This Week',
@@ -207,6 +209,13 @@ export const en = {
   'store.all': 'All',
   'store.veg': 'Veg 🌿',
   'store.noItemsInCategory': 'No items in this category',
+  'store.allMenusTab': 'All Menus',
+  'store.reviewsTab': 'Review',
+
+  // Community reviews (store Review tab + item detail)
+  'reviews.communityReviews': 'Community Reviews',
+  'reviews.empty': 'No reviews yet',
+  'reviews.anonymous': 'Anonymous',
 
   // Track
   'track.title': 'Track Order',
@@ -226,6 +235,8 @@ export const en = {
   'rate.title': 'Rate Order',
   'rate.commentLabel': 'COMMENT (OPTIONAL)',
   'rate.commentPlaceholder': 'Tell others what you thought…',
+  'rate.addPhotos': 'ADD FOOD PHOTOS',
+  'rate.addPhotosHint': 'Add',
   'rate.submit': 'Submit Rating',
   'rate.thanksTitle': 'Thanks for the feedback!',
   'rate.thanksMsg': 'You rated {vendor} {score}★.',
