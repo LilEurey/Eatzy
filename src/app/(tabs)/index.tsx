@@ -11,6 +11,7 @@ import { localizedText } from '@/lib/localize';
 import { getMealSegment, type MealSegment } from '@/lib/time';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { isDrinkCategory } from '@/lib/menu-categories';
+import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
 // its own baked-in colors on most platforms instead of a clean flat icon.
@@ -62,24 +63,24 @@ type MenuItem = {
   allergens: string[] | null;
 };
 
-type DietaryPrefs = { is_halal: boolean; is_vegetarian: boolean; is_jay: boolean; allergies: string[] };
+// Hard dietary filter (is_halal/is_vegetarian/is_jay hide the item) and the
+// warn-only allergen match both live in usePreferences now — shared with
+// search, item/[id], cart and store/[id] so the vocabulary can't drift.
+const passesDietaryFilters = passesDietary;
 
-const DEFAULT_PREFS: DietaryPrefs = { is_halal: false, is_vegetarian: false, is_jay: false, allergies: [] };
-
-// Hard dietary filters — is_halal/is_vegetarian/is_jay are "cannot eat this
-// at all" rules, so they hide, same as recommend-for-you's server-side
-// passesHardFilters(). A halal student was seeing pork items in Latest
-// Release/Trending because those queries never looked at user_preferences
-// at all.
-//
-// Allergies are handled differently: they're a warn-before-add risk, not a
-// hide-from-view rule (see item/[id].tsx's Add to Cart confirm) — a browsed
-// list still shows the item, same as search.tsx.
-function passesDietaryFilters(item: MenuItem, prefs: DietaryPrefs): boolean {
-  if (prefs.is_halal && !item.is_halal) return false;
-  if (prefs.is_vegetarian && !item.is_vegetarian) return false;
-  if (prefs.is_jay && !item.is_jay) return false;
-  return true;
+// Small red pill shown on a menu card when the dish carries an allergen the
+// student listed. Same "warn, don't hide" treatment as search.tsx. Sections
+// fed by edge functions (recommend-for-you, similar) have no allergens field,
+// so they can't show it — a known gap, not a bug.
+function AllergenPill({ allergens }: { allergens: string[] | null }) {
+  const { t } = useI18n();
+  const { prefs } = usePreferences();
+  if (matchAllergens(allergens, prefs).length === 0) return null;
+  return (
+    <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start', marginBottom: 6 }}>
+      <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
+    </View>
+  );
 }
 
 // recommend-for-you returns flat rows (no vendors() join — computed server-side).
@@ -128,6 +129,7 @@ function getTimeBasedHeaderKey(segment: MealSegment): TranslationKey {
 
 export default function HomeScreen() {
   const { t, locale } = useI18n();
+  const { prefs } = usePreferences();
   const [firstName, setFirstName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -152,14 +154,9 @@ export default function HomeScreen() {
       const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name),is_halal,is_vegetarian,is_jay,allergens';
 
       const { data: { user } } = await supabase.auth.getUser();
-      const [profileRes, prefsRes, vendorsRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
+      const [profileRes, vendorsRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
         user
           ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
-          : Promise.resolve({ data: null, error: null }),
-        // Fetched once, applied to every raw menu_items section below —
-        // recommend-for-you already hard-filters on its own, server-side.
-        user
-          ? supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
         supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url').eq('is_open', true).order('current_queue_count', { ascending: true }),
         // Store Options list — every stall, open first then by queue. Closed
@@ -194,8 +191,6 @@ export default function HomeScreen() {
 
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
       if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
-
-      const prefs: DietaryPrefs = prefsRes.data ?? DEFAULT_PREFS;
 
       const dbVendors = vendorsRes.data as Vendor[] | null;
       const featuredCandidates = (featuredRes.data as unknown as MenuItem[] | null) ?? [];
@@ -257,7 +252,10 @@ export default function HomeScreen() {
     setLoading(false);
   }
 
-  useEffect(() => { void loadData(); }, []);
+  // Re-run when the shared prefs resolve/change so the hard dietary filter and
+  // the allergen badges reflect the real values, not the initial defaults.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void loadData(); }, [prefs]);
 
   // Similar Foods — home page had no presence for this feature at all
   // (item/[id].tsx is the only other place it renders); anchor it on
@@ -486,6 +484,7 @@ export default function HomeScreen() {
                       <Text style={{ fontSize: 15, color: '#5a4136', marginBottom: 14 }}>
                         {featured.category ?? t('home.thaiFood')}
                       </Text>
+                      <AllergenPill allergens={featured.allergens} />
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                         <Text style={{ fontSize: 20, fontWeight: '700', color: '#a04100' }}>
                           ฿{featured.price}
@@ -567,6 +566,7 @@ export default function HomeScreen() {
                     <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 8 }} numberOfLines={1}>
                       {item.vendors?.name ?? '—'}
                     </Text>
+                    <AllergenPill allergens={item.allergens} />
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>
                         ฿{item.price}
@@ -668,6 +668,7 @@ export default function HomeScreen() {
                     <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
                       {item.vendors?.name ?? ''}
                     </Text>
+                    <AllergenPill allergens={item.allergens} />
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
                   </View>
                 </Tap>
@@ -756,6 +757,7 @@ export default function HomeScreen() {
                     <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
                       {item.vendors?.name ?? ''}
                     </Text>
+                    <AllergenPill allergens={item.allergens} />
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
                   </View>
                 </Tap>
@@ -802,6 +804,7 @@ export default function HomeScreen() {
                     <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
                       {item.vendors?.name ?? ''}
                     </Text>
+                    <AllergenPill allergens={item.allergens} />
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
                   </View>
                 </Tap>
@@ -851,6 +854,7 @@ export default function HomeScreen() {
                     <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
                       {item.vendors?.name ?? ''}
                     </Text>
+                    <AllergenPill allergens={item.allergens} />
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{item.price}</Text>
                   </View>
                 </Tap>

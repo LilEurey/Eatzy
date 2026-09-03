@@ -8,18 +8,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { addMenuItem } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
-import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { useI18n } from '@/lib/i18n';
+import { ALLERGEN_VOCAB } from '@/lib/allergy-options';
 
 const CATEGORIES = ['Noodles', 'Rice Dishes', 'Curry', 'Soup', 'Salads', 'Grilled', 'Bowls', 'Drinks', 'Other'];
 
-const ALLERGENS: { key: string; labelKey: TranslationKey }[] = [
-  { key: 'peanuts', labelKey: 'onboarding.allergy.peanuts' },
-  { key: 'dairy', labelKey: 'onboarding.allergy.dairy' },
-  { key: 'gluten', labelKey: 'onboarding.allergy.gluten' },
-  { key: 'seafood', labelKey: 'onboarding.allergy.seafood' },
-  { key: 'beef', labelKey: 'onboarding.allergy.beef' },
-  { key: 'eggs', labelKey: 'onboarding.allergy.egg' },
-];
+// Canonical allergen keys — must match the strings students store in
+// user_preferences.allergies (this list used to write 'seafood'/'beef', which
+// never matched the student side's 'shellfish').
+const ALLERGENS = ALLERGEN_VOCAB;
 
 export default function AddMenuItemScreen() {
   const { t } = useI18n();

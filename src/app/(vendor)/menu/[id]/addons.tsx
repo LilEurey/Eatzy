@@ -8,8 +8,9 @@ import { supabase } from '@/lib/supabase';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+import { ALLERGEN_VOCAB } from '@/lib/allergy-options';
 
-type Option = { id: string; name: string; name_th: string | null; price: number; is_available: boolean; sort_order: number };
+type Option = { id: string; name: string; name_th: string | null; price: number; is_available: boolean; sort_order: number; allergens: string[] };
 type Group = {
   id: string;
   name: string;
@@ -21,7 +22,7 @@ type Group = {
 };
 
 type GroupDraft = { editing: Group | null; name: string; nameTh: string; min: string; max: string };
-type OptionDraft = { groupId: string; editing: Option | null; name: string; nameTh: string; price: string; available: boolean };
+type OptionDraft = { groupId: string; editing: Option | null; name: string; nameTh: string; price: string; available: boolean; allergens: Set<string> };
 
 function confirmDelete(title: string, message: string, onConfirm: () => void) {
   if (Platform.OS === 'web') {
@@ -49,7 +50,7 @@ export default function MenuItemAddonsScreen() {
       supabase.from('menu_items').select('name,name_th,vendor_id').eq('id', id).maybeSingle(),
       supabase
         .from('menu_item_addon_groups')
-        .select('id,name,name_th,min_select,max_select,sort_order,menu_item_addons(id,name,name_th,price,is_available,sort_order)')
+        .select('id,name,name_th,min_select,max_select,sort_order,menu_item_addons(id,name,name_th,price,is_available,sort_order,allergens)')
         .eq('menu_item_id', id)
         .order('sort_order'),
     ]);
@@ -109,6 +110,7 @@ export default function MenuItemAddonsScreen() {
       name_th: optionDraft.nameTh.trim() || null,
       price: parseFloat(optionDraft.price) || 0,
       is_available: optionDraft.available,
+      allergens: [...optionDraft.allergens],
     };
     const group = groups.find(g => g.id === optionDraft.groupId);
     const { error } = optionDraft.editing
@@ -209,7 +211,7 @@ export default function MenuItemAddonsScreen() {
                   <Tap
                     onPress={() => setOptionDraft({
                       groupId: g.id, editing: o, name: o.name, nameTh: o.name_th ?? '',
-                      price: String(o.price), available: o.is_available,
+                      price: String(o.price), available: o.is_available, allergens: new Set(o.allergens),
                     })}
                     style={{ padding: 6 }}
                   >
@@ -223,7 +225,7 @@ export default function MenuItemAddonsScreen() {
             </View>
 
             <Tap
-              onPress={() => setOptionDraft({ groupId: g.id, editing: null, name: '', nameTh: '', price: '0', available: true })}
+              onPress={() => setOptionDraft({ groupId: g.id, editing: null, name: '', nameTh: '', price: '0', available: true, allergens: new Set() })}
               style={{ alignSelf: 'flex-start' }}
             >
               <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.addons.addOption')}</Text>
@@ -282,6 +284,40 @@ export default function MenuItemAddonsScreen() {
                 thumbColor="#fff"
               />
             </View>
+
+            {/* Allergen tags — feed the student's warn-before-add / warn-before-
+                checkout confirms. Same canonical vocabulary as the base dish. */}
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>
+                {t('vendor.addons.optionAllergens')}
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {ALLERGEN_VOCAB.map(a => {
+                  const on = optionDraft?.allergens.has(a.key) ?? false;
+                  return (
+                    <Tap
+                      key={a.key}
+                      onPress={() => setOptionDraft(d => {
+                        if (!d) return d;
+                        const next = new Set(d.allergens);
+                        if (next.has(a.key)) next.delete(a.key); else next.add(a.key);
+                        return { ...d, allergens: next };
+                      })}
+                      style={{
+                        paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
+                        borderColor: on ? Brand.vendorAccent : '#C9CCD6',
+                        backgroundColor: on ? Brand.vendorAccent : 'transparent',
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: on ? '#fff' : '#4B4F58' }}>
+                        {t(a.labelKey)}
+                      </Text>
+                    </Tap>
+                  );
+                })}
+              </View>
+            </View>
+
             <ModalActions t={t} onCancel={() => setOptionDraft(null)} onSave={saveOption} />
           </Tap>
         </Tap>

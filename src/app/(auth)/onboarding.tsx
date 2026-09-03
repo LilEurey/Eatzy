@@ -10,6 +10,7 @@ import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { getTopMenuCategories } from '@/lib/menu-categories';
 import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
+import { refreshPreferences } from '@/hooks/usePreferences';
 
 const DIETARY_OPTIONS = ['Halal', 'Vegetarian', 'Jay'] as const;
 type Dietary = (typeof DIETARY_OPTIONS)[number];
@@ -90,6 +91,7 @@ export default function OnboardingScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       await supabase.from('user_preferences').upsert({ user_id: user.id });
+      await refreshPreferences();
     } catch {}
     router.replace('/(tabs)');
     setSaving(false);
@@ -113,6 +115,7 @@ export default function OnboardingScreen() {
         favorite_categories: [...favoriteCategories],
       });
       if (error) throw error;
+      await refreshPreferences();
       router.replace('/(tabs)');
     } catch (e: any) {
       showAlert(t('onboarding.errorSavingTitle'), e.message);

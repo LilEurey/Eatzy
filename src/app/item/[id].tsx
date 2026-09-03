@@ -7,6 +7,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { addToCart, NOTE_MAX } from '@/lib/cart-store';
+import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { showAlert, showConfirm } from '@/lib/alert';
@@ -24,7 +25,7 @@ type Review = {
   users: { name: string | null; avatar_url: string | null } | null;
 };
 
-type AddonOption = { id: string; name: string; name_th: string | null; price: number; is_available: boolean; sort_order: number };
+type AddonOption = { id: string; name: string; name_th: string | null; price: number; is_available: boolean; sort_order: number; allergens: string[] };
 type AddonGroup = {
   id: string;
   name: string;
@@ -59,7 +60,7 @@ export default function ItemDetailScreen() {
   // groupId -> selected option ids
   const [selected, setSelected] = useState<Record<string, string[]>>({});
   const [note, setNote] = useState('');
-  const [myAllergies, setMyAllergies] = useState<string[]>([]);
+  const { prefs, loading: prefsLoading } = usePreferences();
   const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
@@ -71,17 +72,12 @@ export default function ItemDetailScreen() {
     }
     void load();
 
-    // Warn-before-add, not hide-from-search: this is the moment the student
-    // is actually committing to the dish, not just browsing it.
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return;
-      const { data } = await supabase.from('user_preferences').select('allergies').eq('user_id', user.id).maybeSingle();
-      setMyAllergies(data?.allergies ?? []);
-    });
+    // Warn-before-add allergens come from usePreferences() now — shared with
+    // search, home, cart and store/[id] so the vocabulary can't drift.
 
     supabase
       .from('menu_item_addon_groups')
-      .select('id,name,name_th,min_select,max_select,sort_order,menu_item_addons(id,name,name_th,price,is_available,sort_order)')
+      .select('id,name,name_th,min_select,max_select,sort_order,menu_item_addons(id,name,name_th,price,is_available,sort_order,allergens)')
       .eq('menu_item_id', id)
       .order('sort_order')
       .then(({ data }) => {
@@ -152,11 +148,11 @@ export default function ItemDetailScreen() {
     });
   }
 
-  const selectedOptions: { id: string; name: string; name_th: string | null; price: number }[] = groups.flatMap(g =>
+  const selectedOptions: { id: string; name: string; name_th: string | null; price: number; allergens: string[] }[] = groups.flatMap(g =>
     (selected[g.id] ?? [])
       .map(oid => g.menu_item_addons.find(o => o.id === oid))
       .filter((o): o is AddonOption => !!o)
-      .map(o => ({ id: o.id, name: o.name, name_th: o.name_th, price: o.price })),
+      .map(o => ({ id: o.id, name: o.name, name_th: o.name_th, price: o.price, allergens: o.allergens })),
   );
   const addonSum = selectedOptions.reduce((s, o) => s + o.price, 0);
   const groupsValid = groups.every(g => {
@@ -164,10 +160,13 @@ export default function ItemDetailScreen() {
     return count >= g.min_select && (g.max_select == null || count <= g.max_select);
   });
   const total = (item.price + addonSum) * qty;
-  const matchedAllergens = item.allergens.filter(a => myAllergies.includes(a));
+  // Base dish AND any selected add-on — selecting "Fried Egg" can newly trip
+  // the warning even when the dish itself is allergen-free.
+  const allAllergens = [...new Set([...item.allergens, ...selectedOptions.flatMap(o => o.allergens)])];
+  const matchedAllergens = matchAllergens(allAllergens, prefs);
 
   function confirmAddToCart() {
-    if (!groupsValid || !item) return;
+    if (!groupsValid || !item || prefsLoading) return;
     if (!storeOpen) {
       showAlert(t('item.storeClosedTitle'), t('item.storeClosedMsg'));
       return;
@@ -492,6 +491,16 @@ export default function ItemDetailScreen() {
             {t('item.addons.pickRequired')}
           </Text>
         )}
+        {storeOpen && matchedAllergens.length > 0 && (
+          <View style={{
+            backgroundColor: '#fee2e2', borderRadius: 10, borderWidth: 1, borderColor: '#fecaca',
+            paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10,
+          }}>
+            <Text style={{ fontSize: 12, color: '#b91c1c', fontWeight: '700', textAlign: 'center' }}>
+              {t('item.allergyBanner', { allergens: matchedAllergens.join(', ') })}
+            </Text>
+          </View>
+        )}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {/* Qty controls */}
           <View style={{
@@ -518,12 +527,12 @@ export default function ItemDetailScreen() {
           {/* Add to cart button */}
           <Tap
             activeOpacity={0.85}
-            disabled={!groupsValid || !storeOpen}
+            disabled={!groupsValid || !storeOpen || prefsLoading}
             onPress={confirmAddToCart}
             style={{
               flex: 1, backgroundColor: storeOpen ? Brand.orange : Brand.border, borderRadius: 14,
               height: 44, alignItems: 'center', justifyContent: 'center',
-              flexDirection: 'row', gap: 8, opacity: !storeOpen || groupsValid ? 1 : 0.5,
+              flexDirection: 'row', gap: 8, opacity: (!storeOpen || groupsValid) && !prefsLoading ? 1 : 0.5,
               shadowColor: Brand.orange, shadowOffset: { width: 0, height: 4 },
               shadowOpacity: storeOpen ? 0.35 : 0, shadowRadius: 8, elevation: storeOpen ? 4 : 0,
             }}

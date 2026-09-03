@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
 import type { Database } from '@/types/database.types';
 
 type Vendor = Database['public']['Tables']['vendors']['Row'];
@@ -35,6 +36,7 @@ function spiceLabel(level: number, t: ReturnType<typeof useI18n>['t']) {
 
 export default function StoreDetailScreen() {
   const { t, locale } = useI18n();
+  const { prefs } = usePreferences();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -65,10 +67,14 @@ export default function StoreDetailScreen() {
     void load();
   }, [id]);
 
-  const categories = ['All', ...Array.from(new Set(allItems.map(i => i.category).filter((c): c is string => !!c)))];
+  // Hard dietary filter applies here too (was missing) — a halal/veg/jay
+  // student shouldn't see items they can't eat in a stall's menu, same as the
+  // home feed and search. Allergies still only warn (pill below), never hide.
+  const visibleItems = allItems.filter(i => passesDietary(i, prefs));
+  const categories = ['All', ...Array.from(new Set(visibleItems.map(i => i.category).filter((c): c is string => !!c)))];
   const filteredItems = activeCategory === 'All'
-    ? allItems
-    : allItems.filter(i => i.category === activeCategory);
+    ? visibleItems
+    : visibleItems.filter(i => i.category === activeCategory);
 
   const avgScore = reviews.length
     ? reviews.reduce((s, r) => s + r.score, 0) / reviews.length
@@ -332,6 +338,11 @@ export default function StoreDetailScreen() {
                     {item.spice_level > 0 && (
                       <View style={{ backgroundColor: '#fef3c7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
                         <Text style={{ fontSize: 10, color: '#92400e' }}>{spiceLabel(item.spice_level, t)}</Text>
+                      </View>
+                    )}
+                    {matchAllergens(item.allergens, prefs).length > 0 && (
+                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
                       </View>
                     )}
                   </View>

@@ -11,6 +11,7 @@ import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { getTopMenuCategories } from '@/lib/menu-categories';
 import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
+import { refreshPreferences } from '@/hooks/usePreferences';
 
 const DIETARY_OPTIONS = ['Halal', 'Vegetarian', 'Jay'] as const;
 type Dietary = (typeof DIETARY_OPTIONS)[number];
@@ -132,6 +133,10 @@ export default function EditPreferencesScreen() {
         favorite_categories: [...favoriteCategories],
       });
       if (error) throw error;
+
+      // Refresh the shared store so Home / Search / Item / Cart / Store pick up
+      // the new dietary rules and allergies without a full reload.
+      await refreshPreferences();
 
       showAlert(t('editPreferences.savedTitle'), t('editPreferences.savedMsg'), () => router.back());
     } catch (e: any) {

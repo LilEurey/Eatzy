@@ -6,7 +6,8 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, NOTE_MAX } from '@/lib/cart-store';
-import { showAlert } from '@/lib/alert';
+import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
+import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { nextPickupSlots, timeSegmentForBangkok } from '@/lib/time';
@@ -16,8 +17,16 @@ type Vendor = Database['public']['Tables']['vendors']['Row'];
 
 export default function CartScreen() {
   const { t, locale } = useI18n();
+  const { prefs } = usePreferences();
   const cart = useCart();
   const items = cart.items;
+
+  // Allergens the student listed that appear on a line (base dish or any of its
+  // add-ons). The Add to Cart popup on item/[id] is a one-time gate; this keeps
+  // the warning present on the cart and at checkout.
+  const lineAllergens = (line: (typeof items)[number]) =>
+    matchAllergens([...line.allergens, ...line.addons.flatMap(a => a.allergens)], prefs);
+  const orderAllergens = [...new Set(items.flatMap(lineAllergens))];
   // Computed once per visit (not on every render) so the offered windows
   // don't shift under the student while they're picking one — real "next
   // available" slots rolling from right now in Thailand time, not a fixed
@@ -37,12 +46,26 @@ export default function CartScreen() {
       .then(({ data }) => setVendor(data ?? null));
   }, [cart.vendor_id]);
 
-  async function placeOrder() {
+  function placeOrder() {
     if (!cart.vendor_id) return;
     if (vendor?.is_open === false) {
       showAlert(t('cart.storeClosedTitle'), t('cart.storeClosedMsg'));
       return;
     }
+    if (orderAllergens.length > 0) {
+      showConfirm(
+        t('cart.allergyConfirmTitle'),
+        t('cart.allergyConfirmMsg', { allergens: orderAllergens.join(', ') }),
+        () => { void submitOrder(); },
+        { confirmLabel: t('cart.placeAnyway'), cancelLabel: t('common.cancel'), destructive: true },
+      );
+      return;
+    }
+    void submitOrder();
+  }
+
+  async function submitOrder() {
+    if (!cart.vendor_id) return;
     setPlacing(true);
     let orderId: string | null = null;
     try {
@@ -192,6 +215,17 @@ export default function CartScreen() {
           </View>
         )}
 
+        {orderAllergens.length > 0 && (
+          <View style={{
+            backgroundColor: '#fee2e2', borderRadius: 12, borderWidth: 1, borderColor: '#fecaca',
+            paddingHorizontal: 14, paddingVertical: 12, marginBottom: 20,
+          }}>
+            <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700' }}>
+              {t('cart.allergyBanner')}
+            </Text>
+          </View>
+        )}
+
         {/* Cart items */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
           {t('cart.items')}
@@ -220,6 +254,11 @@ export default function CartScreen() {
                       )}
                     </View>
                   ))}
+                  {lineAllergens(item).length > 0 && (
+                    <Text style={{ fontSize: 12, color: '#b91c1c', fontWeight: '700', marginTop: 4 }}>
+                      {t('cart.allergyLineWarning', { allergens: lineAllergens(item).join(', ') })}
+                    </Text>
+                  )}
                 </View>
 
                 {/* Qty controls */}

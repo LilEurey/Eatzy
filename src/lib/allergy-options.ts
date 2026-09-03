@@ -36,3 +36,20 @@ export const ALLERGY_VALUES: Record<Allergy, string> = {
   Egg: 'eggs',
   'Other...': 'other',
 };
+
+// Canonical allergen tags for the vendor side (base dish in menu/new.tsx and
+// add-on options in menu/[id]/addons.tsx). These MUST be the same strings the
+// student side stores in user_preferences.allergies — i.e. the ALLERGY_VALUES
+// above — or the warn-before-add / warn-before-checkout checks silently match
+// nothing. "Seafood" saves as 'shellfish', "Egg" as 'eggs' (see the note
+// above); the vendor picker used to write 'seafood'/'egg' and never matched.
+// Restricted to tags that actually appear in seeded menu_items.allergens.
+export const ALLERGEN_VOCAB: { key: string; labelKey: TranslationKey }[] = [
+  { key: 'peanuts', labelKey: 'onboarding.allergy.peanuts' },
+  { key: 'dairy', labelKey: 'onboarding.allergy.dairy' },
+  { key: 'gluten', labelKey: 'onboarding.allergy.gluten' },
+  { key: 'soy', labelKey: 'onboarding.allergy.soy' },
+  { key: 'sesame', labelKey: 'onboarding.allergy.sesame' },
+  { key: 'shellfish', labelKey: 'onboarding.allergy.seafood' },
+  { key: 'eggs', labelKey: 'onboarding.allergy.egg' },
+];
