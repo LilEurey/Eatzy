@@ -17,6 +17,16 @@
 -- tags = '{}', so the 10 hand-curated "Everything Kitchen" demo rows (already
 -- tagged) are untouched, and a re-run is a no-op.
 --
+-- Hosted-safety scoping: the target set (rows with tags = '{}' at start) is
+-- captured into a temp table up front, and Statement 1, Statement 2 and the
+-- thin-row guard all filter to it -- so a row the migration deliberately skips
+-- can never make the guard abort a `supabase db push`. Vendor-created rows
+-- (src/app/(vendor)/menu/new.tsx inserts with tags/ingredients defaulting to
+-- '{}', category selectable as 'Other') ARE in that target set, so Statement 1's
+-- ingredients floors to array['other'] when no keyword hits and Statement 2's
+-- category `case` floors to 'other' -- every such row still clears the
+-- >= 1 ingredient / >= 2 tag guard.
+--
 -- Accepted imprecision: the `milk` keyword is a plain substring, so ~4 rows whose
 -- text says "coconut milk" gain the `milk` ingredient term and, via Statement 3,
 -- a {dairy} allergen tag -- contrary to 20260903030000's deliberate exclusion of
@@ -28,7 +38,8 @@
 -- is left unanchored for "Egg Fried Rice" etc.); the ` tea` and ` apple` needles
 -- are space-anchored to avoid "steamed"/"steak" and "pineapple", and `melon` was
 -- dropped entirely -- every catalog "melon" is "watermelon"/"cantaloupe", already
--- covered by the `watermelon` needle.
+-- covered by the `watermelon` needle. The scanned document is prefixed with a
+-- space so a name that *starts* with "Tea"/"Apple" still matches.
 
 do $$
 declare
@@ -38,6 +49,14 @@ declare
   allergen_updated int;
   missing text;
 begin
+  -- Capture the target rows up front so the guard and every UPDATE below work off
+  -- a fixed set. A row the migration deliberately skips -- a curated demo row, or
+  -- a vendor-created row (src/app/(vendor)/menu/new.tsx inserts with tags/
+  -- ingredients defaulting to '{}') -- can then never make the guard abort a
+  -- `supabase db push`.
+  create temporary table _regen_targets on commit drop as
+    select id from public.menu_items where tags = '{}';
+
   ----------------------------------------------------------------------------
   -- Statement 1: ingredients from a keyword substring scan
   ----------------------------------------------------------------------------
@@ -67,18 +86,19 @@ begin
           ('broccoli','broccoli'), ('bean sprout','bean sprouts'), ('quinoa','quinoa'),
           ('avocado','avocado'), ('chickpea','chickpeas'), ('peanut','peanut'),
           ('sesame','sesame'), ('tahini','sesame'), ('mayo','mayo'), ('soy sauce','soy sauce'),
-          ('fish sauce','fish sauce'), ('oyster sauce','oyster sauce'), ('curry','curry'),
-          ('syrup','syrup'), ('honey','honey'), ('sugar','sugar'), ('kimchi','kimchi'),
-          ('ginger','ginger'), ('lemongrass','lemongrass'), ('galangal','galangal'),
-          ('tamarind','tamarind'), ('pandan','pandan')
+          ('soy bean','soy sauce'), ('fish sauce','fish sauce'), ('oyster sauce','oyster sauce'),
+          ('curry','curry'), ('syrup','syrup'), ('honey','honey'), ('sugar','sugar'),
+          ('kimchi','kimchi'), ('ginger','ginger'), ('lemongrass','lemongrass'),
+          ('galangal','galangal'), ('tamarind','tamarind'), ('pandan','pandan')
         ) as k(needle, term)
-        where position(k.needle in lower(m.name || ' ' || coalesce(m.description,'') || ' ' || m.category)) > 0
+        where position(k.needle in ' ' || lower(m.name || ' ' || coalesce(m.description,'') || ' ' || coalesce(m.category,''))) > 0
       ),
       '{}'
     ),
-    m.ingredients
+    nullif(m.ingredients, '{}'),
+    array['other']
   )
-  where m.tags = '{}';
+  where m.id in (select id from _regen_targets);
   get diagnostics ing_updated = row_count;
   raise notice 'regenerate_menu_enrichment: ingredients updated on % rows', ing_updated;
 
@@ -108,7 +128,7 @@ begin
         when 'Grilled'            then 'grilled'
         when 'Curry'              then 'main-dishes'
         when 'Bowls'              then 'main-dishes'
-        else null
+        else 'other'
       end
       union all
       select tw.term
@@ -122,11 +142,11 @@ begin
         ('chinese','chinese'), ('korean','korean'), ('japanese','japanese'),
         ('italian','italian'), ('isaan','isaan'), ('esan','isaan')
       ) as tw(needle, term)
-      where position(tw.needle in lower(m.name || ' ' || coalesce(m.description,'') || ' ' || m.category)) > 0
+      where position(tw.needle in ' ' || lower(m.name || ' ' || coalesce(m.description,'') || ' ' || coalesce(m.category,''))) > 0
     ) s
     where tg is not null
   )
-  where m.tags = '{}';
+  where m.id in (select id from _regen_targets);
   get diagnostics tag_updated = row_count;
   raise notice 'regenerate_menu_enrichment: tags updated on % rows', tag_updated;
 
@@ -135,14 +155,15 @@ begin
   ----------------------------------------------------------------------------
   select count(*) into bad_rows
   from public.menu_items
-  where cardinality(ingredients) < 1 or cardinality(tags) < 2;
+  where id in (select id from _regen_targets)
+    and (cardinality(ingredients) < 1 or cardinality(tags) < 2);
   if bad_rows > 0 then
     raise exception
       'regenerate_menu_enrichment: % row(s) ended with <1 ingredient or <2 tags', bad_rows;
   end if;
 
   ----------------------------------------------------------------------------
-  -- Statement 3: re-derive allergens (verbatim from
+  -- Statement 3: re-derive allergens (mappable CTE verbatim from
   -- 20260903030000_backfill_menu_item_allergens.sql, now that ingredients are rich)
   ----------------------------------------------------------------------------
   with mappable(ingredient, tag) as (
@@ -173,11 +194,22 @@ begin
   get diagnostics allergen_updated = row_count;
   raise notice 'regenerate_menu_enrichment: allergens re-derived on % rows', allergen_updated;
 
+  -- Guard 1 (relaxed from 20260903030000's exception to a notice): there, 0 rows
+  -- updated means the ingredients vocabulary drifted out from under the lookup,
+  -- because that migration is the FIRST allergen tagger. Here Statement 3 runs
+  -- immediately after that same migration, so 0 rows updated just means it
+  -- already tagged every mappable row (the common hosted case, where 20260902010000
+  -- is applied and KMUTT rows may already carry tags so Statements 1-2 also touch
+  -- 0 rows). Not an error. Guard 2 below is the real drift check.
   if allergen_updated = 0 then
-    raise exception
-      'regenerate_menu_enrichment: allergen re-derive touched 0 rows; ingredients vocabulary has drifted';
+    raise notice 'regenerate_menu_enrichment: allergen re-derive touched 0 rows (prior migration already tagged them)';
   end if;
 
+  -- Guard 2: every allergen that maps from a COMMON ingredient term must end up
+  -- on at least one row. Catches a partial vocabulary miss (e.g. dairy terms all
+  -- absent) that Guard 1 would not. peanuts / sesame / gluten are intentionally
+  -- excluded here -- they map from rare terms and a legitimately small catalog
+  -- can have zero.
   select string_agg(t, ', ') into missing
   from unnest(array['dairy', 'eggs', 'shellfish', 'beef', 'soy']) as t
   where not exists (select 1 from public.menu_items where t = any(allergens));
