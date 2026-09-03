@@ -24,7 +24,8 @@ export const ALLERGY_LABELS: Record<Allergy, TranslationKey> = {
 // used to save as 'egg'/'seafood' while real menu_items tag 'eggs' and
 // 'shellfish', so that filter silently matched nothing. Verified against
 // live data: distinct menu_items.allergens = dairy, soy, eggs, sesame,
-// peanuts, shellfish, gluten.
+// peanuts, shellfish, gluten, plus beef added by migration
+// 20260903030000_backfill_menu_item_allergens.
 export const ALLERGY_VALUES: Record<Allergy, string> = {
   Peanuts: 'peanuts',
   Dairy: 'dairy',
@@ -43,7 +44,8 @@ export const ALLERGY_VALUES: Record<Allergy, string> = {
 // above — or the warn-before-add / warn-before-checkout checks silently match
 // nothing. "Seafood" saves as 'shellfish', "Egg" as 'eggs' (see the note
 // above); the vendor picker used to write 'seafood'/'egg' and never matched.
-// Restricted to tags that actually appear in seeded menu_items.allergens.
+// Restricted to tags that actually appear in menu_items.allergens (see
+// migration 20260903030000_backfill_menu_item_allergens, which added beef).
 export const ALLERGEN_VOCAB: { key: string; labelKey: TranslationKey }[] = [
   { key: 'peanuts', labelKey: 'onboarding.allergy.peanuts' },
   { key: 'dairy', labelKey: 'onboarding.allergy.dairy' },
@@ -52,4 +54,5 @@ export const ALLERGEN_VOCAB: { key: string; labelKey: TranslationKey }[] = [
   { key: 'sesame', labelKey: 'onboarding.allergy.sesame' },
   { key: 'shellfish', labelKey: 'onboarding.allergy.seafood' },
   { key: 'eggs', labelKey: 'onboarding.allergy.egg' },
+  { key: 'beef', labelKey: 'onboarding.allergy.beef' },
 ];
