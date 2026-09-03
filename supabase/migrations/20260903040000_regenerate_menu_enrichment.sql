@@ -23,7 +23,12 @@
 -- coconut milk from dairy. 32 of the 36 `milk`-matching KMUTT rows are genuine
 -- dairy drinks, and a false {dairy} warning on a coconut drink is the harmless
 -- direction for an allergy gate. `cream` is deliberately not a keyword: "creamy"
--- here is a coconut-milk texture word (~20 rows, ~0 real dairy cream).
+-- here is a coconut-milk texture word (~20 rows, ~0 real dairy cream). Likewise
+-- `egg` substring-matches "eggplant" (0 catalog rows affected today, so the needle
+-- is left unanchored for "Egg Fried Rice" etc.); the ` tea` and ` apple` needles
+-- are space-anchored to avoid "steamed"/"steak" and "pineapple", and `melon` was
+-- dropped entirely -- every catalog "melon" is "watermelon"/"cantaloupe", already
+-- covered by the `watermelon` needle.
 
 do $$
 declare
@@ -49,14 +54,14 @@ begin
           ('bread','bread'), ('sticky rice','sticky rice'), ('milk','milk'), ('cheese','cheese'),
           ('yogurt','milk'), ('yoghurt','milk'), ('condensed milk','milk'),
           ('evaporated milk','milk'), ('cocoa','cocoa'), ('chocolate','cocoa'),
-          ('coffee','coffee'), ('espresso','coffee'), ('tea','tea'), ('boba','boba'),
+          ('coffee','coffee'), ('espresso','coffee'), (' tea','tea'), ('boba','boba'),
           ('bubble','boba'), ('coconut','coconut'), ('garlic','garlic'), ('chili','chili'),
           ('chilli','chili'), ('basil','basil'), ('lime','lime'), ('lemon','lemon'),
           ('onion','onion'), ('tomato','tomato'), ('cucumber','cucumber'), ('papaya','papaya'),
           ('mango','mango'), ('banana','banana'), ('pineapple','pineapple'), ('orange','orange'),
           ('strawberry','strawberry'), ('grape','grape'), ('kiwi','kiwi'), ('lychee','lychee'),
-          ('watermelon','watermelon'), ('melon','melon'), ('passion fruit','passion fruit'),
-          ('apple','apple'), ('corn','corn'), ('mushroom','mushroom'), ('cabbage','cabbage'),
+          ('watermelon','watermelon'), ('passion fruit','passion fruit'),
+          (' apple','apple'), ('corn','corn'), ('mushroom','mushroom'), ('cabbage','cabbage'),
           ('lettuce','lettuce'), ('sweet potato','sweet potato'), ('potato','potato'),
           ('taro','taro'), ('pumpkin','pumpkin'), ('eggplant','eggplant'),
           ('broccoli','broccoli'), ('bean sprout','bean sprouts'), ('quinoa','quinoa'),
