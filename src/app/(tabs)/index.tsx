@@ -35,6 +35,18 @@ type Vendor = {
   cover_image_url: string | null;
 };
 
+// Store Options list — unlike `Vendor` (open stalls only, feeds the queue
+// banner + "No Queue Right Now"), this includes closed stalls so they show
+// dimmed with a "Closed" badge instead of vanishing from home.
+type StoreListVendor = {
+  id: string;
+  name: string;
+  is_halal_certified: boolean | null;
+  cuisine_tags: string[] | null;
+  cover_image_url: string | null;
+  is_open: boolean | null;
+};
+
 type MenuItem = {
   id: string;
   name: string;
@@ -119,6 +131,7 @@ export default function HomeScreen() {
   const [firstName, setFirstName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [allVendors, setAllVendors] = useState<StoreListVendor[]>([]);
   const [featured, setFeatured] = useState<MenuItem | null>(null);
   const [trending, setTrending] = useState<MenuItem[]>([]);
   const [latestRelease, setLatestRelease] = useState<MenuItem[]>([]);
@@ -139,7 +152,7 @@ export default function HomeScreen() {
       const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name),is_halal,is_vegetarian,is_jay,allergens';
 
       const { data: { user } } = await supabase.auth.getUser();
-      const [profileRes, prefsRes, vendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
+      const [profileRes, prefsRes, vendorsRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
         user
           ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
@@ -149,6 +162,9 @@ export default function HomeScreen() {
           ? supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
         supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url').eq('is_open', true).order('current_queue_count', { ascending: true }),
+        // Store Options list — every stall, open first then by queue. Closed
+        // stalls stay visible (dimmed + "Closed" badge) instead of dropping off.
+        supabase.from('vendors').select('id,name,is_halal_certified,cuisine_tags,cover_image_url,is_open').order('is_open', { ascending: false }).order('current_queue_count', { ascending: true }),
         // Fetch a few candidates, not just 1 — the featured item can fail
         // the caller's dietary filter, and we need another to fall back to.
         supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).limit(10),
@@ -186,6 +202,7 @@ export default function HomeScreen() {
       const dbFeatured = featuredCandidates.find(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category));
 
       setVendors(dbVendors ?? []);
+      setAllVendors((allVendorsRes.data as StoreListVendor[] | null) ?? []);
       setFeatured(dbFeatured ?? null);
 
       // Trending and Because You Ordered both come back from their RPCs as
@@ -232,6 +249,7 @@ export default function HomeScreen() {
     } catch {
       // Supabase unreachable — show empty states, not fake data.
       setVendors([]);
+      setAllVendors([]);
       setFeatured(null);
       setTrending([]);
       setDrinks([]);
@@ -858,7 +876,7 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812' }}>
               {t('home.storeOptions')}
             </Text>
-            {vendors.length > 0 && (
+            {allVendors.length > 0 && (
               <Tap onPress={() => router.push('/stores')} haptic={false}>
                 <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.orange }}>
                   {t('home.seeAll')} ›
@@ -867,7 +885,9 @@ export default function HomeScreen() {
             )}
           </View>
           <View style={{ gap: 12 }}>
-            {vendors.slice(0, 6).map(vendor => (
+            {allVendors.slice(0, 6).map(vendor => {
+              const closed = vendor.is_open === false;
+              return (
               <Tap
                 key={vendor.id}
                 onPress={() => router.push(`/store/${vendor.id}`)}
@@ -875,6 +895,7 @@ export default function HomeScreen() {
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 16,
                   backgroundColor: Brand.card, borderRadius: 24, padding: 12,
+                  opacity: closed ? 0.5 : 1,
                   shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
                   shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
                 }}
@@ -890,9 +911,21 @@ export default function HomeScreen() {
                   }
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }}>
-                    {vendor.name}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>
+                      {vendor.name}
+                    </Text>
+                    {closed && (
+                      <View style={{
+                        backgroundColor: Brand.border, borderRadius: 4,
+                        paddingHorizontal: 6, paddingVertical: 2,
+                      }}>
+                        <Text style={{ fontSize: 10, color: Brand.textSecondary, fontWeight: '600' }}>
+                          {t('common.closed')}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 6 }}>
                     {vendor.cuisine_tags?.[0] ?? t('home.thaiFood')}
                   </Text>
@@ -906,10 +939,11 @@ export default function HomeScreen() {
                   )}
                 </View>
               </Tap>
-            ))}
-            {vendors.length === 0 && (
+              );
+            })}
+            {allVendors.length === 0 && (
               <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-                <Text style={{ color: Brand.textSecondary }}>{t('home.noStallsOpen')}</Text>
+                <Text style={{ color: Brand.textSecondary }}>{t('home.noStores')}</Text>
               </View>
             )}
           </View>

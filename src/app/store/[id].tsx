@@ -137,6 +137,17 @@ export default function StoreDetailScreen() {
           </View>
         </View>
 
+        {vendor.is_open === false && (
+          <View style={{
+            backgroundColor: '#fdecec', borderLeftWidth: 3, borderLeftColor: '#ef4444',
+            paddingHorizontal: 20, paddingVertical: 12,
+          }}>
+            <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '600' }}>
+              {t('store.closedBanner')}
+            </Text>
+          </View>
+        )}
+
         <View style={{ padding: 20 }}>
           {/* Vendor name + tags row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>

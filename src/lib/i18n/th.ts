@@ -98,6 +98,7 @@ export const th: Record<TranslationKey, string> = {
   'home.noDrinks': 'ยังไม่มีเครื่องดื่มตอนนี้',
   'home.new': 'ใหม่',
   'home.noStallsOpen': 'ยังไม่มีร้านเปิดตอนนี้',
+  'home.noStores': 'ยังไม่มีร้านค้า',
   'home.noQueueRightNow': 'ไม่มีคิวตอนนี้',
   'home.noQueueEmpty': 'ตอนนี้ทุกร้านมีคิว',
   'home.timeBasedBreakfast': 'เมนูมื้อเช้า',
@@ -162,6 +163,8 @@ export const th: Record<TranslationKey, string> = {
   'cart.insufficientBalanceMsg': 'ยอดเงินใน Campus Wallet ไม่พอสำหรับคำสั่งซื้อนี้ กรุณาเติมเงินที่แท็บกระเป๋าเงินแล้วลองใหม่อีกครั้ง',
   'cart.signInAgainMsg': 'เซสชันของคุณหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
   'cart.addonRuleMsg': 'มีรายการที่ยังไม่ได้เลือกตัวเลือกที่จำเป็น กรุณากลับไปเลือกแล้วลองใหม่อีกครั้ง',
+  'cart.storeClosedTitle': 'ร้านปิดอยู่',
+  'cart.storeClosedMsg': 'ร้านนี้ปิดและยังไม่รับออร์เดอร์ตอนนี้ ตะกร้าของคุณถูกบันทึกไว้จนกว่าร้านจะเปิดอีกครั้ง',
   'cart.addonPlus': '+ {name}',
   'cart.noteToVendor': 'เพิ่มโน้ตถึงร้าน',
 
@@ -196,6 +199,9 @@ export const th: Record<TranslationKey, string> = {
   'item.noteToVendor': 'โน้ตถึงครัว',
   'item.noteToVendorPlaceholder': 'เช่น ไม่เผ็ด ไม่ใส่ถั่ว เพิ่มข้าว',
   'item.addToCart': 'ใส่ตะกร้า · ฿{total}',
+  'item.storeClosedTitle': 'ร้านปิดอยู่',
+  'item.storeClosedMsg': 'ร้านนี้ยังไม่รับออร์เดอร์ตอนนี้ ลองใหม่อีกครั้งเมื่อร้านเปิด',
+  'item.storeClosedNotice': 'ร้านนี้ปิดอยู่ — ยังสั่งซื้อไม่ได้ตอนนี้',
   'item.addons.required': 'ต้องเลือก',
   'item.addons.chooseUpTo': 'เลือกได้ไม่เกิน {n}',
   'item.addons.chooseOne': 'เลือก 1 อย่าง',
@@ -204,6 +210,7 @@ export const th: Record<TranslationKey, string> = {
 
   // Store detail
   'store.notFound': 'ไม่พบร้านนี้',
+  'store.closedBanner': 'ร้านนี้ปิดอยู่และยังไม่รับออร์เดอร์ตอนนี้',
   'store.waitTime': 'เวลารอ',
   'store.ordersCount': '{n} ออเดอร์',
   'store.hours': 'เวลาเปิด-ปิด',

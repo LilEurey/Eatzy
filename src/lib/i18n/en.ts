@@ -96,6 +96,7 @@ export const en = {
   'home.noDrinks': 'No drinks available right now',
   'home.new': 'New',
   'home.noStallsOpen': 'No stalls open right now',
+  'home.noStores': 'No stores yet',
   'home.noQueueRightNow': 'No Queue Right Now',
   'home.noQueueEmpty': 'Every stall has a queue right now',
   'home.timeBasedBreakfast': 'Breakfast Picks',
@@ -160,6 +161,8 @@ export const en = {
   'cart.insufficientBalanceMsg': 'Your Campus Wallet balance is too low for this order. Top up in the Wallet tab and try again.',
   'cart.signInAgainMsg': 'Your session expired. Please sign in again.',
   'cart.addonRuleMsg': 'One of your items is missing a required choice. Go back and pick it, then try again.',
+  'cart.storeClosedTitle': 'Store is closed',
+  'cart.storeClosedMsg': 'This store closed and isn’t taking orders right now. Your cart is saved for when it reopens.',
   'cart.addonPlus': '+ {name}',
   'cart.noteToVendor': 'Add a note for the kitchen',
 
@@ -194,6 +197,9 @@ export const en = {
   'item.noteToVendor': 'Note for the kitchen',
   'item.noteToVendorPlaceholder': 'e.g. no chili, no peanuts, extra rice',
   'item.addToCart': 'Add to Cart · ฿{total}',
+  'item.storeClosedTitle': 'Store is closed',
+  'item.storeClosedMsg': 'This store isn’t taking orders right now. Try again when it reopens.',
+  'item.storeClosedNotice': 'This store is closed — ordering is unavailable right now.',
   'item.addons.required': 'Required',
   'item.addons.chooseUpTo': 'Choose up to {n}',
   'item.addons.chooseOne': 'Choose 1',
@@ -202,6 +208,7 @@ export const en = {
 
   // Store detail
   'store.notFound': 'Store not found',
+  'store.closedBanner': 'This store is closed and isn’t taking orders right now.',
   'store.waitTime': 'Wait time',
   'store.ordersCount': '{n} orders',
   'store.hours': 'Hours',

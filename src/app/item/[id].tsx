@@ -9,7 +9,7 @@ import { Brand } from '@/constants/theme';
 import { addToCart, NOTE_MAX } from '@/lib/cart-store';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { showConfirm } from '@/lib/alert';
+import { showAlert, showConfirm } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import type { Database } from '@/types/database.types';
 
@@ -53,6 +53,7 @@ export default function ItemDetailScreen() {
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
   const [vendorName, setVendorName] = useState('');
+  const [storeOpen, setStoreOpen] = useState(true);
   const [similar, setSimilar] = useState<SimilarItem[]>([]);
   const [groups, setGroups] = useState<AddonGroup[]>([]);
   // groupId -> selected option ids
@@ -63,9 +64,10 @@ export default function ItemDetailScreen() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('menu_items').select('*, vendors(name)').eq('id', id).maybeSingle();
+      const { data } = await supabase.from('menu_items').select('*, vendors(name,is_open)').eq('id', id).maybeSingle();
       setItem(data ?? null);
       setVendorName((data as any)?.vendors?.name ?? '');
+      setStoreOpen((data as any)?.vendors?.is_open !== false);
     }
     void load();
 
@@ -166,6 +168,10 @@ export default function ItemDetailScreen() {
 
   function confirmAddToCart() {
     if (!groupsValid || !item) return;
+    if (!storeOpen) {
+      showAlert(t('item.storeClosedTitle'), t('item.storeClosedMsg'));
+      return;
+    }
     if (matchedAllergens.length > 0) {
       showConfirm(
         t('item.allergyWarningTitle'),
@@ -476,7 +482,12 @@ export default function ItemDetailScreen() {
         shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.06, shadowRadius: 12, elevation: 10,
       }}>
-        {!groupsValid && (
+        {!storeOpen && (
+          <Text style={{ fontSize: 12, color: Brand.textSecondary, marginBottom: 10, textAlign: 'center' }}>
+            {t('item.storeClosedNotice')}
+          </Text>
+        )}
+        {storeOpen && !groupsValid && (
           <Text style={{ fontSize: 12, color: '#b91c1c', marginBottom: 10, textAlign: 'center' }}>
             {t('item.addons.pickRequired')}
           </Text>
@@ -507,12 +518,12 @@ export default function ItemDetailScreen() {
           {/* Add to cart button */}
           <Tap
             activeOpacity={0.85}
-            disabled={!groupsValid}
+            disabled={!groupsValid || !storeOpen}
             onPress={confirmAddToCart}
             style={{
               flex: 1, backgroundColor: Brand.orange, borderRadius: 14,
               height: 44, alignItems: 'center', justifyContent: 'center',
-              flexDirection: 'row', gap: 8, opacity: groupsValid ? 1 : 0.5,
+              flexDirection: 'row', gap: 8, opacity: groupsValid && storeOpen ? 1 : 0.5,
               shadowColor: Brand.orange, shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.35, shadowRadius: 8, elevation: 4,
             }}

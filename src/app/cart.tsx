@@ -25,7 +25,7 @@ export default function CartScreen() {
   const [slots] = useState(() => nextPickupSlots());
   const [selectedIndex, setSelectedIndex] = useState(1);
   const selectedSlot = slots[selectedIndex];
-  const [vendor, setVendor] = useState<Pick<Vendor, 'name' | 'stall_number'> | null>(null);
+  const [vendor, setVendor] = useState<Pick<Vendor, 'name' | 'stall_number' | 'is_open'> | null>(null);
   const [placing, setPlacing] = useState(false);
 
   const subtotal = cartSubtotal(cart);
@@ -33,12 +33,16 @@ export default function CartScreen() {
 
   useEffect(() => {
     if (!cart.vendor_id) return; // cart empty — the empty-state branch below renders instead
-    supabase.from('vendors').select('name,stall_number').eq('id', cart.vendor_id).maybeSingle()
+    supabase.from('vendors').select('name,stall_number,is_open').eq('id', cart.vendor_id).maybeSingle()
       .then(({ data }) => setVendor(data ?? null));
   }, [cart.vendor_id]);
 
   async function placeOrder() {
     if (!cart.vendor_id) return;
+    if (vendor?.is_open === false) {
+      showAlert(t('cart.storeClosedTitle'), t('cart.storeClosedMsg'));
+      return;
+    }
     setPlacing(true);
     let orderId: string | null = null;
     try {
@@ -123,7 +127,9 @@ export default function CartScreen() {
         ? t('cart.insufficientBalanceMsg')
         : e.message === 'addon_rule_violation'
           ? t('cart.addonRuleMsg')
-          : `${e.message}${e.code ? ` [${e.code}]` : ''}${e.details ? `\n${e.details}` : ''}${e.hint ? `\n${e.hint}` : ''}`;
+          : e.message === 'vendor_closed'
+            ? t('cart.storeClosedMsg')
+            : `${e.message}${e.code ? ` [${e.code}]` : ''}${e.details ? `\n${e.details}` : ''}${e.hint ? `\n${e.hint}` : ''}`;
       showAlert(t('cart.orderFailedTitle'), message);
     } finally {
       setPlacing(false);
