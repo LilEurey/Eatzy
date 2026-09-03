@@ -9,6 +9,7 @@ export type CartAddon = {
   name: string;
   name_th: string | null;
   price: number;
+  allergens: string[]; // option's own allergen tags — folded into the cart-screen / checkout warning
 };
 
 type CartItem = {
@@ -22,6 +23,7 @@ type CartItem = {
   unit_price: number; // bare menu price; add-ons are priced separately
   quantity: number;
   addons: CartAddon[];
+  allergens: string[]; // base dish's allergen tags, snapshotted so the cart doesn't re-query
   note: string; // free-text message to the kitchen; '' means none
 };
 
@@ -48,7 +50,7 @@ function configSignature(menuItemId: string, addons: CartAddon[], note: string) 
 }
 
 export function addToCart(
-  item: { id: string; vendor_id: string; name: string; name_th?: string | null; price: number },
+  item: { id: string; vendor_id: string; name: string; name_th?: string | null; price: number; allergens?: string[] },
   qty = 1,
   addons: CartAddon[] = [],
   note = '',
@@ -74,6 +76,7 @@ export function addToCart(
       unit_price: item.price,
       quantity: qty,
       addons,
+      allergens: item.allergens ?? [],
       note: trimmedNote,
     });
   }

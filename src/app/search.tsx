@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
 
 type SearchItem = {
   id: string;
@@ -72,22 +73,15 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [diet, setDiet] = useState<Set<DietFilter>>(new Set());
 
-  const [allergies, setAllergies] = useState<string[]>([]);
+  const { prefs } = usePreferences();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      const [{ data }, prefsRes] = await Promise.all([
-        supabase
-          .from('menu_items')
-          .select('id,vendor_id,name,name_th,description,description_th,price,category,spice_level,is_available,is_halal,is_vegetarian,is_jay,allergens,tags,ingredients,image_url,vendors(name)')
-          .eq('is_available', true),
-        user
-          ? supabase.from('user_preferences').select('allergies').eq('user_id', user.id).maybeSingle()
-          : Promise.resolve({ data: null }),
-      ]);
+      const { data } = await supabase
+        .from('menu_items')
+        .select('id,vendor_id,name,name_th,description,description_th,price,category,spice_level,is_available,is_halal,is_vegetarian,is_jay,allergens,tags,ingredients,image_url,vendors(name)')
+        .eq('is_available', true);
 
-      setAllergies(prefsRes.data?.allergies ?? []);
       const dbItems = (data ?? []) as unknown as (SearchItem & { vendors: { name: string } | null })[];
       setItems(dbItems.map(i => ({ ...i, vendorName: i.vendors?.name ?? '' })));
       setLoading(false);
@@ -219,7 +213,7 @@ export default function SearchScreen() {
                         <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.vegetarian')}</Text>
                       </View>
                     )}
-                    {allergies.some(a => item.allergens.includes(a)) && (
+                    {matchAllergens(item.allergens, prefs).length > 0 && (
                       <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
                         <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
                       </View>

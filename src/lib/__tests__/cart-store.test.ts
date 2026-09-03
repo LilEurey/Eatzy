@@ -1,6 +1,6 @@
 import { lineUnitTotal, cartSubtotal, cartCount } from '@/lib/cart-store';
 
-const addon = (price: number) => ({ id: `a${price}`, name: 'x', name_th: null, price });
+const addon = (price: number) => ({ id: `a${price}`, name: 'x', name_th: null, price, allergens: [] });
 const line = (unit_price: number, quantity: number, addons: ReturnType<typeof addon>[] = []) => ({
   line_id: 'l1',
   menu_item_id: 'm1',
@@ -9,6 +9,7 @@ const line = (unit_price: number, quantity: number, addons: ReturnType<typeof ad
   unit_price,
   quantity,
   addons,
+  allergens: [],
   note: '',
 });
 

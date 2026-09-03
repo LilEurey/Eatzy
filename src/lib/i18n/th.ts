@@ -166,6 +166,11 @@ export const th: Record<TranslationKey, string> = {
   'cart.storeClosedTitle': 'ร้านปิดอยู่',
   'cart.storeClosedMsg': 'ร้านนี้ปิดและยังไม่รับออร์เดอร์ตอนนี้ ตะกร้าของคุณถูกบันทึกไว้จนกว่าร้านจะเปิดอีกครั้ง',
   'cart.addonPlus': '+ {name}',
+  'cart.allergyBanner': '⚠️ บางรายการมีสารก่อภูมิแพ้ที่คุณระบุไว้',
+  'cart.allergyLineWarning': '⚠️ มี {allergens}',
+  'cart.allergyConfirmTitle': '⚠️ คำเตือนภูมิแพ้',
+  'cart.allergyConfirmMsg': 'รายการในคำสั่งซื้อนี้มี {allergens} ซึ่งคุณระบุว่าแพ้ ต้องการสั่งซื้อต่อไปหรือไม่?',
+  'cart.placeAnyway': 'สั่งซื้อต่อไป',
   'cart.noteToVendor': 'เพิ่มโน้ตถึงร้าน',
 
   // Search
@@ -192,6 +197,7 @@ export const th: Record<TranslationKey, string> = {
   'item.price': 'ราคา',
   'item.ingredients': 'ส่วนประกอบ',
   'item.allergens': '⚠️ สารก่อภูมิแพ้',
+  'item.allergyBanner': '⚠️ มีสารก่อภูมิแพ้ที่คุณระบุไว้: {allergens}',
   'item.allergyWarningTitle': '⚠️ คำเตือนภูมิแพ้',
   'item.allergyWarningMsg': 'เมนูนี้มี {allergens} ซึ่งคุณระบุว่าแพ้ ต้องการใส่ตะกร้าต่อไปหรือไม่?',
   'item.addAnyway': 'ใส่ตะกร้าต่อไป',
@@ -405,6 +411,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.addons.optionNameTh': 'ชื่อภาษาไทย (ไม่บังคับ)',
   'vendor.addons.optionPrice': 'ราคา',
   'vendor.addons.optionAvailable': 'พร้อมขาย',
+  'vendor.addons.optionAllergens': 'สารก่อภูมิแพ้ที่ตัวเลือกนี้เพิ่ม',
   'vendor.addons.save': 'บันทึก',
   'vendor.addons.cancel': 'ยกเลิก',
   'vendor.addons.deleteGroupTitle': 'ลบกลุ่ม?',

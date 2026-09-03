@@ -164,6 +164,11 @@ export const en = {
   'cart.storeClosedTitle': 'Store is closed',
   'cart.storeClosedMsg': 'This store closed and isn’t taking orders right now. Your cart is saved for when it reopens.',
   'cart.addonPlus': '+ {name}',
+  'cart.allergyBanner': '⚠️ Some items contain an allergen you listed.',
+  'cart.allergyLineWarning': '⚠️ Contains {allergens}',
+  'cart.allergyConfirmTitle': '⚠️ Allergy Warning',
+  'cart.allergyConfirmMsg': 'Items in this order contain {allergens}, which you\'ve marked as an allergy. Place the order anyway?',
+  'cart.placeAnyway': 'Place Order Anyway',
   'cart.noteToVendor': 'Add a note for the kitchen',
 
   // Search
@@ -190,6 +195,7 @@ export const en = {
   'item.price': 'Price',
   'item.ingredients': 'Ingredients',
   'item.allergens': '⚠️ Allergens',
+  'item.allergyBanner': '⚠️ Contains an allergen you listed: {allergens}',
   'item.allergyWarningTitle': '⚠️ Allergy Warning',
   'item.allergyWarningMsg': 'This dish contains {allergens}, which you\'ve marked as an allergy. Add it to your cart anyway?',
   'item.addAnyway': 'Add Anyway',
@@ -403,6 +409,7 @@ export const en = {
   'vendor.addons.optionNameTh': 'Thai name (optional)',
   'vendor.addons.optionPrice': 'Price',
   'vendor.addons.optionAvailable': 'Available',
+  'vendor.addons.optionAllergens': 'Allergens this option adds',
   'vendor.addons.save': 'Save',
   'vendor.addons.cancel': 'Cancel',
   'vendor.addons.deleteGroupTitle': 'Delete group?',
