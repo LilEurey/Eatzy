@@ -73,10 +73,13 @@ term). Proteins & mains: `pork`→pork, `chicken`→chicken, `beef`→beef, `fis
 `bacon`→bacon, `ham`→ham, `sausage`→sausage, `meatball`→meatball, `wonton`→wonton,
 `tofu`→tofu, `egg`→egg, `omelet`→egg (covers "omelette"). Staples: `rice`→rice,
 `noodle`→noodles, `vermicelli`→vermicelli, `bread`→bread, `sticky rice`→sticky rice.
-Dairy/drink bases: `milk`→milk, `cream`→cream (covers "creamy"), `cheese`→cheese,
-`yogurt`→milk, `yoghurt`→milk, `condensed milk`→milk, `evaporated milk`→milk, `cocoa`→cocoa,
-`chocolate`→cocoa, `coffee`→coffee, `espresso`→coffee, `tea`→tea, `boba`→boba,
-`bubble`→boba, `coconut`→coconut. Produce: `garlic`→garlic, `chili`→chili, `chilli`→chili,
+Dairy/drink bases: `milk`→milk, `cheese`→cheese, `yogurt`→milk, `yoghurt`→milk,
+`condensed milk`→milk, `evaporated milk`→milk, `cocoa`→cocoa, `chocolate`→cocoa,
+`coffee`→coffee, `espresso`→coffee, `tea`→tea, `boba`→boba, `bubble`→boba,
+`coconut`→coconut. **`cream` is deliberately NOT a keyword** — in this catalog "creamy"
+is a coconut-milk texture word (20 rows, ~0 genuine dairy cream), and via Statement 3's
+`mappable` CTE `cream`→dairy it would produce ~20 false `{dairy}` allergen tags on
+coconut curries. Produce: `garlic`→garlic, `chili`→chili, `chilli`→chili,
 `basil`→basil, `lime`→lime, `lemon`→lemon, `onion`→onion, `tomato`→tomato,
 `cucumber`→cucumber, `papaya`→papaya, `mango`→mango, `banana`→banana, `pineapple`→pineapple,
 `orange`→orange, `strawberry`→strawberry, `grape`→grape, `kiwi`→kiwi, `lychee`→lychee,
@@ -136,6 +139,14 @@ coverage assertion. Rows whose freshly-written `ingredients` now contain `milk` 
 Wrap Statements 1–3 in a single `DO $$ ... $$` block so `GET DIAGNOSTICS` is available and
 the whole thing is one transaction.
 
+**Known accepted imprecision:** the `milk` keyword is a plain substring, so ~4 rows whose
+description says "coconut milk" gain the `milk` ingredient term and, via Statement 3, a
+`{dairy}` allergen tag. This contradicts `20260903030000`'s deliberate exclusion of
+coconut milk from dairy, but 32 of the 36 `milk`-matching KMUTT rows are genuine dairy
+drinks (milk tea, latte, cocoa milk) and a false `{dairy}` warning on a coconut drink is
+the harmless direction for an allergy gate. Not worth a negative-lookbehind. Documented in
+the migration header.
+
 ### Guard
 
 After Statement 2, assert every target row has `cardinality(ingredients) >= 1` and
@@ -152,28 +163,39 @@ After Statement 2, assert every target row has `cardinality(ingredients) >= 1` a
   migration** re-enriches `ingredients`/`tags` then re-derives `allergens`. End state is
   consistent.
 
-## Impact (to be measured on local during implementation)
+## Impact (validated locally in a `BEGIN … ROLLBACK` transaction, 2026-09-03)
 
-Expected: ~500 rows rewritten; `ingredients` distinct-term count rises from ~20 to ~60+;
-every target row gains 2–6 `tags`; `allergens` non-empty count rises above the current 111
-(rows that gain `milk`/`cream`/`cheese`/`peanut` ingredients).
+~500 rows rewritten. Distinct `ingredients` terms across `menu_items` rises from ~20 to
+**104**; distinct `tags` to **41**. Every target row gains 2–6 tags. 19 rows match no
+ingredient keyword and keep their seed single-word `ingredients` (generic "Extra" /
+"choice of meat" add-on rows). The allergen re-derive (Statement 3) tags **99** additional
+rows.
 
 ## Testing / verification
 
 Data-only migration; verified by SQL, not a jest test.
 
 1. `npx supabase db reset` — full replay, no error, no `RAISE` from any guard.
-2. `select count(*) filter (where tags='{}') from menu_items;` → expect **10** (only the
-   demo rows; every KMUTT row now tagged).
+2. `select count(*) filter (where tags='{}') from menu_items;` → expect **0** (the 10 demo
+   rows already had non-empty `tags` before this migration; every KMUTT row is now tagged
+   too).
 3. `select count(distinct t) from (select unnest(ingredients) t from menu_items) x;` →
-   expect ≥ 55.
-4. Spot-checks: `Tropical Smoothie` (desc "Mango, pineapple, and banana blended fresh with
-   coconut milk") → `ingredients` ⊇ {mango, pineapple, banana, coconut, milk};
-   `tags` ⊇ {smoothie, beverages, mild}. `Wonton Noodle Soup` → `ingredients` ⊇ {pork,
-   wonton, noodles, egg}; `tags` ⊇ {soup, noodles}. A `beef` dish still has `beef` in
-   `allergens`.
-5. Existing `menu_items` allergen expectations from `20260903030000` still hold or improve
-   (never regress): `Pad Thai` demo row untouched (`tags <> '{}'`).
+   expect ≥ 90 (validated: 104).
+4. Spot-checks against **real KMUTT rows** (not the 10 demo rows, which keep `tags <> '{}'`
+   and are skipped):
+   - `Minced Pork Rice Soup with Egg` → `ingredients` ⊇ {egg, garlic, pork, rice};
+     `tags` ⊇ {soup, mild}.
+   - `Stir-Fried Rice Noodles with Soy Sauce and Chicken (Pad See Ew Chicken)` →
+     `ingredients` ⊇ {chicken, egg, noodles, rice, soy sauce}; `tags` ⊇ {stir-fried,
+     noodles}.
+   - `Coconut Smoothie` → `ingredients` = {coconut}; `tags` ⊇ {smoothie, beverages, mild};
+     `allergens` = `{}`.
+   - Any KMUTT `beef` dish → `beef` in `ingredients` and in `allergens`.
+5. Allergen coverage measured after replay: distinct-tag instance count strictly higher
+   than the pre-migration state (validated locally in a transaction on 2026-09-03: eggs 77,
+   dairy 63, shellfish 54, soy 18, beef 17, peanuts 8, sesame 2, gluten 1 — up from
+   eggs 23 / dairy 24 / shellfish 43 / soy 9 / beef 12 / peanuts 2 / sesame 1 / gluten 1).
+   Never regresses. The 10 demo rows (`Pad Thai` etc.) stay untouched.
 6. `npm test` (5 suites) unaffected — pure DB migration.
 
 ## Files
