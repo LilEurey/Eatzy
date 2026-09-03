@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Image, ActivityIndicator, TextInput } from 'react-native';
 import { Tap } from '@/components/Tap';
+import { ReviewCard } from '@/components/ReviewCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +15,14 @@ import type { Database } from '@/types/database.types';
 
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
 type SimilarItem = { id: string; name: string; price: number; image_url: string | null; vendor_name: string; score: number };
+type Review = {
+  id: string;
+  score: number;
+  comment: string | null;
+  created_at: string;
+  photo_urls: string[];
+  users: { name: string | null; avatar_url: string | null } | null;
+};
 
 type AddonOption = { id: string; name: string; name_th: string | null; price: number; is_available: boolean; sort_order: number };
 type AddonGroup = {
@@ -50,6 +59,7 @@ export default function ItemDetailScreen() {
   const [selected, setSelected] = useState<Record<string, string[]>>({});
   const [note, setNote] = useState('');
   const [myAllergies, setMyAllergies] = useState<string[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -89,6 +99,13 @@ export default function ItemDetailScreen() {
     invokeEdgeFunction<{ results: SimilarItem[] }>('recommend-similar', { body: { item_id: id } })
       .then(({ data }) => setSimilar(data?.results ?? []))
       .catch(() => setSimilar([]));
+
+    supabase
+      .from('ratings')
+      .select('id,score,comment,created_at,photo_urls,users(name,avatar_url)')
+      .eq('menu_item_id', id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setReviews((data ?? []) as unknown as Review[]));
   }, [id]);
 
   if (item === undefined) {
@@ -423,6 +440,30 @@ export default function ItemDetailScreen() {
               </ScrollView>
             </View>
           )}
+
+          {/* Community Reviews */}
+          <View style={{ marginTop: 24 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: Brand.textPrimary, marginBottom: 12 }}>
+              {t('reviews.communityReviews')}
+            </Text>
+            {reviews.length === 0 ? (
+              <Text style={{ fontSize: 13, color: Brand.textSecondary }}>{t('reviews.empty')}</Text>
+            ) : (
+              <View style={{ gap: 16 }}>
+                {reviews.map(r => (
+                  <ReviewCard
+                    key={r.id}
+                    name={r.users?.name ?? t('reviews.anonymous')}
+                    avatarUrl={r.users?.avatar_url ?? null}
+                    score={r.score}
+                    comment={r.comment}
+                    createdAt={r.created_at}
+                    photoUrls={r.photo_urls}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
 
