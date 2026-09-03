@@ -23,6 +23,7 @@ export const ALLERGY_LABELS: Record<Allergy, TranslationKey> = {
 // vendor vocabulary, not just the lowercased UI label — "Egg" and "Seafood"
 // used to save as 'egg'/'seafood' while real menu_items tag 'eggs' and
 // 'shellfish', so that filter silently matched nothing. Verified against
+// live data: distinct menu_items.allergens = dairy, soy, eggs, sesame,
 // peanuts, shellfish, gluten, plus beef added by migration
 // 20260903030000_backfill_menu_item_allergens.
 export const ALLERGY_VALUES: Record<Allergy, string> = {
