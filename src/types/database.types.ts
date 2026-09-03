@@ -586,6 +586,7 @@ export type Database = {
           id: string
           menu_item_id: string
           order_id: string | null
+          photo_urls: string[]
           score: number
           user_id: string
         }
@@ -595,6 +596,7 @@ export type Database = {
           id?: string
           menu_item_id: string
           order_id?: string | null
+          photo_urls?: string[]
           score: number
           user_id: string
         }
@@ -604,6 +606,7 @@ export type Database = {
           id?: string
           menu_item_id?: string
           order_id?: string | null
+          photo_urls?: string[]
           score?: number
           user_id?: string
         }

@@ -7,6 +7,7 @@ import { Brand } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
 import { notificationText } from '@/lib/localize';
+import { timeAgo } from '@/lib/relative-time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
 
 type NotificationRow = {
@@ -22,14 +23,6 @@ type NotificationRow = {
   read: boolean;
   created_at: string;
 };
-
-function timeAgo(iso: string, t: ReturnType<typeof useI18n>['t']) {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return t('common.justNow');
-  if (diff < 3600) return t('common.minutesAgo', { n: Math.floor(diff / 60) });
-  if (diff < 86400) return t('common.hoursAgo', { n: Math.floor(diff / 3600) });
-  return t('common.daysAgo', { n: Math.floor(diff / 86400) });
-}
 
 export default function NotificationsScreen() {
   const { t } = useI18n();

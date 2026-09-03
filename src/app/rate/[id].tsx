@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -27,7 +28,24 @@ export default function RateScreen() {
   const [order, setOrder] = useState<RateOrder | null | undefined>(undefined);
   const [score, setScore] = useState(0);
   const [comment, setComment] = useState('');
+  const [photos, setPhotos] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  async function addPhotos() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showAlert(t('common.permissionNeededTitle'), t('profile.avatarPermissionMsg'));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.6,
+      allowsMultipleSelection: true,
+      selectionLimit: 3,
+    });
+    if (result.canceled) return;
+    setPhotos(prev => [...prev, ...result.assets].slice(0, 3));
+  }
 
   useEffect(() => {
     async function load() {
@@ -83,12 +101,31 @@ export default function RateScreen() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSubmitting(false); return; }
 
+    let photoUrls: string[] = [];
+    try {
+      photoUrls = await Promise.all(photos.map(async (asset, i) => {
+        const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const path = `${user.id}/${order.id}-${i}.${ext}`;
+        const arraybuffer = await fetch(asset.uri).then(res => res.arrayBuffer());
+        const { error: uploadError } = await supabase.storage
+          .from('review-photos')
+          .upload(path, arraybuffer, { contentType: asset.mimeType ?? 'image/jpeg', upsert: true });
+        if (uploadError) throw uploadError;
+        return supabase.storage.from('review-photos').getPublicUrl(path).data.publicUrl;
+      }));
+    } catch (e) {
+      setSubmitting(false);
+      showAlert(t('common.errorTitle'), e instanceof Error ? e.message : String(e));
+      return;
+    }
+
     const { error } = await supabase.from('ratings').insert({
       user_id: user.id,
       menu_item_id: order.primary_menu_item_id,
       order_id: order.id,
       score,
       comment: comment.trim() || null,
+      photo_urls: photoUrls,
     });
     setSubmitting(false);
     if (error) {
@@ -153,6 +190,41 @@ export default function RateScreen() {
             borderWidth: 1, borderColor: Brand.border,
           }}
         />
+
+        {/* Food photos */}
+        <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10, marginTop: 20 }}>
+          {t('rate.addPhotos')}
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          {photos.map((p, i) => (
+            <View key={p.uri}>
+              <Image source={{ uri: p.uri }} style={{ width: 88, height: 88, borderRadius: 12 }} />
+              <Tap
+                onPress={() => setPhotos(prev => prev.filter((_, j) => j !== i))}
+                style={{
+                  position: 'absolute', top: -6, right: -6,
+                  width: 22, height: 22, borderRadius: 11, backgroundColor: Brand.textPrimary,
+                  alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700', lineHeight: 15 }}>×</Text>
+              </Tap>
+            </View>
+          ))}
+          {photos.length < 3 && (
+            <Tap
+              onPress={addPhotos}
+              style={{
+                width: 88, height: 88, borderRadius: 12,
+                borderWidth: 1, borderColor: Brand.orange, borderStyle: 'dashed',
+                alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.orangeLight,
+              }}
+            >
+              <Text style={{ fontSize: 22, color: Brand.orange }}>＋</Text>
+              <Text style={{ fontSize: 10, color: Brand.orange, marginTop: 2 }}>{t('rate.addPhotosHint')}</Text>
+            </Tap>
+          )}
+        </View>
       </ScrollView>
 
       {/* Sticky submit */}

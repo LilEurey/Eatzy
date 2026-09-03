@@ -21,6 +21,8 @@ export const th: Record<TranslationKey, string> = {
   'common.minutesAgo': '{n} นาทีที่แล้ว',
   'common.hoursAgo': '{n} ชั่วโมงที่แล้ว',
   'common.daysAgo': '{n} วันที่แล้ว',
+  'common.weeksAgo': '{n} สัปดาห์ที่แล้ว',
+  'common.monthsAgo': '{n} เดือนที่แล้ว',
   'common.today': 'วันนี้',
   'common.yesterday': 'เมื่อวาน',
   'common.thisWeek': 'สัปดาห์นี้',
@@ -209,6 +211,13 @@ export const th: Record<TranslationKey, string> = {
   'store.all': 'ทั้งหมด',
   'store.veg': 'มังสวิรัติ 🌿',
   'store.noItemsInCategory': 'ไม่มีเมนูในหมวดนี้',
+  'store.allMenusTab': 'เมนูทั้งหมด',
+  'store.reviewsTab': 'รีวิว',
+
+  // Community reviews (store Review tab + item detail)
+  'reviews.communityReviews': 'รีวิวจากผู้ใช้',
+  'reviews.empty': 'ยังไม่มีรีวิว',
+  'reviews.anonymous': 'ไม่ระบุชื่อ',
 
   // Track
   'track.title': 'ติดตามคำสั่งซื้อ',
@@ -228,6 +237,8 @@ export const th: Record<TranslationKey, string> = {
   'rate.title': 'ให้คะแนนคำสั่งซื้อ',
   'rate.commentLabel': 'ความคิดเห็น (ไม่บังคับ)',
   'rate.commentPlaceholder': 'บอกให้คนอื่นรู้ว่าคุณคิดอย่างไร…',
+  'rate.addPhotos': 'เพิ่มรูปอาหาร',
+  'rate.addPhotosHint': 'เพิ่ม',
   'rate.submit': 'ส่งคะแนน',
   'rate.thanksTitle': 'ขอบคุณสำหรับความคิดเห็น!',
   'rate.thanksMsg': 'คุณให้คะแนน {vendor} {score} ดาว',

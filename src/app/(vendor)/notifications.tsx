@@ -7,14 +7,7 @@ import { Brand } from '@/constants/theme';
 import { useVendorNotifications, markNotificationsRead } from '@/lib/vendor-store';
 import { useI18n } from '@/lib/i18n';
 import { notificationText } from '@/lib/localize';
-
-function timeAgo(iso: string, t: ReturnType<typeof useI18n>['t']) {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return t('common.justNow');
-  if (diff < 3600) return t('common.minutesAgo', { n: Math.floor(diff / 60) });
-  if (diff < 86400) return t('common.hoursAgo', { n: Math.floor(diff / 3600) });
-  return t('common.daysAgo', { n: Math.floor(diff / 86400) });
-}
+import { timeAgo } from '@/lib/relative-time';
 
 export default function VendorNotificationsScreen() {
   const { t } = useI18n();

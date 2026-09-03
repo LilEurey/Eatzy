@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
+import { ReviewCard } from '@/components/ReviewCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -11,6 +12,15 @@ import type { Database } from '@/types/database.types';
 
 type Vendor = Database['public']['Tables']['vendors']['Row'];
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
+type StoreReview = {
+  id: string;
+  score: number;
+  comment: string | null;
+  created_at: string;
+  photo_urls: string[];
+  menu_item_id: string;
+  users: { name: string | null; avatar_url: string | null } | null;
+};
 
 function queueStatus(count: number): { labelKey: TranslationKey; color: string } {
   if (count <= 3) return { labelKey: 'common.noQueue', color: '#22c55e' };
@@ -26,9 +36,11 @@ function spiceLabel(level: number, t: ReturnType<typeof useI18n>['t']) {
 export default function StoreDetailScreen() {
   const { t, locale } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
   const [allItems, setAllItems] = useState<MenuItem[]>([]);
+  const [reviews, setReviews] = useState<StoreReview[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -38,6 +50,17 @@ export default function StoreDetailScreen() {
       ]);
       setVendor(vendorRes.data ?? null);
       setAllItems(itemsRes.data ?? []);
+
+      // Ratings are keyed to menu items, not vendors — fan out over this
+      // store's items to collect its reviews.
+      const itemIds = (itemsRes.data ?? []).map(i => i.id);
+      if (itemIds.length === 0) { setReviews([]); return; }
+      const { data: reviewRows } = await supabase
+        .from('ratings')
+        .select('id,score,comment,created_at,photo_urls,menu_item_id,users(name,avatar_url)')
+        .in('menu_item_id', itemIds)
+        .order('created_at', { ascending: false });
+      setReviews((reviewRows ?? []) as unknown as StoreReview[]);
     }
     void load();
   }, [id]);
@@ -46,6 +69,11 @@ export default function StoreDetailScreen() {
   const filteredItems = activeCategory === 'All'
     ? allItems
     : allItems.filter(i => i.category === activeCategory);
+
+  const avgScore = reviews.length
+    ? reviews.reduce((s, r) => s + r.score, 0) / reviews.length
+    : 0;
+  const itemNameById = new Map(allItems.map(i => [i.id, localizedText(i.name, i.name_th, locale)]));
 
   if (vendor === undefined) {
     return (
@@ -137,6 +165,15 @@ export default function StoreDetailScreen() {
             ))}
           </View>
 
+          {/* Average rating */}
+          {reviews.length > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 }}>
+              <Text style={{ fontSize: 14, color: Brand.orange }}>★</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{avgScore.toFixed(1)}</Text>
+              <Text style={{ fontSize: 13, color: Brand.textSecondary }}>({reviews.length})</Text>
+            </View>
+          )}
+
           {/* Stats row */}
           <View style={{
             flexDirection: 'row', gap: 12, marginBottom: 16,
@@ -176,11 +213,36 @@ export default function StoreDetailScreen() {
             {localizedText(vendor.bio ?? '', vendor.bio_th, locale)}
           </Text>
 
-          {/* Menu section */}
-          <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
-            {t('store.menu')}
-          </Text>
+          {/* Tabs: All Menus / Review */}
+          <View style={{
+            flexDirection: 'row', gap: 24, marginBottom: 16,
+            borderBottomWidth: 1, borderBottomColor: Brand.border,
+          }}>
+            {([
+              ['menus', t('store.allMenusTab')],
+              ['reviews', t('store.reviewsTab')],
+            ] as const).map(([key, label]) => {
+              const active = activeTab === key;
+              return (
+                <Tap
+                  key={key}
+                  onPress={() => setActiveTab(key)}
+                  style={{
+                    paddingBottom: 10,
+                    borderBottomWidth: 2,
+                    borderBottomColor: active ? Brand.orange : 'transparent',
+                  }}
+                >
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: active ? Brand.orange : Brand.textSecondary }}>
+                    {label}
+                  </Text>
+                </Tap>
+              );
+            })}
+          </View>
 
+          {activeTab === 'menus' ? (
+          <>
           {/* Category tabs */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -285,6 +347,36 @@ export default function StoreDetailScreen() {
               </View>
             )}
           </View>
+          </>
+          ) : (
+          /* Review tab */
+          <View>
+            <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
+              {t('reviews.communityReviews')}
+            </Text>
+            {reviews.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                <Text style={{ fontSize: 32, marginBottom: 8 }}>💬</Text>
+                <Text style={{ color: Brand.textSecondary }}>{t('reviews.empty')}</Text>
+              </View>
+            ) : (
+              <View style={{ gap: 16 }}>
+                {reviews.map(r => (
+                  <ReviewCard
+                    key={r.id}
+                    name={r.users?.name ?? t('reviews.anonymous')}
+                    avatarUrl={r.users?.avatar_url ?? null}
+                    score={r.score}
+                    comment={r.comment}
+                    createdAt={r.created_at}
+                    menuItemName={itemNameById.get(r.menu_item_id)}
+                    photoUrls={r.photo_urls}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
