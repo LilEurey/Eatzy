@@ -521,15 +521,15 @@ export default function ItemDetailScreen() {
             disabled={!groupsValid || !storeOpen}
             onPress={confirmAddToCart}
             style={{
-              flex: 1, backgroundColor: Brand.orange, borderRadius: 14,
+              flex: 1, backgroundColor: storeOpen ? Brand.orange : Brand.border, borderRadius: 14,
               height: 44, alignItems: 'center', justifyContent: 'center',
-              flexDirection: 'row', gap: 8, opacity: groupsValid && storeOpen ? 1 : 0.5,
+              flexDirection: 'row', gap: 8, opacity: !storeOpen || groupsValid ? 1 : 0.5,
               shadowColor: Brand.orange, shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.35, shadowRadius: 8, elevation: 4,
+              shadowOpacity: storeOpen ? 0.35 : 0, shadowRadius: 8, elevation: storeOpen ? 4 : 0,
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
-              {t('item.addToCart', { total })}
+            <Text style={{ color: storeOpen ? '#fff' : Brand.textSecondary, fontSize: 15, fontWeight: '700' }}>
+              {storeOpen ? t('item.addToCart', { total }) : t('item.storeClosedButton')}
             </Text>
           </Tap>
         </View>

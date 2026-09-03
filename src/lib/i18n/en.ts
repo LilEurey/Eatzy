@@ -200,6 +200,7 @@ export const en = {
   'item.storeClosedTitle': 'Store is closed',
   'item.storeClosedMsg': 'This store isn’t taking orders right now. Try again when it reopens.',
   'item.storeClosedNotice': 'This store is closed — ordering is unavailable right now.',
+  'item.storeClosedButton': 'Store Closed',
   'item.addons.required': 'Required',
   'item.addons.chooseUpTo': 'Choose up to {n}',
   'item.addons.chooseOne': 'Choose 1',

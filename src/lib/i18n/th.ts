@@ -202,6 +202,7 @@ export const th: Record<TranslationKey, string> = {
   'item.storeClosedTitle': 'ร้านปิดอยู่',
   'item.storeClosedMsg': 'ร้านนี้ยังไม่รับออร์เดอร์ตอนนี้ ลองใหม่อีกครั้งเมื่อร้านเปิด',
   'item.storeClosedNotice': 'ร้านนี้ปิดอยู่ — ยังสั่งซื้อไม่ได้ตอนนี้',
+  'item.storeClosedButton': 'ร้านปิดอยู่',
   'item.addons.required': 'ต้องเลือก',
   'item.addons.chooseUpTo': 'เลือกได้ไม่เกิน {n}',
   'item.addons.chooseOne': 'เลือก 1 อย่าง',
