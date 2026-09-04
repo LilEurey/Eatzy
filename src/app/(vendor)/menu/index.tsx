@@ -1,15 +1,30 @@
+import { useMemo } from 'react';
 import { View, Text, Image, Switch } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { useVendorMenu, toggleAvailability } from '@/lib/vendor-store';
+import { useVendorMenu, useVendorOrders, toggleAvailability } from '@/lib/vendor-store';
+import { itemSales } from '@/lib/vendor-analytics';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+
+// Gold, distinct from the orange halal pill — reads as "award".
+const GOLD = '#B8860B';
+const GOLD_BG = '#FBF3DD';
 
 export default function VendorMenuScreen() {
   const { t, locale } = useI18n();
   const items = useVendorMenu();
+  const orders = useVendorOrders();
+
+  // Best-seller ranking over a rolling 30-day window: menu_item_id -> { rank, units }.
+  const salesByItem = useMemo(() => {
+    const ranked = itemSales(orders, 'month');
+    const map = new Map<string, { rank: number; units: number }>();
+    ranked.forEach((s, i) => map.set(s.menuItemId, { rank: i, units: s.units }));
+    return map;
+  }, [orders]);
 
   return (
     <View style={{ gap: 20 }}>
@@ -36,7 +51,11 @@ export default function VendorMenuScreen() {
         <Text style={{ fontSize: 13, color: '#B0B4BF', paddingVertical: 12 }}>{t('vendor.menu.empty')}</Text>
       ) : (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
-          {items.map(item => (
+          {items.map(item => {
+            const stat = salesByItem.get(item.id);
+            const units = stat?.units ?? 0;
+            const rank = stat?.rank ?? -1;
+            return (
             <View key={item.id} style={{ width: 220, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#EEF0F5', overflow: 'hidden' }}>
               <View style={{ height: 160, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                 {item.image_url
@@ -56,6 +75,20 @@ export default function VendorMenuScreen() {
                   <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={2}>{localizedText(item.name, item.name_th, locale)}</Text>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: Brand.vendorAccent }}>{item.price}฿</Text>
                 </View>
+                {rank === 0 && units > 0 && (
+                  <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: GOLD_BG, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <Ionicons name="trophy" size={11} color={GOLD} />
+                    <Text style={{ fontSize: 10, fontWeight: '800', color: GOLD, letterSpacing: 0.5 }}>{t('vendor.menu.bestSeller')}</Text>
+                  </View>
+                )}
+                {(rank === 1 || rank === 2) && units > 0 && (
+                  <View style={{ alignSelf: 'flex-start', backgroundColor: Brand.vendorAccentLight, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: Brand.vendorAccent, letterSpacing: 0.5 }}>{t('vendor.menu.topSellerRank', { n: rank + 1 })}</Text>
+                  </View>
+                )}
+                <Text style={{ fontSize: 11, color: units > 0 ? '#8A8F9B' : '#B0B4BF', fontWeight: '600' }}>
+                  {units > 0 ? t('vendor.menu.soldCount', { n: units }) : t('vendor.menu.noSalesYet')}
+                </Text>
                 {item.is_halal && (
                   <View style={{ alignSelf: 'flex-start', backgroundColor: Brand.orangeLight, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
                     <Text style={{ fontSize: 10, fontWeight: '700', color: Brand.orange, letterSpacing: 0.5 }}>{t('common.halal').toUpperCase()}</Text>
@@ -73,7 +106,8 @@ export default function VendorMenuScreen() {
                 </View>
               </View>
             </View>
-          ))}
+            );
+          })}
         </View>
       )}
     </View>

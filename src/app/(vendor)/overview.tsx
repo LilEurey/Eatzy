@@ -3,10 +3,11 @@ import { View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { useVendorOrders, useVendorProfile } from '@/lib/vendor-store';
-import { salesVelocity, busyGrid } from '@/lib/vendor-analytics';
+import { useVendorOrders, useVendorProfile, useVendorMenu } from '@/lib/vendor-store';
+import { salesVelocity, busyGrid, itemSales, periodDelta, avgFulfilmentMinutes, type PeriodDelta } from '@/lib/vendor-analytics';
 import { comingSoonAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { localizedText } from '@/lib/localize';
 import { isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
 
@@ -19,7 +20,15 @@ function parseHour(value: string | null, fallback: number): number {
   return Number.isFinite(h) && h >= 0 && h <= 23 ? h : fallback;
 }
 
-function StatCard({ label, value, delta, sub, icon }: { label: string; value: string; delta?: string; sub?: string; icon: React.ComponentProps<typeof Ionicons>['name'] }) {
+// Real period-over-period change: green up, red down, grey flat. null hides it.
+const DELTA_STYLE = {
+  up: { color: '#16a34a', icon: 'arrow-up' as const },
+  down: { color: '#dc2626', icon: 'arrow-down' as const },
+  flat: { color: '#8A8F9B', icon: 'remove' as const },
+};
+
+function StatCard({ label, value, delta, sub, icon }: { label: string; value: string; delta?: PeriodDelta; sub?: string; icon: React.ComponentProps<typeof Ionicons>['name'] }) {
+  const d = delta ? DELTA_STYLE[delta.direction] : null;
   return (
     <View style={{ flex: 1, minWidth: 160, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
@@ -30,10 +39,10 @@ function StatCard({ label, value, delta, sub, icon }: { label: string; value: st
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
         <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{value}</Text>
-        {delta && (
+        {delta && d && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-            <Ionicons name="arrow-up" size={10} color="#16a34a" />
-            <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#16a34a' }}>{delta}</Text>
+            <Ionicons name={d.icon} size={10} color={d.color} />
+            <Text style={{ fontSize: 11.5, fontWeight: '700', color: d.color }}>{delta.pct}%</Text>
           </View>
         )}
       </View>
@@ -43,8 +52,9 @@ function StatCard({ label, value, delta, sub, icon }: { label: string; value: st
 }
 
 export default function VendorOverviewScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const orders = useVendorOrders();
+  const menu = useVendorMenu();
   const vendor = useVendorProfile();
   const [range, setRange] = useState<DateRangeFilter>('today');
 
@@ -62,8 +72,24 @@ export default function VendorOverviewScreen() {
     .reduce((sum, o) => sum + o.total_amount, 0);
   const activeQueue = orders.filter(o => o.status === 'pending' || o.status === 'accepted').length;
   const queueCapacity = 20;
-  const avgPrep = vendor?.estimated_wait_min ?? 0;
+
+  // Real window-over-window change (null when there's no prior-period data).
+  const ordersDelta = useMemo(() => periodDelta(orders, range, 'orders'), [orders, range]);
+  const revenueDelta = useMemo(() => periodDelta(orders, range, 'revenue'), [orders, range]);
+  const deltaSub = range === 'today' ? t('vendor.overview.vsYesterday') : t('vendor.overview.vsPrevPeriod');
   const rangeSub = range === 'today' ? t('vendor.overview.vsYesterday') : rangeOptions.find(o => o.key === range)!.label;
+
+  // Measured placed → handed-off time; falls back to the static stall estimate.
+  const fulfilment = useMemo(() => avgFulfilmentMinutes(orders, range), [orders, range]);
+  const avgPrepValue = fulfilment ?? vendor?.estimated_wait_min ?? 0;
+  const avgPrepLabel = fulfilment != null ? t('vendor.overview.avgFulfilment') : t('vendor.overview.avgPrepTime');
+
+  // Per-item sales for the selected range, best seller first.
+  const sales = useMemo(() => itemSales(orders, range), [orders, range]);
+  const topSellers = sales.slice(0, 5);
+  const maxUnits = Math.max(1, ...topSellers.map(s => s.units));
+  const soldIds = new Set(sales.map(s => s.menuItemId));
+  const slowMovers = menu.filter(m => m.is_available && !soldIds.has(m.id)).slice(0, 3);
 
   // Sales Velocity bars follow the header range: hourly for today/yesterday
   // (clamped to the stall's open window), one bar per day for week/month.
@@ -106,8 +132,8 @@ export default function VendorOverviewScreen() {
 
       {/* Stat cards — delta badges are decorative (no historical order data to diff against yet) */}
       <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap' }}>
-        <StatCard label={t('vendor.overview.totalOrders')} value={String(totalOrders)} delta={range === 'today' ? '12%' : undefined} sub={rangeSub} icon="bag-handle-outline" />
-        <StatCard label={t('vendor.overview.revenueToday')} value={`฿${revenueToday.toLocaleString()}`} delta={range === 'today' ? '8.5%' : undefined} sub={rangeSub} icon="cash-outline" />
+        <StatCard label={t('vendor.overview.totalOrders')} value={String(totalOrders)} delta={ordersDelta} sub={ordersDelta ? deltaSub : rangeSub} icon="bag-handle-outline" />
+        <StatCard label={t('vendor.overview.revenueToday')} value={`฿${revenueToday.toLocaleString()}`} delta={revenueDelta} sub={revenueDelta ? deltaSub : rangeSub} icon="cash-outline" />
         <View style={{ flex: 1, minWidth: 180, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
             <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#8A8F9B', letterSpacing: 0.5 }}>{t('vendor.overview.activeQueue')}</Text>
@@ -122,7 +148,7 @@ export default function VendorOverviewScreen() {
             <View style={{ width: `${Math.min(100, (activeQueue / queueCapacity) * 100)}%`, height: '100%', backgroundColor: Brand.orange, borderRadius: 3 }} />
           </View>
         </View>
-        <StatCard label={t('vendor.overview.avgPrepTime')} value={`${avgPrep}m`} icon="time-outline" />
+        <StatCard label={avgPrepLabel} value={`${avgPrepValue}m`} icon="time-outline" />
       </View>
 
       {/* Sales velocity + busy-times heatmap */}
@@ -185,6 +211,53 @@ export default function VendorOverviewScreen() {
             <Text style={{ fontSize: 10, color: '#8A8F9B' }}>{t('vendor.overview.evening')}</Text>
           </View>
         </View>
+      </View>
+
+      {/* Top sellers — follows the header range filter */}
+      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#EEF0F5' }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.overview.topSellers')}</Text>
+          <Text style={{ fontSize: 10, color: '#8A8F9B' }}>{t('vendor.overview.topSellersCaption')}</Text>
+        </View>
+
+        {topSellers.length === 0 ? (
+          <Text style={{ fontSize: 12, color: '#8A8F9B', paddingVertical: 12 }}>{t('vendor.overview.noSalesRange')}</Text>
+        ) : (
+          <View style={{ gap: 12 }}>
+            {topSellers.map((s, i) => (
+              <View key={s.menuItemId} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Text style={{ width: 18, fontSize: 13, fontWeight: '800', color: i === 0 ? Brand.vendorAccent : '#B0B4BF' }}>{i + 1}</Text>
+                <View style={{ flex: 1, gap: 5 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                    <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>
+                      {localizedText(s.name, s.nameTh, locale)}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#8A8F9B' }}>
+                      {t('vendor.overview.unitsSold', { n: s.units })} · ฿{s.revenue.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={{ height: 6, borderRadius: 3, backgroundColor: '#F0F1F5', overflow: 'hidden' }}>
+                    <View style={{ width: `${(s.units / maxUnits) * 100}%`, height: '100%', backgroundColor: Brand.vendorAccent, borderRadius: 3 }} />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {slowMovers.length > 0 && (
+          <View style={{ marginTop: 18, borderTopWidth: 1, borderTopColor: '#EEF0F5', paddingTop: 14, gap: 6 }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#8A8F9B', letterSpacing: 0.5 }}>{t('vendor.overview.slowMovers')}</Text>
+            <Text style={{ fontSize: 10.5, color: '#B0B4BF' }}>{t('vendor.overview.slowMoverHint')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+              {slowMovers.map(m => (
+                <View key={m.id} style={{ backgroundColor: '#F6F7F9', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                  <Text style={{ fontSize: 11, color: '#6B7280' }} numberOfLines={1}>{localizedText(m.name, m.name_th, locale)}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
       </View>
     </View>
   );
