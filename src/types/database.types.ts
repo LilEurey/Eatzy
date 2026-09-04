@@ -867,6 +867,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_order_and_charge: { Args: { p_order_id: string }; Returns: string }
       auto_finalize_stale_handoffs: { Args: never; Returns: undefined }
       bootstrap_admin: { Args: { p_user_id: string }; Returns: undefined }
       finalize_order_handoff: {
@@ -889,10 +890,6 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       next_queue_number: { Args: { p_vendor_id: string }; Returns: number }
-      place_order_escrow: {
-        Args: { p_amount: number; p_order_id: string; p_user_id: string }
-        Returns: undefined
-      }
       provision_vendor: {
         Args: {
           p_business_name: string
