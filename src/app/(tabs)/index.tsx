@@ -270,6 +270,9 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let channel: ReturnType<typeof supabase.channel> | undefined;
+      let cancelled = false;
+
       supabase.auth.getUser().then(async ({ data: { user } }) => {
         if (!user) { setHasUnreadNotifications(false); return; }
 
@@ -280,10 +283,27 @@ export default function HomeScreen() {
           supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle(),
           supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
         ]);
+        if (cancelled) return;
         if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
         setAvatarUrl(profileRes.data?.avatar_url ?? null);
         setHasUnreadNotifications(!!notifRes.count);
+
+        // The focus refetch above only catches a status change while this tab was
+        // backgrounded. If the student stays on home when the vendor updates the
+        // order, the notifications row inserts live — subscribe so the dot lights
+        // up without needing a tab-away-and-back, same pattern as notifications.tsx.
+        channel = supabase
+          .channel(`home-notifications-${user.id}`)
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
+            if (!cancelled) setHasUnreadNotifications(true);
+          })
+          .subscribe();
       });
+
+      return () => {
+        cancelled = true;
+        channel?.unsubscribe();
+      };
     }, [])
   );
 
