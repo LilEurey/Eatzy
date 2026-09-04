@@ -1,28 +1,23 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorOrders, useVendorProfile } from '@/lib/vendor-store';
+import { salesVelocity, busyGrid } from '@/lib/vendor-analytics';
 import { comingSoonAlert } from '@/lib/alert';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
 
-// Decorative — illustrative hourly sales shape, not backed by real interaction data.
-const SALES_VELOCITY = [
-  { label: '10AM', value: 30 }, { label: '11AM', value: 45 }, { label: '12PM', value: 90, highlight: 'accent' as const },
-  { label: '1PM', value: 55 }, { label: '2PM', value: 35 }, { label: '3PM', value: 65 },
-  { label: '4PM', value: 50 }, { label: '5PM', value: 95, highlight: 'orange' as const },
-  { label: '6PM', value: 60 }, { label: '7PM', value: 70 },
-];
+// 0 = Monday … 6 = Sunday, matching lib/time bangkokWeekday / vendor-analytics.
+const DOW = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 
-// Decorative — illustrative traffic intensity grid, not backed by real interaction data.
-const HEATMAP_ROWS = [
-  [0.2, 0.25, 0.55, 0.9, 0.75, 0.3],
-  [0.15, 0.2, 0.35, 0.85, 0.8, 0.4],
-  [0.05, 0.15, 0.3, 0.5, 0.55, 0.35],
-];
+// "09:00:00" / "9:00" -> 9; anything unparseable -> fallback.
+function parseHour(value: string | null, fallback: number): number {
+  const h = Number(String(value ?? '').split(':')[0]);
+  return Number.isFinite(h) && h >= 0 && h <= 23 ? h : fallback;
+}
 
 function StatCard({ label, value, delta, sub, icon }: { label: string; value: string; delta?: string; sub?: string; icon: React.ComponentProps<typeof Ionicons>['name'] }) {
   return (
@@ -70,6 +65,21 @@ export default function VendorOverviewScreen() {
   const avgPrep = vendor?.estimated_wait_min ?? 0;
   const rangeSub = range === 'today' ? t('vendor.overview.vsYesterday') : rangeOptions.find(o => o.key === range)!.label;
 
+  // Sales Velocity bars follow the header range: hourly for today/yesterday
+  // (clamped to the stall's open window), one bar per day for week/month.
+  const openHour = parseHour(vendor?.open_time ?? null, 9);
+  const closeHour = parseHour(vendor?.close_time ?? null, 20);
+  const hourly = range === 'today' || range === 'yesterday';
+  const bars = useMemo(
+    () => salesVelocity(orders, range, openHour, closeHour),
+    [orders, range, openHour, closeHour],
+  );
+  const maxBar = Math.max(0, ...bars.map(b => b.value));
+  const hasSales = maxBar > 0;
+  // The heatmap needs a wide window to be meaningful, so it ignores the
+  // header range and always looks at the last 4 weeks.
+  const grid = useMemo(() => busyGrid(orders), [orders]);
+
   const comingSoon = () => comingSoonAlert(t);
 
   return (
@@ -115,44 +125,61 @@ export default function VendorOverviewScreen() {
         <StatCard label={t('vendor.overview.avgPrepTime')} value={`${avgPrep}m`} icon="time-outline" />
       </View>
 
-      {/* Sales velocity + heatmap */}
+      {/* Sales velocity + busy-times heatmap */}
       <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap' }}>
         <View style={{ flex: 2, minWidth: 320, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#EEF0F5' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.overview.salesVelocity')}</Text>
-            <Tap onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.overview.today')}</Text>
-              <Ionicons name="chevron-down" size={11} color="#8A8F9B" />
-            </Tap>
+            <View style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: '#8A8F9B' }}>
+                {t(hourly ? 'vendor.overview.salesPerHour' : 'vendor.overview.salesPerDay')}
+              </Text>
+            </View>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 140 }}>
-            {SALES_VELOCITY.map(bar => (
-              <View key={bar.label} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-                <View style={{
-                  width: '100%', height: `${bar.value}%`, borderRadius: 6,
-                  backgroundColor: bar.highlight === 'accent' ? Brand.vendorAccent : bar.highlight === 'orange' ? Brand.orange : '#EEF0F5',
-                }} />
-                <Text style={{ fontSize: 9, color: '#8A8F9B' }}>{bar.label}</Text>
-              </View>
-            ))}
-          </View>
+          {hasSales ? (
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: bars.length > 12 ? 3 : 8, height: 140 }}>
+              {bars.map((bar, i) => {
+                const showLabel = bars.length <= 12 || i % 5 === 0 || i === bars.length - 1;
+                return (
+                  <View key={i} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+                    <View style={{
+                      width: '100%',
+                      height: `${(bar.value / maxBar) * 100}%`,
+                      minHeight: bar.value > 0 ? 4 : 0,
+                      borderRadius: 6,
+                      backgroundColor: bar.value === maxBar ? Brand.vendorAccent : bar.isNow ? Brand.orange : '#EEF0F5',
+                    }} />
+                    <Text style={{ fontSize: 9, color: '#8A8F9B' }}>{showLabel ? bar.label : ''}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <View style={{ height: 140, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 12, color: '#8A8F9B' }}>{t('vendor.overview.noSalesRange')}</Text>
+            </View>
+          )}
         </View>
 
         <View style={{ flex: 1, minWidth: 220, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#EEF0F5' }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, marginBottom: 16 }}>{t('vendor.overview.trafficHeatmap')}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.overview.trafficHeatmap')}</Text>
+            <Text style={{ fontSize: 10, color: '#8A8F9B' }}>{t('vendor.overview.busyTimesCaption')}</Text>
+          </View>
           <View style={{ gap: 6 }}>
-            {HEATMAP_ROWS.map((row, i) => (
-              <View key={i} style={{ flexDirection: 'row', gap: 6 }}>
-                {row.map((intensity, j) => (
+            {grid.rows.map((row, i) => (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={{ width: 26, fontSize: 9, color: '#8A8F9B' }}>{t(`vendor.overview.dow.${DOW[i]}` as TranslationKey)}</Text>
+                {row.map((count, j) => (
                   <View key={j} style={{
-                    flex: 1, aspectRatio: 1.4, borderRadius: 6,
-                    backgroundColor: `rgba(108,99,255,${intensity})`,
+                    flex: 1, aspectRatio: 2.2, borderRadius: 6,
+                    backgroundColor: `rgba(108,99,255,${grid.max ? 0.08 + 0.92 * (count / grid.max) : 0.08})`,
                   }} />
                 ))}
               </View>
             ))}
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, marginLeft: 32 }}>
             <Text style={{ fontSize: 10, color: '#8A8F9B' }}>{t('vendor.overview.morning')}</Text>
             <Text style={{ fontSize: 10, color: '#8A8F9B' }}>{t('vendor.overview.lunch')}</Text>
             <Text style={{ fontSize: 10, color: '#8A8F9B' }}>{t('vendor.overview.evening')}</Text>

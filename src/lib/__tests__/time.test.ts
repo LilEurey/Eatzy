@@ -3,6 +3,8 @@ import {
   nextPickupSlots,
   isBangkokDateInRange,
   isBangkokToday,
+  bangkokHour,
+  bangkokWeekday,
 } from '@/lib/time';
 
 // A fixed instant: 2026-06-15T04:00:00Z == 11:00 in Bangkok (UTC+7, no DST).
@@ -43,6 +45,23 @@ describe('nextPickupSlots', () => {
     const slots = nextPickupSlots(3, 15, 15);
     expect(slots[1].start.getTime() - slots[0].start.getTime()).toBe(15 * 60 * 1000);
     expect(slots[0].end.getTime() - slots[0].start.getTime()).toBe(15 * 60 * 1000);
+  });
+});
+
+describe('bangkokHour / bangkokWeekday', () => {
+  it('bangkokHour returns the 0–23 hour in Thailand time', () => {
+    expect(bangkokHour(new Date('2026-06-15T04:00:00Z'))).toBe(11);
+    expect(bangkokHour(new Date('2026-06-14T18:00:00Z'))).toBe(1); // next Bangkok day
+  });
+
+  it('bangkokWeekday returns 0=Mon … 6=Sun in Thailand time', () => {
+    expect(bangkokWeekday(new Date('2026-06-15T05:00:00Z'))).toBe(0); // Monday
+    expect(bangkokWeekday(new Date('2026-06-14T05:00:00Z'))).toBe(6); // Sunday
+  });
+
+  it('bangkokWeekday rolls to the Bangkok day, not the device day', () => {
+    // 2026-06-14T18:00Z is still Sunday in UTC but 01:00 Monday in Bangkok.
+    expect(bangkokWeekday(new Date('2026-06-14T18:00:00Z'))).toBe(0);
   });
 });
 

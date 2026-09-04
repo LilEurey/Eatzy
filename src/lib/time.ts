@@ -5,9 +5,18 @@
 
 export const BANGKOK_TZ = 'Asia/Bangkok';
 
-function bangkokHour(date: Date): number {
+export function bangkokHour(date: Date): number {
   const parts = new Intl.DateTimeFormat('en-US', { timeZone: BANGKOK_TZ, hour: 'numeric', hourCycle: 'h23' }).formatToParts(date);
   return Number(parts.find(p => p.type === 'hour')!.value);
+}
+
+const WEEKDAY_INDEX: Record<string, number> = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+
+// 0 = Monday … 6 = Sunday, in Thailand local time regardless of the device's
+// own timezone (near midnight the device's weekday can differ from Bangkok's).
+export function bangkokWeekday(date: Date): number {
+  const short = new Intl.DateTimeFormat('en-US', { timeZone: BANGKOK_TZ, weekday: 'short' }).format(date);
+  return WEEKDAY_INDEX[short];
 }
 
 export type MealSegment = 'breakfast' | 'lunch' | 'dinner';
@@ -44,7 +53,7 @@ export function formatFriendlyDateTime(iso: string | null, todayLabel: string) {
 }
 
 // en-CA formats as YYYY-MM-DD, giving a string that sorts/compares like a date.
-function bangkokDayKey(d: Date) {
+export function bangkokDayKey(d: Date) {
   return d.toLocaleDateString('en-CA', { timeZone: BANGKOK_TZ });
 }
 
