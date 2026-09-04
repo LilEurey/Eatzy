@@ -242,6 +242,12 @@ export const en = {
   'track.stepReadyHint': 'Come pick it up at the stall',
   'track.stepPickedUpLabel': 'Picked up',
   'track.stepPickedUpHint': 'Enjoy your meal!',
+  'track.cancelOrder': 'Cancel Order',
+  'track.cancelConfirmTitle': 'Cancel this order?',
+  'track.cancelConfirmMsg': "You haven't been charged yet — cancelling now is free.",
+  'track.cancelConfirmAction': 'Cancel Order',
+  'track.cancelFailedTitle': "Can't cancel now",
+  'track.cancelFailedMsg': 'The vendor already started on this order.',
 
   // Rate
   'rate.title': 'Rate Order',

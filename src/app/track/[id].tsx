@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { showAlert } from '@/lib/alert';
+import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
@@ -78,6 +78,33 @@ export default function TrackScreen() {
     const { error } = await supabase.rpc('student_confirm_pickup', { p_order_id: order.id });
     if (error) { showAlert(t('common.orderNotFound'), error.message); return; }
     setOrder({ ...order, student_picked_up_at: new Date().toISOString() });
+  }
+
+  async function cancelOrder() {
+    if (!order) return;
+    showConfirm(
+      t('track.cancelConfirmTitle'),
+      t('track.cancelConfirmMsg'),
+      async () => {
+        // .eq('status', 'pending') is the race guard: if the vendor
+        // accepted between this screen's last render and this tap, the
+        // update matches zero rows instead of silently cancelling an
+        // order the vendor already committed to.
+        const { data, error } = await supabase
+          .from('orders')
+          .update({ status: 'cancelled' })
+          .eq('id', order.id)
+          .eq('status', 'pending')
+          .select('id');
+        if (error) { showAlert(t('common.orderNotFound'), error.message); return; }
+        if (!data || data.length === 0) {
+          showAlert(t('track.cancelFailedTitle'), t('track.cancelFailedMsg'));
+          return;
+        }
+        router.replace('/(tabs)/orders');
+      },
+      { confirmLabel: t('track.cancelConfirmAction'), cancelLabel: t('common.cancel'), destructive: true },
+    );
   }
 
   if (order === undefined) {
@@ -213,6 +240,22 @@ export default function TrackScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {status === 'pending' && (
+        <View style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          backgroundColor: Brand.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 36,
+          borderTopWidth: 1, borderTopColor: Brand.border,
+        }}>
+          <Tap
+            activeOpacity={0.85}
+            onPress={cancelOrder}
+            style={{ backgroundColor: '#FEE2E2', borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
+          >
+            <Text style={{ color: '#dc2626', fontSize: 16, fontWeight: '700' }}>{t('track.cancelOrder')}</Text>
+          </Tap>
+        </View>
+      )}
 
       {/* Sticky action when ready */}
       {isReady && (

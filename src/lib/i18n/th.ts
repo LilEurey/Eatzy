@@ -244,6 +244,12 @@ export const th: Record<TranslationKey, string> = {
   'track.stepReadyHint': 'มารับอาหารได้ที่ร้านเลย',
   'track.stepPickedUpLabel': 'รับอาหารแล้ว',
   'track.stepPickedUpHint': 'ทานให้อร่อยนะ!',
+  'track.cancelOrder': 'ยกเลิกคำสั่งซื้อ',
+  'track.cancelConfirmTitle': 'ยกเลิกคำสั่งซื้อนี้หรือไม่?',
+  'track.cancelConfirmMsg': 'คุณยังไม่ถูกเรียกเก็บเงิน ยกเลิกตอนนี้ได้ฟรี',
+  'track.cancelConfirmAction': 'ยกเลิกคำสั่งซื้อ',
+  'track.cancelFailedTitle': 'ยกเลิกไม่ได้แล้ว',
+  'track.cancelFailedMsg': 'ร้านค้าเริ่มดำเนินการคำสั่งซื้อนี้แล้ว',
 
   // Rate
   'rate.title': 'ให้คะแนนคำสั่งซื้อ',
