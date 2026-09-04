@@ -57,6 +57,7 @@ export default function VendorOverviewScreen() {
   const menu = useVendorMenu();
   const vendor = useVendorProfile();
   const [range, setRange] = useState<DateRangeFilter>('today');
+  const [expandedSellers, setExpandedSellers] = useState<Set<string>>(new Set());
 
   const rangeOptions: { key: DateRangeFilter; label: string }[] = [
     { key: 'today', label: t('common.today') },
@@ -229,9 +230,24 @@ export default function VendorOverviewScreen() {
                 <Text style={{ width: 18, fontSize: 13, fontWeight: '800', color: i === 0 ? Brand.vendorAccent : '#B0B4BF' }}>{i + 1}</Text>
                 <View style={{ flex: 1, gap: 5 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                    <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>
-                      {localizedText(s.name, s.nameTh, locale)}
-                    </Text>
+                    <Tap
+                      style={{ flex: 1 }}
+                      onPress={() =>
+                        setExpandedSellers(prev => {
+                          const next = new Set(prev);
+                          if (next.has(s.menuItemId)) next.delete(s.menuItemId);
+                          else next.add(s.menuItemId);
+                          return next;
+                        })
+                      }
+                    >
+                      <Text
+                        style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}
+                        numberOfLines={expandedSellers.has(s.menuItemId) ? undefined : 1}
+                      >
+                        {localizedText(s.name, s.nameTh, locale)}
+                      </Text>
+                    </Tap>
                     <Text style={{ fontSize: 12, color: '#8A8F9B' }}>
                       {t('vendor.overview.unitsSold', { n: s.units })} · ฿{s.revenue.toLocaleString()}
                     </Text>
