@@ -306,7 +306,7 @@ export const en = {
   'notif.orderReady.title': 'Order ready for pickup!',
   'notif.orderReady.body': '{vendor} · Queue #{queue}',
   'notif.orderRejected.title': 'Order rejected',
-  'notif.orderRejected.body': "{vendor} couldn't accept your order — refund processing",
+  'notif.orderRejected.body': "{vendor} couldn't accept your order.",
   'notif.orderCompleted.title': 'Order picked up',
   'notif.orderCompleted.body': 'Enjoy your meal from {vendor}!',
   'notif.vendorNewOrder.title': 'New order!',

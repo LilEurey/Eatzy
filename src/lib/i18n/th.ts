@@ -308,7 +308,7 @@ export const th: Record<TranslationKey, string> = {
   'notif.orderReady.title': 'ออเดอร์พร้อมรับแล้ว!',
   'notif.orderReady.body': '{vendor} · คิว #{queue}',
   'notif.orderRejected.title': 'ออเดอร์ถูกปฏิเสธ',
-  'notif.orderRejected.body': '{vendor} ไม่สามารถรับออเดอร์ได้ — กำลังดำเนินการคืนเงิน',
+  'notif.orderRejected.body': '{vendor} ไม่สามารถรับออเดอร์ได้',
   'notif.orderCompleted.title': 'รับออเดอร์เรียบร้อยแล้ว',
   'notif.orderCompleted.body': 'ขอให้อร่อยกับมื้ออาหารจาก {vendor}!',
   'notif.vendorNewOrder.title': 'มีออเดอร์ใหม่!',
