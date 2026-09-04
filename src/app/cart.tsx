@@ -135,24 +135,20 @@ export default function CartScreen() {
         }
       }
 
-      const { error: escrowError } = await supabase
-        .rpc('place_order_escrow', { p_user_id: user.id, p_order_id: order.id, p_amount: total });
-      if (escrowError) throw escrowError;
-
       clearCart();
       router.replace(`/track/${order.id}`);
     } catch (e: any) {
-      // Don't strand a pending order when checkout fails after the row was
-      // inserted (rule violation / low balance). Best-effort; RLS lets a
-      // student delete their own not-yet-paid order.
+      // Don't strand a pending order when order_items/addons insertion
+      // fails after the orders row itself was created. Best-effort; RLS
+      // lets a student delete their own not-yet-paid order. Wallet
+      // deduction no longer happens here (see accept_order_and_charge —
+      // it now fires when the vendor accepts), so the two failure modes
+      // that used to need special-casing here (insufficient_wallet_balance,
+      // addon_rule_violation) can no longer occur at this step.
       if (orderId) await supabase.from('orders').delete().eq('id', orderId);
-      const message = e.message === 'insufficient_wallet_balance'
-        ? t('cart.insufficientBalanceMsg')
-        : e.message === 'addon_rule_violation'
-          ? t('cart.addonRuleMsg')
-          : e.message === 'vendor_closed'
-            ? t('cart.storeClosedMsg')
-            : `${e.message}${e.code ? ` [${e.code}]` : ''}${e.details ? `\n${e.details}` : ''}${e.hint ? `\n${e.hint}` : ''}`;
+      const message = e.message === 'vendor_closed'
+        ? t('cart.storeClosedMsg')
+        : `${e.message}${e.code ? ` [${e.code}]` : ''}${e.details ? `\n${e.details}` : ''}${e.hint ? `\n${e.hint}` : ''}`;
       showAlert(t('cart.orderFailedTitle'), message);
     } finally {
       setPlacing(false);

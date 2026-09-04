@@ -249,17 +249,33 @@ export async function signOutVendor() {
 // ─── Orders ─────────────────────────────────────────────────────────────────
 
 export async function acceptOrder(id: string) {
-  const { error } = await supabase.from('orders').update({ status: 'accepted' }).eq('id', id);
+  // Charging the student now happens inside this RPC, at the moment the
+  // vendor accepts — not at order placement. See accept_order_and_charge
+  // in 20260904010000_charge_on_vendor_accept.sql.
+  const { data, error } = await supabase.rpc('accept_order_and_charge', { p_order_id: id });
   if (error) { showAlert('Could not accept order', error.message); return; }
+  if (data === 'insufficient_balance') {
+    showAlert('Order auto-rejected', "Customer's balance changed and is no longer enough to cover this order.");
+  }
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
 
 export async function rejectOrder(id: string) {
-  const { error } = await supabase.from('orders').update({ status: 'rejected' }).eq('id', id);
+  // Reject only ever happens pre-accept — nothing was charged yet, so
+  // there's nothing to refund. Guard on status='pending' so a race with
+  // an accept that just landed (or a stale second device) can't flip an
+  // already-charged order to 'rejected' with no way to unwind the debit.
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ status: 'rejected' })
+    .eq('id', id)
+    .eq('status', 'pending')
+    .select('id');
   if (error) { showAlert('Could not reject order', error.message); return; }
-  const { error: refundError } = await supabase.rpc('refund_escrow', { p_order_id: id });
-  if (refundError) showAlert('Order rejected, but refund failed', refundError.message);
+  if (!data || data.length === 0) {
+    showAlert('Could not reject order', 'This order is no longer pending.');
+  }
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
