@@ -1,8 +1,8 @@
-jest.mock('@/lib/alert', () => ({ showAlert: jest.fn() }));
-
 import { __setNextRpcResult, __setNextResult, __getRpcCalls, __resetMock } from './__mocks__/supabase';
 import { acceptOrder, rejectOrder } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
+
+jest.mock('@/lib/alert', () => ({ showAlert: jest.fn() }));
 
 describe('acceptOrder', () => {
   beforeEach(() => {
@@ -16,6 +16,7 @@ describe('acceptOrder', () => {
     await acceptOrder('order-1');
 
     expect(showAlert).not.toHaveBeenCalled();
+    expect(__getRpcCalls()).toEqual([{ name: 'accept_order_and_charge', args: { p_order_id: 'order-1' } }]);
   });
 
   it('alerts the vendor when the RPC auto-rejects for insufficient balance', async () => {
@@ -51,5 +52,13 @@ describe('rejectOrder', () => {
 
     expect(showAlert).not.toHaveBeenCalled();
     expect(__getRpcCalls()).toEqual([]);
+  });
+
+  it('alerts when the order is no longer pending (race with a just-landed accept)', async () => {
+    __setNextResult({ data: [], error: null });
+
+    await rejectOrder('order-1');
+
+    expect(showAlert).toHaveBeenCalledWith('Could not reject order', 'This order is no longer pending.');
   });
 });

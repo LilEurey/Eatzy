@@ -262,11 +262,20 @@ export async function acceptOrder(id: string) {
 }
 
 export async function rejectOrder(id: string) {
-  // Reject only ever happens pre-accept (see the "incoming" column in
-  // (vendor)/orders.tsx) — nothing was charged yet, so there's nothing to
-  // refund here anymore.
-  const { error } = await supabase.from('orders').update({ status: 'rejected' }).eq('id', id);
+  // Reject only ever happens pre-accept — nothing was charged yet, so
+  // there's nothing to refund. Guard on status='pending' so a race with
+  // an accept that just landed (or a stale second device) can't flip an
+  // already-charged order to 'rejected' with no way to unwind the debit.
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ status: 'rejected' })
+    .eq('id', id)
+    .eq('status', 'pending')
+    .select('id');
   if (error) { showAlert('Could not reject order', error.message); return; }
+  if (!data || data.length === 0) {
+    showAlert('Could not reject order', 'This order is no longer pending.');
+  }
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
