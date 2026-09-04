@@ -56,9 +56,23 @@ export default function OrdersScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let channel: ReturnType<typeof supabase.channel> | undefined;
+
       async function load() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { if (!cancelledRef.current) setLoading(false); return; }
+
+        // Live-update the list while it's focused — vendor status changes
+        // otherwise only showed on tab refocus. (orders is in the
+        // supabase_realtime publication as of 20260904000000.)
+        if (!channel) {
+          channel = supabase
+            .channel(`student-orders-${user.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, () => {
+              void load();
+            })
+            .subscribe();
+        }
 
         const { data } = await supabase
           .from('orders')
@@ -85,6 +99,7 @@ export default function OrdersScreen() {
         setLoading(false);
       }
       void load();
+      return () => { void channel?.unsubscribe(); };
     }, [cancelledRef])
   );
 
