@@ -343,6 +343,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.notifications.title': 'การแจ้งเตือน',
   'vendor.notifications.empty': 'ยังไม่มีการแจ้งเตือน',
   'vendor.notifications.backCaption': 'ย้อนกลับ',
+  'vendor.notifications.new': 'ใหม่',
 
   // Vendor — overview
   'vendor.overview.title': 'ภาพรวมแดชบอร์ด',

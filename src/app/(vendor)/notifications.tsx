@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
@@ -12,6 +12,15 @@ import { timeAgo } from '@/lib/relative-time';
 export default function VendorNotificationsScreen() {
   const { t } = useI18n();
   const notifications = useVendorNotifications();
+
+  // Snapshot which ids were unread at the moment the screen opened, so the
+  // "new" marker stays visible for this viewing even after markNotificationsRead()
+  // flips the underlying store's `read` flag (which happens almost immediately —
+  // otherwise every notification reads as already-seen before the vendor can look).
+  const unreadAtOpenRef = useRef<Set<string> | null>(null);
+  if (unreadAtOpenRef.current === null) {
+    unreadAtOpenRef.current = new Set(notifications.filter(n => !n.read).map(n => n.id));
+  }
 
   useEffect(() => { void markNotificationsRead(); }, []);
 
@@ -34,15 +43,17 @@ export default function VendorNotificationsScreen() {
         <View style={{ gap: 10, maxWidth: 480 }}>
           {notifications.map(n => {
             const { title, body } = notificationText(n, t);
+            const isNew = unreadAtOpenRef.current!.has(n.id);
             return (
               <Tap
                 key={n.id}
                 onPress={() => router.push('/(vendor)/orders' as any)}
                 style={{
                   flexDirection: 'row', gap: 12,
-                  backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14,
-                  borderLeftWidth: n.read ? 1 : 3,
-                  borderLeftColor: n.read ? '#EEF0F5' : Brand.orange,
+                  backgroundColor: isNew ? Brand.vendorAccentLight + '33' : '#fff',
+                  borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14,
+                  borderLeftWidth: isNew ? 3 : 1,
+                  borderLeftColor: isNew ? Brand.orange : '#EEF0F5',
                 }}
               >
                 <View style={{
@@ -54,7 +65,11 @@ export default function VendorNotificationsScreen() {
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{title}</Text>
-                    {!n.read && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.orange }} />}
+                    {isNew && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Brand.orange, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{t('vendor.notifications.new')}</Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={{ fontSize: 13, color: '#4B4F58', marginTop: 2 }}>{body}</Text>
                   <Text style={{ fontSize: 11, color: '#8A8F9B', marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>

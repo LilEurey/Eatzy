@@ -341,6 +341,7 @@ export const en = {
   'vendor.notifications.title': 'Notifications',
   'vendor.notifications.empty': 'No notifications yet',
   'vendor.notifications.backCaption': 'Back',
+  'vendor.notifications.new': 'NEW',
 
   // Vendor — overview
   'vendor.overview.title': 'Dashboard Overview',
