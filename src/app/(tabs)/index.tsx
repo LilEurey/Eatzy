@@ -392,63 +392,6 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* No Queue Right Now — open vendors under the same "no queue"
-            threshold queueStatus() uses for the banner above; a real
-            section instead of just Store Options' sort order. */}
-        <View style={{ marginBottom: 28 }}>
-          <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
-            {t('home.noQueueRightNow')}
-          </Text>
-          {noQueueVendors.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-              {noQueueVendors.map(vendor => (
-                <Tap
-                  key={vendor.id}
-                  onPress={() => router.push(`/store/${vendor.id}`)}
-                  activeOpacity={0.85}
-                  style={{
-                    width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
-                  }}
-                >
-                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-                    {vendor.cover_image_url
-                      ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                      : <Text style={{ fontSize: 36 }}>🏪</Text>
-                    }
-                    <View style={{
-                      position: 'absolute', top: 8, right: 8,
-                      backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 99,
-                      paddingHorizontal: 8, paddingVertical: 4,
-                      flexDirection: 'row', alignItems: 'center', gap: 3,
-                    }}>
-                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('common.noQueue')}</Text>
-                    </View>
-                  </View>
-                  <View style={{ padding: 10 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={1}>
-                      {vendor.name}
-                    </Text>
-                    <Text style={{ fontSize: 11, color: '#5a4136' }} numberOfLines={1}>
-                      {vendor.estimated_wait_min ?? 5}–{(vendor.estimated_wait_min ?? 5) + 3} min
-                    </Text>
-                  </View>
-                </Tap>
-              ))}
-            </ScrollView>
-          ) : (
-            <View style={{
-              borderRadius: 24, backgroundColor: Brand.card, height: 120,
-              alignItems: 'center', justifyContent: 'center',
-              shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
-            }}>
-              <Text style={{ color: Brand.textSecondary }}>{t('home.noQueueEmpty')}</Text>
-            </View>
-          )}
-        </View>
-
         {/* Promoted Foods — sponsored items (is_featured), not personalized */}
         <View style={{ marginBottom: 28 }}>
           <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
@@ -589,6 +532,64 @@ export default function HomeScreen() {
               shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
             }}>
               <Text style={{ color: Brand.textSecondary }}>{t('home.noTrending')}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* No Queue Right Now — open vendors under the same "no queue"
+            threshold queueStatus() uses for the banner above; a real
+            section instead of just Store Options' sort order. Sits below
+            Promoted — paid placement ranks above organic queue picks. */}
+        <View style={{ marginBottom: 28 }}>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+            {t('home.noQueueRightNow')}
+          </Text>
+          {noQueueVendors.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {noQueueVendors.map(vendor => (
+                <Tap
+                  key={vendor.id}
+                  onPress={() => router.push(`/store/${vendor.id}`)}
+                  activeOpacity={0.85}
+                  style={{
+                    width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                  }}
+                >
+                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                    {vendor.cover_image_url
+                      ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      : <Text style={{ fontSize: 36 }}>🏪</Text>
+                    }
+                    <View style={{
+                      position: 'absolute', top: 8, right: 8,
+                      backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 99,
+                      paddingHorizontal: 8, paddingVertical: 4,
+                      flexDirection: 'row', alignItems: 'center', gap: 3,
+                    }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('common.noQueue')}</Text>
+                    </View>
+                  </View>
+                  <View style={{ padding: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={1}>
+                      {vendor.name}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#5a4136' }} numberOfLines={1}>
+                      {vendor.estimated_wait_min ?? 5}–{(vendor.estimated_wait_min ?? 5) + 3} min
+                    </Text>
+                  </View>
+                </Tap>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={{
+              borderRadius: 24, backgroundColor: Brand.card, height: 120,
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
+            }}>
+              <Text style={{ color: Brand.textSecondary }}>{t('home.noQueueEmpty')}</Text>
             </View>
           )}
         </View>
