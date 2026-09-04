@@ -13,13 +13,14 @@ import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
 import { showAlert } from '@/lib/alert';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-type NavLabelKey = 'vendor.nav.overview' | 'vendor.nav.orders' | 'vendor.nav.menu' | 'vendor.nav.finance';
+type NavLabelKey = 'vendor.nav.overview' | 'vendor.nav.orders' | 'vendor.nav.menu' | 'vendor.nav.reviews' | 'vendor.nav.finance';
 type NavItem = { href: string; match: string; icon: IoniconsName; labelKey: NavLabelKey };
 
 const NAV: NavItem[] = [
   { href: '/(vendor)/overview', match: '/overview', icon: 'grid-outline', labelKey: 'vendor.nav.overview' },
   { href: '/(vendor)/orders', match: '/orders', icon: 'cart-outline', labelKey: 'vendor.nav.orders' },
   { href: '/(vendor)/menu', match: '/menu', icon: 'cut-outline', labelKey: 'vendor.nav.menu' },
+  { href: '/(vendor)/reviews', match: '/reviews', icon: 'star-outline', labelKey: 'vendor.nav.reviews' },
   // Route path stays /analytics; the screen itself is finance content
   // (revenue, payment history, withdraw) — only the nav label changes.
   { href: '/(vendor)/analytics', match: '/analytics', icon: 'bar-chart-outline', labelKey: 'vendor.nav.finance' },
