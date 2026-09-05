@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
@@ -105,6 +105,9 @@ export default function VendorOverviewScreen() {
   );
   const maxBar = Math.max(0, ...bars.map(b => b.value));
   const hasSales = maxBar > 0;
+  const [selectedBarIndex, setSelectedBarIndex] = useState<number | null>(null);
+  useEffect(() => setSelectedBarIndex(null), [bars]);
+  const selectedBar = selectedBarIndex != null ? bars[selectedBarIndex] : null;
   // The heatmap needs a wide window to be meaningful, so it ignores the
   // header range and always looks at the last 4 weeks.
   const grid = useMemo(() => busyGrid(orders), [orders]);
@@ -159,27 +162,46 @@ export default function VendorOverviewScreen() {
         <View style={{ flex: 2, minWidth: 320, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#EEF0F5' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.overview.salesVelocity')}</Text>
-            <View style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <Text style={{ fontSize: 11, fontWeight: '600', color: '#8A8F9B' }}>
-                {t(hourly ? 'vendor.overview.salesPerHour' : 'vendor.overview.salesPerDay')}
-              </Text>
-            </View>
+            {selectedBar ? (
+              <View style={{ backgroundColor: Brand.vendorAccentLight, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.vendorAccent }}>
+                  {selectedBar.label} · ฿{selectedBar.value.toLocaleString()}
+                </Text>
+              </View>
+            ) : (
+              <View style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Text style={{ fontSize: 11, fontWeight: '600', color: '#8A8F9B' }}>
+                  {t(hourly ? 'vendor.overview.salesPerHour' : 'vendor.overview.salesPerDay')}
+                </Text>
+              </View>
+            )}
           </View>
           {hasSales ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: bars.length > 12 ? 3 : 8, height: 140 }}>
               {bars.map((bar, i) => {
                 const showLabel = bars.length <= 12 || i % 5 === 0 || i === bars.length - 1;
+                const selected = i === selectedBarIndex;
                 return (
-                  <View key={i} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+                  <Tap
+                    key={i}
+                    haptic={false}
+                    onPress={() => setSelectedBarIndex(prev => (prev === i ? null : i))}
+                    style={{ flex: 1, alignItems: 'center', gap: 6 }}
+                  >
                     <View style={{
                       width: '100%',
                       height: `${(bar.value / maxBar) * 100}%`,
                       minHeight: bar.value > 0 ? 4 : 0,
                       borderRadius: 6,
+                      borderWidth: selected ? 2 : 0,
+                      borderColor: '#fff',
                       backgroundColor: bar.value === maxBar ? Brand.vendorAccent : bar.isNow ? Brand.orange : '#EEF0F5',
+                      opacity: selectedBarIndex != null && !selected ? 0.5 : 1,
                     }} />
-                    <Text style={{ fontSize: 9, color: '#8A8F9B' }}>{showLabel ? bar.label : ''}</Text>
-                  </View>
+                    <Text style={{ fontSize: 9, fontWeight: selected ? '700' : '400', color: selected ? Brand.textPrimary : '#8A8F9B' }}>
+                      {showLabel || selected ? bar.label : ''}
+                    </Text>
+                  </Tap>
                 );
               })}
             </View>
