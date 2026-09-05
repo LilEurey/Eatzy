@@ -20,6 +20,13 @@ function fulfilled(orders: AnalyticsOrder[]): AnalyticsOrder[] {
   return orders.filter(o => !EXCLUDED.has(o.status));
 }
 
+// Money only actually lands in the vendor's wallet once both sides confirm
+// handoff (finalize_order_handoff) — pending/accepted/ready is still escrow,
+// not earned revenue.
+function earned(orders: AnalyticsOrder[]): AnalyticsOrder[] {
+  return orders.filter(o => o.status === 'completed');
+}
+
 // 0 → "12AM", 9 → "9AM", 12 → "12PM", 23 → "11PM".
 function hourLabel(hour: number): string {
   const h12 = ((hour + 11) % 12) + 1;
@@ -154,7 +161,7 @@ export function periodDelta(
   now: Date = new Date(),
 ): PeriodDelta {
   if (range === 'all') return null;
-  const rows = fulfilled(orders);
+  const rows = metric === 'revenue' ? earned(orders) : fulfilled(orders);
 
   let curr: AnalyticsOrder[];
   let prev: AnalyticsOrder[];

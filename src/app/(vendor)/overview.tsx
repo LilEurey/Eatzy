@@ -68,8 +68,10 @@ export default function VendorOverviewScreen() {
   const rangedOrders = orders.filter(o => isBangkokDateInRange(o.created_at, range));
 
   const totalOrders = rangedOrders.length;
+  // Money only actually lands in the vendor's wallet once both sides confirm
+  // handoff — accepted/ready orders are still held in student-side escrow.
   const revenueToday = rangedOrders
-    .filter(o => o.status !== 'rejected' && o.status !== 'cancelled')
+    .filter(o => o.status === 'completed')
     .reduce((sum, o) => sum + o.total_amount, 0);
   const activeQueue = orders.filter(o => o.status === 'pending' || o.status === 'accepted').length;
   const queueCapacity = 20;

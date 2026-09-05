@@ -393,8 +393,11 @@ type VendorPayment = {
 };
 
 export function getVendorPayments(): VendorPayment[] {
+  // Escrow is held on accept, but only lands in the vendor's wallet once
+  // both sides confirm handoff (finalize_order_handoff) — only 'completed'
+  // orders are real, received revenue.
   return orders
-    .filter(o => o.status === 'accepted' || o.status === 'ready' || o.status === 'completed')
+    .filter(o => o.status === 'completed')
     .map(o => ({
       order_id: o.id,
       display_id: `#${o.queue_number ?? o.id.slice(0, 8).toUpperCase()}`,
