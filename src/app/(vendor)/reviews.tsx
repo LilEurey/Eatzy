@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, Image, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +35,7 @@ export default function VendorReviewsScreen() {
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBest, setSortBest] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const itemName = useMemo(() => {
     const m = new Map<string, { name: string; name_th: string | null }>();
@@ -195,7 +196,9 @@ export default function VendorReviewsScreen() {
                   {r.photo_urls?.length > 0 && (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                       {r.photo_urls.map((url, i) => (
-                        <Image key={i} source={{ uri: url }} style={{ width: 72, height: 72, borderRadius: 8, backgroundColor: '#F0F1F5' }} />
+                        <Tap key={i} onPress={() => setPreviewUrl(url)}>
+                          <Image source={{ uri: url }} style={{ width: 72, height: 72, borderRadius: 8, backgroundColor: '#F0F1F5' }} />
+                        </Tap>
                       ))}
                     </ScrollView>
                   )}
@@ -205,6 +208,23 @@ export default function VendorReviewsScreen() {
           </View>
         </>
       )}
+
+      <Modal
+        visible={!!previewUrl}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewUrl(null)}
+      >
+        <Tap
+          activeOpacity={1}
+          onPress={() => setPreviewUrl(null)}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center', padding: 16 }}
+        >
+          {previewUrl && (
+            <Image source={{ uri: previewUrl }} style={{ width: '100%', height: '80%' }} resizeMode="contain" />
+          )}
+        </Tap>
+      </Modal>
     </View>
   );
 }
