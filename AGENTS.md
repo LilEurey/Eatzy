@@ -32,6 +32,8 @@ eas build --platform ios --profile preview   # EAS build (see eas.json: developm
 eas submit --platform ios --profile production
 ```
 
+> The store-location map (`react-native-maps`) needs a development build — run `npx expo run:ios` or an EAS `development` build, not Expo Go.
+
 ## Project Structure
 
 ```
