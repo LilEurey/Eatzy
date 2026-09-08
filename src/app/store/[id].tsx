@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Image, ActivityIndicator, Platform } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Tap } from '@/components/Tap';
 import { ReviewCard } from '@/components/ReviewCard';
+import StoreMiniMap from '@/components/StoreMiniMap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
-import { hasCoords, regionForCoords } from '@/lib/geo';
+import { hasCoords } from '@/lib/geo';
 import { localizedText } from '@/lib/localize';
 import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
 import type { Database } from '@/types/database.types';
@@ -247,24 +247,12 @@ export default function StoreDetailScreen() {
               <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, marginBottom: 10 }}>
                 {t('store.whereToFind')}
               </Text>
-              <View style={{ height: 160, borderRadius: 16, overflow: 'hidden' }}>
-                <MapView
-                  provider={PROVIDER_DEFAULT}
-                  style={{ flex: 1 }}
-                  pointerEvents="none"
-                  scrollEnabled={false}
-                  zoomEnabled={false}
-                  rotateEnabled={false}
-                  pitchEnabled={false}
-                  showsUserLocation={canShowUser}
-                  region={regionForCoords({ latitude: vendor.latitude, longitude: vendor.longitude })}
-                >
-                  <Marker
-                    coordinate={{ latitude: vendor.latitude, longitude: vendor.longitude }}
-                    title={vendor.name}
-                  />
-                </MapView>
-              </View>
+              <StoreMiniMap
+                latitude={vendor.latitude}
+                longitude={vendor.longitude}
+                title={vendor.name}
+                showUser={canShowUser}
+              />
               {vendor.stall_number ? (
                 <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 8 }}>
                   {t('store.stall', { n: vendor.stall_number })}

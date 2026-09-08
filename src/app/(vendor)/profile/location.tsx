@@ -1,13 +1,15 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, Platform } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import type MapView from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
+import StoreLocationPicker from '@/components/StoreLocationPicker';
 import { useVendorProfile, updateVendorProfile } from '@/lib/vendor-store';
 import { useI18n } from '@/lib/i18n';
+import { setScrollLocked } from '@/lib/scroll-lock';
 import { KMUTT_REGION, regionForCoords, hasCoords, type LatLng } from '@/lib/geo';
 
 export default function VendorStoreLocationScreen() {
@@ -21,6 +23,10 @@ export default function VendorStoreLocationScreen() {
   const [saving, setSaving] = useState(false);
   const mapRef = useRef<MapView>(null);
 
+  // Belt-and-braces: if the screen unmounts mid-drag, don't leave the parent
+  // layout ScrollView frozen.
+  useEffect(() => () => setScrollLocked(false), []);
+
   // react-native-maps has no web implementation — never mount MapView on web.
   if (Platform.OS === 'web') {
     return (
@@ -31,16 +37,24 @@ export default function VendorStoreLocationScreen() {
   }
 
   async function useMyLocation() {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
+    // getCurrentPositionAsync / requestForegroundPermissions can reject on
+    // Location-Services-off (system-wide, distinct from a denied permission),
+    // a GPS timeout indoors, or a simulator with no location set. Fall back to
+    // the "tap the map to place your pin" guidance rather than a redbox.
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setPermDenied(true);
+        return;
+      }
+      setPermDenied(false);
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const next: LatLng = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+      setPoint(next);
+      mapRef.current?.animateToRegion(regionForCoords(next), 400);
+    } catch {
       setPermDenied(true);
-      return;
     }
-    setPermDenied(false);
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    const next: LatLng = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-    setPoint(next);
-    mapRef.current?.animateToRegion(regionForCoords(next), 400);
   }
 
   async function onSave() {
@@ -65,19 +79,12 @@ export default function VendorStoreLocationScreen() {
 
       <Text style={{ fontSize: 13, color: '#4B4F58', maxWidth: 480 }}>{t('vendor.location.hint')}</Text>
 
-      <View style={{ height: 440, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#EEF0F5', maxWidth: 480 }}>
-        <MapView
-          ref={mapRef}
-          provider={PROVIDER_DEFAULT}
-          style={{ flex: 1 }}
-          initialRegion={point ? regionForCoords(point) : KMUTT_REGION}
-          onPress={e => setPoint(e.nativeEvent.coordinate)}
-        >
-          {point && (
-            <Marker draggable coordinate={point} onDragEnd={e => setPoint(e.nativeEvent.coordinate)} />
-          )}
-        </MapView>
-      </View>
+      <StoreLocationPicker
+        point={point}
+        initialRegion={point ? regionForCoords(point) : KMUTT_REGION}
+        onPick={setPoint}
+        mapRef={mapRef}
+      />
 
       {permDenied && (
         <Text style={{ fontSize: 12, color: Brand.orange, maxWidth: 480 }}>{t('vendor.location.permDenied')}</Text>

@@ -94,6 +94,9 @@ function subscribe(cb: () => void) {
 }
 
 export function useVendorProfile() { return useSyncExternalStore(subscribe, () => vendorProfile, () => vendorProfile); }
+/** Test-only: read the mapped profile without a React renderer (the jest
+ * harness is pure-logic / node — no hooks). Not used by app code. */
+export function __getVendorProfileForTest() { return vendorProfile; }
 export function useVendorLoading() { return useSyncExternalStore(subscribe, () => loading, () => loading); }
 export function useVendorOrders() { return useSyncExternalStore(subscribe, () => orders, () => orders); }
 export function useVendorMenu() { return useSyncExternalStore(subscribe, () => menuItems, () => menuItems); }
@@ -203,11 +206,21 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
   const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle();
   if (profile?.role !== 'vendor') { loading = false; emit(); return 'not-vendor'; }
 
-  const { data: vendor } = await supabase
+  // select('*') (not a column list) so a not-yet-live column — latitude /
+  // longitude land with 20260908000000_vendor_geo.sql, still pending on the
+  // hosted DB — can't 42703 the whole query and bounce every vendor to login.
+  // Matches how the student side (store/[id].tsx) reads vendors.
+  const { data: vendor, error: vendorError } = await supabase
     .from('vendors')
-    .select('id,name,estimated_wait_min,current_queue_count,is_open,is_on_campus,stall_number,address,latitude,longitude,bio,bio_th,cuisine_tags,is_halal_certified,open_time,close_time')
+    .select('*')
     .eq('owner_user_id', user.id)
     .maybeSingle();
+  if (vendorError) {
+    showAlert('Could not load your store', vendorError.message);
+    loading = false;
+    emit();
+    return 'no-session';
+  }
   if (!vendor) { loading = false; emit(); return 'not-vendor'; }
 
   vendorProfile = {
@@ -218,8 +231,11 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
     is_on_campus: vendor.is_on_campus,
     stall_number: vendor.stall_number,
     address: vendor.address,
-    latitude: vendor.latitude,
-    longitude: vendor.longitude,
+    // `?? null` not just for the type: until the geo migration lands on the
+    // hosted DB the column is absent from the row entirely (undefined), and
+    // `latitude: number | null` should stay honest.
+    latitude: vendor.latitude ?? null,
+    longitude: vendor.longitude ?? null,
     bio: vendor.bio,
     bio_th: vendor.bio_th,
     cuisine_tags: vendor.cuisine_tags ?? [],

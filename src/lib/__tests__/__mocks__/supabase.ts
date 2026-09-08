@@ -7,10 +7,9 @@
 // `__queueResults(...)` seeds a FIFO of results for code paths that fire
 // several `.from(...)` queries in sequence (e.g. `initVendorSession`); once
 // the queue drains, chains fall back to `__setNextResult`. `__getFromCalls()`
-// / `__getFrom(table)` expose the captured `.from(table)` chains — the table
-// name plus whatever `.select(...)` / `.update(...)` / `.insert(...)` payload
-// the code under test passed — so a test can assert on an update patch or a
-// select column list.
+// exposes the captured `.from(table)` chains — the table name plus whatever
+// `.select(...)` / `.update(...)` / `.insert(...)` payload the code under test
+// passed — so a test can assert on an update patch or a select column list.
 type MockResult = { data: unknown; error: unknown };
 type FromCall = { table: string; select?: unknown; update?: unknown; insert?: unknown };
 
@@ -47,14 +46,6 @@ export function __getRpcCalls() {
 /** Every captured `.from(table)` chain, in call order. */
 export function __getFromCalls() {
   return fromCalls;
-}
-
-/** The most recent captured `.from(table)` chain for `table`, or undefined. */
-export function __getFrom(table: string) {
-  for (let i = fromCalls.length - 1; i >= 0; i--) {
-    if (fromCalls[i].table === table) return fromCalls[i];
-  }
-  return undefined;
 }
 
 export function __resetMock() {
