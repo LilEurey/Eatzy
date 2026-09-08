@@ -541,6 +541,16 @@ export const th: Record<TranslationKey, string> = {
   'vendor.profile.savedTitle': 'อัปเดตโปรไฟล์แล้ว',
   'vendor.profile.savedMsg': 'บันทึกโปรไฟล์ร้านค้าของคุณแล้ว',
 
+  // Vendor — store location pin picker
+  'vendor.location.rowLabel': 'ตำแหน่งร้าน',
+  'vendor.location.pinned': 'ปักหมุดแล้ว',
+  'vendor.location.notSet': 'ยังไม่ได้ตั้งค่า',
+  'vendor.location.hint': 'ลากหมุดหรือแตะแผนที่เพื่อระบุตำแหน่งร้านของคุณ',
+  'vendor.location.useMyLocation': 'ใช้ตำแหน่งปัจจุบันของฉัน',
+  'vendor.location.permDenied': 'ปิดสิทธิ์การเข้าถึงตำแหน่งอยู่ — แตะแผนที่เพื่อวางหมุดแทน',
+  'vendor.location.save': 'บันทึก',
+  'vendor.location.webOnly': 'เปิดหน้านี้ในแอป Eatzy เพื่อตั้งค่าตำแหน่งร้านของคุณ',
+
   // Admin — login
   'admin.login.brand': 'Eatzy',
   'admin.login.heading': 'พอร์ทัลแอดมิน',

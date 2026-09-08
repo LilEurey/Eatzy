@@ -539,6 +539,16 @@ export const en = {
   'vendor.profile.savedTitle': 'Profile updated',
   'vendor.profile.savedMsg': 'Your store profile was saved.',
 
+  // Vendor — store location pin picker
+  'vendor.location.rowLabel': 'Store location',
+  'vendor.location.pinned': 'Pinned',
+  'vendor.location.notSet': 'Not set',
+  'vendor.location.hint': 'Drag the pin or tap the map to mark where your stall is.',
+  'vendor.location.useMyLocation': 'Use my current location',
+  'vendor.location.permDenied': 'Location permission is off — tap the map to place your pin instead.',
+  'vendor.location.save': 'Save',
+  'vendor.location.webOnly': 'Open this screen on the Eatzy app to set your store location.',
+
   // Admin — login
   'admin.login.brand': 'Eatzy',
   'admin.login.heading': 'Admin Portal',
