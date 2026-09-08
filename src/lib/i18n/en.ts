@@ -223,6 +223,8 @@ export const en = {
   'store.noItemsInCategory': 'No items in this category',
   'store.allMenusTab': 'All Menus',
   'store.reviewsTab': 'Review',
+  'store.whereToFind': 'Where to find it',
+  'store.stall': 'Stall {n}',
 
   // Community reviews (store Review tab + item detail)
   'reviews.communityReviews': 'Community Reviews',
