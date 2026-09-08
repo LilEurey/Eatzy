@@ -17,6 +17,8 @@ type VendorProfile = {
   is_on_campus: boolean;
   stall_number: string | null;
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   bio: string | null;
   bio_th: string | null;
   cuisine_tags: string[];
@@ -203,7 +205,7 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
 
   const { data: vendor } = await supabase
     .from('vendors')
-    .select('id,name,estimated_wait_min,current_queue_count,is_open,is_on_campus,stall_number,address,bio,bio_th,cuisine_tags,is_halal_certified,open_time,close_time')
+    .select('id,name,estimated_wait_min,current_queue_count,is_open,is_on_campus,stall_number,address,latitude,longitude,bio,bio_th,cuisine_tags,is_halal_certified,open_time,close_time')
     .eq('owner_user_id', user.id)
     .maybeSingle();
   if (!vendor) { loading = false; emit(); return 'not-vendor'; }
@@ -216,6 +218,8 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
     is_on_campus: vendor.is_on_campus,
     stall_number: vendor.stall_number,
     address: vendor.address,
+    latitude: vendor.latitude,
+    longitude: vendor.longitude,
     bio: vendor.bio,
     bio_th: vendor.bio_th,
     cuisine_tags: vendor.cuisine_tags ?? [],
@@ -363,7 +367,7 @@ export async function setStoreOpen(open: boolean) {
 // ─── Profile ────────────────────────────────────────────────────────────────
 
 type VendorProfilePatch = Partial<Pick<VendorProfile,
-  'name' | 'is_on_campus' | 'stall_number' | 'address' | 'bio' | 'bio_th' | 'cuisine_tags' | 'is_halal_certified' | 'open_time' | 'close_time'
+  'name' | 'is_on_campus' | 'stall_number' | 'address' | 'latitude' | 'longitude' | 'bio' | 'bio_th' | 'cuisine_tags' | 'is_halal_certified' | 'open_time' | 'close_time'
 >>;
 
 export async function updateVendorProfile(patch: VendorProfilePatch): Promise<boolean> {
