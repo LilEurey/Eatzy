@@ -11,6 +11,7 @@ import {
 } from '@/lib/vendor-store';
 import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
 import { showAlert } from '@/lib/alert';
+import { useScrollLocked } from '@/lib/scroll-lock';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 type NavLabelKey = 'vendor.nav.overview' | 'vendor.nav.orders' | 'vendor.nav.menu' | 'vendor.nav.reviews' | 'vendor.nav.finance';
@@ -147,6 +148,9 @@ export default function VendorLayout() {
   const hasUnreadNotifications = useVendorUnreadNotifications();
   const vendor = useVendorProfile();
   const loading = useVendorLoading();
+  // The store-location picker freezes this scroll while a finger is on the map
+  // so a vertical drag isn't stolen from the map.
+  const scrollLocked = useScrollLocked();
   const initStarted = useRef(false);
   const { width } = useWindowDimensions();
   const isTablet = width >= TABLET_BREAKPOINT;
@@ -253,7 +257,7 @@ export default function VendorLayout() {
   );
 
   const content = (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: isTablet ? 24 : 16 }} showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: isTablet ? 24 : 16 }} showsVerticalScrollIndicator={false} scrollEnabled={!scrollLocked}>
       <Slot />
     </ScrollView>
   );

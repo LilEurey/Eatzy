@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, ActivityIndicator, Platform } from 'react-native';
+import * as Location from 'expo-location';
 import { Tap } from '@/components/Tap';
 import { ReviewCard } from '@/components/ReviewCard';
+import StoreMiniMap from '@/components/StoreMiniMap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { hasCoords } from '@/lib/geo';
 import { localizedText } from '@/lib/localize';
 import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
 import type { Database } from '@/types/database.types';
@@ -43,6 +46,14 @@ export default function StoreDetailScreen() {
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
   const [allItems, setAllItems] = useState<MenuItem[]>([]);
   const [reviews, setReviews] = useState<StoreReview[]>([]);
+  const [canShowUser, setCanShowUser] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    Location.getForegroundPermissionsAsync()
+      .then(p => setCanShowUser(p.status === 'granted'))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -229,6 +240,26 @@ export default function StoreDetailScreen() {
           <Text style={{ fontSize: 14, color: Brand.textSecondary, lineHeight: 20, marginBottom: 24 }}>
             {localizedText(vendor.bio ?? '', vendor.bio_th, locale)}
           </Text>
+
+          {/* Where to find it — read-only mini map (native only, only when pinned) */}
+          {Platform.OS !== 'web' && hasCoords(vendor) && (
+            <View style={{ marginBottom: 24 }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, marginBottom: 10 }}>
+                {t('store.whereToFind')}
+              </Text>
+              <StoreMiniMap
+                latitude={vendor.latitude}
+                longitude={vendor.longitude}
+                title={vendor.name}
+                showUser={canShowUser}
+              />
+              {vendor.stall_number ? (
+                <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 8 }}>
+                  {t('store.stall', { n: vendor.stall_number })}
+                </Text>
+              ) : null}
+            </View>
+          )}
 
           {/* Tabs: All Menus / Review */}
           <View style={{

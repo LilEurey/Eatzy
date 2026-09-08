@@ -32,6 +32,8 @@ eas build --platform ios --profile preview   # EAS build (see eas.json: developm
 eas submit --platform ios --profile production
 ```
 
+> The store-location map (`react-native-maps`) needs a development build — run `npx expo run:ios` or an EAS `development` build, not Expo Go.
+
 ## Project Structure
 
 ```
@@ -113,7 +115,7 @@ Keep schema consistent with this ERD for all SQL/migrations/types. Field names a
 
 - **users** — id (uuid, references auth.users), name, email, university_id, role (student|vendor|admin), department, language, wallet_balance, avatar_url, notifications_enabled, created_at
 - **user_preferences** — user_id, is_halal, is_vegetarian, is_jay, spice_level, budget_max, allergies (text[]), liked_cuisines (text[]), favorite_categories (text[])
-- **vendors** — id, name, stall_number, is_on_campus, address, is_halal_certified, open_time, close_time, is_open, bio, bio_th, cuisine_tags (text[]), estimated_wait_min, cover_image_url, current_queue_count, owner_user_id, created_at
+- **vendors** — id, name, stall_number, is_on_campus, address, latitude, longitude, is_halal_certified, open_time, close_time, is_open, bio, bio_th, cuisine_tags (text[]), estimated_wait_min, cover_image_url, current_queue_count, owner_user_id, created_at
 - **menu_items** — id, vendor_id, name, description, price, category, spice_level, is_available, is_halal, is_vegetarian, is_jay, allergens (text[]), tags (text[]), ingredients (text[]), preparation_time_min, image_url, is_featured, available_time_segment (breakfast|lunch|dinner|all), release_date, updated_at
 - **orders** — id, user_id, vendor_id, queue_number, status (pending|accepted|rejected|ready|completed|cancelled), subtotal, packaging_fee, total_amount, payment_method, pickup_start, pickup_end, estimated_prep_minutes, time_segment, vendor_handed_off_at, student_picked_up_at, created_at
 - **order_items** — id, order_id, menu_item_id, quantity, unit_price, special_instructions

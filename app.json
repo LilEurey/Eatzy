@@ -44,7 +44,13 @@
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Eatzy uses your location to place your store on the campus map and to show where you are relative to a stall."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

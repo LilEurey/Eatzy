@@ -7,6 +7,7 @@ import { Brand } from '@/constants/theme';
 import { useVendorProfile, updateVendorProfile } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
+import { hasCoords } from '@/lib/geo';
 
 export default function VendorProfileScreen() {
   const { t } = useI18n();
@@ -111,6 +112,22 @@ export default function VendorProfileScreen() {
             />
           </View>
         )}
+
+        <Tap
+          onPress={() => router.push('/(vendor)/profile/location' as any)}
+          style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+            borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12,
+          }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.location.rowLabel')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={{ fontSize: 13, color: '#8A8F9B' }}>
+              {vendor && hasCoords(vendor) ? t('vendor.location.pinned') : t('vendor.location.notSet')}
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color="#8A8F9B" />
+          </View>
+        </Tap>
 
         <View>
           <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.bioLabel')}</Text>

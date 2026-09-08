@@ -225,6 +225,8 @@ export const th: Record<TranslationKey, string> = {
   'store.noItemsInCategory': 'ไม่มีเมนูในหมวดนี้',
   'store.allMenusTab': 'เมนูทั้งหมด',
   'store.reviewsTab': 'รีวิว',
+  'store.whereToFind': 'ตำแหน่งร้าน',
+  'store.stall': 'ร้าน {n}',
 
   // Community reviews (store Review tab + item detail)
   'reviews.communityReviews': 'รีวิวจากผู้ใช้',
@@ -540,6 +542,16 @@ export const th: Record<TranslationKey, string> = {
   'vendor.profile.saving': 'กำลังบันทึก…',
   'vendor.profile.savedTitle': 'อัปเดตโปรไฟล์แล้ว',
   'vendor.profile.savedMsg': 'บันทึกโปรไฟล์ร้านค้าของคุณแล้ว',
+
+  // Vendor — store location pin picker
+  'vendor.location.rowLabel': 'ตำแหน่งร้าน',
+  'vendor.location.pinned': 'ปักหมุดแล้ว',
+  'vendor.location.notSet': 'ยังไม่ได้ตั้งค่า',
+  'vendor.location.hint': 'ลากหมุดหรือแตะแผนที่เพื่อระบุตำแหน่งร้านของคุณ',
+  'vendor.location.useMyLocation': 'ใช้ตำแหน่งปัจจุบันของฉัน',
+  'vendor.location.permDenied': 'ปิดสิทธิ์การเข้าถึงตำแหน่งอยู่ — แตะแผนที่เพื่อวางหมุดแทน',
+  'vendor.location.save': 'บันทึก',
+  'vendor.location.webOnly': 'เปิดหน้านี้ในแอป Eatzy เพื่อตั้งค่าตำแหน่งร้านของคุณ',
 
   // Admin — login
   'admin.login.brand': 'Eatzy',

@@ -771,6 +771,8 @@ export type Database = {
           is_halal_certified: boolean
           is_on_campus: boolean
           is_open: boolean
+          latitude: number | null
+          longitude: number | null
           name: string
           open_time: string | null
           owner_user_id: string | null
@@ -790,6 +792,8 @@ export type Database = {
           is_halal_certified?: boolean
           is_on_campus?: boolean
           is_open?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name: string
           open_time?: string | null
           owner_user_id?: string | null
@@ -809,6 +813,8 @@ export type Database = {
           is_halal_certified?: boolean
           is_on_campus?: boolean
           is_open?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           open_time?: string | null
           owner_user_id?: string | null
