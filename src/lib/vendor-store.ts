@@ -178,7 +178,7 @@ export async function markNotificationsRead() {
 }
 
 function subscribeRealtime(vendorId: string, userId: string) {
-  realtimeChannel?.unsubscribe();
+  if (realtimeChannel) void supabase.removeChannel(realtimeChannel);
   realtimeChannel = supabase
     .channel(`vendor-${vendorId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
@@ -254,7 +254,7 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
 }
 
 export async function signOutVendor() {
-  realtimeChannel?.unsubscribe();
+  if (realtimeChannel) void supabase.removeChannel(realtimeChannel);
   realtimeChannel = null;
   vendorProfile = null;
   menuItems = [];

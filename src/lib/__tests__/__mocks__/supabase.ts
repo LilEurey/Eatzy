@@ -97,4 +97,5 @@ export const supabase = {
     signOut: () => Promise.resolve({ error: null }),
   },
   channel: () => channelStub,
+  removeChannel: () => Promise.resolve('ok'),
 };

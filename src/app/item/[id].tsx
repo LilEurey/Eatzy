@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
+import { Image } from 'expo-image';
 import { Tap } from '@/components/Tap';
 import { ReviewCard } from '@/components/ReviewCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -190,7 +191,7 @@ export default function ItemDetailScreen() {
         {/* Image area */}
         <View style={{ height: 280, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
           {item.image_url
-            ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
             : <Text style={{ fontSize: 90 }}>🍽️</Text>
           }
           {/* Back button */}
@@ -431,7 +432,7 @@ export default function ItemDetailScreen() {
                   >
                     <View style={{ height: 120, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                       {s.image_url
-                        ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                        ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                         : <Text style={{ fontSize: 32 }}>🍽️</Text>
                       }
                     </View>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { Tap } from '@/components/Tap';
 import { ReviewCard } from '@/components/ReviewCard';
@@ -124,7 +125,7 @@ export default function StoreDetailScreen() {
         {/* Header image area */}
         <View style={{ height: 220, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
           {vendor.cover_image_url
-            ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
             : <Text style={{ fontSize: 72 }}>🏪</Text>
           }
           {/* Back button */}
@@ -340,7 +341,7 @@ export default function StoreDetailScreen() {
                   alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
                   {item.image_url
-                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                     : <Text style={{ fontSize: 34 }}>🍽️</Text>
                   }
                 </View>

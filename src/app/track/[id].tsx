@@ -70,7 +70,7 @@ export default function TrackScreen() {
         setStatus(payload.new.status as Status);
       })
       .subscribe();
-    return () => { void channel.unsubscribe(); };
+    return () => { void supabase.removeChannel(channel); };
   }, [id]);
 
   async function markPickedUp() {
