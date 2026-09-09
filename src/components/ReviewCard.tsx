@@ -1,4 +1,6 @@
-import { View, Text, Image, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { View, Text, Image, ScrollView, Modal } from 'react-native';
+import { Tap } from '@/components/Tap';
 import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { timeAgo } from '@/lib/relative-time';
@@ -25,6 +27,7 @@ export function ReviewCard({
   name, avatarUrl, score, comment, createdAt, menuItemName, photoUrls,
 }: ReviewCardProps) {
   const { t } = useI18n();
+  const [preview, setPreview] = useState<string | null>(null);
 
   return (
     <View style={{
@@ -68,10 +71,30 @@ export function ReviewCard({
       {photoUrls && photoUrls.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
           {photoUrls.map((url, i) => (
-            <Image key={`${url}-${i}`} source={{ uri: url }} style={{ width: 96, height: 96, borderRadius: 12 }} />
+            <Tap key={`${url}-${i}`} onPress={() => setPreview(url)}>
+              <Image source={{ uri: url }} style={{ width: 96, height: 96, borderRadius: 12 }} />
+            </Tap>
           ))}
         </ScrollView>
       ) : null}
+
+      <Modal
+        visible={!!preview}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreview(null)}
+      >
+        <Tap
+          activeOpacity={1}
+          haptic={false}
+          onPress={() => setPreview(null)}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center', padding: 16 }}
+        >
+          {preview ? (
+            <Image source={{ uri: preview }} style={{ width: '100%', height: '80%' }} resizeMode="contain" />
+          ) : null}
+        </Tap>
+      </Modal>
     </View>
   );
 }

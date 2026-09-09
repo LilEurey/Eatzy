@@ -39,9 +39,12 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
-  const callerClient = createClient(supabaseUrl, serviceRoleKey, {
+  // Caller identity only — anon key so a future refactor that drops the role
+  // check below can't turn this into an unauthenticated admin endpoint.
+  const callerClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   });
   const { data: { user: caller } } = await callerClient.auth.getUser();

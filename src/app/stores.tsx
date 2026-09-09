@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, Image, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -143,7 +144,7 @@ export default function StoresScreen() {
                   alignItems: 'center', justifyContent: 'center',
                 }}>
                   {vendor.cover_image_url
-                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                     : <Text style={{ fontSize: 28 }}>🏪</Text>}
                 </View>
                 <View style={{ flex: 1 }}>

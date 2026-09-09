@@ -61,7 +61,7 @@ export default function NotificationsScreen() {
       }
       void load();
 
-      return () => { void channel?.unsubscribe(); };
+      return () => { if (channel) void supabase.removeChannel(channel); };
     }, [cancelledRef])
   );
 

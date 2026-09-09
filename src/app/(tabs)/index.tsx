@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -302,7 +303,7 @@ export default function HomeScreen() {
 
       return () => {
         cancelled = true;
-        channel?.unsubscribe();
+        if (channel) void supabase.removeChannel(channel);
       };
     }, [])
   );
@@ -472,7 +473,7 @@ export default function HomeScreen() {
                       alignItems: 'center', justifyContent: 'center',
                     }}>
                       {featured.image_url
-                        ? <Image source={{ uri: featured.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                        ? <Image source={{ uri: featured.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                         : <Text style={{ fontSize: 44 }}>🍽️</Text>
                       }
                     </View>
@@ -507,7 +508,7 @@ export default function HomeScreen() {
                   {/* Image area */}
                   <View style={{ height: 150, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
-                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                       : <Text style={{ fontSize: 40 }}>🍽️</Text>
                     }
                     {/* Trending badge */}
@@ -579,7 +580,7 @@ export default function HomeScreen() {
                 >
                   <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {vendor.cover_image_url
-                      ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                       : <Text style={{ fontSize: 36 }}>🏪</Text>
                     }
                     <View style={{
@@ -638,7 +639,7 @@ export default function HomeScreen() {
                 >
                   <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
-                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>
                     }
                   </View>
@@ -678,7 +679,7 @@ export default function HomeScreen() {
                 >
                   <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
-                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>
                     }
                   </View>
@@ -727,7 +728,7 @@ export default function HomeScreen() {
                 >
                   <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
-                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>
                     }
                   </View>
@@ -767,7 +768,7 @@ export default function HomeScreen() {
                 >
                   <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
-                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>
                     }
                   </View>
@@ -807,7 +808,7 @@ export default function HomeScreen() {
                 >
                   <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
-                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                       : <Text style={{ fontSize: 36 }}>🍽️</Text>
                     }
                     <View style={{
@@ -864,7 +865,7 @@ export default function HomeScreen() {
                 >
                   <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                     {item.image_url
-                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                       : <Text style={{ fontSize: 36 }}>🥤</Text>
                     }
                   </View>
@@ -931,7 +932,7 @@ export default function HomeScreen() {
                   alignItems: 'center', justifyContent: 'center',
                 }}>
                   {vendor.cover_image_url
-                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                     : <Text style={{ fontSize: 28 }}>🏪</Text>
                   }
                 </View>

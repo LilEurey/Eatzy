@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, Image, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -192,7 +193,7 @@ export default function SearchScreen() {
                   backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
                 }}>
                   {item.image_url
-                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                     : <Text style={{ fontSize: 26 }}>🍽️</Text>}
                 </View>
                 <View style={{ flex: 1 }}>

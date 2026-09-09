@@ -99,7 +99,7 @@ export default function OrdersScreen() {
         setLoading(false);
       }
       void load();
-      return () => { void channel?.unsubscribe(); };
+      return () => { if (channel) void supabase.removeChannel(channel); };
     }, [cancelledRef])
   );
 
