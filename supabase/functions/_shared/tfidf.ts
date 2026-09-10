@@ -20,8 +20,22 @@ export function itemDoc(item: DocFields): string {
     .toLowerCase();
 }
 
+// sklearn's default token_pattern, `(?u)\b\w\w+\b`: runs of 2+ word
+// characters, everything else (punctuation, single letters) dropped.
+// Splitting on whitespace instead — which is what this did first — kept the
+// punctuation glued on, and menu_items.category is full of it: the catalog's
+// most common category, 'Main Dishes (Rice)', tokenized to `(rice)`, which
+// never matched the bare `rice` sitting in 150 items' ingredients. Verified
+// against sklearn: with this pattern the cosines agree to 6 decimal places,
+// with the whitespace split they didn't (0.35657 vs 0.402956).
+const TOKEN_PATTERN = /[\p{L}\p{N}_]{2,}/gu;
+
+export function tokenize(doc: string): string[] {
+  return doc.match(TOKEN_PATTERN) ?? [];
+}
+
 export function buildTfidfVectors(docs: string[]): Map<string, number>[] {
-  const tokenized = docs.map((d) => d.split(/\s+/).filter(Boolean));
+  const tokenized = docs.map(tokenize);
   const df = new Map<string, number>();
   for (const tokens of tokenized) {
     for (const term of new Set(tokens)) df.set(term, (df.get(term) ?? 0) + 1);

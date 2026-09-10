@@ -76,10 +76,10 @@ Eatzy/
 
 1. **Similar Foods** — content-based (TF-IDF + cosine similarity on ingredients/cuisine/tags)
 2. **Because You Ordered...** — collaborative filtering on order history & similar users
-3. **Trending Meals Today** — popularity from recent order volume
+3. **Trending Meals Today** — popularity from recent order volume (`get_trending_items`: `sum(quantity)` over orders in `accepted|ready|completed` only — cancelled/rejected orders are not demand)
 4. **No Queue Right Now** — vendors ranked by low `estimated_wait_min` / `queue_count`
-5. **Time-Based** — breakfast/lunch/dinner context
-6. **Latest Release** — newest menu items (last 7 days, `release_date DESC`, top 10, daily reset)
+5. **Time-Based** — breakfast/lunch/dinner context. Driven by `category`, not `available_time_segment` (which is `'all'` on every row). The breakfast list must not name a drink category — home strips drinks from this section, so a drink category there silently empties it.
+6. **Latest Release** — newest menu items, `release_date DESC`, top 10. Deliberately **no** "last N days" window: `release_date` is only ever set by its column default, so a bulk-seeded catalog shares one date and any fixed window empties the section forever once that date ages out (fixed in `20260910010000`, which also spread the seeded dates).
 7. **Promoted Foods** — sponsored items from partner vendors
 
 Default to TF-IDF + cosine for content-based and collaborative filtering for "because you ordered" — don't introduce new ML approaches unless asked.
@@ -91,7 +91,13 @@ Default to TF-IDF + cosine for content-based and collaborative filtering for "be
 
 ### ML Pipeline (User Vector approach)
 
-Build a **User Vector** (taste profile) from behavior — order history, ratings, view/click, trending, time context — and **Food Vectors** via TF-IDF on ingredients/cuisine/dietary tags; rank by **cosine similarity**, then filter by dietary rules, allergies, budget, wait time, ratings → Top-N. Reference impl: `ml/recommend.py`.
+Build a **User Vector** (taste profile) from behavior — order history, ratings, view/click, trending, time context — and **Food Vectors** via TF-IDF on ingredients/cuisine/dietary tags; rank by **cosine similarity**, then filter by dietary rules, allergies, budget, wait time, ratings → Top-N. Reference impl: `ml/recommend.py` (set `SUPABASE_URL` + `SUPABASE_ANON_KEY` to score the live catalog; add `SUPABASE_SERVICE_ROLE_KEY` for order history, which is RLS-scoped — the CSVs in `ml/data/` are dead 10-item fixtures kept only for offline runs).
+
+Rules the ranking code must keep:
+- **Tokenization mirrors sklearn's default `token_pattern`** (`\b\w\w+\b`) — `_shared/tfidf.ts` is unit-tested for 6-decimal parity. Splitting on whitespace instead leaves punctuation attached, and `Main Dishes (Rice)` (the largest category) then tokenizes to `(rice)`, which never matches the bare `rice` in item ingredients.
+- **Fit TF-IDF over the whole catalog, then filter results.** Filtering first makes each term's IDF depend on the caller's own dietary settings, so scores stop being comparable between students.
+- **Every ranking has a deterministic tie-break** (`menu_item_id` / `item.id`). Ties are the norm at this scale — Postgres ordering, JS sort stability over an unordered `select`, and Python set iteration all reorder them otherwise.
+- `recommend-for-you` and `recommend-similar` write the served set to `recommendation_log`; `item/[id].tsx` writes a `view` row to `ml_interactions` on unmount, with `was_recommended` set from the `?rec=1` param that the recommendation rows append to their links.
 
 ### User Roles
 

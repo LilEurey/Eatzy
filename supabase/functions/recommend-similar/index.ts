@@ -32,7 +32,6 @@ type UserPreferences = {
   is_halal: boolean;
   is_vegetarian: boolean;
   is_jay: boolean;
-  allergies: string[];
 };
 
 // Same hard filters recommend-for-you applies — a halal/vegetarian/jay
@@ -77,9 +76,9 @@ Deno.serve(async (req) => {
   // recommend-for-you.
   const { data: { user } } = await supabase.auth.getUser();
   const { data: prefsRow } = user
-    ? await supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle()
+    ? await supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay').eq('user_id', user.id).maybeSingle()
     : { data: null };
-  const prefs: UserPreferences = prefsRow ?? { is_halal: false, is_vegetarian: false, is_jay: false, allergies: [] };
+  const prefs: UserPreferences = prefsRow ?? { is_halal: false, is_vegetarian: false, is_jay: false };
 
   const { rows: catalog, error } = await getRankingCatalog<MenuItemRow>(supabase);
   if (error) return json({ error }, 500);
@@ -89,7 +88,7 @@ Deno.serve(async (req) => {
 
   // TF-IDF vectors computed over the full catalog (so IDF weights aren't
   // skewed by dropping items first) — the dietary filter only trims which
-  // *results* can surface, same order as recommend-for-you.
+  // *results* can surface. recommend-for-you now fits in this same order.
   const vectors = buildTfidfVectors(catalog.map(itemDoc));
   const targetVec = vectors[targetIndex];
 
@@ -97,8 +96,23 @@ Deno.serve(async (req) => {
     .map((item, i) => ({ item, score: cosineSimilarity(targetVec, vectors[i]) }))
     .filter((_, i) => i !== targetIndex)
     .filter(({ item }) => passesHardFilters(item, prefs))
-    .sort((a, b) => b.score - a.score)
+    // id breaks score ties so repeat requests return the same five items.
+    .sort((a, b) => b.score - a.score || a.item.id.localeCompare(b.item.id))
     .slice(0, TOP_K);
+
+  // Same best-effort served-set log recommend-for-you writes. Only for a
+  // signed-in caller: recommendation_log.user_id is NOT NULL and its RLS
+  // insert policy is `auth.uid() = user_id`, so an anonymous browse logs
+  // nothing rather than failing.
+  if (user && scored.length > 0) {
+    await supabase.from('recommendation_log').insert({
+      user_id: user.id,
+      row_type: 'similar_foods',
+      recommendation_type: 'content_tfidf_cosine',
+      item_ids: scored.map(({ item }) => item.id),
+      match_score: Number(scored[0].score.toFixed(4)),
+    });
+  }
 
   return json({
     results: scored.map(({ item, score }) => ({

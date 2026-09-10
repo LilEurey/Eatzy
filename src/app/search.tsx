@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
+import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
 
 type SearchItem = {
   id: string;
@@ -101,6 +101,11 @@ export default function SearchScreen() {
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return items
+      // Saved halal/vegetarian/jay are hard filters everywhere else in the app
+      // (home, store/[id], both recommend-* functions) — search was the one
+      // surface that skipped them, so a halal student searching "pork" got
+      // pork. The chips below stack on top: they narrow further, never widen.
+      .filter(item => passesDietary(item, prefs))
       // Allergies don't hide results here — a search is browsing, same as
       // store/[id].tsx. The actual gate is the confirm popup on Add to
       // Cart (item/[id].tsx), the moment the student commits to the dish;
@@ -110,7 +115,7 @@ export default function SearchScreen() {
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score)
       .map(({ item }) => item);
-  }, [items, query, diet]);
+  }, [items, query, diet, prefs]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>

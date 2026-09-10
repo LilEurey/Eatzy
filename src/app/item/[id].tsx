@@ -51,7 +51,7 @@ function SpiceIndicator({ level }: { level: number }) {
 
 export default function ItemDetailScreen() {
   const { t, locale } = useI18n();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, rec } = useLocalSearchParams<{ id: string; rec?: string }>();
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
   const [vendorName, setVendorName] = useState('');
@@ -106,6 +106,29 @@ export default function ItemDetailScreen() {
       .order('created_at', { ascending: false })
       .then(({ data }) => setReviews((data ?? []) as unknown as Review[]));
   }, [id]);
+
+  // ml_interactions has existed since the first migration and nothing had ever
+  // written to it, so the "view/click" half of the User Vector had no data at
+  // all. Logged on unmount rather than on open so view_duration_sec is the
+  // real dwell time — a two-second bounce and a two-minute read are very
+  // different signals. Best-effort and fire-and-forget: a student browsing
+  // must never wait on, or be blocked by, telemetry.
+  useEffect(() => {
+    const openedAt = Date.now();
+    return () => {
+      const seconds = Math.round((Date.now() - openedAt) / 1000);
+      void supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) return;
+        void supabase.from('ml_interactions').insert({
+          user_id: user.id,
+          menu_item_id: id,
+          action: 'view',
+          view_duration_sec: seconds,
+          was_recommended: rec === '1',
+        });
+      });
+    };
+  }, [id, rec]);
 
   if (item === undefined) {
     return (
@@ -422,7 +445,7 @@ export default function ItemDetailScreen() {
                 {similar.map(s => (
                   <Tap
                     key={s.id}
-                    onPress={() => router.push(`/item/${s.id}`)}
+                    onPress={() => router.push(`/item/${s.id}?rec=1`)}
                     activeOpacity={0.85}
                     style={{
                       width: 140, borderRadius: 20, backgroundColor: Brand.card, overflow: 'hidden',
