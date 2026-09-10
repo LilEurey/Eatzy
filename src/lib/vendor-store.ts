@@ -301,8 +301,22 @@ export async function rejectOrder(id: string) {
 }
 
 export async function markReady(id: string) {
-  const { error } = await supabase.from('orders').update({ status: 'ready' }).eq('id', id);
+  // Guard on 'accepted' for the same reason rejectOrder guards on 'pending':
+  // a pending order has not been charged yet (accept_order_and_charge is the
+  // only charge point), so flipping it straight to 'ready' would hand over
+  // food that was never paid for. The DB enforces this too — see
+  // enforce_order_status_transition — but matching here turns a raw Postgres
+  // exception into the same "no longer …" message reject already shows.
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ status: 'ready' })
+    .eq('id', id)
+    .eq('status', 'accepted')
+    .select('id');
   if (error) { showAlert('Could not update order', error.message); return; }
+  if (!data || data.length === 0) {
+    showAlert('Could not update order', 'This order is no longer accepted.');
+  }
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
