@@ -10,7 +10,13 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
 
-type Status = 'pending' | 'accepted' | 'ready' | 'completed';
+// 'rejected' / 'cancelled' are reachable while this screen is mounted — the
+// realtime UPDATE below pushes whatever the vendor (or accept_order_and_charge's
+// insufficient-balance auto-reject) wrote. They're terminal and off the happy
+// path, so they replace the stepper instead of indexing into it: ORDER.indexOf
+// returns -1 for them, which rendered every step as not-yet-reached and left
+// the student on a frozen tracker with no explanation.
+type Status = 'pending' | 'accepted' | 'ready' | 'completed' | 'rejected' | 'cancelled';
 
 type TrackOrder = {
   id: string;
@@ -20,6 +26,13 @@ type TrackOrder = {
   total_amount: number;
   vendor_name: string;
   student_picked_up_at: string | null;
+  // A payments row exists only once accept_order_and_charge has run, so its
+  // absence is the authoritative "the wallet was never touched" signal. The
+  // terminal panel states that to the student either way, and asserting it
+  // from data beats asserting it from "no code path does that yet" — the
+  // status guard (20260910000000) deliberately allows accepted -> cancelled
+  // so escrow can be unwound later.
+  was_charged: boolean;
   items: { name: string; name_th: string | null; quantity: number; unit_price: number; addons: { name: string; name_th: string | null; price: number }[] }[];
 };
 
@@ -32,6 +45,11 @@ const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: Tra
 
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];
 
+const TERMINAL: Partial<Record<Status, { icon: string; titleKey: TranslationKey; bodyKey: TranslationKey }>> = {
+  rejected:  { icon: '🚫', titleKey: 'orders.status.rejected',  bodyKey: 'track.rejectedMsg' },
+  cancelled: { icon: '✖️', titleKey: 'orders.status.cancelled', bodyKey: 'track.cancelledMsg' },
+};
+
 export default function TrackScreen() {
   const { t, locale } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -42,7 +60,7 @@ export default function TrackScreen() {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),payments(status),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
@@ -54,6 +72,9 @@ export default function TrackScreen() {
         total_amount: data.total_amount,
         vendor_name: (data as any).vendors?.name ?? '',
         student_picked_up_at: data.student_picked_up_at,
+        // payments.order_id is unique, so PostgREST embeds it to-ONE: an object
+        // when the order was charged, null when it wasn't — not an array.
+        was_charged: !!(data as any).payments,
         items: ((data as any).order_items ?? []).map((oi: any) => ({
           name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null,
           quantity: oi.quantity, unit_price: oi.unit_price,
@@ -134,6 +155,7 @@ export default function TrackScreen() {
   const vendor = order.vendor_name;
   const currentIdx = ORDER.indexOf(status);
   const isReady = status === 'ready';
+  const terminal = TERMINAL[status];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -167,7 +189,27 @@ export default function TrackScreen() {
           </Text>
         </View>
 
-        {/* Stepper */}
+        {/* Terminal state — the order is dead, so there is no progress to step
+            through. Shown in place of the stepper for rejected/cancelled. */}
+        {terminal ? (
+          <View style={{
+            backgroundColor: Brand.card, borderRadius: 20, padding: 24, marginBottom: 24,
+            alignItems: 'center',
+            shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
+          }}>
+            <Text style={{ fontSize: 40, marginBottom: 10 }}>{terminal.icon}</Text>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: Brand.textPrimary, marginBottom: 6 }}>
+              {t(terminal.titleKey)}
+            </Text>
+            <Text style={{ fontSize: 13, color: Brand.textSecondary, textAlign: 'center', lineHeight: 19 }}>
+              {t(terminal.bodyKey, { vendor })}
+              {' '}
+              {t(order.was_charged ? 'track.terminalRefund' : 'track.terminalNoCharge')}
+            </Text>
+          </View>
+        ) : (
+        /* Stepper */
         <View style={{
           backgroundColor: Brand.card, borderRadius: 20, padding: 20, marginBottom: 24,
           shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
@@ -205,6 +247,7 @@ export default function TrackScreen() {
             );
           })}
         </View>
+        )}
 
         {/* Items */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
