@@ -107,7 +107,13 @@ export default function OrdersScreen() {
     if (tab === 'All') return true;
     if (tab === 'Active') return ACTIVE.includes(o.status);
     if (tab === 'Completed') return o.status === 'completed';
-    if (tab === 'Cancelled') return o.status === 'cancelled';
+    // 'rejected' belongs here too. It is neither active nor completed, so
+    // filtering this tab on 'cancelled' alone left a rejected order reachable
+    // only under "All" — and rejection is not a rare state: a student whose
+    // wallet is short gets auto-rejected the moment the vendor taps Accept
+    // (see accept_order_and_charge). Both mean the same thing to a student:
+    // the order didn't happen.
+    if (tab === 'Cancelled') return o.status === 'cancelled' || o.status === 'rejected';
     return true;
   });
 
