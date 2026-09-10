@@ -495,6 +495,7 @@ export const en = {
   'vendor.menuNew.validationMsg': 'Please add a name and price.',
   'vendor.menuNew.savedTitle': 'Item added',
   'vendor.menuNew.savedMsg': '{name} was added to your menu.',
+  'vendor.menuNew.imageUploadErrorTitle': 'Couldn’t upload photo',
 
   // Vendor — finance / analytics
   'vendor.finance.title': 'Finance',

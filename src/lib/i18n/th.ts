@@ -497,6 +497,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.menuNew.validationMsg': 'กรุณาใส่ชื่อเมนูและราคา',
   'vendor.menuNew.savedTitle': 'เพิ่มเมนูแล้ว',
   'vendor.menuNew.savedMsg': 'เพิ่ม {name} ลงในเมนูของคุณแล้ว',
+  'vendor.menuNew.imageUploadErrorTitle': 'อัปโหลดรูปภาพไม่สำเร็จ',
 
   // Vendor — finance / analytics
   'vendor.finance.title': 'การเงิน',
