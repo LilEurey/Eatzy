@@ -13,6 +13,13 @@ import { useI18n } from '@/lib/i18n';
 import { ALLERGEN_VOCAB } from '@/lib/allergy-options';
 import { getTopMenuCategories, FALLBACK_CATEGORIES } from '@/lib/menu-categories';
 
+// Comma-separated free text -> text[]. Trimmed, blanks dropped, so "pork, ,
+// basil," yields ['pork','basil'] rather than empty strings that would become
+// junk TF-IDF tokens.
+function splitList(raw: string): string[] {
+  return raw.split(',').map(s => s.trim()).filter(Boolean);
+}
+
 // Canonical allergen keys — must match the strings students store in
 // user_preferences.allergies (this list used to write 'seafood'/'beef', which
 // never matched the student side's 'shellfish').
@@ -23,6 +30,8 @@ export default function AddMenuItemScreen() {
   const [name, setName] = useState('');
   const [nameTh, setNameTh] = useState('');
   const [description, setDescription] = useState('');
+  const [ingredients, setIngredients] = useState('');
+  const [tags, setTags] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
@@ -129,6 +138,8 @@ export default function AddMenuItemScreen() {
       spice_level: spiceLevel,
       preparation_time_min: parseInt(prepTime, 10) || 0,
       allergens: allergenList,
+      ingredients: splitList(ingredients),
+      tags: splitList(tags),
       image_url: imageUrl,
     });
 
@@ -186,6 +197,35 @@ export default function AddMenuItemScreen() {
                 multiline
                 numberOfLines={3}
                 style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary, minHeight: 70, textAlignVertical: 'top' }}
+              />
+            </View>
+
+            {/* Ingredients / tags feed the recommendation ranking directly:
+                itemDoc() in _shared/tfidf.ts builds an item's TF-IDF document
+                from ingredients + tags + category and NOT from its name, so an
+                item saved without these has a document consisting of its
+                category alone — indistinguishable from every other item in
+                that category, and effectively absent from Similar Foods and
+                Recommended For You. */}
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.ingredientsLabel')}</Text>
+              <TextInput
+                value={ingredients}
+                onChangeText={setIngredients}
+                placeholder={t('vendor.menuNew.ingredientsPlaceholder')}
+                placeholderTextColor="#B0B4BF"
+                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
+              />
+            </View>
+
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.tagsLabel')}</Text>
+              <TextInput
+                value={tags}
+                onChangeText={setTags}
+                placeholder={t('vendor.menuNew.tagsPlaceholder')}
+                placeholderTextColor="#B0B4BF"
+                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
               />
             </View>
 

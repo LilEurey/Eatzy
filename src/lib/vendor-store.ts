@@ -364,6 +364,11 @@ type NewMenuItemInput = {
   spice_level: number;
   preparation_time_min: number;
   allergens: string[];
+  // Both feed itemDoc() in the ranking pipeline (ingredients + tags +
+  // category); an item saved without them is near-invisible to the
+  // recommendation feeds. Left as [] only when the vendor supplies nothing.
+  ingredients: string[];
+  tags: string[];
   image_url: string | null;
 };
 
