@@ -119,14 +119,19 @@ export default function RateScreen() {
       return;
     }
 
-    const { error } = await supabase.from('ratings').insert({
+    // upsert, not insert: ratings carries unique (user_id, menu_item_id,
+    // order_id), and the orders list offers "Rate" on every completed order
+    // with no already-rated check — so re-rating one raised a raw 23505
+    // duplicate-key error under a "not found" alert. Re-rating now just
+    // revises the existing review, which is what the student meant anyway.
+    const { error } = await supabase.from('ratings').upsert({
       user_id: user.id,
       menu_item_id: order.primary_menu_item_id,
       order_id: order.id,
       score,
       comment: comment.trim() || null,
       photo_urls: photoUrls,
-    });
+    }, { onConflict: 'user_id,menu_item_id,order_id' });
     setSubmitting(false);
     if (error) {
       showAlert(t('common.orderNotFound'), error.message);
