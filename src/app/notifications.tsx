@@ -41,7 +41,11 @@ export default function NotificationsScreen() {
           .from('notifications')
           .select('id,order_id,icon,title,body,event,vendor_name,queue_number,total_amount,read,created_at')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          // Append-only feed with no pagination in the UI — without a cap this
+          // query grows for the life of the account and the whole history is
+          // parsed on every open. 100 is far past what anyone scrolls to.
+          .limit(100);
         const rows = data ?? [];
         if (cancelledRef.current) return;
         setNotifications(rows);

@@ -45,7 +45,10 @@ export default function WalletScreen() {
   async function loadWallet(userId: string) {
     const [profileRes, txnsRes] = await Promise.all([
       supabase.from('users').select('wallet_balance').eq('id', userId).maybeSingle(),
-      supabase.from('wallet_transactions').select('id,type,amount,description,created_at').eq('user_id', userId).order('created_at', { ascending: false }),
+      // Append-only ledger, no pagination in the UI — cap it so the query
+      // doesn't grow for the life of the account. Balance comes from
+      // users.wallet_balance, not from summing these, so a cap is display-only.
+      supabase.from('wallet_transactions').select('id,type,amount,description,created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(100),
     ]);
     return {
       balance: profileRes.data?.wallet_balance ?? 0,

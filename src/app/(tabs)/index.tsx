@@ -27,23 +27,17 @@ function BellIcon({ size = 20 }: { size?: number }) {
   );
 }
 
+// One row shape for all three vendor surfaces. Store Options lists every
+// stall (closed ones dimmed with a "Closed" badge); the queue banner and
+// "No Queue Right Now" use the open subset, derived client-side rather than
+// re-queried — the two used to be separate round trips fetching overlapping
+// columns from the same 16-row table.
 type Vendor = {
   id: string;
   name: string;
   is_halal_certified: boolean | null;
   estimated_wait_min: number | null;
   current_queue_count: number | null;
-  cuisine_tags: string[] | null;
-  cover_image_url: string | null;
-};
-
-// Store Options list — unlike `Vendor` (open stalls only, feeds the queue
-// banner + "No Queue Right Now"), this includes closed stalls so they show
-// dimmed with a "Closed" badge instead of vanishing from home.
-type StoreListVendor = {
-  id: string;
-  name: string;
-  is_halal_certified: boolean | null;
   cuisine_tags: string[] | null;
   cover_image_url: string | null;
   is_open: boolean | null;
@@ -130,11 +124,10 @@ function getTimeBasedHeaderKey(segment: MealSegment): TranslationKey {
 
 export default function HomeScreen() {
   const { t, locale } = useI18n();
-  const { prefs } = usePreferences();
+  const { prefs, loading: prefsLoading } = usePreferences();
   const [firstName, setFirstName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [allVendors, setAllVendors] = useState<StoreListVendor[]>([]);
+  const [allVendors, setAllVendors] = useState<Vendor[]>([]);
   const [featured, setFeatured] = useState<MenuItem | null>(null);
   const [trending, setTrending] = useState<MenuItem[]>([]);
   const [latestRelease, setLatestRelease] = useState<MenuItem[]>([]);
@@ -155,14 +148,14 @@ export default function HomeScreen() {
       const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name),is_halal,is_vegetarian,is_jay,allergens';
 
       const { data: { user } } = await supabase.auth.getUser();
-      const [profileRes, vendorsRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
+      const [profileRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
         user
           ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
-        supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url').eq('is_open', true).order('current_queue_count', { ascending: true }),
-        // Store Options list — every stall, open first then by queue. Closed
-        // stalls stay visible (dimmed + "Closed" badge) instead of dropping off.
-        supabase.from('vendors').select('id,name,is_halal_certified,cuisine_tags,cover_image_url,is_open').order('is_open', { ascending: false }).order('current_queue_count', { ascending: true }),
+        // Every stall, open first then by queue. Closed stalls stay visible in
+        // Store Options (dimmed + "Closed" badge); the queue banner and
+        // "No Queue Right Now" filter this same list down to the open ones.
+        supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url,is_open').order('is_open', { ascending: false }).order('current_queue_count', { ascending: true }),
         // Fetch a few candidates, not just 1 — the featured item can fail
         // the caller's dietary filter, and we need another to fall back to.
         supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).limit(10),
@@ -193,12 +186,10 @@ export default function HomeScreen() {
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
       if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
 
-      const dbVendors = vendorsRes.data as Vendor[] | null;
       const featuredCandidates = (featuredRes.data as unknown as MenuItem[] | null) ?? [];
       const dbFeatured = featuredCandidates.find(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category));
 
-      setVendors(dbVendors ?? []);
-      setAllVendors((allVendorsRes.data as StoreListVendor[] | null) ?? []);
+      setAllVendors((allVendorsRes.data as Vendor[] | null) ?? []);
       setFeatured(dbFeatured ?? null);
 
       // Trending and Because You Ordered both come back from their RPCs as
@@ -244,7 +235,6 @@ export default function HomeScreen() {
       setTimeBasedItems(dbTimeBased.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category)));
     } catch {
       // Supabase unreachable — show empty states, not fake data.
-      setVendors([]);
       setAllVendors([]);
       setFeatured(null);
       setTrending([]);
@@ -253,10 +243,15 @@ export default function HomeScreen() {
     setLoading(false);
   }
 
-  // Re-run when the shared prefs resolve/change so the hard dietary filter and
-  // the allergen badges reflect the real values, not the initial defaults.
+  // Re-run when the shared prefs change so the hard dietary filter and the
+  // allergen badges reflect the real values. Waiting on prefsLoading matters:
+  // usePreferences emits twice on a cold start (DEFAULT_PREFERENCES, then the
+  // loaded row), and firing on the first emit ran this whole ~10-query fanout
+  // for a prefs object that was about to be replaced — the results were
+  // thrown away a moment later. The screen is already showing its spinner
+  // during that window, so nothing renders later than before.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { void loadData(); }, [prefs]);
+  useEffect(() => { if (!prefsLoading) void loadData(); }, [prefs, prefsLoading]);
 
   // Similar Foods — home page had no presence for this feature at all
   // (item/[id].tsx is the only other place it renders); anchor it on
@@ -316,9 +311,12 @@ export default function HomeScreen() {
     );
   }
 
-  const topVendor = vendors[0] ?? null;
+  // allVendors is already ordered open-first, then by queue — so the open
+  // subset keeps the lowest-queue-first order the banner and section want.
+  const openVendors = allVendors.filter(v => v.is_open === true);
+  const topVendor = openVendors[0] ?? null;
   const queue = queueStatus(topVendor?.current_queue_count ?? null);
-  const noQueueVendors = vendors.filter(v => (v.current_queue_count ?? 0) <= NO_QUEUE_THRESHOLD).slice(0, 6);
+  const noQueueVendors = openVendors.filter(v => (v.current_queue_count ?? 0) <= NO_QUEUE_THRESHOLD).slice(0, 6);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>

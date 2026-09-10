@@ -69,6 +69,7 @@ function makeBuilder(call: FromCall): any {
     eq: () => builder,
     in: () => builder,
     order: () => builder,
+    limit: () => builder,
     maybeSingle: () => Promise.resolve(takeResult()),
     single: () => Promise.resolve(takeResult()),
     then: (resolve: (v: unknown) => unknown) => Promise.resolve(takeResult()).then(resolve),

@@ -163,7 +163,10 @@ async function fetchNotifications(userId: string) {
     .from('notifications')
     .select('id,order_id,icon,title,body,event,vendor_name,queue_number,total_amount,read,created_at')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    // Same cap as the student notifications screen — append-only feed, no
+    // pagination in the UI, so without this it grows unbounded per account.
+    .limit(100);
   notifications = (data as VendorNotification[] | null) ?? [];
 }
 
