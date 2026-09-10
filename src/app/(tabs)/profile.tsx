@@ -78,9 +78,15 @@ export default function ProfileScreen() {
   // immediately, without needing a full remount.
   useFocusEffect(
     useCallback(() => {
-      supabase.auth.getUser().then(async ({ data: { user } }) => {
+      // getSession() (not getUser()) — reads the stored session with no network
+      // round-trip, so the card can paint a real name on first focus instead of
+      // flashing the "Student" placeholder while getUser()/the users row load.
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        const user = session?.user;
         if (!user) { setRecentOrder(null); setHasUnreadNotifications(false); return; } // dev skip-login: keep defaults
         setEmail(user.email ?? '');
+        const sessionName = (user.user_metadata?.full_name as string) ?? user.email?.split('@')[0];
+        if (sessionName) setName(sessionName);
 
         const [profileRes, prefsRes, orderRes, notifRes] = await Promise.all([
           supabase.from('users').select('name,avatar_url,notifications_enabled').eq('id', user.id).maybeSingle(),

@@ -7,7 +7,7 @@ import {
   __setAuthUser,
   __resetMock,
 } from './__mocks__/supabase';
-import { acceptOrder, rejectOrder, initVendorSession, updateVendorProfile, __getVendorProfileForTest } from '@/lib/vendor-store';
+import { acceptOrder, rejectOrder, markReady, initVendorSession, updateVendorProfile, __getVendorProfileForTest } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 
 jest.mock('@/lib/alert', () => ({ showAlert: jest.fn() }));
@@ -68,6 +68,32 @@ describe('rejectOrder', () => {
     await rejectOrder('order-1');
 
     expect(showAlert).toHaveBeenCalledWith('Could not reject order', 'This order is no longer pending.');
+  });
+});
+
+describe('markReady', () => {
+  beforeEach(() => {
+    __resetMock();
+    (showAlert as jest.Mock).mockClear();
+  });
+
+  it('only promotes an order that is already accepted — a pending one was never charged', async () => {
+    __setNextResult({ data: [{ id: 'order-1' }], error: null });
+
+    await markReady('order-1');
+
+    expect(showAlert).not.toHaveBeenCalled();
+    // accept_order_and_charge is the sole wallet-charge point, so 'ready' must
+    // never be reachable straight from 'pending'.
+    expect(__getFromCalls()[0]).toMatchObject({ table: 'orders', update: { status: 'ready' } });
+  });
+
+  it('alerts when the order is no longer accepted', async () => {
+    __setNextResult({ data: [], error: null });
+
+    await markReady('order-1');
+
+    expect(showAlert).toHaveBeenCalledWith('Could not update order', 'This order is no longer accepted.');
   });
 });
 
