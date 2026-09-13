@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { getMealSegment, type MealSegment } from '@/lib/time';
+import { bangkokHour, getMealSegment, type MealSegment } from '@/lib/time';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { isDrinkCategory } from '@/lib/menu-categories';
 import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
@@ -84,8 +84,11 @@ type PersonalizedItem = { id: string; name: string; name_th: string | null; pric
 // recommend-similar's response shape (same as item/[id].tsx's SimilarItem) — no name_th, unlocalized.
 type SimilarToItem = { id: string; name: string; price: number; image_url: string | null; vendor_name: string; score: number };
 
+// Bangkok hours, not device hours — the greeting sits directly above a meal
+// row that getMealSegment() already picks in Bangkok time, so a device in
+// another timezone was showing "Good evening" over the lunch selection.
 function getGreetingKey(): TranslationKey {
-  const h = new Date().getHours();
+  const h = bangkokHour(new Date());
   if (h < 12) return 'home.greetingMorning';
   if (h < 17) return 'home.greetingAfternoon';
   return 'home.greetingEvening';
@@ -106,7 +109,13 @@ const NO_QUEUE_THRESHOLD = 3;
 // row (a KMUTT stall's menu doesn't actually change by clock hour), so
 // filtering on that column would just return the full catalog. Category is
 // the real signal for "what fits this meal" instead.
-const BREAKFAST_CATEGORIES = ['Beverages', 'Desserts', 'Add-ons'];
+//
+// Breakfast used to be ['Beverages', 'Desserts', 'Add-ons'], which collapsed
+// to almost nothing: the drink filter applied to this section strips
+// 'Beverages', by far the biggest of the three, leaving ~6 desserts and a
+// pile of add-ons that aren't meals. These are the categories a Thai campus
+// stall actually serves in the morning, and none of them is a drink.
+const BREAKFAST_CATEGORIES = ['Noodles', 'Soup', 'Appetizers', 'Main Dishes (Rice)'];
 const LUNCH_CATEGORIES = ['Main Dishes (Rice)', 'Noodles', 'Main Dishes', 'Appetizers'];
 const DINNER_CATEGORIES = ['Main Dishes (Rice)', 'Noodles', 'Main Dishes'];
 
@@ -161,9 +170,15 @@ export default function HomeScreen() {
         supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).limit(10),
         // Trending Meals Today — real order volume, most-ordered first (see get_trending_items).
         supabase.rpc('get_trending_items', { since: sevenDaysAgo, limit_n: 10 }),
-        // Latest Release — newest items in the last 7 days, matching the current meal time.
+        // Latest Release — the newest items in the catalog, matching the current
+        // meal time. There is deliberately no "released in the last 7 days"
+        // window: menu_items.release_date is only ever set by its column
+        // default, so a bulk-seeded catalog shares one date and any fixed
+        // window empties the section permanently once that date ages out.
+        // Migration 20260910010000 spreads the seeded dates so "newest" means
+        // something; ordering alone keeps the row populated forever.
         supabase.from('menu_items').select(menuFields).eq('is_available', true).or(timeFilter)
-          .gte('release_date', sevenDaysAgo.slice(0, 10)).order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
+          .order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
         // Because You Ordered — collaborative filtering off the caller's own order
         // history (see get_because_you_ordered); anonymous or order-less users
         // just get zero rows back, not an error.
@@ -210,11 +225,13 @@ export default function HomeScreen() {
           : Promise.resolve({ data: null }),
       ]);
 
+      // Anything the RPC didn't rank sorts last, not first — `?? 0` used to
+      // promote an unranked row to the top of a "most ordered" list.
       const byRank = (ids: string[]) => {
         const rank = new Map(ids.map((id, i) => [id, i]));
         return (rows: unknown) => (rows as MenuItem[] | null)
           ?.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category))
-          .slice().sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) ?? [];
+          .slice().sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER)) ?? [];
       };
 
       const dbTrending = byRank(trendingIds)(trendingRowsRes.data);
@@ -234,11 +251,18 @@ export default function HomeScreen() {
       const dbTimeBased = (timeBasedRes.data as unknown as MenuItem[] | null) ?? [];
       setTimeBasedItems(dbTimeBased.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category)));
     } catch {
-      // Supabase unreachable — show empty states, not fake data.
+      // Supabase unreachable — show empty states, not fake data. Every list
+      // has to be cleared, not just four of them: leaving the rest holding the
+      // previous load's rows renders a half-stale feed that looks live.
       setAllVendors([]);
       setFeatured(null);
       setTrending([]);
       setDrinks([]);
+      setLatestRelease([]);
+      setTimeBasedItems([]);
+      setRecommendedForYou([]);
+      setBecauseYouOrdered([]);
+      setSimilarToFeatured([]);
     }
     setLoading(false);
   }
@@ -627,7 +651,9 @@ export default function HomeScreen() {
               {similarToFeatured.map(item => (
                 <Tap
                   key={item.id}
-                  onPress={() => router.push(`/item/${item.id}`)}
+                  // ?rec=1 → item/[id] logs this view as was_recommended, so
+                  // ml_interactions can tell a recommended tap from a browse.
+                  onPress={() => router.push(`/item/${item.id}?rec=1`)}
                   activeOpacity={0.85}
                   style={{
                     width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
@@ -716,7 +742,7 @@ export default function HomeScreen() {
               {recommendedForYou.map(item => (
                 <Tap
                   key={item.id}
-                  onPress={() => router.push(`/item/${item.id}`)}
+                  onPress={() => router.push(`/item/${item.id}?rec=1`)}
                   activeOpacity={0.85}
                   style={{
                     width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
@@ -756,7 +782,7 @@ export default function HomeScreen() {
               {becauseYouOrdered.map(item => (
                 <Tap
                   key={item.id}
-                  onPress={() => router.push(`/item/${item.id}`)}
+                  onPress={() => router.push(`/item/${item.id}?rec=1`)}
                   activeOpacity={0.85}
                   style={{
                     width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',

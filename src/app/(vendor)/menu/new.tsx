@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput, Image, Modal, ScrollView } from 'react-native';
 import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
@@ -6,12 +6,19 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
+import { supabase } from '@/lib/supabase';
 import { addMenuItem } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { ALLERGEN_VOCAB } from '@/lib/allergy-options';
+import { getTopMenuCategories, FALLBACK_CATEGORIES } from '@/lib/menu-categories';
 
-const CATEGORIES = ['Noodles', 'Rice Dishes', 'Curry', 'Soup', 'Salads', 'Grilled', 'Bowls', 'Drinks', 'Other'];
+// Comma-separated free text -> text[]. Trimmed, blanks dropped, so "pork, ,
+// basil," yields ['pork','basil'] rather than empty strings that would become
+// junk TF-IDF tokens.
+function splitList(raw: string): string[] {
+  return raw.split(',').map(s => s.trim()).filter(Boolean);
+}
 
 // Canonical allergen keys — must match the strings students store in
 // user_preferences.allergies (this list used to write 'seafood'/'beef', which
@@ -23,6 +30,8 @@ export default function AddMenuItemScreen() {
   const [name, setName] = useState('');
   const [nameTh, setNameTh] = useState('');
   const [description, setDescription] = useState('');
+  const [ingredients, setIngredients] = useState('');
+  const [tags, setTags] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
@@ -31,7 +40,21 @@ export default function AddMenuItemScreen() {
   const [allergens, setAllergens] = useState<Set<string>>(new Set());
   const [otherAllergen, setOtherAllergen] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageMimeType, setImageMimeType] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // The picker offered a hand-typed list ('Rice Dishes', 'Curry', 'Salads',
+  // 'Grilled', 'Bowls') that overlapped the real catalog on 'Noodles' alone.
+  // menu_items.category is free text with no constraint, so those strings
+  // saved fine and then went invisible: home's Time-Based sections filter on
+  // the real categories, and recommend-for-you's TF-IDF doc includes the
+  // literal category string, so an orphan value has nothing to match against.
+  // getTopMenuCategories() returns the actual distinct DB values — the same
+  // vocabulary onboarding / edit-preferences already picks from. Seeded with
+  // its fallback rather than [] so the picker and the save-time default below
+  // are never blank while that query is in flight.
+  const [categories, setCategories] = useState<string[]>(FALLBACK_CATEGORIES);
+  useEffect(() => { void getTopMenuCategories().then(setCategories); }, []);
 
   function toggleAllergen(key: string) {
     setAllergens(prev => {
@@ -54,8 +77,28 @@ export default function AddMenuItemScreen() {
       quality: 0.7,
     });
     if (result.canceled) return;
-    // ponytail: upload to Supabase Storage (menu-item-images bucket) and store the public URL.
+    // Local preview only — the upload happens in saveItem() so abandoning the
+    // form doesn't leave an orphan object in the bucket.
     setImageUri(result.assets[0].uri);
+    setImageMimeType(result.assets[0].mimeType ?? null);
+  }
+
+  // Upload to the existing "menu-item-images" bucket (20260901000000). Its RLS
+  // insert policy gates on (storage.foldername(name))[1] = auth.uid(), so the
+  // object key must start with the vendor owner's user id. Same fetch ->
+  // arrayBuffer -> upload shape as the avatars upload in (tabs)/profile.tsx;
+  // RN has no File/Blob upload path that Supabase Storage accepts directly.
+  async function uploadImage(uri: string): Promise<string | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    const arraybuffer = await fetch(uri).then(res => res.arrayBuffer());
+    const { error } = await supabase.storage
+      .from('menu-item-images')
+      .upload(path, arraybuffer, { contentType: imageMimeType ?? 'image/jpeg', upsert: true });
+    if (error) throw error;
+    return supabase.storage.from('menu-item-images').getPublicUrl(path).data.publicUrl;
   }
 
   async function saveItem() {
@@ -69,18 +112,35 @@ export default function AddMenuItemScreen() {
     setSaving(true);
     const allergenList = [...allergens, ...(otherAllergen.trim() ? [otherAllergen.trim()] : [])];
 
+    // Upload before the insert: a device file:// path is unreachable from any
+    // other client, so image_url has to be the bucket's public URL or null.
+    // A failed upload aborts the save rather than silently dropping the photo
+    // — the form keeps its values so the vendor can retry.
+    let imageUrl: string | null = null;
+    if (imageUri) {
+      try {
+        imageUrl = await uploadImage(imageUri);
+      } catch (e) {
+        setSaving(false);
+        showAlert(t('vendor.menuNew.imageUploadErrorTitle'), e instanceof Error ? e.message : String(e));
+        return;
+      }
+    }
+
     const ok = await addMenuItem({
       name: trimmedName,
       name_th: nameTh.trim() || null,
       description: description.trim(),
       price: parsedPrice,
-      category: category || 'Other',
+      // 'Other' was the old default and is not a category the catalog uses, so
+      // an item saved without picking one landed outside every home section.
+      category: category || categories[0],
       spice_level: spiceLevel,
       preparation_time_min: parseInt(prepTime, 10) || 0,
       allergens: allergenList,
-      // ponytail: upload to Supabase Storage and use its public URL — a local
-      // device file:// path would be unreachable from any other client.
-      image_url: null,
+      ingredients: splitList(ingredients),
+      tags: splitList(tags),
+      image_url: imageUrl,
     });
 
     setSaving(false);
@@ -137,6 +197,35 @@ export default function AddMenuItemScreen() {
                 multiline
                 numberOfLines={3}
                 style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary, minHeight: 70, textAlignVertical: 'top' }}
+              />
+            </View>
+
+            {/* Ingredients / tags feed the recommendation ranking directly:
+                itemDoc() in _shared/tfidf.ts builds an item's TF-IDF document
+                from ingredients + tags + category and NOT from its name, so an
+                item saved without these has a document consisting of its
+                category alone — indistinguishable from every other item in
+                that category, and effectively absent from Similar Foods and
+                Recommended For You. */}
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.ingredientsLabel')}</Text>
+              <TextInput
+                value={ingredients}
+                onChangeText={setIngredients}
+                placeholder={t('vendor.menuNew.ingredientsPlaceholder')}
+                placeholderTextColor="#B0B4BF"
+                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
+              />
+            </View>
+
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.tagsLabel')}</Text>
+              <TextInput
+                value={tags}
+                onChangeText={setTags}
+                placeholder={t('vendor.menuNew.tagsPlaceholder')}
+                placeholderTextColor="#B0B4BF"
+                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
               />
             </View>
 
@@ -278,7 +367,7 @@ export default function AddMenuItemScreen() {
               {t('vendor.menuNew.categoryLabel')}
             </Text>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {CATEGORIES.map(c => (
+              {categories.map(c => (
                 <Tap
                   key={c}
                   onPress={() => { setCategory(c); setCategoryPickerOpen(false); }}

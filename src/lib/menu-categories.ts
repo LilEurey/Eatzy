@@ -1,8 +1,15 @@
 import { supabase } from '@/lib/supabase';
 
-// Static fallback if the catalog query fails or the DB is empty — a
-// reasonable default set for a Thai campus food court.
-const FALLBACK_CATEGORIES = ['Noodles', 'Rice Dishes', 'Curry', 'Soup', 'Salads', 'Desserts', 'Drinks', 'Appetizers'];
+// Static fallback if the catalog query fails or the DB is empty. These are the
+// real distinct menu_items.category values, most common first — NOT a
+// hand-invented set. Both consumers write these strings into data that is
+// later matched against the catalog: the preferences picker seeds
+// recommend-for-you's cold-start User Vector (whose TF-IDF doc contains the
+// literal category string), and the vendor add-item picker sets
+// menu_items.category itself, which home's Time-Based sections filter on.
+// An invented value like 'Rice Dishes' or 'Curry' saves fine and then matches
+// nothing, so the fallback has to speak the catalog's vocabulary too.
+export const FALLBACK_CATEGORIES = ['Main Dishes (Rice)', 'Beverages', 'Noodles', 'Appetizers', 'Main Dishes', 'Desserts', 'Add-ons'];
 
 // menu_items.category is free text with no DB constraint, and different
 // seeds/screens have written drinks under two different strings —

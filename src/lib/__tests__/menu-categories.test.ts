@@ -30,7 +30,20 @@ describe('getTopMenuCategories', () => {
   it('returns the static fallback list when the query errors', async () => {
     __setNextResult({ error: { message: 'boom' } });
     const out = await getTopMenuCategories(3);
-    expect(out).toEqual(['Noodles', 'Rice Dishes', 'Curry']);
+    expect(out).toEqual(['Main Dishes (Rice)', 'Beverages', 'Noodles']);
+  });
+
+  // Regression: the fallback used to be hand-invented ('Rice Dishes', 'Curry',
+  // 'Salads', ...), overlapping the real catalog on 'Noodles' alone. Those
+  // strings reach menu_items.category via the vendor add-item picker and the
+  // User Vector via the preferences picker, where anything outside the
+  // catalog's vocabulary matches nothing and silently disappears from home.
+  it('falls back only to categories the real catalog actually uses', async () => {
+    const CATALOG = ['Main Dishes (Rice)', 'Beverages', 'Noodles', 'Appetizers', 'Main Dishes', 'Add-ons', 'Desserts'];
+    __setNextResult({ error: { message: 'boom' } });
+    for (const category of await getTopMenuCategories(20)) {
+      expect(CATALOG).toContain(category);
+    }
   });
 
   it('returns the static fallback list when the catalog is empty', async () => {
