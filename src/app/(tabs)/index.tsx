@@ -512,8 +512,14 @@ export default function HomeScreen() {
               <Text style={{ color: Brand.textSecondary }}>{t('home.noFeaturedItems')}</Text>
             </View>
           )}
+        </View>
 
-          {/* Trending small cards — real order volume; own empty state when none */}
+        {/* Trending Meals Today — real order volume; own empty state when none */}
+        <View style={{ marginBottom: 28 }}>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>
+            {t('home.trendingToday')}
+          </Text>
+
           {trending.length > 0 ? (
             <View style={{ flexDirection: 'row', gap: 12 }}>
               {trending.map(item => (
