@@ -202,7 +202,11 @@ export default function HomeScreen() {
       if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
 
       const featuredCandidates = (featuredRes.data as unknown as MenuItem[] | null) ?? [];
-      const dbFeatured = featuredCandidates.find(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category));
+      // No ORDER BY on the query above, so without shuffling this always
+      // resolves to the same row (e.g. always "Korean Fried Chicken") and
+      // the "Similar Foods" section below — anchored on featured — never varies either.
+      const eligibleFeatured = featuredCandidates.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category));
+      const dbFeatured = eligibleFeatured[Math.floor(Math.random() * eligibleFeatured.length)];
 
       setAllVendors((allVendorsRes.data as Vendor[] | null) ?? []);
       setFeatured(dbFeatured ?? null);
