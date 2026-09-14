@@ -16,7 +16,8 @@ const DOW = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 
 // "09:00:00" / "9:00" -> 9; anything unparseable -> fallback.
 function parseHour(value: string | null, fallback: number): number {
-  const h = Number(String(value ?? '').split(':')[0]);
+  if (!value) return fallback;
+  const h = Number(value.split(':')[0]);
   return Number.isFinite(h) && h >= 0 && h <= 23 ? h : fallback;
 }
 
