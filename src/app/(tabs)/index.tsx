@@ -167,7 +167,7 @@ export default function HomeScreen() {
         supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url,is_open').order('is_open', { ascending: false }).order('current_queue_count', { ascending: true }),
         // Fetch a few candidates, not just 1 — the featured item can fail
         // the caller's dietary filter, and we need another to fall back to.
-        supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).limit(10),
+        supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).order('id').limit(10),
         // Trending Meals Today — real order volume, most-ordered first (see get_trending_items).
         supabase.rpc('get_trending_items', { since: sevenDaysAgo, limit_n: 10 }),
         // Latest Release — the newest items in the catalog, matching the current
@@ -202,11 +202,15 @@ export default function HomeScreen() {
       if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
 
       const featuredCandidates = (featuredRes.data as unknown as MenuItem[] | null) ?? [];
-      // No ORDER BY on the query above, so without shuffling this always
-      // resolves to the same row (e.g. always "Korean Fried Chicken") and
-      // the "Similar Foods" section below — anchored on featured — never varies either.
       const eligibleFeatured = featuredCandidates.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category));
-      const dbFeatured = eligibleFeatured[Math.floor(Math.random() * eligibleFeatured.length)];
+      // One promoted item per week, same for every student — a per-load
+      // Math.random() pick showed a different item per user and per refresh.
+      // Ordered query + week-number seed keeps the index (and so the item)
+      // fixed all week, then rotates automatically the next week.
+      const weekNumber = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+      const dbFeatured = eligibleFeatured.length > 0
+        ? eligibleFeatured[weekNumber % eligibleFeatured.length]
+        : undefined;
 
       setAllVendors((allVendorsRes.data as Vendor[] | null) ?? []);
       setFeatured(dbFeatured ?? null);
