@@ -388,6 +388,20 @@ export async function addMenuItem(input: NewMenuItemInput): Promise<boolean> {
   return true;
 }
 
+// order_items.menu_item_id is `on delete restrict` — an item with order
+// history can't be hard-deleted. Caller (menu screen) shows a "disable
+// instead" message on the 23503 foreign-key-violation code.
+export async function deleteMenuItem(itemId: string): Promise<'ok' | 'blocked' | 'error'> {
+  const prev = menuItems;
+  menuItems = menuItems.filter(i => i.id !== itemId); // optimistic
+  emit();
+  const { error } = await supabase.from('menu_items').delete().eq('id', itemId);
+  if (!error) return 'ok';
+  menuItems = prev; // revert
+  emit();
+  return error.code === '23503' ? 'blocked' : 'error';
+}
+
 // ─── Store status ───────────────────────────────────────────────────────────
 
 export async function setStoreOpen(open: boolean) {

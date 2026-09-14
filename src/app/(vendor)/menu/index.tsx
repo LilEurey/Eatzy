@@ -4,10 +4,11 @@ import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { useVendorMenu, useVendorOrders, toggleAvailability } from '@/lib/vendor-store';
+import { useVendorMenu, useVendorOrders, toggleAvailability, deleteMenuItem } from '@/lib/vendor-store';
 import { itemSales } from '@/lib/vendor-analytics';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+import { showAlert, showConfirm } from '@/lib/alert';
 
 // Gold, distinct from the orange halal pill — reads as "award".
 const GOLD = '#B8860B';
@@ -68,6 +69,21 @@ export default function VendorMenuScreen() {
                 >
                   <Ionicons name="options-outline" size={13} color={Brand.textPrimary} />
                   <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.menu.manageAddons')}</Text>
+                </Tap>
+                <Tap
+                  onPress={() => showConfirm(
+                    t('vendor.menu.delete'),
+                    t('vendor.menu.deleteConfirmMsg', { name: localizedText(item.name, item.name_th, locale) }),
+                    async () => {
+                      const result = await deleteMenuItem(item.id);
+                      if (result === 'blocked') showAlert(t('vendor.menu.deleteBlockedTitle'), t('vendor.menu.deleteBlockedMsg'));
+                      else if (result === 'error') showAlert(t('vendor.menu.deleteErrorTitle'));
+                    },
+                    { confirmLabel: t('vendor.menu.delete'), destructive: true },
+                  )}
+                  style={{ position: 'absolute', top: 8, left: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="trash-outline" size={14} color="#D64545" />
                 </Tap>
               </View>
               <View style={{ padding: 14, gap: 8 }}>
