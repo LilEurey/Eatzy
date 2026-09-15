@@ -9,6 +9,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
+import { invokeEdgeFunction } from '@/lib/edge-function';
 
 // 'rejected' / 'cancelled' are reachable while this screen is mounted — the
 // realtime UPDATE below pushes whatever the vendor (or accept_order_and_charge's
@@ -122,6 +123,10 @@ export default function TrackScreen() {
     const { error } = await supabase.rpc('student_confirm_pickup', { p_order_id: order.id });
     if (error) { showAlert(t('common.orderNotFound'), error.message); return; }
     setOrder({ ...order, student_picked_up_at: new Date().toISOString() });
+    // Only actually completes the order (and transfers) once the vendor has
+    // also confirmed — a no-op otherwise. Fire-and-forget: the internal
+    // wallet ledger is already correct regardless of this call's outcome.
+    void invokeEdgeFunction('transfer-order-payout', { body: { order_id: order.id } });
   }
 
   async function cancelOrder() {

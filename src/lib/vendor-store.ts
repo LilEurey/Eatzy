@@ -334,6 +334,10 @@ export async function markReady(id: string) {
 export async function handOff(id: string) {
   const { error } = await supabase.rpc('vendor_confirm_handoff', { p_order_id: id });
   if (error) { showAlert('Could not confirm hand-off', error.message); return; }
+  // Only actually completes the order (and transfers) once the student has
+  // also confirmed — a no-op otherwise. Fire-and-forget: the internal
+  // wallet ledger is already correct regardless of this call's outcome.
+  void invokeEdgeFunction('transfer-order-payout', { body: { order_id: id } });
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
@@ -446,21 +450,24 @@ export async function updateVendorProfile(patch: VendorProfilePatch): Promise<bo
 
 // ─── Stripe Connect onboarding ─────────────────────────────────────────────
 
-/** Refetches just the vendor row — used after returning from Stripe-hosted
- * onboarding, since stripe_account_id is written server-side by
- * vendor-stripe-onboarding and this tab's local state doesn't know about it. */
+/** Refetches the vendor row and asks Stripe directly for current payout
+ * capability status — used after returning from Stripe-hosted onboarding,
+ * since neither stripe_account_id (written server-side by
+ * vendor-stripe-onboarding) nor Stripe's own verification progress is known
+ * to this tab's local state yet. */
 export async function refreshVendorProfile(): Promise<void> {
   if (!vendorProfile) return;
-  const { data: vendor } = await supabase
-    .from('vendors')
-    .select('stripe_account_id, stripe_payouts_enabled')
-    .eq('id', vendorProfile.id)
-    .maybeSingle();
+  const [{ data: vendor }, statusRes] = await Promise.all([
+    supabase.from('vendors').select('stripe_account_id, stripe_payouts_enabled').eq('id', vendorProfile.id).maybeSingle(),
+    invokeEdgeFunction<{ payouts_enabled: boolean }>('vendor-stripe-status'),
+  ]);
   if (!vendor) return;
   vendorProfile = {
     ...vendorProfile,
     stripe_account_id: vendor.stripe_account_id ?? null,
-    stripe_payouts_enabled: vendor.stripe_payouts_enabled ?? false,
+    // vendor-stripe-status re-checks Stripe live and is the freshest source
+    // when it succeeds; fall back to the row we just read otherwise.
+    stripe_payouts_enabled: statusRes.data?.payouts_enabled ?? vendor.stripe_payouts_enabled ?? false,
   };
   emit();
 }

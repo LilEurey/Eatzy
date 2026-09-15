@@ -431,6 +431,7 @@ export type Database = {
           pickup_start: string | null
           queue_number: number | null
           status: string
+          stripe_transfer_id: string | null
           student_picked_up_at: string | null
           subtotal: number
           time_segment: string | null
@@ -449,6 +450,7 @@ export type Database = {
           pickup_start?: string | null
           queue_number?: number | null
           status?: string
+          stripe_transfer_id?: string | null
           student_picked_up_at?: string | null
           subtotal: number
           time_segment?: string | null
@@ -467,6 +469,7 @@ export type Database = {
           pickup_start?: string | null
           queue_number?: number | null
           status?: string
+          stripe_transfer_id?: string | null
           student_picked_up_at?: string | null
           subtotal?: number
           time_segment?: string | null
