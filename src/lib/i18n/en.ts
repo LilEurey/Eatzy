@@ -235,6 +235,7 @@ export const en = {
   // Track
   'track.title': 'Track Order',
   'track.queueNumber': 'QUEUE NUMBER',
+  'track.ordersAhead': '{n} ahead of you in the queue',
   'track.order': 'ORDER',
   'track.pickedItUp': 'I’ve picked it up',
   'track.waitingOnVendorConfirm': 'Confirmed! Waiting for the vendor to confirm hand-off.',

@@ -20,6 +20,7 @@ type Status = 'pending' | 'accepted' | 'ready' | 'completed' | 'rejected' | 'can
 
 type TrackOrder = {
   id: string;
+  vendor_id: string;
   queue_number: number | null;
   pickup_start: string | null;
   pickup_end: string | null;
@@ -55,17 +56,19 @@ export default function TrackScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [order, setOrder] = useState<TrackOrder | null | undefined>(undefined);
   const [status, setStatus] = useState<Status>('pending');
+  const [ordersAhead, setOrdersAhead] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),payments(status),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,vendor_id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),payments(status),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
       setOrder({
         id: data.id,
+        vendor_id: data.vendor_id,
         queue_number: data.queue_number,
         pickup_start: data.pickup_start,
         pickup_end: data.pickup_end,
@@ -93,6 +96,26 @@ export default function TrackScreen() {
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [id]);
+
+  // Queue position ("N orders ahead of you") — the RPC itself returns null
+  // once this order leaves pending/accepted, so no separate hide logic is
+  // needed here beyond rendering when non-null.
+  useEffect(() => {
+    if (!order) return;
+    async function fetchOrdersAhead() {
+      const { data } = await supabase.rpc('get_orders_ahead', { p_order_id: id });
+      setOrdersAhead(data ?? null);
+    }
+    void fetchOrdersAhead();
+
+    const channel = supabase
+      .channel(`track-queue-${order.vendor_id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${order.vendor_id}` }, () => {
+        void fetchOrdersAhead();
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [order?.vendor_id, id]);
 
   async function markPickedUp() {
     if (!order) return;
@@ -187,6 +210,11 @@ export default function TrackScreen() {
           <Text style={{ fontSize: 13, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary, marginTop: 2 }}>
             {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
           </Text>
+          {ordersAhead !== null && (
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isReady ? '#fff' : Brand.orange, marginTop: 8 }}>
+              {t('track.ordersAhead', { n: ordersAhead })}
+            </Text>
+          )}
         </View>
 
         {/* Terminal state — the order is dead, so there is no progress to step

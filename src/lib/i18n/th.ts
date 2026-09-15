@@ -237,6 +237,7 @@ export const th: Record<TranslationKey, string> = {
   // Track
   'track.title': 'ติดตามคำสั่งซื้อ',
   'track.queueNumber': 'หมายเลขคิว',
+  'track.ordersAhead': 'มีคิวก่อนคุณอีก {n} คิว',
   'track.order': 'คำสั่งซื้อ',
   'track.pickedItUp': 'รับอาหารแล้ว',
   'track.waitingOnVendorConfirm': 'ยืนยันแล้ว! รอร้านค้ายืนยันการส่งมอบ',
