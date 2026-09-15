@@ -58,6 +58,24 @@ begin
 end;
 $$;
 
+-- The demo presentation seed (20260908010000) inserted topup rows with
+-- placeholder references, and on hosted at least one of those references
+-- ended up duplicated (seed re-run, manual re-seed, etc. — the seed's own
+-- `if not exists` guard only checks within a single user, not globally).
+-- Real Stripe PaymentIntent ids can't collide; demo placeholders can and did.
+-- Null out the reference on every but the earliest row per duplicate value
+-- so the unique index below can actually be created — the ledger row (and
+-- its contribution to wallet_balance) stays, it just loses its reference.
+with duplicates as (
+  select id, row_number() over (partition by reference order by created_at, id) as rn
+    from public.wallet_transactions
+   where type = 'topup' and reference is not null
+)
+update public.wallet_transactions w
+   set reference = null
+  from duplicates d
+ where w.id = d.id and d.rn > 1;
+
 create unique index wallet_transactions_topup_reference_unique
   on public.wallet_transactions (reference)
   where type = 'topup';
