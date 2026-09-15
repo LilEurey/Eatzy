@@ -557,6 +557,13 @@ export const th: Record<TranslationKey, string> = {
   'vendor.profile.saving': 'กำลังบันทึก…',
   'vendor.profile.savedTitle': 'อัปเดตโปรไฟล์แล้ว',
   'vendor.profile.savedMsg': 'บันทึกโปรไฟล์ร้านค้าของคุณแล้ว',
+  'vendor.profile.payoutsTitle': 'การรับเงิน',
+  'vendor.profile.payoutsNotStarted': 'ตั้งค่าบัญชีธนาคารเพื่อรับเงินจากออเดอร์ที่เสร็จสมบูรณ์',
+  'vendor.profile.payoutsPending': 'กำลังตั้งค่าการรับเงิน — ทำให้เสร็จเพื่อเริ่มรับเงินโอน',
+  'vendor.profile.payoutsActive': 'เปิดใช้งานการรับเงินแล้ว ออเดอร์ที่เสร็จสมบูรณ์จะโอนเข้าบัญชีธนาคารของคุณโดยอัตโนมัติ',
+  'vendor.profile.payoutsSetUp': 'ตั้งค่าการรับเงิน',
+  'vendor.profile.payoutsResume': 'ตั้งค่าการรับเงินต่อ',
+  'vendor.profile.payoutsConnecting': 'กำลังเปิด…',
 
   // Vendor — store location pin picker
   'vendor.location.rowLabel': 'ตำแหน่งร้าน',

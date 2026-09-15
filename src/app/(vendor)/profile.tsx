@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Switch } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as ExpoLinking from 'expo-linking';
 import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { useVendorProfile, updateVendorProfile } from '@/lib/vendor-store';
+import { useVendorProfile, updateVendorProfile, startVendorStripeOnboarding, refreshVendorProfile } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { hasCoords } from '@/lib/geo';
@@ -12,6 +14,18 @@ import { hasCoords } from '@/lib/geo';
 export default function VendorProfileScreen() {
   const { t } = useI18n();
   const vendor = useVendorProfile();
+  const [connectingPayouts, setConnectingPayouts] = useState(false);
+
+  async function setUpPayouts() {
+    setConnectingPayouts(true);
+    const redirectTo = ExpoLinking.createURL('/');
+    const url = await startVendorStripeOnboarding(redirectTo);
+    if (url) {
+      await WebBrowser.openAuthSessionAsync(url, redirectTo);
+      await refreshVendorProfile();
+    }
+    setConnectingPayouts(false);
+  }
 
   const [name, setName] = useState(vendor?.name ?? '');
   const [isOnCampus, setIsOnCampus] = useState(vendor?.is_on_campus ?? true);
@@ -50,6 +64,30 @@ export default function VendorProfileScreen() {
         <Tap onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
           <Ionicons name="arrow-back" size={14} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#8A8F9B' }}>{t('vendor.profile.backCaption')}</Text>
+        </Tap>
+      </View>
+
+      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5', gap: 10, maxWidth: 480 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.profile.payoutsTitle')}</Text>
+        <Text style={{ fontSize: 13, color: '#8A8F9B' }}>
+          {vendor?.stripe_payouts_enabled
+            ? t('vendor.profile.payoutsActive')
+            : vendor?.stripe_account_id
+              ? t('vendor.profile.payoutsPending')
+              : t('vendor.profile.payoutsNotStarted')}
+        </Text>
+        <Tap
+          onPress={setUpPayouts}
+          disabled={connectingPayouts}
+          style={{ alignSelf: 'flex-start', backgroundColor: Brand.vendorAccent, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, opacity: connectingPayouts ? 0.7 : 1 }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>
+            {connectingPayouts
+              ? t('vendor.profile.payoutsConnecting')
+              : vendor?.stripe_account_id
+                ? t('vendor.profile.payoutsResume')
+                : t('vendor.profile.payoutsSetUp')}
+          </Text>
         </Tap>
       </View>
 

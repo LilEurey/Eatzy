@@ -555,6 +555,13 @@ export const en = {
   'vendor.profile.saving': 'Saving…',
   'vendor.profile.savedTitle': 'Profile updated',
   'vendor.profile.savedMsg': 'Your store profile was saved.',
+  'vendor.profile.payoutsTitle': 'Payouts',
+  'vendor.profile.payoutsNotStarted': 'Set up your bank account to receive payments for completed orders.',
+  'vendor.profile.payoutsPending': 'Payout setup is in progress — finish it to start receiving transfers.',
+  'vendor.profile.payoutsActive': 'Payouts are active. Completed orders transfer to your bank account automatically.',
+  'vendor.profile.payoutsSetUp': 'Set up payouts',
+  'vendor.profile.payoutsResume': 'Resume payout setup',
+  'vendor.profile.payoutsConnecting': 'Opening…',
 
   // Vendor — store location pin picker
   'vendor.location.rowLabel': 'Store location',

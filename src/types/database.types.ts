@@ -777,6 +777,8 @@ export type Database = {
           open_time: string | null
           owner_user_id: string | null
           stall_number: string | null
+          stripe_account_id: string | null
+          stripe_payouts_enabled: boolean
         }
         Insert: {
           address?: string | null
@@ -798,6 +800,8 @@ export type Database = {
           open_time?: string | null
           owner_user_id?: string | null
           stall_number?: string | null
+          stripe_account_id?: string | null
+          stripe_payouts_enabled?: boolean
         }
         Update: {
           address?: string | null
@@ -819,6 +823,8 @@ export type Database = {
           open_time?: string | null
           owner_user_id?: string | null
           stall_number?: string | null
+          stripe_account_id?: string | null
+          stripe_payouts_enabled?: boolean
         }
         Relationships: [
           {

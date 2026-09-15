@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
 import { showAlert } from '@/lib/alert';
+import { invokeEdgeFunction } from '@/lib/edge-function';
 
 // Vendor-side state — orders, menu, store-open — backed by real Supabase
 // queries + Realtime, scoped to whichever vendor the signed-in user owns.
@@ -25,6 +26,8 @@ type VendorProfile = {
   is_halal_certified: boolean;
   open_time: string | null;
   close_time: string | null;
+  stripe_account_id: string | null;
+  stripe_payouts_enabled: boolean;
 };
 
 type MenuItem = {
@@ -245,6 +248,10 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
     is_halal_certified: vendor.is_halal_certified,
     open_time: vendor.open_time,
     close_time: vendor.close_time,
+    // `?? null`/`?? false`: same not-yet-migrated-on-hosted-DB defensiveness
+    // as latitude/longitude above, until 20260915020000 lands there.
+    stripe_account_id: vendor.stripe_account_id ?? null,
+    stripe_payouts_enabled: vendor.stripe_payouts_enabled ?? false,
   };
   storeOpen = vendor.is_open;
 
@@ -435,6 +442,40 @@ export async function updateVendorProfile(patch: VendorProfilePatch): Promise<bo
     return false;
   }
   return true;
+}
+
+// ─── Stripe Connect onboarding ─────────────────────────────────────────────
+
+/** Refetches just the vendor row — used after returning from Stripe-hosted
+ * onboarding, since stripe_account_id is written server-side by
+ * vendor-stripe-onboarding and this tab's local state doesn't know about it. */
+export async function refreshVendorProfile(): Promise<void> {
+  if (!vendorProfile) return;
+  const { data: vendor } = await supabase
+    .from('vendors')
+    .select('stripe_account_id, stripe_payouts_enabled')
+    .eq('id', vendorProfile.id)
+    .maybeSingle();
+  if (!vendor) return;
+  vendorProfile = {
+    ...vendorProfile,
+    stripe_account_id: vendor.stripe_account_id ?? null,
+    stripe_payouts_enabled: vendor.stripe_payouts_enabled ?? false,
+  };
+  emit();
+}
+
+/** Starts (or resumes) Stripe Connect onboarding and returns the hosted
+ * onboarding URL to open with expo-web-browser, or null on failure. */
+export async function startVendorStripeOnboarding(returnUrl: string): Promise<string | null> {
+  const { data, error } = await invokeEdgeFunction<{ url: string }>('vendor-stripe-onboarding', {
+    body: { return_url: returnUrl, refresh_url: returnUrl },
+  });
+  if (error || !data?.url) {
+    showAlert('Could not start payout setup', error?.message ?? 'Please try again.');
+    return null;
+  }
+  return data.url;
 }
 
 // ─── Derived: payments / finance ───────────────────────────────────────────
