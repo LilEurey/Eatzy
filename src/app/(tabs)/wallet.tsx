@@ -3,12 +3,14 @@ import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
+import { useStripe } from '@stripe/stripe-react-native';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert, comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
+import { invokeEdgeFunction } from '@/lib/edge-function';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
 type WalletTxn = { id: string; type: TxType; amount: number; description: string | null; created_at: string };
@@ -36,6 +38,7 @@ function formatDate(iso: string, t: ReturnType<typeof useI18n>['t']) {
 
 export default function WalletScreen() {
   const { t } = useI18n();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [balance, setBalance] = useState(0);
   const [txns, setTxns] = useState<WalletTxn[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,16 +76,47 @@ export default function WalletScreen() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { comingSoonAlert(t); return; }
     setToppingUp(true);
-    const { error } = await supabase.rpc('topup_wallet', { p_user_id: user.id, p_amount: amount });
+
+    const { data: intentData, error: intentError } = await invokeEdgeFunction<{ client_secret: string }>(
+      'create-topup-intent',
+      { body: { amount } },
+    );
     if (cancelledRef.current) return;
-    if (error) {
-      showAlert(t('wallet.topUpFailedTitle'), error.message);
-    } else {
-      const { balance, txns } = await loadWallet(user.id);
-      if (cancelledRef.current) return;
-      setBalance(balance);
-      setTxns(txns);
+    if (intentError || !intentData?.client_secret) {
+      showAlert(t('wallet.topUpFailedTitle'), intentError?.message ?? 'Could not start payment');
+      setToppingUp(false);
+      return;
     }
+
+    const { error: initError } = await initPaymentSheet({
+      paymentIntentClientSecret: intentData.client_secret,
+      merchantDisplayName: 'Eatzy',
+    });
+    if (cancelledRef.current) return;
+    if (initError) {
+      showAlert(t('wallet.topUpFailedTitle'), initError.message);
+      setToppingUp(false);
+      return;
+    }
+
+    const { error: presentError } = await presentPaymentSheet();
+    if (cancelledRef.current) return;
+    if (presentError) {
+      // 'Canceled' means the student closed the sheet — not a failure.
+      if (presentError.code !== 'Canceled') showAlert(t('wallet.topUpFailedTitle'), presentError.message);
+      setToppingUp(false);
+      return;
+    }
+
+    // PaymentSheet resolving success only means Stripe confirmed the charge
+    // client-side — the wallet is credited by stripe-webhook (payment_intent.
+    // succeeded), which typically lands within a second or two of this point
+    // but isn't guaranteed to have run yet.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const { balance, txns } = await loadWallet(user.id);
+    if (cancelledRef.current) return;
+    setBalance(balance);
+    setTxns(txns);
     setToppingUp(false);
   }
 

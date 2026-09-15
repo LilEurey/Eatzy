@@ -50,7 +50,8 @@
         {
           "locationWhenInUsePermission": "Eatzy uses your location to place your store on the campus map and to show where you are relative to a stall."
         }
-      ]
+      ],
+      "@stripe/stripe-react-native"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -2,9 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { Stack, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { supabase } from '@/lib/supabase';
 import { I18nProvider } from '@/lib/i18n';
 import type { Session } from '@supabase/supabase-js';
+
+// PaymentSheet needs this native module, which Expo Go doesn't ship — same
+// dev-build requirement as react-native-maps. Falls back to an empty key so
+// unrelated screens still render in Expo Go; the topup flow itself will
+// fail loudly if actually invoked there.
+const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 
 // Standalone entry points meant to be reached directly (typed URL, bookmark,
 // QR code) while signed out — not just via an in-app link from (auth). The
@@ -107,10 +114,15 @@ export default function RootLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
+  // merchantIdentifier only matters for Apple Pay — it must match an Apple
+  // merchant ID actually registered in the Apple Developer portal before
+  // Apple Pay will work; card payments don't need it.
   return (
-    <I18nProvider>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }} />
-    </I18nProvider>
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} merchantIdentifier="merchant.com.anonymous.eatzy">
+      <I18nProvider>
+        <StatusBar style="dark" />
+        <Stack screenOptions={{ headerShown: false }} />
+      </I18nProvider>
+    </StripeProvider>
   );
 }
