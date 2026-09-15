@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     intent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // THB smallest unit (satang)
       currency: 'thb',
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: ['promptpay'],
       metadata: { user_id: caller.id },
     });
   } catch (err) {
