@@ -25,6 +25,7 @@ npx expo start --ios    # Open in iOS Simulator
 npx expo start --android
 npx expo start --web    # Web preview
 npm run lint            # ESLint
+npm test                # Jest (ts-jest, node env) — pure logic only: src/lib/__tests__, supabase/functions/__tests__; no RN component tests; @/lib/supabase is mocked
 npm run reset-project    # Reset to blank starter app/ (scripts/reset-project.js)
 npx supabase db push    # Apply pending migrations (requires Supabase CLI)
 npx supabase gen types typescript --local > src/types/database.types.ts  # Regenerate DB types
@@ -62,8 +63,10 @@ Eatzy/
 │       └── database.types.ts  # Generated Supabase types
 ├── supabase/
 │   ├── migrations/       # SQL migration files (timestamp-prefixed)
-│   └── functions/        # Edge fns: admin-create-vendor, bootstrap-admin,
-│                         #   recommend-for-you, recommend-similar (ranking pipeline)
+│   └── functions/        # Edge fns (Deno): admin-create-vendor, recommend-for-you,
+│                         #   recommend-similar (ranking pipeline), create-topup-intent,
+│                         #   stripe-webhook, transfer-order-payout, vendor-stripe-{onboarding,status};
+│                         #   _shared/ = tfidf, catalog, cors. (bootstrap-admin is no longer in the repo.)
 ├── ml/                    # recommend.py (TF-IDF + cosine demo), data/*.csv fixtures
 ├── eas.json               # EAS build/submit profiles (iOS-first)
 ├── global.css            # Tailwind directives (imported in app/_layout)
@@ -108,6 +111,11 @@ Rules the ranking code must keep:
 ### Payment Flow
 
 Escrow: student payment held → on completion, transferred to vendor wallet (refunded if rejected/cancelled). Implement via Supabase RPC.
+
+Real money (Stripe, added 2026-09-15) sits on either side of the in-app ledger:
+- **Top-up (PromptPay only)** — `wallet.tsx` → `create-topup-intent` (PaymentIntent, ฿ min/max enforced server-side) → PaymentSheet → `stripe-webhook` verifies the signature → `topup_wallet` RPC (service-role only; idempotent on the PaymentIntent id, since Stripe retries). The client never credits the wallet. `charge.dispute.created` → `debit_wallet_for_dispute`.
+- **Vendor payout** — vendor onboards via `vendor-stripe-onboarding` / `vendor-stripe-status` (Connect). After either handoff-confirm RPC, the client calls `transfer-order-payout`; it no-ops until `finalize_order_handoff` completes the order, pays out `payments.amount` (not recomputed `orders.total_amount`), and is idempotent on `orders.stripe_transfer_id`. Orders auto-finalized by the stale-handoff cron are not transferred until reconciled (`ponytail:` in the function).
+- Setup steps still manual — see `scripts/stripe-setup.sh`.
 
 ### Localization
 
