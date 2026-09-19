@@ -17,7 +17,7 @@ export type Preferences = {
 
 // Anonymous / no row: nothing is filtered and nothing warns — matches the old
 // DEFAULT_PREFS in (tabs)/index.tsx.
-export const DEFAULT_PREFERENCES: Preferences = {
+const DEFAULT_PREFERENCES: Preferences = {
   is_halal: false,
   is_vegetarian: false,
   is_jay: false,
