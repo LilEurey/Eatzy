@@ -4,9 +4,8 @@
   },
   "permissions": {
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.local)",
-      "Read(./.env.*.local)"
+      "Read(**/.env)",
+      "Read(**/.env.*)"
     ],
     "ask": [
       "Bash(npx supabase db push:*)",
