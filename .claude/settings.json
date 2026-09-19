@@ -2,7 +2,18 @@
   "enabledPlugins": {
     "expo@claude-plugins-official": true
   },
-  "enableAllProjectMcpServers": true,
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)"
+    ],
+    "ask": [
+      "Bash(npx supabase db push:*)",
+      "Bash(supabase db push:*)",
+      "Bash(eas submit:*)"
+    ]
+  },
   "skillOverrides": {
     "eas-app-stores": "on",
     "eas-hosting": "on",
