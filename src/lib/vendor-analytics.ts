@@ -103,7 +103,7 @@ function inRange(iso: string, range: DateRangeFilter, now: Date): boolean {
   return t.getTime() >= cutoff && t.getTime() <= now.getTime();
 }
 
-export type SalesOrderItem = {
+type SalesOrderItem = {
   menu_item_id: string;
   name: string;
   name_th: string | null;
