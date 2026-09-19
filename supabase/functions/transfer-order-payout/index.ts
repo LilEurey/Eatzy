@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
   const { data: order, error: orderError } = await adminClient
     .from('orders')
-    .select('id, status, user_id, vendor_id, total_amount, stripe_transfer_id')
+    .select('id, status, user_id, vendor_id, stripe_transfer_id')
     .eq('id', orderId)
     .maybeSingle();
   if (orderError) return json({ error: orderError.message }, 500);
@@ -82,13 +82,24 @@ Deno.serve(async (req) => {
     return json({ ok: false, reason: 'vendor_not_onboarded' });
   }
 
+  // Pay what the student was actually charged (payments.amount, frozen at
+  // accept time), not orders.total_amount, which is recomputed from order_items.
+  const { data: payment, error: paymentError } = await adminClient
+    .from('payments')
+    .select('amount')
+    .eq('order_id', order.id)
+    .eq('status', 'completed')
+    .maybeSingle();
+  if (paymentError) return json({ error: paymentError.message }, 500);
+  if (!payment) return json({ ok: false, reason: 'no_completed_payment' });
+
   const stripe = new Stripe(stripeSecretKey);
 
   let transfer;
   try {
     transfer = await stripe.transfers.create(
       {
-        amount: Math.round(order.total_amount * 100),
+        amount: Math.round(payment.amount * 100),
         currency: 'thb',
         destination: vendor.stripe_account_id,
         transfer_group: order.id,
