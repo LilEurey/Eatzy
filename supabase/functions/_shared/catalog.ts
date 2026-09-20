@@ -12,15 +12,6 @@ const SELECT =
 
 let cache: { rows: unknown[]; at: number } | null = null;
 
-// Mirror of src/lib/menu-categories.ts's DRINK_CATEGORIES — an Edge Function
-// can't import from src/, and menu_items.category is free text that seeds have
-// written under both spellings. Keep the two lists in step.
-const DRINK_CATEGORIES = ['beverages', 'drinks'];
-
-export function isDrinkCategory(category: string | null): boolean {
-  return !!category && DRINK_CATEGORIES.includes(category.toLowerCase());
-}
-
 export async function getRankingCatalog<T>(
   client: SupabaseClient,
 ): Promise<{ rows: T[]; error: string | null }> {
