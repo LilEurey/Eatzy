@@ -11,7 +11,7 @@
 // `.select(...)` / `.update(...)` / `.insert(...)` payload the code under test
 // passed — so a test can assert on an update patch or a select column list.
 type MockResult = { data: unknown; error: unknown };
-type FromCall = { table: string; select?: unknown; update?: unknown; insert?: unknown };
+type FromCall = { table: string; select?: unknown; update?: unknown; insert?: unknown; filters: [string, unknown][] };
 
 let nextResult: MockResult = { data: null, error: null };
 let nextRpcResult: MockResult = { data: null, error: null };
@@ -66,7 +66,7 @@ function makeBuilder(call: FromCall): any {
     select: (arg?: unknown) => { call.select = arg; return builder; },
     update: (arg?: unknown) => { call.update = arg; return builder; },
     insert: (arg?: unknown) => { call.insert = arg; return builder; },
-    eq: () => builder,
+    eq: (col: string, val: unknown) => { call.filters.push([col, val]); return builder; },
     in: () => builder,
     order: () => builder,
     limit: () => builder,
@@ -85,7 +85,7 @@ const channelStub: any = {
 
 export const supabase = {
   from: (table: string) => {
-    const call: FromCall = { table };
+    const call: FromCall = { table, filters: [] };
     fromCalls.push(call);
     return makeBuilder(call);
   },

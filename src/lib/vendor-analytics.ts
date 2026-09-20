@@ -4,7 +4,7 @@
 // __tests__/vendor-analytics.test.ts. Works off the order rows already in
 // vendor-store (whole history, all statuses); does its own date windowing.
 
-import type { OrderStatus } from '@/lib/vendor-store';
+import { isEarned, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 import { bangkokDayKey, bangkokHour, bangkokWeekday, getMealSegment, type DateRangeFilter } from '@/lib/time';
 
 export type AnalyticsOrder = { created_at: string; status: OrderStatus; total_amount: number };
@@ -12,19 +12,15 @@ export type AnalyticsOrder = { created_at: string; status: OrderStatus; total_am
 export type VelocityBar = { label: string; value: number; isNow: boolean };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-// Rejected / cancelled orders never earned money and don't reflect real demand.
-const EXCLUDED: ReadonlySet<OrderStatus> = new Set<OrderStatus>(['rejected', 'cancelled']);
 const SEGMENT_INDEX = { breakfast: 0, lunch: 1, dinner: 2 } as const;
 
+// Rejected / cancelled orders never earned money and don't reflect real demand.
 function fulfilled(orders: AnalyticsOrder[]): AnalyticsOrder[] {
-  return orders.filter(o => !EXCLUDED.has(o.status));
+  return orders.filter(o => !isVoided(o.status));
 }
 
-// Money only actually lands in the vendor's wallet once both sides confirm
-// handoff (finalize_order_handoff) — pending/accepted/ready is still escrow,
-// not earned revenue.
 function earned(orders: AnalyticsOrder[]): AnalyticsOrder[] {
-  return orders.filter(o => o.status === 'completed');
+  return orders.filter(o => isEarned(o.status));
 }
 
 // 0 → "12AM", 9 → "9AM", 12 → "12PM", 23 → "11PM".
@@ -127,7 +123,7 @@ export type ItemSales = {
 export function itemSales(orders: SalesOrder[], range: DateRangeFilter, now: Date = new Date()): ItemSales[] {
   const acc = new Map<string, ItemSales>();
   for (const o of orders) {
-    if (EXCLUDED.has(o.status)) continue;
+    if (isVoided(o.status)) continue;
     if (!inRange(o.created_at, range, now)) continue;
     const counted = new Set<string>();
     for (const it of o.items) {
@@ -203,7 +199,7 @@ export type FulfilmentOrder = { created_at: string; status: OrderStatus; vendor_
 export function avgFulfilmentMinutes(orders: FulfilmentOrder[], range: DateRangeFilter, now: Date = new Date()): number | null {
   const durations: number[] = [];
   for (const o of orders) {
-    if (EXCLUDED.has(o.status) || !o.vendor_handed_off_at) continue;
+    if (isVoided(o.status) || !o.vendor_handed_off_at) continue;
     if (!inRange(o.created_at, range, now)) continue;
     const ms = new Date(o.vendor_handed_off_at).getTime() - new Date(o.created_at).getTime();
     if (ms > 0) durations.push(ms / 60000);

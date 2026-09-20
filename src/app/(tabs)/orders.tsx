@@ -10,7 +10,7 @@ import { localizedText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
-import type { OrderStatus } from '@/lib/vendor-store';
+import { isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
 
@@ -45,7 +45,6 @@ const FILTER_LABELS: Record<FilterTab, TranslationKey> = {
 
 const PROGRESS_STEPS: TranslationKey[] = ['track.stepPlacedLabel', 'orders.status.preparing', 'orders.status.ready'];
 
-const ACTIVE: OrderStatus[] = ['pending', 'accepted', 'ready'];
 
 export default function OrdersScreen() {
   const { t, locale } = useI18n();
@@ -105,7 +104,7 @@ export default function OrdersScreen() {
 
   const filtered = orders.filter(o => {
     if (tab === 'All') return true;
-    if (tab === 'Active') return ACTIVE.includes(o.status);
+    if (tab === 'Active') return isActiveForStudent(o.status);
     if (tab === 'Completed') return o.status === 'completed';
     // 'rejected' belongs here too. It is neither active nor completed, so
     // filtering this tab on 'cancelled' alone left a rejected order reachable
@@ -113,7 +112,7 @@ export default function OrdersScreen() {
     // wallet is short gets auto-rejected the moment the vendor taps Accept
     // (see accept_order_and_charge). Both mean the same thing to a student:
     // the order didn't happen.
-    if (tab === 'Cancelled') return o.status === 'cancelled' || o.status === 'rejected';
+    if (tab === 'Cancelled') return isVoided(o.status);
     return true;
   });
 
@@ -163,7 +162,7 @@ export default function OrdersScreen() {
       ) : (
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
-        {tab === 'All' && filtered.some(o => ACTIVE.includes(o.status)) && (
+        {tab === 'All' && filtered.some(o => isActiveForStudent(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
             {t('orders.active')}
           </Text>
@@ -173,7 +172,7 @@ export default function OrdersScreen() {
           {filtered.map(order => {
             const cfg = STATUS_CONFIG[order.status];
             const vendor = order.vendor_name;
-            const isActive = ACTIVE.includes(order.status);
+            const isActive = isActiveForStudent(order.status);
             const itemSummary = order.items.map(i => {
               const addons = i.addons.length ? ` (+${i.addons.map(a => localizedText(a.name, a.name_th, locale)).join(', ')})` : '';
               return `${localizedText(i.name, i.name_th, locale)}${i.quantity > 1 ? ` ×${i.quantity}` : ''}${addons}`;

@@ -2,13 +2,12 @@ import { useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
 import { showAlert } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
+import { confirmHandoff, isEarned, transitionOrder, type OrderStatus } from '@/lib/order-lifecycle';
 
 // Vendor-side state — orders, menu, store-open — backed by real Supabase
 // queries + Realtime, scoped to whichever vendor the signed-in user owns.
 // Module-level state + useSyncExternalStore (mirrors cart-store.ts) so it
 // survives Expo Router unmounting screens on navigation.
-
-export type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'ready' | 'completed' | 'cancelled';
 
 type VendorProfile = {
   id: string;
@@ -296,16 +295,9 @@ export async function rejectOrder(id: string) {
   // there's nothing to refund. Guard on status='pending' so a race with
   // an accept that just landed (or a stale second device) can't flip an
   // already-charged order to 'rejected' with no way to unwind the debit.
-  const { data, error } = await supabase
-    .from('orders')
-    .update({ status: 'rejected' })
-    .eq('id', id)
-    .eq('status', 'pending')
-    .select('id');
-  if (error) { showAlert('Could not reject order', error.message); return; }
-  if (!data || data.length === 0) {
-    showAlert('Could not reject order', 'This order is no longer pending.');
-  }
+  const result = await transitionOrder(id, 'pending', 'rejected');
+  if (typeof result === 'object') { showAlert('Could not reject order', result.error); return; }
+  if (result === 'lost-race') showAlert('Could not reject order', 'This order is no longer pending.');
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
@@ -317,27 +309,16 @@ export async function markReady(id: string) {
   // food that was never paid for. The DB enforces this too — see
   // enforce_order_status_transition — but matching here turns a raw Postgres
   // exception into the same "no longer …" message reject already shows.
-  const { data, error } = await supabase
-    .from('orders')
-    .update({ status: 'ready' })
-    .eq('id', id)
-    .eq('status', 'accepted')
-    .select('id');
-  if (error) { showAlert('Could not update order', error.message); return; }
-  if (!data || data.length === 0) {
-    showAlert('Could not update order', 'This order is no longer accepted.');
-  }
+  const result = await transitionOrder(id, 'accepted', 'ready');
+  if (typeof result === 'object') { showAlert('Could not update order', result.error); return; }
+  if (result === 'lost-race') showAlert('Could not update order', 'This order is no longer accepted.');
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
 
 export async function handOff(id: string) {
-  const { error } = await supabase.rpc('vendor_confirm_handoff', { p_order_id: id });
-  if (error) { showAlert('Could not confirm hand-off', error.message); return; }
-  // Only actually completes the order (and transfers) once the student has
-  // also confirmed — a no-op otherwise. Fire-and-forget: the internal
-  // wallet ledger is already correct regardless of this call's outcome.
-  void invokeEdgeFunction('transfer-order-payout', { body: { order_id: id } });
+  const error = await confirmHandoff('vendor', id);
+  if (error) { showAlert('Could not confirm hand-off', error); return; }
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
@@ -501,7 +482,7 @@ export function getVendorPayments(): VendorPayment[] {
   // both sides confirm handoff (finalize_order_handoff) — only 'completed'
   // orders are real, received revenue.
   return orders
-    .filter(o => o.status === 'completed')
+    .filter(o => isEarned(o.status))
     .map(o => ({
       order_id: o.id,
       display_id: `#${o.queue_number ?? o.id.slice(0, 8).toUpperCase()}`,
