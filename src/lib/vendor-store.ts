@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
 import { showAlert } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
@@ -477,11 +477,11 @@ type VendorPayment = {
   status: 'COMPLETED';
 };
 
-export function getVendorPayments(): VendorPayment[] {
+export function paymentsFromOrders(all: VendorOrder[]): VendorPayment[] {
   // Escrow is held on accept, but only lands in the vendor's wallet once
   // both sides confirm handoff (finalize_order_handoff) — only 'completed'
   // orders are real, received revenue.
-  return orders
+  return all
     .filter(o => isEarned(o.status))
     .map(o => ({
       order_id: o.id,
@@ -492,4 +492,12 @@ export function getVendorPayments(): VendorPayment[] {
       status: 'COMPLETED' as const,
     }))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+/** Reactive: re-derives whenever the order list changes, unlike the old
+ * module-state read, which left the finance screen stale until something
+ * else happened to re-render it. */
+export function useVendorPayments(): VendorPayment[] {
+  const all = useVendorOrders();
+  return useMemo(() => paymentsFromOrders(all), [all]);
 }

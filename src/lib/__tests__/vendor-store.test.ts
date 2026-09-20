@@ -7,7 +7,7 @@ import {
   __setAuthUser,
   __resetMock,
 } from './__mocks__/supabase';
-import { acceptOrder, rejectOrder, markReady, initVendorSession, updateVendorProfile, __getVendorProfileForTest } from '@/lib/vendor-store';
+import { acceptOrder, rejectOrder, markReady, initVendorSession, updateVendorProfile, paymentsFromOrders, __getVendorProfileForTest } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 
 jest.mock('@/lib/alert', () => ({ showAlert: jest.fn() }));
@@ -218,5 +218,35 @@ describe('updateVendorProfile coordinates', () => {
     expect(vendorUpdate?.update).toEqual(
       expect.objectContaining({ latitude: 13.651, longitude: 100.497 }),
     );
+  });
+});
+
+describe('paymentsFromOrders', () => {
+  const order = (over: Partial<Parameters<typeof paymentsFromOrders>[0][number]>) => ({
+    id: 'aaaaaaaa-1111', queue_number: 7, status: 'completed' as const, total_amount: 50,
+    pickup_start: null, payment_method: 'wallet', created_at: '2026-06-15T05:00:00Z',
+    prep_seconds: null, special_request: null, vendor_handed_off_at: null, items: [],
+    ...over,
+  });
+
+  it('counts only completed orders as received revenue', () => {
+    const rows = paymentsFromOrders([
+      order({ id: 'a', status: 'pending' }),
+      order({ id: 'b', status: 'accepted' }),
+      order({ id: 'c', status: 'ready' }),
+      order({ id: 'd', status: 'rejected' }),
+      order({ id: 'e', status: 'cancelled' }),
+      order({ id: 'f', status: 'completed' }),
+    ]);
+    expect(rows.map(r => r.order_id)).toEqual(['f']);
+  });
+
+  it('sorts newest first and falls back to a short id when there is no queue number', () => {
+    const rows = paymentsFromOrders([
+      order({ id: 'old', created_at: '2026-06-14T05:00:00Z' }),
+      order({ id: 'abcdef123456', queue_number: null, created_at: '2026-06-15T05:00:00Z' }),
+    ]);
+    expect(rows.map(r => r.order_id)).toEqual(['abcdef123456', 'old']);
+    expect(rows[0].display_id).toBe('#ABCDEF12');
   });
 });
