@@ -10,7 +10,7 @@ import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { nextPickupSlots, timeSegmentForBangkok } from '@/lib/time';
+import { nextPickupSlots, getMealSegment } from '@/lib/time';
 import type { Database } from '@/types/database.types';
 
 type Vendor = Database['public']['Tables']['vendors']['Row'];
@@ -95,7 +95,7 @@ export default function CartScreen() {
           payment_method: 'wallet',
           pickup_start: selectedSlot.start.toISOString(),
           pickup_end: selectedSlot.end.toISOString(),
-          time_segment: timeSegmentForBangkok(selectedSlot.start),
+          time_segment: getMealSegment(selectedSlot.start),
         })
         .select('id')
         .single();

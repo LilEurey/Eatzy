@@ -5,7 +5,7 @@
 // vendor-store (whole history, all statuses); does its own date windowing.
 
 import { isEarned, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
-import { bangkokDayKey, bangkokHour, bangkokWeekday, getMealSegment, type DateRangeFilter } from '@/lib/time';
+import { bangkokDayKey, bangkokHour, bangkokWeekday, getMealSegment, isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
 
 export type AnalyticsOrder = { created_at: string; status: OrderStatus; total_amount: number };
 
@@ -86,19 +86,6 @@ export function salesVelocity(
   return bars;
 }
 
-// Bangkok-calendar window predicate with an injectable `now` (so callers stay
-// unit-testable). Mirrors lib/time's isBangkokDateInRange, which hard-codes
-// new Date() and so can't be used from tests.
-function inRange(iso: string, range: DateRangeFilter, now: Date): boolean {
-  if (range === 'all') return true;
-  const t = new Date(iso);
-  if (range === 'today') return bangkokDayKey(t) === bangkokDayKey(now);
-  if (range === 'yesterday') return bangkokDayKey(t) === bangkokDayKey(new Date(now.getTime() - DAY_MS));
-  const days = range === 'week' ? 7 : 30;
-  const cutoff = now.getTime() - days * DAY_MS;
-  return t.getTime() >= cutoff && t.getTime() <= now.getTime();
-}
-
 type SalesOrderItem = {
   menu_item_id: string;
   name: string;
@@ -124,7 +111,7 @@ export function itemSales(orders: SalesOrder[], range: DateRangeFilter, now: Dat
   const acc = new Map<string, ItemSales>();
   for (const o of orders) {
     if (isVoided(o.status)) continue;
-    if (!inRange(o.created_at, range, now)) continue;
+    if (!isBangkokDateInRange(o.created_at, range, now)) continue;
     const counted = new Set<string>();
     for (const it of o.items) {
       let row = acc.get(it.menu_item_id);
@@ -200,7 +187,7 @@ export function avgFulfilmentMinutes(orders: FulfilmentOrder[], range: DateRange
   const durations: number[] = [];
   for (const o of orders) {
     if (isVoided(o.status) || !o.vendor_handed_off_at) continue;
-    if (!inRange(o.created_at, range, now)) continue;
+    if (!isBangkokDateInRange(o.created_at, range, now)) continue;
     const ms = new Date(o.vendor_handed_off_at).getTime() - new Date(o.created_at).getTime();
     if (ms > 0) durations.push(ms / 60000);
   }
