@@ -1,14 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { Brand } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
 import { notificationText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
-import { useFocusGuard } from '@/hooks/useFocusGuard';
+import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 
 type NotificationRow = {
   id: string;
@@ -27,47 +27,38 @@ type NotificationRow = {
 export default function NotificationsScreen() {
   const { t } = useI18n();
   const [notifications, setNotifications] = useState<NotificationRow[] | undefined>(undefined);
-  const cancelledRef = useFocusGuard();
 
-  useFocusEffect(
-    useCallback(() => {
-      let channel: ReturnType<typeof supabase.channel> | undefined;
+  useLiveWhileFocused(async isCancelled => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { if (!isCancelled()) setNotifications([]); return; }
 
-      async function load() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { if (!cancelledRef.current) setNotifications([]); return; }
+    const { data } = await supabase
+      .from('notifications')
+      .select('id,order_id,icon,title,body,event,vendor_name,queue_number,total_amount,read,created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      // Append-only feed with no pagination in the UI — without a cap this
+      // query grows for the life of the account and the whole history is
+      // parsed on every open. 100 is far past what anyone scrolls to.
+      .limit(100);
+    const rows = data ?? [];
+    if (isCancelled()) return;
+    setNotifications(rows);
 
-        const { data } = await supabase
-          .from('notifications')
-          .select('id,order_id,icon,title,body,event,vendor_name,queue_number,total_amount,read,created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          // Append-only feed with no pagination in the UI — without a cap this
-          // query grows for the life of the account and the whole history is
-          // parsed on every open. 100 is far past what anyone scrolls to.
-          .limit(100);
-        const rows = data ?? [];
-        if (cancelledRef.current) return;
-        setNotifications(rows);
+    const unreadIds = rows.filter(r => !r.read).map(r => r.id);
+    if (unreadIds.length) {
+      await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
+    }
+    if (isCancelled()) return;
 
-        const unreadIds = rows.filter(r => !r.read).map(r => r.id);
-        if (unreadIds.length) {
-          await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
-        }
-        if (cancelledRef.current) return;
-
-        channel = supabase
-          .channel(`notifications-${user.id}`)
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
-            if (!cancelledRef.current) setNotifications(prev => [payload.new as NotificationRow, ...(prev ?? [])]);
-          })
-          .subscribe();
-      }
-      void load();
-
-      return () => { if (channel) void supabase.removeChannel(channel); };
-    }, [cancelledRef])
-  );
+    const channel = supabase
+      .channel(`notifications-${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
+        if (!isCancelled()) setNotifications(prev => [payload.new as NotificationRow, ...(prev ?? [])]);
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  });
 
   if (notifications === undefined) {
     return (

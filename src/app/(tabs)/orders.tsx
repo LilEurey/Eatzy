@@ -1,15 +1,15 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
-import { useFocusGuard } from '@/hooks/useFocusGuard';
+import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
@@ -51,56 +51,50 @@ export default function OrdersScreen() {
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const cancelledRef = useFocusGuard();
 
-  useFocusEffect(
-    useCallback(() => {
-      let channel: ReturnType<typeof supabase.channel> | undefined;
+  useLiveWhileFocused(async isCancelled => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { if (!isCancelled()) setLoading(false); return; }
+    const userId = user.id;
 
-      async function load() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { if (!cancelledRef.current) setLoading(false); return; }
+    async function load() {
+      const { data } = await supabase
+        .from('orders')
+        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th),order_item_addons(name,name_th))')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-        // Live-update the list while it's focused — vendor status changes
-        // otherwise only showed on tab refocus. (orders is in the
-        // supabase_realtime publication as of 20260904000000.)
-        if (!channel) {
-          channel = supabase
-            .channel(`student-orders-${user.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, () => {
-              void load();
-            })
-            .subscribe();
-        }
+      if (isCancelled()) return;
+      setOrders(((data as any[] | null) ?? []).map(o => ({
+        id: o.id,
+        vendor_id: o.vendor_id,
+        queue_number: o.queue_number,
+        status: o.status,
+        total_amount: o.total_amount,
+        pickup_start: o.pickup_start,
+        pickup_end: o.pickup_end,
+        created_at: o.created_at,
+        vendor_name: o.vendors?.name ?? '—',
+        items: (o.order_items ?? []).map((oi: any) => ({
+          name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity,
+          addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null })),
+        })),
+      })));
+      setLoading(false);
+    }
 
-        const { data } = await supabase
-          .from('orders')
-          .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th),order_item_addons(name,name_th))')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (cancelledRef.current) return;
-        setOrders(((data as any[] | null) ?? []).map(o => ({
-          id: o.id,
-          vendor_id: o.vendor_id,
-          queue_number: o.queue_number,
-          status: o.status,
-          total_amount: o.total_amount,
-          pickup_start: o.pickup_start,
-          pickup_end: o.pickup_end,
-          created_at: o.created_at,
-          vendor_name: o.vendors?.name ?? '—',
-          items: (o.order_items ?? []).map((oi: any) => ({
-            name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity,
-            addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null })),
-          })),
-        })));
-        setLoading(false);
-      }
-      void load();
-      return () => { if (channel) void supabase.removeChannel(channel); };
-    }, [cancelledRef])
-  );
+    // Live-update the list while it's focused — vendor status changes
+    // otherwise only showed on tab refocus. (orders is in the
+    // supabase_realtime publication as of 20260904000000.)
+    const channel = supabase
+      .channel(`student-orders-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, () => {
+        void load();
+      })
+      .subscribe();
+    void load();
+    return () => { void supabase.removeChannel(channel); };
+  });
 
   const filtered = orders.filter(o => {
     if (tab === 'All') return true;

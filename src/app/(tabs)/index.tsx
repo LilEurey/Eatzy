@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
+import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
@@ -296,44 +297,34 @@ export default function HomeScreen() {
       .catch(() => setSimilarToFeatured([]));
   }, [featured]);
 
-  useFocusEffect(
-    useCallback(() => {
-      let channel: ReturnType<typeof supabase.channel> | undefined;
-      let cancelled = false;
+  useLiveWhileFocused(async isCancelled => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setHasUnreadNotifications(false); return; }
 
-      supabase.auth.getUser().then(async ({ data: { user } }) => {
-        if (!user) { setHasUnreadNotifications(false); return; }
+    // Re-fetch name/avatar on every focus (not just mount) so a name/photo
+    // change saved in edit-preferences shows up immediately on return,
+    // instead of needing a full app reload — same pattern profile.tsx uses.
+    const [profileRes, notifRes] = await Promise.all([
+      supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle(),
+      supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
+    ]);
+    if (isCancelled()) return;
+    if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
+    setAvatarUrl(profileRes.data?.avatar_url ?? null);
+    setHasUnreadNotifications(!!notifRes.count);
 
-        // Re-fetch name/avatar on every focus (not just mount) so a name/photo
-        // change saved in edit-preferences shows up immediately on return,
-        // instead of needing a full app reload — same pattern profile.tsx uses.
-        const [profileRes, notifRes] = await Promise.all([
-          supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle(),
-          supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
-        ]);
-        if (cancelled) return;
-        if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
-        setAvatarUrl(profileRes.data?.avatar_url ?? null);
-        setHasUnreadNotifications(!!notifRes.count);
-
-        // The focus refetch above only catches a status change while this tab was
-        // backgrounded. If the student stays on home when the vendor updates the
-        // order, the notifications row inserts live — subscribe so the dot lights
-        // up without needing a tab-away-and-back, same pattern as notifications.tsx.
-        channel = supabase
-          .channel(`home-notifications-${user.id}`)
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
-            if (!cancelled) setHasUnreadNotifications(true);
-          })
-          .subscribe();
-      });
-
-      return () => {
-        cancelled = true;
-        if (channel) void supabase.removeChannel(channel);
-      };
-    }, [])
-  );
+    // The focus refetch above only catches a status change while this tab was
+    // backgrounded. If the student stays on home when the vendor updates the
+    // order, the notifications row inserts live — subscribe so the dot lights
+    // up without needing a tab-away-and-back, same pattern as notifications.tsx.
+    const channel = supabase
+      .channel(`home-notifications-${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
+        if (!isCancelled()) setHasUnreadNotifications(true);
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  });
 
   if (loading) {
     return (
