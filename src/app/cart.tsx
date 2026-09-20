@@ -10,7 +10,8 @@ import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { nextPickupSlots, getMealSegment } from '@/lib/time';
+import { nextPickupSlots } from '@/lib/time';
+import { placeOrder as placeOrderInDb } from '@/lib/place-order';
 import type { Database } from '@/types/database.types';
 
 type Vendor = Database['public']['Tables']['vendors']['Row'];
@@ -67,88 +68,22 @@ export default function CartScreen() {
   async function submitOrder() {
     if (!cart.vendor_id) return;
     setPlacing(true);
-    let orderId: string | null = null;
     try {
-      // getSession() (not getUser()) because it's the session whose
-      // access_token actually rides along on the inserts below — reading
-      // identity from a separate getUser() call risks acting on a user
-      // whose token isn't the one the request will carry. getSession()
-      // refreshes an expired-but-refreshable token in place; a missing
-      // access_token past that point means the session is truly gone.
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error(t('cart.signInAgainMsg'));
-      const user = session.user;
-
-      const { data: queueNumber, error: queueError } = await supabase
-        .rpc('next_queue_number', { p_vendor_id: cart.vendor_id });
-      if (queueError) throw queueError;
-
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          vendor_id: cart.vendor_id,
-          queue_number: queueNumber,
-          status: 'pending',
-          subtotal,
-          total_amount: total,
-          payment_method: 'wallet',
-          pickup_start: selectedSlot.start.toISOString(),
-          pickup_end: selectedSlot.end.toISOString(),
-          time_segment: getMealSegment(selectedSlot.start),
-        })
-        .select('id')
-        .single();
-      if (orderError) throw orderError;
-      orderId = order.id;
-
-      // Insert line by line: two lines can share menu_item_id (different
-      // add-on configs), so a bulk insert can't be re-correlated to its
-      // cart line when attaching order_item_addons. unit_price / add-on
-      // name+price are re-derived from the catalog by DB triggers; the
-      // values we send are the client's snapshot and get overwritten.
-      for (const line of items) {
-        const { data: oi, error: itemError } = await supabase
-          .from('order_items')
-          .insert({
-            order_id: order.id,
-            menu_item_id: line.menu_item_id,
-            quantity: line.quantity,
-            unit_price: line.unit_price,
-            special_instructions: line.note.trim() || null,
-          })
-          .select('id')
-          .single();
-        if (itemError) throw itemError;
-
-        if (line.addons.length > 0) {
-          const { error: addonError } = await supabase
-            .from('order_item_addons')
-            .insert(line.addons.map(a => ({
-              order_item_id: oi.id,
-              addon_id: a.id,
-              name: a.name,
-              name_th: a.name_th,
-              price: a.price,
-            })));
-          if (addonError) throw addonError;
-        }
+      const result = await placeOrderInDb({
+        vendorId: cart.vendor_id,
+        lines: items,
+        subtotal,
+        total,
+        slot: selectedSlot,
+      });
+      if (result.ok) {
+        clearCart();
+        router.replace(`/track/${result.orderId}`);
+        return;
       }
-
-      clearCart();
-      router.replace(`/track/${order.id}`);
-    } catch (e: any) {
-      // Don't strand a pending order when order_items/addons insertion
-      // fails after the orders row itself was created. Best-effort; RLS
-      // lets a student delete their own not-yet-paid order. Wallet
-      // deduction no longer happens here (see accept_order_and_charge —
-      // it now fires when the vendor accepts), so the two failure modes
-      // that used to need special-casing here (insufficient_wallet_balance,
-      // addon_rule_violation) can no longer occur at this step.
-      if (orderId) await supabase.from('orders').delete().eq('id', orderId);
-      const message = e.message === 'vendor_closed'
-        ? t('cart.storeClosedMsg')
-        : `${e.message}${e.code ? ` [${e.code}]` : ''}${e.details ? `\n${e.details}` : ''}${e.hint ? `\n${e.hint}` : ''}`;
+      const message = result.reason === 'no-session' ? t('cart.signInAgainMsg')
+        : result.reason === 'vendor-closed' ? t('cart.storeClosedMsg')
+        : result.message;
       showAlert(t('cart.orderFailedTitle'), message);
     } finally {
       setPlacing(false);
