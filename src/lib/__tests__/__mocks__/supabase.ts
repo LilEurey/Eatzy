@@ -11,7 +11,7 @@
 // `.select(...)` / `.update(...)` / `.insert(...)` payload the code under test
 // passed — so a test can assert on an update patch or a select column list.
 type MockResult = { data: unknown; error: unknown };
-type FromCall = { table: string; select?: unknown; update?: unknown; insert?: unknown };
+type FromCall = { table: string; select?: unknown; update?: unknown; insert?: unknown; deleted?: boolean; filters: [string, unknown][] };
 
 let nextResult: MockResult = { data: null, error: null };
 let nextRpcResult: MockResult = { data: null, error: null };
@@ -19,6 +19,12 @@ let resultQueue: MockResult[] = [];
 let rpcCalls: { name: string; args: unknown }[] = [];
 let fromCalls: FromCall[] = [];
 let authUser: unknown = null;
+let authSession: unknown = null;
+
+/** Sets what `supabase.auth.getSession()` resolves its `data.session` to. */
+export function __setSession(session: unknown) {
+  authSession = session;
+}
 
 export function __setNextResult(result: { data?: unknown; error?: unknown }) {
   nextResult = { data: result.data ?? null, error: result.error ?? null };
@@ -55,6 +61,7 @@ export function __resetMock() {
   rpcCalls = [];
   fromCalls = [];
   authUser = null;
+  authSession = null;
 }
 
 function takeResult(): MockResult {
@@ -66,7 +73,8 @@ function makeBuilder(call: FromCall): any {
     select: (arg?: unknown) => { call.select = arg; return builder; },
     update: (arg?: unknown) => { call.update = arg; return builder; },
     insert: (arg?: unknown) => { call.insert = arg; return builder; },
-    eq: () => builder,
+    delete: () => { call.deleted = true; return builder; },
+    eq: (col: string, val: unknown) => { call.filters.push([col, val]); return builder; },
     in: () => builder,
     order: () => builder,
     limit: () => builder,
@@ -85,7 +93,7 @@ const channelStub: any = {
 
 export const supabase = {
   from: (table: string) => {
-    const call: FromCall = { table };
+    const call: FromCall = { table, filters: [] };
     fromCalls.push(call);
     return makeBuilder(call);
   },
@@ -95,6 +103,7 @@ export const supabase = {
   },
   auth: {
     getUser: () => Promise.resolve({ data: { user: authUser }, error: null }),
+    getSession: () => Promise.resolve({ data: { session: authSession }, error: null }),
     signOut: () => Promise.resolve({ error: null }),
   },
   channel: () => channelStub,

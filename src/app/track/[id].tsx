@@ -9,7 +9,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
-import { invokeEdgeFunction } from '@/lib/edge-function';
+import { confirmHandoff, transitionOrder, type OrderStatus } from '@/lib/order-lifecycle';
 
 // 'rejected' / 'cancelled' are reachable while this screen is mounted — the
 // realtime UPDATE below pushes whatever the vendor (or accept_order_and_charge's
@@ -17,7 +17,7 @@ import { invokeEdgeFunction } from '@/lib/edge-function';
 // path, so they replace the stepper instead of indexing into it: ORDER.indexOf
 // returns -1 for them, which rendered every step as not-yet-reached and left
 // the student on a frozen tracker with no explanation.
-type Status = 'pending' | 'accepted' | 'ready' | 'completed' | 'rejected' | 'cancelled';
+type Status = OrderStatus;
 
 type TrackOrder = {
   id: string;
@@ -120,13 +120,9 @@ export default function TrackScreen() {
 
   async function markPickedUp() {
     if (!order) return;
-    const { error } = await supabase.rpc('student_confirm_pickup', { p_order_id: order.id });
-    if (error) { showAlert(t('common.orderNotFound'), error.message); return; }
+    const error = await confirmHandoff('student', order.id);
+    if (error) { showAlert(t('common.orderNotFound'), error); return; }
     setOrder({ ...order, student_picked_up_at: new Date().toISOString() });
-    // Only actually completes the order (and transfers) once the vendor has
-    // also confirmed — a no-op otherwise. Fire-and-forget: the internal
-    // wallet ledger is already correct regardless of this call's outcome.
-    void invokeEdgeFunction('transfer-order-payout', { body: { order_id: order.id } });
   }
 
   async function cancelOrder() {
@@ -135,18 +131,12 @@ export default function TrackScreen() {
       t('track.cancelConfirmTitle'),
       t('track.cancelConfirmMsg'),
       async () => {
-        // .eq('status', 'pending') is the race guard: if the vendor
-        // accepted between this screen's last render and this tap, the
-        // update matches zero rows instead of silently cancelling an
-        // order the vendor already committed to.
-        const { data, error } = await supabase
-          .from('orders')
-          .update({ status: 'cancelled' })
-          .eq('id', order.id)
-          .eq('status', 'pending')
-          .select('id');
-        if (error) { showAlert(t('common.orderNotFound'), error.message); return; }
-        if (!data || data.length === 0) {
+        // Guarded on 'pending': if the vendor accepted between this screen's
+        // last render and this tap, the transition loses the race instead of
+        // silently cancelling an order the vendor already committed to.
+        const result = await transitionOrder(order.id, 'pending', 'cancelled');
+        if (typeof result === 'object') { showAlert(t('common.orderNotFound'), result.error); return; }
+        if (result === 'lost-race') {
           showAlert(t('track.cancelFailedTitle'), t('track.cancelFailedMsg'));
           return;
         }

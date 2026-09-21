@@ -7,10 +7,8 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
-import { buildTfidfVectors, cosineSimilarity, itemDoc } from '../_shared/tfidf.ts';
 import { getRankingCatalog } from '../_shared/catalog.ts';
-
-const TOP_K = 5;
+import { rankSimilar } from '../_shared/ranking.ts';
 
 type MenuItemRow = {
   id: string;
@@ -33,18 +31,6 @@ type UserPreferences = {
   is_vegetarian: boolean;
   is_jay: boolean;
 };
-
-// Same hard filters recommend-for-you applies — a halal/vegetarian/jay
-// caller must not see a violating item surface as "similar", even when the
-// anchor item itself is something they can eat. Allergies are deliberately
-// NOT filtered here: they're a warn-before-add risk (the Add to Cart
-// confirm in item/[id].tsx), not a hide-from-recommendations rule.
-function passesHardFilters(item: MenuItemRow, prefs: UserPreferences): boolean {
-  if (prefs.is_halal && !item.is_halal) return false;
-  if (prefs.is_vegetarian && !item.is_vegetarian) return false;
-  if (prefs.is_jay && !item.is_jay) return false;
-  return true;
-}
 
 Deno.serve(async (req) => {
   const cors = corsHeaders(req);
@@ -83,22 +69,10 @@ Deno.serve(async (req) => {
   const { rows: catalog, error } = await getRankingCatalog<MenuItemRow>(supabase);
   if (error) return json({ error }, 500);
 
-  const targetIndex = catalog.findIndex((i) => i.id === body.item_id);
-  if (targetIndex === -1) return json({ error: 'item not found or unavailable' }, 404);
-
-  // TF-IDF vectors computed over the full catalog (so IDF weights aren't
-  // skewed by dropping items first) — the dietary filter only trims which
-  // *results* can surface. recommend-for-you now fits in this same order.
-  const vectors = buildTfidfVectors(catalog.map(itemDoc));
-  const targetVec = vectors[targetIndex];
-
-  const scored = catalog
-    .map((item, i) => ({ item, score: cosineSimilarity(targetVec, vectors[i]) }))
-    .filter((_, i) => i !== targetIndex)
-    .filter(({ item }) => passesHardFilters(item, prefs))
-    // id breaks score ties so repeat requests return the same five items.
-    .sort((a, b) => b.score - a.score || a.item.id.localeCompare(b.item.id))
-    .slice(0, TOP_K);
+  // Fit-over-whole-catalog, diet filter, id tie-break and top-K all live in
+  // _shared/ranking.ts (shared with recommend-for-you, and unit-tested).
+  const scored = rankSimilar(catalog, body.item_id, prefs);
+  if (!scored) return json({ error: 'item not found or unavailable' }, 404);
 
   // Same best-effort served-set log recommend-for-you writes. Only for a
   // signed-in caller: recommendation_log.user_id is NOT NULL and its RLS

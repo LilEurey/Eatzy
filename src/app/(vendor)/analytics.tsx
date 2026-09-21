@@ -3,7 +3,7 @@ import { View, Text, ScrollView, useWindowDimensions } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { getVendorPayments } from '@/lib/vendor-store';
+import { useVendorPayments } from '@/lib/vendor-store';
 import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { isBangkokToday, isBangkokDateInRange, formatFriendlyDateTime, type DateRangeFilter } from '@/lib/time';
@@ -15,7 +15,7 @@ export default function VendorFinanceScreen() {
   const { t } = useI18n();
   const { width } = useWindowDimensions();
   const tableScrolls = width < TABLE_MIN_WIDTH + 32;
-  const payments = getVendorPayments();
+  const payments = useVendorPayments();
   const [historyFilter, setHistoryFilter] = useState<DateRangeFilter>('all');
 
   const todayPayments = payments.filter(p => isBangkokToday(p.created_at));

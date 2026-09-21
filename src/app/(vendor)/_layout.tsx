@@ -12,6 +12,7 @@ import {
 import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
 import { showAlert } from '@/lib/alert';
 import { useScrollLocked } from '@/lib/scroll-lock';
+import { isInVendorQueue } from '@/lib/order-lifecycle';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 type NavLabelKey = 'vendor.nav.overview' | 'vendor.nav.orders' | 'vendor.nav.menu' | 'vendor.nav.reviews' | 'vendor.nav.finance';
@@ -167,7 +168,7 @@ export default function VendorLayout() {
     });
   }, []);
 
-  const activeCount = orders.filter(o => o.status === 'pending' || o.status === 'accepted').length;
+  const activeCount = orders.filter(o => isInVendorQueue(o.status)).length;
 
   if (loading || !vendor) {
     return (

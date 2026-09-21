@@ -12,10 +12,8 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
-import { buildTfidfVectors, cosineSimilarity, itemDoc } from '../_shared/tfidf.ts';
-import { getRankingCatalog, isDrinkCategory } from '../_shared/catalog.ts';
-
-const TOP_K = 5;
+import { getRankingCatalog } from '../_shared/catalog.ts';
+import { rankForPreferences } from '../_shared/ranking.ts';
 
 type MenuItemRow = {
   id: string;
@@ -56,24 +54,6 @@ function preferenceDoc(prefs: UserPreferences): string {
   return [...prefs.liked_cuisines, ...prefs.favorite_categories].join(' ').toLowerCase();
 }
 
-// Hard filters — is_halal/is_vegetarian/is_jay/budget are "don't rank this
-// at all" rules. Allergies are NOT a hard filter here anymore: they're a
-// warn-before-add risk (the Add to Cart confirm in item/[id].tsx), not a
-// hide-from-recommendations rule, so a matching item can still surface —
-// same policy the home feed and search use.
-//
-// Drinks are excluded for the same reason every other home section excludes
-// them: the feed has its own "Drinks You Might Like" row, and a milk tea
-// outranking every dish in "Recommended For You" reads as a broken ranking.
-function passesHardFilters(item: MenuItemRow, prefs: UserPreferences): boolean {
-  if (isDrinkCategory(item.category)) return false;
-  if (prefs.budget_max != null && item.price > prefs.budget_max) return false;
-  if (prefs.is_halal && !item.is_halal) return false;
-  if (prefs.is_vegetarian && !item.is_vegetarian) return false;
-  if (prefs.is_jay && !item.is_jay) return false;
-  return true;
-}
-
 Deno.serve(async (req) => {
   const cors = corsHeaders(req);
   const json = (body: unknown, status = 200) =>
@@ -112,21 +92,9 @@ Deno.serve(async (req) => {
   if (error) return json({ error }, 500);
   if (catalog.length === 0) return json({ results: [] });
 
-  // Vectors are fitted over the WHOLE catalog, then the hard filters decide
-  // which results may surface. Fitting over the filtered catalog instead —
-  // which this used to do — made every term's IDF depend on the caller's own
-  // dietary settings, so two students could not be handed comparable scores
-  // for the same dish. recommend-similar has always done it in this order.
-  const vectors = buildTfidfVectors([...catalog.map(itemDoc), doc]);
-  const userVec = vectors[vectors.length - 1];
-
-  const scored = catalog
-    .map((item, i) => ({ item, score: cosineSimilarity(userVec, vectors[i]) }))
-    .filter(({ item }) => passesHardFilters(item, prefs))
-    // id breaks score ties, so an unchanged catalog always yields the same
-    // top-5 — plenty of items tie, most obviously every item scoring 0.
-    .sort((a, b) => b.score - a.score || a.item.id.localeCompare(b.item.id))
-    .slice(0, TOP_K);
+  // Fit-over-whole-catalog, hard filters, id tie-break and top-K all live in
+  // _shared/ranking.ts (shared with recommend-similar, and unit-tested).
+  const scored = rankForPreferences(catalog, doc, prefs);
 
   // What was actually served, for offline evaluation of the ranking — the
   // recommendation_log table existed from the first migration and nothing had

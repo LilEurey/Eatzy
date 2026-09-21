@@ -16,7 +16,7 @@ export const FALLBACK_CATEGORIES = ['Main Dishes (Rice)', 'Beverages', 'Noodles'
 // 'Beverages' (main KMUTT seed) and 'Drinks' (vendor add-item screen, other
 // seed data). Compare case-insensitively so home's food/drink split isn't
 // tripped up by that inconsistency.
-const DRINK_CATEGORIES = ['beverages', 'drinks'];
+export const DRINK_CATEGORIES = ['beverages', 'drinks'];
 
 export function isDrinkCategory(category: string | null): boolean {
   return !!category && DRINK_CATEGORIES.includes(category.toLowerCase());

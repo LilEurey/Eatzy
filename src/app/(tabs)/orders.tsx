@@ -1,16 +1,16 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
-import { useFocusGuard } from '@/hooks/useFocusGuard';
-import type { OrderStatus } from '@/lib/vendor-store';
+import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
+import { isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
 
@@ -45,67 +45,60 @@ const FILTER_LABELS: Record<FilterTab, TranslationKey> = {
 
 const PROGRESS_STEPS: TranslationKey[] = ['track.stepPlacedLabel', 'orders.status.preparing', 'orders.status.ready'];
 
-const ACTIVE: OrderStatus[] = ['pending', 'accepted', 'ready'];
 
 export default function OrdersScreen() {
   const { t, locale } = useI18n();
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const cancelledRef = useFocusGuard();
 
-  useFocusEffect(
-    useCallback(() => {
-      let channel: ReturnType<typeof supabase.channel> | undefined;
+  useLiveWhileFocused(async isCancelled => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { if (!isCancelled()) setLoading(false); return; }
+    const userId = user.id;
 
-      async function load() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { if (!cancelledRef.current) setLoading(false); return; }
+    async function load() {
+      const { data } = await supabase
+        .from('orders')
+        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th),order_item_addons(name,name_th))')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-        // Live-update the list while it's focused — vendor status changes
-        // otherwise only showed on tab refocus. (orders is in the
-        // supabase_realtime publication as of 20260904000000.)
-        if (!channel) {
-          channel = supabase
-            .channel(`student-orders-${user.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, () => {
-              void load();
-            })
-            .subscribe();
-        }
+      if (isCancelled()) return;
+      setOrders(((data as any[] | null) ?? []).map(o => ({
+        id: o.id,
+        vendor_id: o.vendor_id,
+        queue_number: o.queue_number,
+        status: o.status,
+        total_amount: o.total_amount,
+        pickup_start: o.pickup_start,
+        pickup_end: o.pickup_end,
+        created_at: o.created_at,
+        vendor_name: o.vendors?.name ?? '—',
+        items: (o.order_items ?? []).map((oi: any) => ({
+          name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity,
+          addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null })),
+        })),
+      })));
+      setLoading(false);
+    }
 
-        const { data } = await supabase
-          .from('orders')
-          .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th),order_item_addons(name,name_th))')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (cancelledRef.current) return;
-        setOrders(((data as any[] | null) ?? []).map(o => ({
-          id: o.id,
-          vendor_id: o.vendor_id,
-          queue_number: o.queue_number,
-          status: o.status,
-          total_amount: o.total_amount,
-          pickup_start: o.pickup_start,
-          pickup_end: o.pickup_end,
-          created_at: o.created_at,
-          vendor_name: o.vendors?.name ?? '—',
-          items: (o.order_items ?? []).map((oi: any) => ({
-            name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity,
-            addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null })),
-          })),
-        })));
-        setLoading(false);
-      }
-      void load();
-      return () => { if (channel) void supabase.removeChannel(channel); };
-    }, [cancelledRef])
-  );
+    // Live-update the list while it's focused — vendor status changes
+    // otherwise only showed on tab refocus. (orders is in the
+    // supabase_realtime publication as of 20260904000000.)
+    const channel = supabase
+      .channel(`student-orders-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, () => {
+        void load();
+      })
+      .subscribe();
+    void load();
+    return () => { void supabase.removeChannel(channel); };
+  });
 
   const filtered = orders.filter(o => {
     if (tab === 'All') return true;
-    if (tab === 'Active') return ACTIVE.includes(o.status);
+    if (tab === 'Active') return isActiveForStudent(o.status);
     if (tab === 'Completed') return o.status === 'completed';
     // 'rejected' belongs here too. It is neither active nor completed, so
     // filtering this tab on 'cancelled' alone left a rejected order reachable
@@ -113,7 +106,7 @@ export default function OrdersScreen() {
     // wallet is short gets auto-rejected the moment the vendor taps Accept
     // (see accept_order_and_charge). Both mean the same thing to a student:
     // the order didn't happen.
-    if (tab === 'Cancelled') return o.status === 'cancelled' || o.status === 'rejected';
+    if (tab === 'Cancelled') return isVoided(o.status);
     return true;
   });
 
@@ -163,7 +156,7 @@ export default function OrdersScreen() {
       ) : (
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
-        {tab === 'All' && filtered.some(o => ACTIVE.includes(o.status)) && (
+        {tab === 'All' && filtered.some(o => isActiveForStudent(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
             {t('orders.active')}
           </Text>
@@ -173,7 +166,7 @@ export default function OrdersScreen() {
           {filtered.map(order => {
             const cfg = STATUS_CONFIG[order.status];
             const vendor = order.vendor_name;
-            const isActive = ACTIVE.includes(order.status);
+            const isActive = isActiveForStudent(order.status);
             const itemSummary = order.items.map(i => {
               const addons = i.addons.length ? ` (+${i.addons.map(a => localizedText(a.name, a.name_th, locale)).join(', ')})` : '';
               return `${localizedText(i.name, i.name_th, locale)}${i.quantity > 1 ? ` ×${i.quantity}` : ''}${addons}`;

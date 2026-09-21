@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
+import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
@@ -12,6 +13,7 @@ import { localizedText } from '@/lib/localize';
 import { bangkokHour, getMealSegment, type MealSegment } from '@/lib/time';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { isDrinkCategory } from '@/lib/menu-categories';
+import { DRINK_CATEGORY_FILTER, getTimeBasedCategories, restoreRank } from '@/lib/home-feed';
 import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
@@ -105,26 +107,6 @@ function queueStatus(count: number | null): { labelKey: TranslationKey; color: s
 // dedicated section instead of just sort order buried in Store Options.
 const NO_QUEUE_THRESHOLD = 3;
 
-// Time-Based — menu_items.available_time_segment is 'all' on every seeded
-// row (a KMUTT stall's menu doesn't actually change by clock hour), so
-// filtering on that column would just return the full catalog. Category is
-// the real signal for "what fits this meal" instead.
-//
-// Breakfast used to be ['Beverages', 'Desserts', 'Add-ons'], which collapsed
-// to almost nothing: the drink filter applied to this section strips
-// 'Beverages', by far the biggest of the three, leaving ~6 desserts and a
-// pile of add-ons that aren't meals. These are the categories a Thai campus
-// stall actually serves in the morning, and none of them is a drink.
-const BREAKFAST_CATEGORIES = ['Noodles', 'Soup', 'Appetizers', 'Main Dishes (Rice)'];
-const LUNCH_CATEGORIES = ['Main Dishes (Rice)', 'Noodles', 'Main Dishes', 'Appetizers'];
-const DINNER_CATEGORIES = ['Main Dishes (Rice)', 'Noodles', 'Main Dishes'];
-
-function getTimeBasedCategories(segment: MealSegment): string[] {
-  if (segment === 'breakfast') return BREAKFAST_CATEGORIES;
-  if (segment === 'lunch') return LUNCH_CATEGORIES;
-  return DINNER_CATEGORIES;
-}
-
 function getTimeBasedHeaderKey(segment: MealSegment): TranslationKey {
   if (segment === 'breakfast') return 'home.timeBasedBreakfast';
   if (segment === 'lunch') return 'home.timeBasedLunch';
@@ -155,6 +137,10 @@ export default function HomeScreen() {
       const timeFilter = `available_time_segment.eq.${segment},available_time_segment.eq.all`;
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name),is_halal,is_vegetarian,is_jay,allergens';
+      const asRows = (data: unknown) => (data as MenuItem[] | null) ?? [];
+      // Every food section: what this student can eat, minus drinks (drinks
+      // have their own row).
+      const foodForMe = (rows: MenuItem[]) => rows.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category));
 
       const { data: { user } } = await supabase.auth.getUser();
       const [profileRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
@@ -194,15 +180,14 @@ export default function HomeScreen() {
         // Drinks You Might Like — mirrors Latest Release's query, filtered to
         // drink categories instead of excluding them (see isDrinkCategory).
         supabase.from('menu_items').select(menuFields).eq('is_available', true)
-          .or('category.ilike.beverages,category.ilike.drinks')
+          .or(DRINK_CATEGORY_FILTER)
           .order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
       ]);
 
       if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
       if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
 
-      const featuredCandidates = (featuredRes.data as unknown as MenuItem[] | null) ?? [];
-      const eligibleFeatured = featuredCandidates.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category));
+      const eligibleFeatured = foodForMe(asRows(featuredRes.data));
       // One promoted item per week, same for every student — a per-load
       // Math.random() pick showed a different item per user and per refresh.
       // Ordered query + week-number seed keeps the index (and so the item)
@@ -233,31 +218,19 @@ export default function HomeScreen() {
           : Promise.resolve({ data: null }),
       ]);
 
-      // Anything the RPC didn't rank sorts last, not first — `?? 0` used to
-      // promote an unranked row to the top of a "most ordered" list.
-      const byRank = (ids: string[]) => {
-        const rank = new Map(ids.map((id, i) => [id, i]));
-        return (rows: unknown) => (rows as MenuItem[] | null)
-          ?.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category))
-          .slice().sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER)) ?? [];
-      };
-
-      const dbTrending = byRank(trendingIds)(trendingRowsRes.data);
+      const dbTrending = restoreRank(trendingIds, foodForMe(asRows(trendingRowsRes.data)));
       setTrending(dbTrending.slice(0, 2));
 
-      const dbLatestRelease = (latestReleaseRes.data as unknown as MenuItem[] | null) ?? [];
-      setLatestRelease(dbLatestRelease.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category)));
+      setLatestRelease(foodForMe(asRows(latestReleaseRes.data)));
 
-      const dbDrinks = (drinksRes.data as unknown as MenuItem[] | null) ?? [];
-      setDrinks(dbDrinks.filter(i => passesDietaryFilters(i, prefs)));
+      setDrinks(asRows(drinksRes.data).filter(i => passesDietaryFilters(i, prefs)));
 
-      setBecauseYouOrdered(byRank(byoIds)(byoRowsRes.data));
+      setBecauseYouOrdered(restoreRank(byoIds, foodForMe(asRows(byoRowsRes.data))));
 
       setRecommendedForYou(recommendedRes.data?.results ?? []);
 
       setMealSegment(segment);
-      const dbTimeBased = (timeBasedRes.data as unknown as MenuItem[] | null) ?? [];
-      setTimeBasedItems(dbTimeBased.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category)));
+      setTimeBasedItems(foodForMe(asRows(timeBasedRes.data)));
     } catch {
       // Supabase unreachable — show empty states, not fake data. Every list
       // has to be cleared, not just four of them: leaving the rest holding the
@@ -296,44 +269,34 @@ export default function HomeScreen() {
       .catch(() => setSimilarToFeatured([]));
   }, [featured]);
 
-  useFocusEffect(
-    useCallback(() => {
-      let channel: ReturnType<typeof supabase.channel> | undefined;
-      let cancelled = false;
+  useLiveWhileFocused(async isCancelled => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setHasUnreadNotifications(false); return; }
 
-      supabase.auth.getUser().then(async ({ data: { user } }) => {
-        if (!user) { setHasUnreadNotifications(false); return; }
+    // Re-fetch name/avatar on every focus (not just mount) so a name/photo
+    // change saved in edit-preferences shows up immediately on return,
+    // instead of needing a full app reload — same pattern profile.tsx uses.
+    const [profileRes, notifRes] = await Promise.all([
+      supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle(),
+      supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
+    ]);
+    if (isCancelled()) return;
+    if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
+    setAvatarUrl(profileRes.data?.avatar_url ?? null);
+    setHasUnreadNotifications(!!notifRes.count);
 
-        // Re-fetch name/avatar on every focus (not just mount) so a name/photo
-        // change saved in edit-preferences shows up immediately on return,
-        // instead of needing a full app reload — same pattern profile.tsx uses.
-        const [profileRes, notifRes] = await Promise.all([
-          supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle(),
-          supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
-        ]);
-        if (cancelled) return;
-        if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
-        setAvatarUrl(profileRes.data?.avatar_url ?? null);
-        setHasUnreadNotifications(!!notifRes.count);
-
-        // The focus refetch above only catches a status change while this tab was
-        // backgrounded. If the student stays on home when the vendor updates the
-        // order, the notifications row inserts live — subscribe so the dot lights
-        // up without needing a tab-away-and-back, same pattern as notifications.tsx.
-        channel = supabase
-          .channel(`home-notifications-${user.id}`)
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
-            if (!cancelled) setHasUnreadNotifications(true);
-          })
-          .subscribe();
-      });
-
-      return () => {
-        cancelled = true;
-        if (channel) void supabase.removeChannel(channel);
-      };
-    }, [])
-  );
+    // The focus refetch above only catches a status change while this tab was
+    // backgrounded. If the student stays on home when the vendor updates the
+    // order, the notifications row inserts live — subscribe so the dot lights
+    // up without needing a tab-away-and-back, same pattern as notifications.tsx.
+    const channel = supabase
+      .channel(`home-notifications-${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
+        if (!isCancelled()) setHasUnreadNotifications(true);
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  });
 
   if (loading) {
     return (

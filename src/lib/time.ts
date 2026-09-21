@@ -68,10 +68,9 @@ export type DateRangeFilter = 'today' | 'yesterday' | 'week' | 'month' | 'all';
 // Rolling windows measured in Bangkok calendar days, not raw 24h buckets,
 // so "yesterday" means Thailand's previous calendar day regardless of the
 // device's own timezone.
-export function isBangkokDateInRange(iso: string, range: DateRangeFilter) {
+export function isBangkokDateInRange(iso: string, range: DateRangeFilter, now: Date = new Date()) {
   if (range === 'all') return true;
   const target = new Date(iso);
-  const now = new Date();
   if (range === 'today') return bangkokDayKey(target) === bangkokDayKey(now);
   if (range === 'yesterday') {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -96,11 +95,4 @@ export function nextPickupSlots(count = 5, leadMinutes = 15, slotMinutes = 15): 
     const end = new Date(start.getTime() + slotMinutes * 60 * 1000);
     return { start, end, label: `${formatBangkokClock(start.toISOString())} – ${formatBangkokClock(end.toISOString())}` };
   });
-}
-
-export function timeSegmentForBangkok(date: Date): 'breakfast' | 'lunch' | 'dinner' {
-  const hour = bangkokHour(date);
-  if (hour < 11) return 'breakfast';
-  if (hour < 17) return 'lunch';
-  return 'dinner';
 }

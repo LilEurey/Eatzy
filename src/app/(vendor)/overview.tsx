@@ -9,6 +9,7 @@ import { comingSoonAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
+import { isEarned, isInVendorQueue } from '@/lib/order-lifecycle';
 import { PillDropdown } from '@/components/PillDropdown';
 
 // 0 = Monday … 6 = Sunday, matching lib/time bangkokWeekday / vendor-analytics.
@@ -72,9 +73,9 @@ export default function VendorOverviewScreen() {
   // Money only actually lands in the vendor's wallet once both sides confirm
   // handoff — accepted/ready orders are still held in student-side escrow.
   const revenueToday = rangedOrders
-    .filter(o => o.status === 'completed')
+    .filter(o => isEarned(o.status))
     .reduce((sum, o) => sum + o.total_amount, 0);
-  const activeQueue = orders.filter(o => o.status === 'pending' || o.status === 'accepted').length;
+  const activeQueue = orders.filter(o => isInVendorQueue(o.status)).length;
   const queueCapacity = 20;
 
   // Real window-over-window change (null when there's no prior-period data).

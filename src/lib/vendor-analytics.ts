@@ -4,27 +4,23 @@
 // __tests__/vendor-analytics.test.ts. Works off the order rows already in
 // vendor-store (whole history, all statuses); does its own date windowing.
 
-import type { OrderStatus } from '@/lib/vendor-store';
-import { bangkokDayKey, bangkokHour, bangkokWeekday, getMealSegment, type DateRangeFilter } from '@/lib/time';
+import { isEarned, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
+import { bangkokDayKey, bangkokHour, bangkokWeekday, getMealSegment, isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
 
 export type AnalyticsOrder = { created_at: string; status: OrderStatus; total_amount: number };
 
 export type VelocityBar = { label: string; value: number; isNow: boolean };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-// Rejected / cancelled orders never earned money and don't reflect real demand.
-const EXCLUDED: ReadonlySet<OrderStatus> = new Set<OrderStatus>(['rejected', 'cancelled']);
 const SEGMENT_INDEX = { breakfast: 0, lunch: 1, dinner: 2 } as const;
 
+// Rejected / cancelled orders never earned money and don't reflect real demand.
 function fulfilled(orders: AnalyticsOrder[]): AnalyticsOrder[] {
-  return orders.filter(o => !EXCLUDED.has(o.status));
+  return orders.filter(o => !isVoided(o.status));
 }
 
-// Money only actually lands in the vendor's wallet once both sides confirm
-// handoff (finalize_order_handoff) — pending/accepted/ready is still escrow,
-// not earned revenue.
 function earned(orders: AnalyticsOrder[]): AnalyticsOrder[] {
-  return orders.filter(o => o.status === 'completed');
+  return orders.filter(o => isEarned(o.status));
 }
 
 // 0 → "12AM", 9 → "9AM", 12 → "12PM", 23 → "11PM".
@@ -90,19 +86,6 @@ export function salesVelocity(
   return bars;
 }
 
-// Bangkok-calendar window predicate with an injectable `now` (so callers stay
-// unit-testable). Mirrors lib/time's isBangkokDateInRange, which hard-codes
-// new Date() and so can't be used from tests.
-function inRange(iso: string, range: DateRangeFilter, now: Date): boolean {
-  if (range === 'all') return true;
-  const t = new Date(iso);
-  if (range === 'today') return bangkokDayKey(t) === bangkokDayKey(now);
-  if (range === 'yesterday') return bangkokDayKey(t) === bangkokDayKey(new Date(now.getTime() - DAY_MS));
-  const days = range === 'week' ? 7 : 30;
-  const cutoff = now.getTime() - days * DAY_MS;
-  return t.getTime() >= cutoff && t.getTime() <= now.getTime();
-}
-
 type SalesOrderItem = {
   menu_item_id: string;
   name: string;
@@ -127,8 +110,8 @@ export type ItemSales = {
 export function itemSales(orders: SalesOrder[], range: DateRangeFilter, now: Date = new Date()): ItemSales[] {
   const acc = new Map<string, ItemSales>();
   for (const o of orders) {
-    if (EXCLUDED.has(o.status)) continue;
-    if (!inRange(o.created_at, range, now)) continue;
+    if (isVoided(o.status)) continue;
+    if (!isBangkokDateInRange(o.created_at, range, now)) continue;
     const counted = new Set<string>();
     for (const it of o.items) {
       let row = acc.get(it.menu_item_id);
@@ -203,8 +186,8 @@ export type FulfilmentOrder = { created_at: string; status: OrderStatus; vendor_
 export function avgFulfilmentMinutes(orders: FulfilmentOrder[], range: DateRangeFilter, now: Date = new Date()): number | null {
   const durations: number[] = [];
   for (const o of orders) {
-    if (EXCLUDED.has(o.status) || !o.vendor_handed_off_at) continue;
-    if (!inRange(o.created_at, range, now)) continue;
+    if (isVoided(o.status) || !o.vendor_handed_off_at) continue;
+    if (!isBangkokDateInRange(o.created_at, range, now)) continue;
     const ms = new Date(o.vendor_handed_off_at).getTime() - new Date(o.created_at).getTime();
     if (ms > 0) durations.push(ms / 60000);
   }

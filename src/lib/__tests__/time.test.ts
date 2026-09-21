@@ -84,3 +84,24 @@ describe('Bangkok calendar-day helpers', () => {
     expect(isBangkokDateInRange(tenDaysAgo, 'month')).toBe(true);
   });
 });
+
+describe('isBangkokDateInRange with an injected now', () => {
+  const NOW = new Date('2026-06-15T05:00:00Z'); // Mon 12:00 BKK
+
+  it('"today" follows the Bangkok calendar day, not the UTC one', () => {
+    // 00:30 BKK on the 15th is still the 14th in UTC.
+    expect(isBangkokDateInRange('2026-06-14T17:30:00Z', 'today', NOW)).toBe(true);
+    expect(isBangkokDateInRange('2026-06-14T16:30:00Z', 'today', NOW)).toBe(false); // 23:30 BKK on the 14th
+  });
+
+  it('"yesterday" is the previous Bangkok calendar day', () => {
+    expect(isBangkokDateInRange('2026-06-14T10:00:00Z', 'yesterday', NOW)).toBe(true);
+    expect(isBangkokDateInRange('2026-06-15T01:00:00Z', 'yesterday', NOW)).toBe(false);
+  });
+
+  it('"week" is inclusive at exactly 7 days and excludes the future', () => {
+    expect(isBangkokDateInRange('2026-06-08T05:00:00Z', 'week', NOW)).toBe(true);
+    expect(isBangkokDateInRange('2026-06-08T04:59:59Z', 'week', NOW)).toBe(false);
+    expect(isBangkokDateInRange('2026-06-15T05:00:01Z', 'week', NOW)).toBe(false);
+  });
+});
