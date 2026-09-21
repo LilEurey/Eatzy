@@ -101,8 +101,9 @@ export default function TrackScreen() {
   // Queue position ("N orders ahead of you") — the RPC itself returns null
   // once this order leaves pending/accepted, so no separate hide logic is
   // needed here beyond rendering when non-null.
+  const vendorId = order?.vendor_id;
   useEffect(() => {
-    if (!order) return;
+    if (!vendorId) return;
     async function fetchOrdersAhead() {
       const { data } = await supabase.rpc('get_orders_ahead', { p_order_id: id });
       setOrdersAhead(data ?? null);
@@ -110,13 +111,13 @@ export default function TrackScreen() {
     void fetchOrdersAhead();
 
     const channel = supabase
-      .channel(`track-queue-${order.vendor_id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${order.vendor_id}` }, () => {
+      .channel(`track-queue-${vendorId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
         void fetchOrdersAhead();
       })
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
-  }, [order?.vendor_id, id]);
+  }, [vendorId, id]);
 
   async function markPickedUp() {
     if (!order) return;
