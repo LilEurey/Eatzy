@@ -42,13 +42,13 @@ Eatzy/
 ├── src/
 │   ├── app/              # Expo Router pages (file-based routing)
 │   │   ├── (tabs)/       # Student tabs — home, orders, wallet, profile
-│   │   ├── (vendor)/     # Vendor dashboard — index.tsx redirects to overview; orders, menu, analytics, profile, notifications (real Supabase, not mock)
+│   │   ├── (vendor)/     # Vendor dashboard — index.tsx redirects to overview; orders, menu, analytics, reviews, profile, notifications (real Supabase, not mock)
 │   │   ├── (admin)/      # Admin portal — create vendor store accounts + vendor store monitoring/force open-close (email/password auth, not Google)
 │   │   ├── (auth)/       # Login/onboarding stack
-│   │   ├── admin-login.tsx, vendor-login.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx, search.tsx  # Public entry points outside the tab groups
+│   │   ├── admin-login.tsx, vendor-login.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx, search.tsx, stores.tsx  # Public entry points outside the tab groups
 │   │   └── store/, item/, track/, rate/  # Detail screens
-│   ├── components/       # Reusable RN components (Tap, PillDropdown)
-│   ├── hooks/            # useGoogleSignIn, useFocusGuard (blur/unmount race guard)
+│   ├── components/       # Reusable RN components (Tap, PillDropdown, ReviewCard, StoreMiniMap / StoreLocationPicker — each has a .web.tsx stub since react-native-maps is native-only)
+│   ├── hooks/            # useGoogleSignIn, useFocusGuard (blur/unmount race guard), usePreferences
 │   ├── constants/        # theme.ts (Brand colors/tokens)
 │   ├── lib/
 │   │   ├── supabase.ts   # Supabase client singleton
@@ -57,6 +57,7 @@ Eatzy/
 │   │   ├── cart-store.ts, vendor-store.ts  # useSyncExternalStore-based client state
 │   │   ├── edge-function.ts  # Supabase Edge Function invocation helper
 │   │   ├── alert.ts      # Cross-platform alert helper
+│   │   ├── geo.ts, vendor-analytics.ts, relative-time.ts, allergy-options.ts, scroll-lock.ts  # small helpers (geo, vendor-analytics have tests)
 │   │   ├── time.ts       # Bangkok timezone formatting / pickup-slot helpers
 │   │   └── menu-categories.ts  # Drinks/Beverages category reconciliation + top-category picker (cold-start User Vector)
 │   └── types/
@@ -104,9 +105,9 @@ Rules the ranking code must keep:
 
 ### User Roles
 
-- **Student** — browse, order, pre-order with pickup time, pay via Campus Wallet, track, rate. Google-only auth ([[project_vendor_google_only_auth]]).
-- **Vendor** — manage menu, accept/reject/complete orders, view earnings. **Email/password auth** at `/vendor-login` (`signInWithPassword`, screen mirrors `admin-login.tsx`). Store accounts are created by an admin, not self-serve: `(admin)/new-vendor.tsx` form (store email, password, business name, cuisine tags) → `admin-create-vendor` edge function → `auth.admin.createUser({ email_confirm: true })` → `provision_vendor()` RPC creates the `vendors` row (`owner_user_id` set, `is_on_campus`/address default) and flips `users.role` to `vendor`. Location is set afterward from the vendor profile screen. The admin hands the credentials to the vendor; "Forgot Password?" on `/vendor-login` is a contact-admin stub. Changed 2026-08-30 (was Google-only + self-serve `vendor_applications`) — see [[project_vendor_google_only_auth]] and `docs/superpowers/specs/2026-08-30-vendor-email-password-auth-design.md`.
-- **Admin** — manage users, monitor transactions & reports; creates vendor store accounts at `/admin-login` → `(admin)/new-vendor`; monitors every vendor stall and can force one open/closed at `(admin)/vendors` (writes `vendors.is_open` directly, bypassing the owner). Email/password (`signInWithPassword`), bootstrapped once via the `bootstrap-admin` edge function.
+- **Student** — browse, order, pre-order with pickup time, pay via Campus Wallet, track, rate. Google-only auth.
+- **Vendor** — manage menu, accept/reject/complete orders, view earnings. **Email/password auth** at `/vendor-login` (`signInWithPassword`, screen mirrors `admin-login.tsx`). Store accounts are created by an admin, not self-serve: `(admin)/new-vendor.tsx` form (store email, password, business name, cuisine tags) → `admin-create-vendor` edge function → `auth.admin.createUser({ email_confirm: true })` → `provision_vendor()` RPC creates the `vendors` row (`owner_user_id` set, `is_on_campus`/address default) and flips `users.role` to `vendor`. Location is set afterward from the vendor profile screen. The admin hands the credentials to the vendor; "Forgot Password?" on `/vendor-login` is a contact-admin stub. Changed 2026-08-30 (was Google-only + self-serve `vendor_applications`) — see `docs/superpowers/specs/2026-08-30-vendor-email-password-auth-design.md`.
+- **Admin** — manage users, monitor transactions & reports; creates vendor store accounts at `/admin-login` → `(admin)/new-vendor`; monitors every vendor stall and can force one open/closed at `(admin)/vendors` (writes `vendors.is_open` directly, bypassing the owner). Email/password (`signInWithPassword`), account was created once out-of-band (`bootstrap-admin` was removed from the repo).
 
 ### Payment Flow
 
@@ -159,4 +160,4 @@ Discover → Onboarding (Google login, preferences/allergies/budget) → Explore
 All surfaces read real Supabase — the DB carries real seeded KMUTT data (16 stalls, ~500 menu items). Mock fixtures (`src/lib/mock-data.ts`) were removed 2026-08-31; screens now show their own empty states when a query returns nothing, not fake data.
 - **Student side** — Home (`/(tabs)/index.tsx`) and search query Supabase directly. Empty-state copy: `home.noStallsOpen`, `home.noFeaturedItems`, `search.noResults`. Client state: `cart-store.ts` (single-vendor-per-cart rule), local component state for wallet.
 - **Vendor & admin side** — `vendor-store.ts` (orders/menu/profile, with Realtime) and the admin new-vendor / store-monitoring screens hit live tables.
-- Remaining mock-to-real TODOs are `ponytail:` comments — currently menu-item image upload in `(vendor)/menu/new.tsx` (needs Supabase Storage `menu-item-images` bucket) and the single-vendor-per-cart note in `cart-store.ts`. Grep `ponytail:` before trusting this list — it drifts.
+- Known shortcuts are `ponytail:` comments — `cart-store.ts` (single-vendor-per-cart) and the Stripe edge functions (`create-topup-intent`, `stripe-webhook`, `vendor-stripe-onboarding`, `transfer-order-payout`). Grep `ponytail:` before trusting this list — it drifts.
