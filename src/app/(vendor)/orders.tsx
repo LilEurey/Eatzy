@@ -5,12 +5,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone } from '@/lib/vendor-store';
 import { comingSoonAlert } from '@/lib/alert';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, type Locale } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock12, formatFriendlyDateTime } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
 
 type VendorOrder = ReturnType<typeof useVendorOrders>[number];
+type TFn = ReturnType<typeof useI18n>['t'];
+
+function ActionButton({ label, onPress, bg, color }: { label: string; onPress: () => void; bg: string; color: string }) {
+  return (
+    <Tap onPress={onPress} style={{ flex: 1, backgroundColor: bg, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+      <Text style={{ fontSize: 12.5, fontWeight: '700', color }}>{label}</Text>
+    </Tap>
+  );
+}
+
+const countItems = (order: VendorOrder) => order.items.reduce((s, i) => s + i.quantity, 0);
 
 function formatCountdown(seconds: number) {
   const clamped = Math.max(0, seconds);
@@ -73,7 +84,7 @@ function CardShell({
   );
 }
 
-function SpecialBanner({ text, t }: { text: string; t: ReturnType<typeof useI18n>['t'] }) {
+function SpecialBanner({ text, t }: { text: string; t: TFn }) {
   return (
     <View style={{ backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 8, padding: 8 }}>
       <Text style={{ fontSize: 11.5, color: '#B91C1C' }}>
@@ -83,7 +94,7 @@ function SpecialBanner({ text, t }: { text: string; t: ReturnType<typeof useI18n
   );
 }
 
-function IncomingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t']; locale: ReturnType<typeof useI18n>['locale'] }) {
+function IncomingCard({ order, t, locale }: { order: VendorOrder; t: TFn; locale: Locale }) {
   return (
     <CardShell
       accent="#ef4444"
@@ -100,12 +111,8 @@ function IncomingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType<
       }
       footer={
         <>
-          <Tap onPress={() => rejectOrder(order.id)} style={{ flex: 1, backgroundColor: '#F0F1F5', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#4B4F58' }}>{t('vendor.orders.reject')}</Text>
-          </Tap>
-          <Tap onPress={() => acceptOrder(order.id)} style={{ flex: 1, backgroundColor: Brand.orange, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#fff' }}>{t('vendor.orders.confirmStart')}</Text>
-          </Tap>
+          <ActionButton label={t('vendor.orders.reject')} onPress={() => rejectOrder(order.id)} bg="#F0F1F5" color="#4B4F58" />
+          <ActionButton label={t('vendor.orders.confirmStart')} onPress={() => acceptOrder(order.id)} bg={Brand.orange} color="#fff" />
         </>
       }
     >
@@ -126,7 +133,7 @@ function IncomingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType<
   );
 }
 
-function PreparingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t']; locale: ReturnType<typeof useI18n>['locale'] }) {
+function PreparingCard({ order, t, locale }: { order: VendorOrder; t: TFn; locale: Locale }) {
   const comingSoon = () => comingSoonAlert(t);
   return (
     <CardShell
@@ -139,12 +146,8 @@ function PreparingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType
       }
       footer={
         <>
-          <Tap onPress={comingSoon} style={{ flex: 1, backgroundColor: '#F0F1F5', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#4B4F58' }}>{t('vendor.orders.issue')}</Text>
-          </Tap>
-          <Tap onPress={() => markReady(order.id)} style={{ flex: 1, backgroundColor: Brand.vendorAccent, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#fff' }}>{t('vendor.orders.markReady')}</Text>
-          </Tap>
+          <ActionButton label={t('vendor.orders.issue')} onPress={comingSoon} bg="#F0F1F5" color="#4B4F58" />
+          <ActionButton label={t('vendor.orders.markReady')} onPress={() => markReady(order.id)} bg={Brand.vendorAccent} color="#fff" />
         </>
       }
     >
@@ -177,7 +180,7 @@ function PreparingCard({ order, t, locale }: { order: VendorOrder; t: ReturnType
   );
 }
 
-function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t'] }) {
+function ReadyCard({ order, t }: { order: VendorOrder; t: TFn }) {
   const confirmed = !!order.vendor_handed_off_at;
   return (
     <CardShell
@@ -195,21 +198,19 @@ function ReadyCard({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.orders.waitingOnCustomerConfirm')}</Text>
           </View>
         ) : (
-          <Tap onPress={() => handOff(order.id)} style={{ flex: 1, backgroundColor: Brand.vendorAccentLight, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.orders.handedToCustomer')}</Text>
-          </Tap>
+          <ActionButton label={t('vendor.orders.handedToCustomer')} onPress={() => handOff(order.id)} bg={Brand.vendorAccentLight} color={Brand.vendorAccent} />
         )
       }
     >
       <Text style={{ fontSize: 12.5, color: Brand.textSecondary }}>
-        {t('vendor.orders.itemsPaid', { n: order.items.reduce((s, i) => s + i.quantity, 0) })}
+        {t('vendor.orders.itemsPaid', { n: countItems(order) })}
       </Text>
     </CardShell>
   );
 }
 
-function CompletedTicket({ order, t }: { order: VendorOrder; t: ReturnType<typeof useI18n>['t'] }) {
-  const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
+function CompletedTicket({ order, t }: { order: VendorOrder; t: TFn }) {
+  const itemCount = countItems(order);
   return (
     <View style={{
       flexDirection: 'row', alignItems: 'center', gap: 10,

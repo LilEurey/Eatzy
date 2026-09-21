@@ -65,11 +65,13 @@ export default function MenuItemAddonsScreen() {
 
   useFocusEffect(useCallback(() => { void reload(); }, [reload]));
 
+  const showError = (message: string) => showAlert(t('vendor.addons.validationTitle'), message);
+
   // ─── Group CRUD ───────────────────────────────────────────────────────────
   async function saveGroup() {
     if (!groupDraft || !vendorId) return;
     const name = groupDraft.name.trim();
-    if (!name) { showAlert(t('vendor.addons.validationTitle'), t('vendor.addons.validationMsg')); return; }
+    if (!name) { showError(t('vendor.addons.validationMsg')); return; }
     const min = parseInt(groupDraft.min, 10) || 0;
     const maxParsed = parseInt(groupDraft.max, 10);
     const max = Number.isFinite(maxParsed) && maxParsed >= 1 ? maxParsed : null;
@@ -87,7 +89,7 @@ export default function MenuItemAddonsScreen() {
           vendor_id: vendorId, // DB trigger keeps this in lockstep with the dish
           sort_order: groups.length,
         });
-    if (error) { showAlert(t('vendor.addons.validationTitle'), error.message); return; }
+    if (error) { showError(error.message); return; }
     setGroupDraft(null);
     await reload();
   }
@@ -95,7 +97,7 @@ export default function MenuItemAddonsScreen() {
   function deleteGroup(g: Group) {
     confirmDelete(t('vendor.addons.deleteGroupTitle'), t('vendor.addons.deleteGroupMsg', { name: g.name }), async () => {
       const { error } = await supabase.from('menu_item_addon_groups').delete().eq('id', g.id);
-      if (error) { showAlert(t('vendor.addons.validationTitle'), error.message); return; }
+      if (error) { showError(error.message); return; }
       await reload();
     });
   }
@@ -104,7 +106,7 @@ export default function MenuItemAddonsScreen() {
   async function saveOption() {
     if (!optionDraft || !vendorId) return;
     const name = optionDraft.name.trim();
-    if (!name) { showAlert(t('vendor.addons.validationTitle'), t('vendor.addons.validationMsg')); return; }
+    if (!name) { showError(t('vendor.addons.validationMsg')); return; }
     const payload = {
       name,
       name_th: optionDraft.nameTh.trim() || null,
@@ -121,7 +123,7 @@ export default function MenuItemAddonsScreen() {
           vendor_id: vendorId, // DB trigger keeps this in lockstep with the dish
           sort_order: group?.menu_item_addons.length ?? 0,
         });
-    if (error) { showAlert(t('vendor.addons.validationTitle'), error.message); return; }
+    if (error) { showError(error.message); return; }
     setOptionDraft(null);
     await reload();
   }
@@ -129,7 +131,7 @@ export default function MenuItemAddonsScreen() {
   function deleteOption(o: Option) {
     confirmDelete(t('vendor.addons.deleteOptionTitle'), t('vendor.addons.deleteOptionMsg', { name: o.name }), async () => {
       const { error } = await supabase.from('menu_item_addons').delete().eq('id', o.id);
-      if (error) { showAlert(t('vendor.addons.validationTitle'), error.message); return; }
+      if (error) { showError(error.message); return; }
       await reload();
     });
   }
@@ -140,7 +142,7 @@ export default function MenuItemAddonsScreen() {
       menu_item_addons: g.menu_item_addons.map(x => x.id === o.id ? { ...x, is_available: !x.is_available } : x),
     })));
     const { error } = await supabase.from('menu_item_addons').update({ is_available: !o.is_available }).eq('id', o.id);
-    if (error) { await reload(); showAlert(t('vendor.addons.validationTitle'), error.message); }
+    if (error) { await reload(); showError(error.message); }
   }
 
   const dishLabel = localizedText(itemName, itemNameTh, locale);
@@ -242,87 +244,91 @@ export default function MenuItemAddonsScreen() {
       </Tap>
 
       {/* Group editor */}
-      <Modal visible={!!groupDraft} transparent animationType="fade" onRequestClose={() => setGroupDraft(null)}>
-        <Tap activeOpacity={1} onPress={() => setGroupDraft(null)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 28 }}>
-          <Tap activeOpacity={1} onPress={() => {}} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, gap: 14 }}>
-            <Field label={t('vendor.addons.groupName')} value={groupDraft?.name ?? ''} placeholder={t('vendor.addons.groupNamePlaceholder')}
-              onChangeText={v => setGroupDraft(d => d && { ...d, name: v })} />
-            <Field label={t('vendor.addons.groupNameTh')} value={groupDraft?.nameTh ?? ''}
-              onChangeText={v => setGroupDraft(d => d && { ...d, nameTh: v })} />
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Field label={t('vendor.addons.minSelect')} value={groupDraft?.min ?? ''} keyboardType="number-pad"
-                  onChangeText={v => setGroupDraft(d => d && { ...d, min: v })} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Field label={t('vendor.addons.maxSelect')} value={groupDraft?.max ?? ''} keyboardType="number-pad"
-                  placeholder={t('vendor.addons.maxSelectHint')}
-                  onChangeText={v => setGroupDraft(d => d && { ...d, max: v })} />
-              </View>
-            </View>
-            <ModalActions t={t} onCancel={() => setGroupDraft(null)} onSave={saveGroup} />
-          </Tap>
-        </Tap>
-      </Modal>
+      <EditorModal visible={!!groupDraft} onClose={() => setGroupDraft(null)}>
+        <Field label={t('vendor.addons.groupName')} value={groupDraft?.name ?? ''} placeholder={t('vendor.addons.groupNamePlaceholder')}
+          onChangeText={v => setGroupDraft(d => d && { ...d, name: v })} />
+        <Field label={t('vendor.addons.groupNameTh')} value={groupDraft?.nameTh ?? ''}
+          onChangeText={v => setGroupDraft(d => d && { ...d, nameTh: v })} />
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <Field label={t('vendor.addons.minSelect')} value={groupDraft?.min ?? ''} keyboardType="number-pad"
+              onChangeText={v => setGroupDraft(d => d && { ...d, min: v })} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Field label={t('vendor.addons.maxSelect')} value={groupDraft?.max ?? ''} keyboardType="number-pad"
+              placeholder={t('vendor.addons.maxSelectHint')}
+              onChangeText={v => setGroupDraft(d => d && { ...d, max: v })} />
+          </View>
+        </View>
+        <ModalActions t={t} onCancel={() => setGroupDraft(null)} onSave={saveGroup} />
+      </EditorModal>
 
       {/* Option editor */}
-      <Modal visible={!!optionDraft} transparent animationType="fade" onRequestClose={() => setOptionDraft(null)}>
-        <Tap activeOpacity={1} onPress={() => setOptionDraft(null)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 28 }}>
-          <Tap activeOpacity={1} onPress={() => {}} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, gap: 14 }}>
-            <Field label={t('vendor.addons.optionName')} value={optionDraft?.name ?? ''} placeholder={t('vendor.addons.optionNamePlaceholder')}
-              onChangeText={v => setOptionDraft(d => d && { ...d, name: v })} />
-            <Field label={t('vendor.addons.optionNameTh')} value={optionDraft?.nameTh ?? ''}
-              onChangeText={v => setOptionDraft(d => d && { ...d, nameTh: v })} />
-            <Field label={t('vendor.addons.optionPrice')} value={optionDraft?.price ?? ''} keyboardType="decimal-pad"
-              onChangeText={v => setOptionDraft(d => d && { ...d, price: v })} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#4B4F58' }}>{t('vendor.addons.optionAvailable')}</Text>
-              <Switch
-                value={optionDraft?.available ?? true}
-                onValueChange={v => setOptionDraft(d => d && { ...d, available: v })}
-                trackColor={{ false: '#E2E4EC', true: Brand.vendorAccent }}
-                thumbColor="#fff"
-              />
-            </View>
+      <EditorModal visible={!!optionDraft} onClose={() => setOptionDraft(null)}>
+        <Field label={t('vendor.addons.optionName')} value={optionDraft?.name ?? ''} placeholder={t('vendor.addons.optionNamePlaceholder')}
+          onChangeText={v => setOptionDraft(d => d && { ...d, name: v })} />
+        <Field label={t('vendor.addons.optionNameTh')} value={optionDraft?.nameTh ?? ''}
+          onChangeText={v => setOptionDraft(d => d && { ...d, nameTh: v })} />
+        <Field label={t('vendor.addons.optionPrice')} value={optionDraft?.price ?? ''} keyboardType="decimal-pad"
+          onChangeText={v => setOptionDraft(d => d && { ...d, price: v })} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#4B4F58' }}>{t('vendor.addons.optionAvailable')}</Text>
+          <Switch
+            value={optionDraft?.available ?? true}
+            onValueChange={v => setOptionDraft(d => d && { ...d, available: v })}
+            trackColor={{ false: '#E2E4EC', true: Brand.vendorAccent }}
+            thumbColor="#fff"
+          />
+        </View>
 
-            {/* Allergen tags — feed the student's warn-before-add / warn-before-
-                checkout confirms. Same canonical vocabulary as the base dish. */}
-            <View>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>
-                {t('vendor.addons.optionAllergens')}
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {ALLERGEN_VOCAB.map(a => {
-                  const on = optionDraft?.allergens.has(a.key) ?? false;
-                  return (
-                    <Tap
-                      key={a.key}
-                      onPress={() => setOptionDraft(d => {
-                        if (!d) return d;
-                        const next = new Set(d.allergens);
-                        if (next.has(a.key)) next.delete(a.key); else next.add(a.key);
-                        return { ...d, allergens: next };
-                      })}
-                      style={{
-                        paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
-                        borderColor: on ? Brand.vendorAccent : '#C9CCD6',
-                        backgroundColor: on ? Brand.vendorAccent : 'transparent',
-                      }}
-                    >
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: on ? '#fff' : '#4B4F58' }}>
-                        {t(a.labelKey)}
-                      </Text>
-                    </Tap>
-                  );
-                })}
-              </View>
-            </View>
+        {/* Allergen tags — feed the student's warn-before-add / warn-before-
+            checkout confirms. Same canonical vocabulary as the base dish. */}
+        <View>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>
+            {t('vendor.addons.optionAllergens')}
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {ALLERGEN_VOCAB.map(a => {
+              const on = optionDraft?.allergens.has(a.key) ?? false;
+              return (
+                <Tap
+                  key={a.key}
+                  onPress={() => setOptionDraft(d => {
+                    if (!d) return d;
+                    const next = new Set(d.allergens);
+                    if (next.has(a.key)) next.delete(a.key); else next.add(a.key);
+                    return { ...d, allergens: next };
+                  })}
+                  style={{
+                    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
+                    borderColor: on ? Brand.vendorAccent : '#C9CCD6',
+                    backgroundColor: on ? Brand.vendorAccent : 'transparent',
+                  }}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: on ? '#fff' : '#4B4F58' }}>
+                    {t(a.labelKey)}
+                  </Text>
+                </Tap>
+              );
+            })}
+          </View>
+        </View>
 
-            <ModalActions t={t} onCancel={() => setOptionDraft(null)} onSave={saveOption} />
-          </Tap>
-        </Tap>
-      </Modal>
+        <ModalActions t={t} onCancel={() => setOptionDraft(null)} onSave={saveOption} />
+      </EditorModal>
     </View>
+  );
+}
+
+function EditorModal({ visible, onClose, children }: { visible: boolean; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Tap activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 28 }}>
+        <Tap activeOpacity={1} onPress={() => {}} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, gap: 14 }}>
+          {children}
+        </Tap>
+      </Tap>
+    </Modal>
   );
 }
 

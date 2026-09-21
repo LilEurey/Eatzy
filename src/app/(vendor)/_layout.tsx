@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, useWindowDimensions, Modal, Pressable } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Slot, router, usePathname } from 'expo-router';
+import { Slot, router, usePathname, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import {
@@ -16,7 +16,7 @@ import { isInVendorQueue } from '@/lib/order-lifecycle';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 type NavLabelKey = 'vendor.nav.overview' | 'vendor.nav.orders' | 'vendor.nav.menu' | 'vendor.nav.reviews' | 'vendor.nav.finance';
-type NavItem = { href: string; match: string; icon: IoniconsName; labelKey: NavLabelKey };
+type NavItem = { href: Href; match: string; icon: IoniconsName; labelKey: NavLabelKey };
 
 const NAV: NavItem[] = [
   { href: '/(vendor)/overview', match: '/overview', icon: 'grid-outline', labelKey: 'vendor.nav.overview' },
@@ -36,6 +36,25 @@ const TABLET_BREAKPOINT = 760;
 // bar's worth of nav but not a permanent 220px sidebar without squeezing
 // content, so this range gets a hamburger-triggered overlay drawer instead.
 const DESKTOP_BREAKPOINT = 1024;
+
+const isActive = (pathname: string, item: NavItem) =>
+  pathname === item.match || pathname.startsWith(item.match + '/');
+
+const logOut = () => signOutVendor().then(() => router.replace('/(auth)'));
+
+function PickerModal({ visible, onClose, children }: { visible: boolean; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Tap
+        activeOpacity={1}
+        onPress={onClose}
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
+      >
+        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>{children}</View>
+      </Tap>
+    </Modal>
+  );
+}
 
 function NavRow({ item, active, badge, onPress }: { item: NavItem; active: boolean; badge: number; onPress: () => void }) {
   const { t } = useI18n();
@@ -61,7 +80,7 @@ function NavRow({ item, active, badge, onPress }: { item: NavItem; active: boole
   );
 }
 
-function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; activeCount: number; onNavigate: (href: string) => void }) {
+function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; activeCount: number; onNavigate: (href: Href) => void }) {
   const { t } = useI18n();
   return (
     <View style={{ flex: 1, justifyContent: 'space-between' }}>
@@ -77,12 +96,9 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
         </View>
 
         <View style={{ gap: 2, paddingHorizontal: 12 }}>
-          {NAV.map(item => {
-            const active = pathname === item.match || pathname.startsWith(item.match + '/');
-            return (
-              <NavRow key={item.href} item={item} active={active} badge={activeCount} onPress={() => onNavigate(item.href)} />
-            );
-          })}
+          {NAV.map(item => (
+            <NavRow key={item.match} item={item} active={isActive(pathname, item)} badge={activeCount} onPress={() => onNavigate(item.href)} />
+          ))}
         </View>
       </View>
 
@@ -95,7 +111,7 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
           <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.helpCenter')}</Text>
         </Tap>
         <Tap
-          onPress={() => signOutVendor().then(() => router.replace('/(auth)' as any))}
+          onPress={logOut}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
         >
           <Ionicons name="log-out-outline" size={18} color="#8A8F9B" />
@@ -112,11 +128,11 @@ function BottomTabBar({ pathname, badge }: { pathname: string; badge: number }) 
     <SafeAreaView edges={['bottom']} style={{ backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#EEF0F5' }}>
       <View style={{ flexDirection: 'row', paddingTop: 8 }}>
         {NAV.map(item => {
-          const active = pathname === item.match || pathname.startsWith(item.match + '/');
+          const active = isActive(pathname, item);
           return (
             <Tap
-              key={item.href}
-              onPress={() => router.push(item.href as any)}
+              key={item.match}
+              onPress={() => router.push(item.href)}
               style={{ flex: 1, alignItems: 'center', gap: 3, paddingVertical: 6 }}
             >
               <View>
@@ -164,7 +180,7 @@ export default function VendorLayout() {
     if (initStarted.current) return;
     initStarted.current = true;
     initVendorSession().then(result => {
-      if (result !== 'ok') router.replace('/(auth)' as any);
+      if (result !== 'ok') router.replace('/(auth)');
     });
   }, []);
 
@@ -195,7 +211,7 @@ export default function VendorLayout() {
       <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{vendor?.name ?? ''}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: isTablet ? 14 : 10 }}>
         <Tap
-          onPress={() => router.push('/(vendor)/notifications' as any)}
+          onPress={() => router.push('/(vendor)/notifications')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <View style={{ position: 'relative' }}>
@@ -238,7 +254,7 @@ export default function VendorLayout() {
           <Ionicons name="chevron-down" size={12} color="#8A8F9B" />
         </Tap>
         <Tap
-          onPress={() => router.push('/(vendor)/profile' as any)}
+          onPress={() => router.push('/(vendor)/profile')}
           style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: Brand.vendorAccent, alignItems: 'center', justifyContent: 'center' }}
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
@@ -247,7 +263,7 @@ export default function VendorLayout() {
         </Tap>
         {!isDesktop && (
           <Tap
-            onPress={() => signOutVendor().then(() => router.replace('/(auth)' as any))}
+            onPress={logOut}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="log-out-outline" size={20} color="#8A8F9B" />
@@ -264,68 +280,52 @@ export default function VendorLayout() {
   );
 
   const langPickerModal = (
-    <Modal visible={langPickerOpen} transparent animationType="fade" onRequestClose={() => setLangPickerOpen(false)}>
-      <Tap
-        activeOpacity={1}
-        onPress={() => setLangPickerOpen(false)}
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
-      >
-        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>
-          <Text style={{
-            fontSize: 15, fontWeight: '700', color: Brand.textPrimary,
-            paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
-          }}>
-            {t('profile.languagePickerTitle')}
+    <PickerModal visible={langPickerOpen} onClose={() => setLangPickerOpen(false)}>
+      <Text style={{
+        fontSize: 15, fontWeight: '700', color: Brand.textPrimary,
+        paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
+      }}>
+        {t('profile.languagePickerTitle')}
+      </Text>
+      {(Object.keys(LOCALE_LABELS) as Locale[]).map((code) => (
+        <Tap
+          key={code}
+          onPress={() => { setLocale(code); setLangPickerOpen(false); }}
+          style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+            paddingHorizontal: 16, paddingVertical: 14,
+          }}
+        >
+          <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: locale === code ? '700' : '500' }}>
+            {LOCALE_LABELS[code]}
           </Text>
-          {(Object.keys(LOCALE_LABELS) as Locale[]).map((code) => (
-            <Tap
-              key={code}
-              onPress={() => { setLocale(code); setLangPickerOpen(false); }}
-              style={{
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                paddingHorizontal: 16, paddingVertical: 14,
-              }}
-            >
-              <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: locale === code ? '700' : '500' }}>
-                {LOCALE_LABELS[code]}
-              </Text>
-              {locale === code && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
-            </Tap>
-          ))}
-        </View>
-      </Tap>
-    </Modal>
+          {locale === code && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
+        </Tap>
+      ))}
+    </PickerModal>
   );
 
   const storePickerModal = (
-    <Modal visible={storePickerOpen} transparent animationType="fade" onRequestClose={() => setStorePickerOpen(false)}>
-      <Tap
-        activeOpacity={1}
-        onPress={() => setStorePickerOpen(false)}
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
-      >
-        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>
-          {[true, false].map((open) => (
-            <Tap
-              key={String(open)}
-              onPress={() => { setStoreOpen(open); setStorePickerOpen(false); }}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'space-between',
-                paddingHorizontal: 16, paddingVertical: 14,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: open ? '#22c55e' : '#ef4444' }} />
-                <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: storeOpen === open ? '700' : '500' }}>
-                  {open ? t('vendor.topbar.storeOpen') : t('vendor.topbar.storeClosed')}
-                </Text>
-              </View>
-              {storeOpen === open && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
-            </Tap>
-          ))}
-        </View>
-      </Tap>
-    </Modal>
+    <PickerModal visible={storePickerOpen} onClose={() => setStorePickerOpen(false)}>
+      {[true, false].map((open) => (
+        <Tap
+          key={String(open)}
+          onPress={() => { setStoreOpen(open); setStorePickerOpen(false); }}
+          style={{
+            flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'space-between',
+            paddingHorizontal: 16, paddingVertical: 14,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: open ? '#22c55e' : '#ef4444' }} />
+            <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: storeOpen === open ? '700' : '500' }}>
+              {open ? t('vendor.topbar.storeOpen') : t('vendor.topbar.storeClosed')}
+            </Text>
+          </View>
+          {storeOpen === open && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
+        </Tap>
+      ))}
+    </PickerModal>
   );
 
   if (!isTablet) {
@@ -356,7 +356,7 @@ export default function VendorLayout() {
                 <SidebarBody
                   pathname={pathname}
                   activeCount={activeCount}
-                  onNavigate={(href) => { setDrawerOpen(false); router.push(href as any); }}
+                  onNavigate={(href) => { setDrawerOpen(false); router.push(href); }}
                 />
               </SafeAreaView>
             </View>
@@ -374,7 +374,7 @@ export default function VendorLayout() {
       <View style={{ flex: 1, flexDirection: 'row' }}>
         {/* Sidebar */}
         <View style={{ width: 220, backgroundColor: '#fff', borderRightWidth: 1, borderRightColor: '#EEF0F5', paddingVertical: 20 }}>
-          <SidebarBody pathname={pathname} activeCount={activeCount} onNavigate={(href) => router.push(href as any)} />
+          <SidebarBody pathname={pathname} activeCount={activeCount} onNavigate={(href) => router.push(href)} />
         </View>
 
         {/* Main column */}
