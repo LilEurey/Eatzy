@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { showAlert } from '@/lib/alert';
+import { showAlert, errorMessage } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 
@@ -28,8 +28,8 @@ export default function AdminLoginScreen() {
       }
 
       router.replace('/(admin)/new-vendor');
-    } catch (e: any) {
-      showAlert(t('auth.signInFailedTitle'), e.message);
+    } catch (e) {
+      showAlert(t('auth.signInFailedTitle'), errorMessage(e));
       setLoading(false);
     }
   }

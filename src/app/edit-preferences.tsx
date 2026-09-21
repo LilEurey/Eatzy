@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { showAlert } from '@/lib/alert';
+import { showAlert, errorMessage } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { getTopMenuCategories } from '@/lib/menu-categories';
 import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
@@ -139,8 +139,8 @@ export default function EditPreferencesScreen() {
       await refreshPreferences();
 
       showAlert(t('editPreferences.savedTitle'), t('editPreferences.savedMsg'), () => router.back());
-    } catch (e: any) {
-      showAlert(t('onboarding.errorSavingTitle'), e.message);
+    } catch (e) {
+      showAlert(t('onboarding.errorSavingTitle'), errorMessage(e));
     } finally {
       setSaving(false);
     }

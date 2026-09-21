@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { showAlert } from '@/lib/alert';
+import { showAlert, errorMessage } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { getTopMenuCategories } from '@/lib/menu-categories';
 import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
@@ -117,8 +117,8 @@ export default function OnboardingScreen() {
       if (error) throw error;
       await refreshPreferences();
       router.replace('/(tabs)');
-    } catch (e: any) {
-      showAlert(t('onboarding.errorSavingTitle'), e.message);
+    } catch (e) {
+      showAlert(t('onboarding.errorSavingTitle'), errorMessage(e));
       setSaving(false);
     }
   }
