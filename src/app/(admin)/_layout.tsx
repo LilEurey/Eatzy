@@ -21,10 +21,10 @@ export default function AdminLayout() {
 
     async function checkAdmin() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace('/admin-login' as any); return; }
+      if (!user) { router.replace('/admin-login'); return; }
 
       const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle();
-      if (profile?.role !== 'admin') { router.replace('/admin-login' as any); return; }
+      if (profile?.role !== 'admin') { router.replace('/admin-login'); return; }
 
       setOk(true);
       setLoading(false);
@@ -34,7 +34,7 @@ export default function AdminLayout() {
 
   async function logOut() {
     await supabase.auth.signOut();
-    router.replace('/admin-login' as any);
+    router.replace('/admin-login');
   }
 
   if (loading || !ok) {
@@ -67,12 +67,12 @@ export default function AdminLayout() {
         <NavTab
           label={t('admin.nav.newVendor')}
           active={pathname === '/new-vendor'}
-          onPress={() => router.push('/(admin)/new-vendor' as any)}
+          onPress={() => router.push('/(admin)/new-vendor')}
         />
         <NavTab
           label={t('admin.nav.vendors')}
           active={pathname === '/vendors'}
-          onPress={() => router.push('/(admin)/vendors' as any)}
+          onPress={() => router.push('/(admin)/vendors')}
         />
       </View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>

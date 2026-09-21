@@ -31,9 +31,9 @@ export default function VendorLoginScreen() {
         throw new Error('This account is not registered as a vendor.');
       }
 
-      router.replace('/(vendor)/overview' as any);
-    } catch (e: any) {
-      showAlert(t('auth.signInFailedTitle'), e.message);
+      router.replace('/(vendor)/overview');
+    } catch (e) {
+      showAlert(t('auth.signInFailedTitle'), e instanceof Error ? e.message : String(e));
       setLoading(false);
     }
   }

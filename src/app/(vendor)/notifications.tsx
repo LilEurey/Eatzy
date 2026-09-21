@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
@@ -17,10 +17,7 @@ export default function VendorNotificationsScreen() {
   // "new" marker stays visible for this viewing even after markNotificationsRead()
   // flips the underlying store's `read` flag (which happens almost immediately —
   // otherwise every notification reads as already-seen before the vendor can look).
-  const unreadAtOpenRef = useRef<Set<string> | null>(null);
-  if (unreadAtOpenRef.current === null) {
-    unreadAtOpenRef.current = new Set(notifications.filter(n => !n.read).map(n => n.id));
-  }
+  const [unreadAtOpen] = useState(() => new Set(notifications.filter(n => !n.read).map(n => n.id)));
 
   useEffect(() => { void markNotificationsRead(); }, []);
 
@@ -43,11 +40,11 @@ export default function VendorNotificationsScreen() {
         <View style={{ gap: 10, maxWidth: 480 }}>
           {notifications.map(n => {
             const { title, body } = notificationText(n, t);
-            const isNew = unreadAtOpenRef.current!.has(n.id);
+            const isNew = unreadAtOpen.has(n.id);
             return (
               <Tap
                 key={n.id}
-                onPress={() => router.push('/(vendor)/orders' as any)}
+                onPress={() => router.push('/(vendor)/orders')}
                 style={{
                   flexDirection: 'row', gap: 12,
                   backgroundColor: isNew ? Brand.vendorAccentLight + '33' : '#fff',

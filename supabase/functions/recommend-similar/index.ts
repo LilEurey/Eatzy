@@ -5,8 +5,7 @@
 //
 // Deploy: supabase functions deploy recommend-similar
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
+import { callerClient, corsAndJson } from '../_shared/http.ts';
 import { getRankingCatalog } from '../_shared/catalog.ts';
 import { rankSimilar } from '../_shared/ranking.ts';
 
@@ -33,12 +32,7 @@ type UserPreferences = {
 };
 
 Deno.serve(async (req) => {
-  const cors = corsHeaders(req);
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    });
+  const { cors, json } = corsAndJson(req);
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
@@ -50,12 +44,7 @@ Deno.serve(async (req) => {
   }
   if (!body.item_id) return json({ error: 'item_id is required' }, 400);
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const authHeader = req.headers.get('Authorization') ?? '';
-  const supabase = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
+  const supabase = callerClient(req.headers.get('Authorization') ?? '');
 
   // Best-effort: an anonymous caller (or one with no saved preferences yet)
   // just gets the unfiltered ranking, same cold-start behavior as

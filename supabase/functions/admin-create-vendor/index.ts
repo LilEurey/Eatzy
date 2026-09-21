@@ -8,8 +8,7 @@
 //
 // Deploy: supabase functions deploy admin-create-vendor
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
+import { callerClient, corsAndJson, serviceClient } from '../_shared/http.ts';
 
 const MIN_PASSWORD_LENGTH = 10; // Mirror auth.minimum_password_length in config.toml.
 
@@ -25,29 +24,18 @@ function normalizeTags(input: unknown): string[] {
 }
 
 Deno.serve(async (req) => {
-  const cors = corsHeaders(req);
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    });
+  const { cors, json } = corsAndJson(req);
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return json({ error: 'Missing authorization header' }, 401);
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-
-  const adminClient = createClient(supabaseUrl, serviceRoleKey);
-  // Caller identity only — anon key so a future refactor that drops the role
-  // check below can't turn this into an unauthenticated admin endpoint.
-  const callerClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: { user: caller } } = await callerClient.auth.getUser();
+  const adminClient = serviceClient();
+  // Caller identity only — callerClient() uses the anon key so a future
+  // refactor that drops the role check below can't turn this into an
+  // unauthenticated admin endpoint.
+  const { data: { user: caller } } = await callerClient(authHeader).auth.getUser();
   if (!caller) return json({ error: 'Invalid session' }, 401);
 
   const { data: callerProfile } = await adminClient

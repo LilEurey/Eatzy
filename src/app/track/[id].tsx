@@ -74,15 +74,15 @@ export default function TrackScreen() {
         pickup_start: data.pickup_start,
         pickup_end: data.pickup_end,
         total_amount: data.total_amount,
-        vendor_name: (data as any).vendors?.name ?? '',
+        vendor_name: data.vendors?.name ?? '',
         student_picked_up_at: data.student_picked_up_at,
         // payments.order_id is unique, so PostgREST embeds it to-ONE: an object
         // when the order was charged, null when it wasn't — not an array.
-        was_charged: !!(data as any).payments,
-        items: ((data as any).order_items ?? []).map((oi: any) => ({
+        was_charged: !!data.payments,
+        items: data.order_items.map((oi) => ({
           name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null,
           quantity: oi.quantity, unit_price: oi.unit_price,
-          addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null, price: a.price })),
+          addons: oi.order_item_addons.map((a) => ({ name: a.name, name_th: a.name_th ?? null, price: a.price })),
         })),
       });
       setStatus(data.status as Status);
@@ -101,22 +101,26 @@ export default function TrackScreen() {
   // Queue position ("N orders ahead of you") — the RPC itself returns null
   // once this order leaves pending/accepted, so no separate hide logic is
   // needed here beyond rendering when non-null.
+  const vendorId = order?.vendor_id;
   useEffect(() => {
-    if (!order) return;
+    if (!vendorId) return;
     async function fetchOrdersAhead() {
-      const { data } = await supabase.rpc('get_orders_ahead', { p_order_id: id });
-      setOrdersAhead(data ?? null);
+      // get_orders_ahead (20260915000000, returns int) is missing from the
+      // generated database.types.ts, so the name/args are cast and the result
+      // narrowed to its real SQL return type.
+      const { data } = await supabase.rpc('get_orders_ahead' as never, { p_order_id: id } as never);
+      setOrdersAhead((data as number | null) ?? null);
     }
     void fetchOrdersAhead();
 
     const channel = supabase
-      .channel(`track-queue-${order.vendor_id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${order.vendor_id}` }, () => {
+      .channel(`track-queue-${vendorId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
         void fetchOrdersAhead();
       })
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
-  }, [order?.vendor_id, id]);
+  }, [vendorId, id]);
 
   async function markPickedUp() {
     if (!order) return;

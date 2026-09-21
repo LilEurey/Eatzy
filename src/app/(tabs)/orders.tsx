@@ -65,19 +65,19 @@ export default function OrdersScreen() {
         .order('created_at', { ascending: false });
 
       if (isCancelled()) return;
-      setOrders(((data as any[] | null) ?? []).map(o => ({
+      setOrders((data ?? []).map(o => ({
         id: o.id,
         vendor_id: o.vendor_id,
         queue_number: o.queue_number,
-        status: o.status,
+        status: o.status as OrderStatus,
         total_amount: o.total_amount,
         pickup_start: o.pickup_start,
         pickup_end: o.pickup_end,
         created_at: o.created_at,
         vendor_name: o.vendors?.name ?? '—',
-        items: (o.order_items ?? []).map((oi: any) => ({
+        items: o.order_items.map((oi) => ({
           name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity,
-          addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null })),
+          addons: oi.order_item_addons.map((a) => ({ name: a.name, name_th: a.name_th ?? null })),
         })),
       })));
       setLoading(false);

@@ -120,9 +120,9 @@ export default function ProfileScreen() {
         setDietaryChips(dietary);
         setAllergyChips((prefs?.allergies ?? []).map(a => a.charAt(0).toUpperCase() + a.slice(1)));
 
-        const order = orderRes.data as any;
+        const order = orderRes.data;
         if (!order) { setRecentOrder(null); return; }
-        const items = order.order_items ?? [];
+        const items = order.order_items;
         const itemSummary = items.length
           ? localizedText(items[0].menu_items?.name ?? '', items[0].menu_items?.name_th ?? null, locale) + (items.length > 1 ? ` +${items.length - 1}` : '')
           : '';

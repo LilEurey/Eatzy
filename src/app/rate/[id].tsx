@@ -55,13 +55,13 @@ export default function RateScreen() {
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
-      const orderItems = (data as any).order_items ?? [];
+      const orderItems = data.order_items;
       setOrder({
         id: data.id,
-        vendor_name: (data as any).vendors?.name ?? '',
-        items: orderItems.map((oi: any) => ({
+        vendor_name: data.vendors?.name ?? '',
+        items: orderItems.map((oi) => ({
           name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null,
-          addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null })),
+          addons: oi.order_item_addons.map((a) => ({ name: a.name, name_th: a.name_th ?? null })),
         })),
         primary_menu_item_id: orderItems[0]?.menu_item_id ?? null,
       });

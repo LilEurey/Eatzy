@@ -117,8 +117,8 @@ export default function OnboardingScreen() {
       if (error) throw error;
       await refreshPreferences();
       router.replace('/(tabs)');
-    } catch (e: any) {
-      showAlert(t('onboarding.errorSavingTitle'), e.message);
+    } catch (e) {
+      showAlert(t('onboarding.errorSavingTitle'), (e as Error).message);
       setSaving(false);
     }
   }

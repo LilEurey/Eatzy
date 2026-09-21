@@ -20,10 +20,16 @@ function splitList(raw: string): string[] {
   return raw.split(',').map(s => s.trim()).filter(Boolean);
 }
 
-// Canonical allergen keys — must match the strings students store in
-// user_preferences.allergies (this list used to write 'seafood'/'beef', which
-// never matched the student side's 'shellfish').
-const ALLERGENS = ALLERGEN_VOCAB;
+const INPUT_STYLE = { borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary } as const;
+
+function Field({ label, ...inputProps }: { label: string } & React.ComponentProps<typeof TextInput>) {
+  return (
+    <View>
+      <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{label}</Text>
+      <TextInput placeholderTextColor="#B0B4BF" {...inputProps} style={[INPUT_STYLE, inputProps.style]} />
+    </View>
+  );
+}
 
 export default function AddMenuItemScreen() {
   const { t } = useI18n();
@@ -165,40 +171,19 @@ export default function AddMenuItemScreen() {
           <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5', gap: 14 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.menuNew.basicInfo')}</Text>
 
-            <View>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.nameLabel')}</Text>
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder={t('vendor.menuNew.namePlaceholder')}
-                placeholderTextColor="#B0B4BF"
-                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-              />
-            </View>
+            <Field label={t('vendor.menuNew.nameLabel')} value={name} onChangeText={setName} placeholder={t('vendor.menuNew.namePlaceholder')} />
 
-            <View>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.nameThLabel')}</Text>
-              <TextInput
-                value={nameTh}
-                onChangeText={setNameTh}
-                placeholder={t('vendor.menuNew.nameThPlaceholder')}
-                placeholderTextColor="#B0B4BF"
-                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-              />
-            </View>
+            <Field label={t('vendor.menuNew.nameThLabel')} value={nameTh} onChangeText={setNameTh} placeholder={t('vendor.menuNew.nameThPlaceholder')} />
 
-            <View>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.descLabel')}</Text>
-              <TextInput
-                value={description}
-                onChangeText={setDescription}
-                placeholder={t('vendor.menuNew.descPlaceholder')}
-                placeholderTextColor="#B0B4BF"
-                multiline
-                numberOfLines={3}
-                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary, minHeight: 70, textAlignVertical: 'top' }}
-              />
-            </View>
+            <Field
+              label={t('vendor.menuNew.descLabel')}
+              value={description}
+              onChangeText={setDescription}
+              placeholder={t('vendor.menuNew.descPlaceholder')}
+              multiline
+              numberOfLines={3}
+              style={{ minHeight: 70, textAlignVertical: 'top' }}
+            />
 
             {/* Ingredients / tags feed the recommendation ranking directly:
                 itemDoc() in _shared/tfidf.ts builds an item's TF-IDF document
@@ -207,27 +192,9 @@ export default function AddMenuItemScreen() {
                 category alone — indistinguishable from every other item in
                 that category, and effectively absent from Similar Foods and
                 Recommended For You. */}
-            <View>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.ingredientsLabel')}</Text>
-              <TextInput
-                value={ingredients}
-                onChangeText={setIngredients}
-                placeholder={t('vendor.menuNew.ingredientsPlaceholder')}
-                placeholderTextColor="#B0B4BF"
-                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-              />
-            </View>
+            <Field label={t('vendor.menuNew.ingredientsLabel')} value={ingredients} onChangeText={setIngredients} placeholder={t('vendor.menuNew.ingredientsPlaceholder')} />
 
-            <View>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.tagsLabel')}</Text>
-              <TextInput
-                value={tags}
-                onChangeText={setTags}
-                placeholder={t('vendor.menuNew.tagsPlaceholder')}
-                placeholderTextColor="#B0B4BF"
-                style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-              />
-            </View>
+            <Field label={t('vendor.menuNew.tagsLabel')} value={tags} onChangeText={setTags} placeholder={t('vendor.menuNew.tagsPlaceholder')} />
 
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}>
@@ -326,7 +293,10 @@ export default function AddMenuItemScreen() {
 
           <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5', gap: 10 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, marginBottom: 4 }}>{t('vendor.menuNew.sensitiveIngredients')}</Text>
-            {ALLERGENS.map(a => (
+            {/* Canonical allergen keys — must match the strings students store in
+                user_preferences.allergies (this list used to write 'seafood'/'beef',
+                which never matched the student side's 'shellfish'). */}
+            {ALLERGEN_VOCAB.map(a => (
               <Tap key={a.key} onPress={() => toggleAllergen(a.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{
                   width: 17, height: 17, borderRadius: 4, borderWidth: 1.5,

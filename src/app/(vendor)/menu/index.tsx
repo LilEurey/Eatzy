@@ -35,7 +35,7 @@ export default function VendorMenuScreen() {
           <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>{t('vendor.menu.subtitle')}</Text>
         </View>
         <Tap
-          onPress={() => router.push('/(vendor)/menu/new' as any)}
+          onPress={() => router.push('/(vendor)/menu/new')}
           style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10 }}
         >
           <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{t('vendor.menu.addNewItem')}</Text>
@@ -64,7 +64,7 @@ export default function VendorMenuScreen() {
                   : <Text style={{ fontSize: 44 }}>🍽️</Text>
                 }
                 <Tap
-                  onPress={() => router.push(`/(vendor)/menu/${item.id}/addons` as any)}
+                  onPress={() => router.push(`/(vendor)/menu/${item.id}/addons`)}
                   style={{ position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', gap: 4, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.92)', paddingHorizontal: 10 }}
                 >
                   <Ionicons name="options-outline" size={13} color={Brand.textPrimary} />
