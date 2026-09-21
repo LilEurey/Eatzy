@@ -112,21 +112,42 @@ export function useVendorUnreadNotifications() {
   );
 }
 
-function mapOrder(row: any): VendorOrder {
-  const items: OrderItem[] = (row.order_items ?? []).map((oi: any) => ({
+// Row shape of fetchOrders()'s select string.
+type OrderRow = {
+  id: string;
+  queue_number: number | null;
+  status: OrderStatus;
+  total_amount: number;
+  pickup_start: string | null;
+  payment_method: string;
+  created_at: string;
+  estimated_prep_minutes: number | null;
+  vendor_handed_off_at: string | null;
+  order_items: {
+    menu_item_id: string;
+    quantity: number;
+    unit_price: number;
+    special_instructions: string | null;
+    menu_items: { name: string; name_th: string | null } | null;
+    order_item_addons: { name: string; name_th: string | null; price: number }[] | null;
+  }[] | null;
+};
+
+function mapOrder(row: OrderRow): VendorOrder {
+  const items: OrderItem[] = (row.order_items ?? []).map(oi => ({
     menu_item_id: oi.menu_item_id,
     name: oi.menu_items?.name ?? '',
     name_th: oi.menu_items?.name_th ?? null,
     quantity: oi.quantity,
     unit_price: oi.unit_price,
-    addons: (oi.order_item_addons ?? []).map((a: any) => ({
+    addons: (oi.order_item_addons ?? []).map(a => ({
       name: a.name, name_th: a.name_th ?? null, price: a.price,
     })),
     done: false,
   }));
   const specialNotes = (row.order_items ?? [])
-    .map((oi: any) => oi.special_instructions)
-    .filter((s: string | null) => !!s);
+    .map(oi => oi.special_instructions)
+    .filter(s => !!s);
   return {
     id: row.id,
     queue_number: row.queue_number,
@@ -157,7 +178,7 @@ async function fetchOrders(vendorId: string) {
     .select('id,queue_number,status,total_amount,pickup_start,payment_method,created_at,estimated_prep_minutes,vendor_handed_off_at,order_items(menu_item_id,quantity,unit_price,special_instructions,menu_items(name,name_th),order_item_addons(name,name_th,price))')
     .eq('vendor_id', vendorId)
     .order('created_at', { ascending: true });
-  orders = ((data as any[] | null) ?? []).map(mapOrder);
+  orders = ((data as unknown as OrderRow[] | null) ?? []).map(mapOrder);
 }
 
 async function fetchNotifications(userId: string) {

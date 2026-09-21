@@ -64,8 +64,8 @@ export function useGoogleSignIn() {
       // the redirect URL, so an intercepted callback alone is useless.
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
       if (exchangeError) throw exchangeError;
-    } catch (e: any) {
-      showAlert(t('auth.signInFailedTitle'), e.message);
+    } catch (e) {
+      showAlert(t('auth.signInFailedTitle'), (e as Error).message);
     } finally {
       setLoading(false);
     }

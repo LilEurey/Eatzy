@@ -102,7 +102,9 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     }
 
     return { ok: true, orderId: order.id };
-  } catch (e: any) {
+  } catch (err) {
+    // Postgrest errors are plain objects (not Error instances), so no instanceof.
+    const e = err as { message: string; code?: string; details?: string; hint?: string };
     // Don't strand a pending order when order_items/addons insertion
     // fails after the orders row itself was created. Best-effort; RLS
     // lets a student delete their own not-yet-paid order. Wallet
