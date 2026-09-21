@@ -90,11 +90,15 @@ export default function OnboardingScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      await supabase.from('user_preferences').upsert({ user_id: user.id });
+      const { error } = await supabase.from('user_preferences').upsert({ user_id: user.id });
+      if (error) throw error;
       await refreshPreferences();
-    } catch {}
-    router.replace('/(tabs)');
-    setSaving(false);
+      router.replace('/(tabs)');
+    } catch (e) {
+      showAlert(t('onboarding.errorSavingTitle'), errorMessage(e));
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleContinue() {

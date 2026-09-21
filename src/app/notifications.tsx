@@ -32,7 +32,7 @@ export default function NotificationsScreen() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { if (!isCancelled()) setNotifications([]); return; }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('notifications')
       .select('id,order_id,icon,title,body,event,vendor_name,queue_number,total_amount,read,created_at')
       .eq('user_id', user.id)
@@ -41,8 +41,9 @@ export default function NotificationsScreen() {
       // query grows for the life of the account and the whole history is
       // parsed on every open. 100 is far past what anyone scrolls to.
       .limit(100);
-    const rows = data ?? [];
     if (isCancelled()) return;
+    if (error) { console.warn('load notifications failed:', error.message); return; }
+    const rows = data ?? [];
     setNotifications(rows);
 
     const unreadIds = rows.filter(r => !r.read).map(r => r.id);

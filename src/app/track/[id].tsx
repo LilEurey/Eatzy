@@ -102,7 +102,8 @@ export default function TrackScreen() {
   useEffect(() => {
     if (!vendorId) return;
     async function fetchOrdersAhead() {
-      const { data } = await supabase.rpc('get_orders_ahead', { p_order_id: id });
+      const { data, error } = await supabase.rpc('get_orders_ahead', { p_order_id: id });
+      if (error) { console.warn('get_orders_ahead failed:', error.message); return; }
       setOrdersAhead(data ?? null);
     }
     void fetchOrdersAhead();

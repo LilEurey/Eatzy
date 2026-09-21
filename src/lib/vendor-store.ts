@@ -112,25 +112,30 @@ export function useVendorUnreadNotifications() {
   );
 }
 
-function mapOrder(row: any): VendorOrder {
-  const items: OrderItem[] = (row.order_items ?? []).map((oi: any) => ({
+const ORDER_SELECT = 'id,queue_number,status,total_amount,pickup_start,payment_method,created_at,estimated_prep_minutes,vendor_handed_off_at,order_items(menu_item_id,quantity,unit_price,special_instructions,menu_items(name,name_th),order_item_addons(name,name_th,price))';
+const queryOrders = (vendorId: string) =>
+  supabase.from('orders').select(ORDER_SELECT).eq('vendor_id', vendorId).order('created_at', { ascending: true });
+type OrderRow = NonNullable<Awaited<ReturnType<typeof queryOrders>>['data']>[number];
+
+function mapOrder(row: OrderRow): VendorOrder {
+  const items: OrderItem[] = row.order_items.map(oi => ({
     menu_item_id: oi.menu_item_id,
     name: oi.menu_items?.name ?? '',
     name_th: oi.menu_items?.name_th ?? null,
     quantity: oi.quantity,
     unit_price: oi.unit_price,
-    addons: (oi.order_item_addons ?? []).map((a: any) => ({
+    addons: oi.order_item_addons.map(a => ({
       name: a.name, name_th: a.name_th ?? null, price: a.price,
     })),
     done: false,
   }));
-  const specialNotes = (row.order_items ?? [])
-    .map((oi: any) => oi.special_instructions)
-    .filter((s: string | null) => !!s);
+  const specialNotes = row.order_items
+    .map(oi => oi.special_instructions)
+    .filter(s => !!s);
   return {
     id: row.id,
     queue_number: row.queue_number,
-    status: row.status,
+    status: row.status as OrderStatus,
     total_amount: row.total_amount,
     pickup_start: row.pickup_start,
     payment_method: row.payment_method,
@@ -143,25 +148,25 @@ function mapOrder(row: any): VendorOrder {
 }
 
 async function fetchMenu(vendorId: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('menu_items')
     .select('id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
     .eq('vendor_id', vendorId)
     .order('name');
+  // On a failed refetch keep the last good list — [] would show an empty menu.
+  if (error) { console.warn('fetchMenu failed:', error.message); return; }
   menuItems = (data as MenuItem[] | null) ?? [];
 }
 
 async function fetchOrders(vendorId: string) {
-  const { data } = await supabase
-    .from('orders')
-    .select('id,queue_number,status,total_amount,pickup_start,payment_method,created_at,estimated_prep_minutes,vendor_handed_off_at,order_items(menu_item_id,quantity,unit_price,special_instructions,menu_items(name,name_th),order_item_addons(name,name_th,price))')
-    .eq('vendor_id', vendorId)
-    .order('created_at', { ascending: true });
-  orders = ((data as any[] | null) ?? []).map(mapOrder);
+  const { data, error } = await queryOrders(vendorId);
+  // Keep the last good queue on a failed refetch — [] would tell the vendor nothing is waiting.
+  if (error) { console.warn('fetchOrders failed:', error.message); return; }
+  orders = data.map(mapOrder);
 }
 
 async function fetchNotifications(userId: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('notifications')
     .select('id,order_id,icon,title,body,event,vendor_name,queue_number,total_amount,read,created_at')
     .eq('user_id', userId)
@@ -169,6 +174,7 @@ async function fetchNotifications(userId: string) {
     // Same cap as the student notifications screen — append-only feed, no
     // pagination in the UI, so without this it grows unbounded per account.
     .limit(100);
+  if (error) { console.warn('fetchNotifications failed:', error.message); return; }
   notifications = (data as VendorNotification[] | null) ?? [];
 }
 

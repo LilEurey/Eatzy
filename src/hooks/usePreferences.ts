@@ -69,11 +69,19 @@ async function load(): Promise<void> {
     emit();
     return;
   }
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('user_preferences')
     .select('is_halal,is_vegetarian,is_jay,allergies')
     .eq('user_id', user.id)
     .maybeSingle();
+  if (error) {
+    // Don't overwrite with all-false: that would silently drop the halal /
+    // vegetarian / jay hard filters for a student who has them saved.
+    console.warn('load preferences failed:', error.message);
+    loading = false;
+    emit();
+    return;
+  }
   prefs = {
     is_halal: data?.is_halal ?? false,
     is_vegetarian: data?.is_vegetarian ?? false,

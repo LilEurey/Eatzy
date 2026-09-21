@@ -59,13 +59,15 @@ export default function OrdersScreen() {
     const userId = user.id;
 
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (isCancelled()) return;
+      // Keep the list on a failed live refetch — [] would flash "no orders".
+      if (error) { console.warn('load orders failed:', error.message); setLoading(false); return; }
       setOrders((data ?? []).map(o => ({
         id: o.id,
         vendor_id: o.vendor_id,

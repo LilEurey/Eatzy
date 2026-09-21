@@ -35,13 +35,14 @@ export default function AdminVendorsScreen() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('vendors')
       .select(
         'id,name,stall_number,is_on_campus,address,cuisine_tags,is_halal_certified,is_open,open_time,close_time,created_at,current_queue_count,estimated_wait_min,owner_user_id,owner:users(name,email)'
       )
       .order('name', { ascending: true });
-    const rows = ((data as any[]) ?? []).map((row) => ({
+    if (error) { console.warn('load vendors failed:', error.message); setLoading(false); return; }
+    const rows = (data ?? []).map((row) => ({
       ...row,
       owner: Array.isArray(row.owner) ? (row.owner[0] ?? null) : row.owner,
     })) as VendorRow[];
@@ -174,7 +175,7 @@ export default function AdminVendorsScreen() {
   );
 }
 
-function StatusPill({ isOpen, t }: { isOpen: boolean; t: (key: any) => string }) {
+function StatusPill({ isOpen, t }: { isOpen: boolean; t: ReturnType<typeof useI18n>['t'] }) {
   return (
     <View
       style={{
