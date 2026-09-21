@@ -91,6 +91,9 @@ export default function WalletScreen() {
     const { error: initError } = await initPaymentSheet({
       paymentIntentClientSecret: intentData.client_secret,
       merchantDisplayName: 'Eatzy',
+      // PromptPay is a redirect-based method: without returnURL the iOS sheet
+      // hides it, and it's our only method. Deep link lands back on this tab.
+      returnURL: 'eatzy://wallet',
     });
     if (cancelledRef.current) return;
     if (initError) {

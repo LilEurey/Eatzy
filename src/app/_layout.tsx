@@ -118,7 +118,7 @@ export default function RootLayout() {
   // merchant ID actually registered in the Apple Developer portal before
   // Apple Pay will work; card payments don't need it.
   return (
-    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} merchantIdentifier="merchant.com.anonymous.eatzy">
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="eatzy" merchantIdentifier="merchant.com.anonymous.eatzy">
       <I18nProvider>
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false }} />
