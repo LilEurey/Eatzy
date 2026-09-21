@@ -1,5 +1,6 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getUserRole } from '@/lib/user-role';
 import { showAlert } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { confirmHandoff, isEarned, transitionOrder, type OrderStatus } from '@/lib/order-lifecycle';
@@ -214,8 +215,7 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { loading = false; emit(); return 'no-session'; }
 
-  const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle();
-  if (profile?.role !== 'vendor') { loading = false; emit(); return 'not-vendor'; }
+  if (await getUserRole(user.id) !== 'vendor') { loading = false; emit(); return 'not-vendor'; }
 
   // select('*') (not a column list) so a not-yet-live column — latitude /
   // longitude land with 20260908000000_vendor_geo.sql, still pending on the

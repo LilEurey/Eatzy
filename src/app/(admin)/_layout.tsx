@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { getUserRole } from '@/lib/user-role';
 
 export default function AdminLayout() {
   const { t } = useI18n();
@@ -23,8 +24,7 @@ export default function AdminLayout() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/admin-login'); return; }
 
-      const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle();
-      if (profile?.role !== 'admin') { router.replace('/admin-login'); return; }
+      if (await getUserRole(user.id) !== 'admin') { router.replace('/admin-login'); return; }
 
       setOk(true);
       setLoading(false);

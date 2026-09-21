@@ -8,6 +8,7 @@ import { Brand } from '@/constants/theme';
 import { showAlert, errorMessage } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { getUserRole } from '@/lib/user-role';
 
 export default function VendorLoginScreen() {
   const { t } = useI18n();
@@ -25,8 +26,7 @@ export default function VendorLoginScreen() {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      const { data: profile } = await supabase.from('users').select('role').eq('id', data.user.id).maybeSingle();
-      if (profile?.role !== 'vendor') {
+      if (await getUserRole(data.user.id) !== 'vendor') {
         await supabase.auth.signOut();
         throw new Error('This account is not registered as a vendor.');
       }
