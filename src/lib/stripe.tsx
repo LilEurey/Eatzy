@@ -16,6 +16,9 @@ const unavailable = {
   error: { code: 'Failed', message: 'Payments need a development build (npx expo run:ios), not Expo Go.' },
 };
 
+// CollectionMode.NEVER's value, without a runtime import of the guarded SDK.
+export const COLLECT_NEVER = 'never' as StripeSdk.CollectionMode;
+
 export function StripeProvider(props: ComponentProps<typeof StripeSdk.StripeProvider>) {
   if (!sdk) return <>{props.children}</>;
   return <sdk.StripeProvider {...props} />;
