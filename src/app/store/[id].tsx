@@ -15,8 +15,11 @@ import { localizedText } from '@/lib/localize';
 import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
 import type { Database } from '@/types/database.types';
 
-type Vendor = Database['public']['Tables']['vendors']['Row'];
-type MenuItem = Database['public']['Tables']['menu_items']['Row'];
+type Tables = Database['public']['Tables'];
+const VENDOR_COLUMNS = 'id,name,stall_number,is_open,open_time,close_time,bio,bio_th,cuisine_tags,estimated_wait_min,current_queue_count,cover_image_url,is_halal_certified,latitude,longitude';
+const MENU_ITEM_COLUMNS = 'id,category,name,name_th,description,description_th,price,spice_level,image_url,allergens,is_halal,is_vegetarian,is_jay';
+type Vendor = Pick<Tables['vendors']['Row'], 'id' | 'name' | 'stall_number' | 'is_open' | 'open_time' | 'close_time' | 'bio' | 'bio_th' | 'cuisine_tags' | 'estimated_wait_min' | 'current_queue_count' | 'cover_image_url' | 'is_halal_certified' | 'latitude' | 'longitude'>;
+type MenuItem = Pick<Tables['menu_items']['Row'], 'id' | 'category' | 'name' | 'name_th' | 'description' | 'description_th' | 'price' | 'spice_level' | 'image_url' | 'allergens' | 'is_halal' | 'is_vegetarian' | 'is_jay'>;
 type StoreReview = {
   id: string;
   score: number;
@@ -59,8 +62,8 @@ export default function StoreDetailScreen() {
   useEffect(() => {
     async function load() {
       const [vendorRes, itemsRes] = await Promise.all([
-        supabase.from('vendors').select('*').eq('id', id).maybeSingle(),
-        supabase.from('menu_items').select('*').eq('vendor_id', id).order('name'),
+        supabase.from('vendors').select(VENDOR_COLUMNS).eq('id', id).maybeSingle(),
+        supabase.from('menu_items').select(MENU_ITEM_COLUMNS).eq('vendor_id', id).order('name'),
       ]);
       setVendor(vendorRes.data ?? null);
       setAllItems(itemsRes.data ?? []);
