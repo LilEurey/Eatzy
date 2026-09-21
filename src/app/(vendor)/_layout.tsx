@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, useWindowDimensions, Modal, Pressable } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Slot, router, usePathname } from 'expo-router';
+import { Slot, router, usePathname, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import {
@@ -16,7 +16,7 @@ import { isInVendorQueue } from '@/lib/order-lifecycle';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 type NavLabelKey = 'vendor.nav.overview' | 'vendor.nav.orders' | 'vendor.nav.menu' | 'vendor.nav.reviews' | 'vendor.nav.finance';
-type NavItem = { href: string; match: string; icon: IoniconsName; labelKey: NavLabelKey };
+type NavItem = { href: Href; match: string; icon: IoniconsName; labelKey: NavLabelKey };
 
 const NAV: NavItem[] = [
   { href: '/(vendor)/overview', match: '/overview', icon: 'grid-outline', labelKey: 'vendor.nav.overview' },
@@ -61,7 +61,7 @@ function NavRow({ item, active, badge, onPress }: { item: NavItem; active: boole
   );
 }
 
-function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; activeCount: number; onNavigate: (href: string) => void }) {
+function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; activeCount: number; onNavigate: (href: Href) => void }) {
   const { t } = useI18n();
   return (
     <View style={{ flex: 1, justifyContent: 'space-between' }}>
@@ -80,7 +80,7 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
           {NAV.map(item => {
             const active = pathname === item.match || pathname.startsWith(item.match + '/');
             return (
-              <NavRow key={item.href} item={item} active={active} badge={activeCount} onPress={() => onNavigate(item.href)} />
+              <NavRow key={item.match} item={item} active={active} badge={activeCount} onPress={() => onNavigate(item.href)} />
             );
           })}
         </View>
@@ -95,7 +95,7 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
           <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.helpCenter')}</Text>
         </Tap>
         <Tap
-          onPress={() => signOutVendor().then(() => router.replace('/(auth)' as any))}
+          onPress={() => signOutVendor().then(() => router.replace('/(auth)'))}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
         >
           <Ionicons name="log-out-outline" size={18} color="#8A8F9B" />
@@ -115,8 +115,8 @@ function BottomTabBar({ pathname, badge }: { pathname: string; badge: number }) 
           const active = pathname === item.match || pathname.startsWith(item.match + '/');
           return (
             <Tap
-              key={item.href}
-              onPress={() => router.push(item.href as any)}
+              key={item.match}
+              onPress={() => router.push(item.href)}
               style={{ flex: 1, alignItems: 'center', gap: 3, paddingVertical: 6 }}
             >
               <View>
@@ -164,7 +164,7 @@ export default function VendorLayout() {
     if (initStarted.current) return;
     initStarted.current = true;
     initVendorSession().then(result => {
-      if (result !== 'ok') router.replace('/(auth)' as any);
+      if (result !== 'ok') router.replace('/(auth)');
     });
   }, []);
 
@@ -195,7 +195,7 @@ export default function VendorLayout() {
       <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{vendor?.name ?? ''}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: isTablet ? 14 : 10 }}>
         <Tap
-          onPress={() => router.push('/(vendor)/notifications' as any)}
+          onPress={() => router.push('/(vendor)/notifications')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <View style={{ position: 'relative' }}>
@@ -238,7 +238,7 @@ export default function VendorLayout() {
           <Ionicons name="chevron-down" size={12} color="#8A8F9B" />
         </Tap>
         <Tap
-          onPress={() => router.push('/(vendor)/profile' as any)}
+          onPress={() => router.push('/(vendor)/profile')}
           style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: Brand.vendorAccent, alignItems: 'center', justifyContent: 'center' }}
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
@@ -247,7 +247,7 @@ export default function VendorLayout() {
         </Tap>
         {!isDesktop && (
           <Tap
-            onPress={() => signOutVendor().then(() => router.replace('/(auth)' as any))}
+            onPress={() => signOutVendor().then(() => router.replace('/(auth)'))}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="log-out-outline" size={20} color="#8A8F9B" />
@@ -356,7 +356,7 @@ export default function VendorLayout() {
                 <SidebarBody
                   pathname={pathname}
                   activeCount={activeCount}
-                  onNavigate={(href) => { setDrawerOpen(false); router.push(href as any); }}
+                  onNavigate={(href) => { setDrawerOpen(false); router.push(href); }}
                 />
               </SafeAreaView>
             </View>
@@ -374,7 +374,7 @@ export default function VendorLayout() {
       <View style={{ flex: 1, flexDirection: 'row' }}>
         {/* Sidebar */}
         <View style={{ width: 220, backgroundColor: '#fff', borderRightWidth: 1, borderRightColor: '#EEF0F5', paddingVertical: 20 }}>
-          <SidebarBody pathname={pathname} activeCount={activeCount} onNavigate={(href) => router.push(href as any)} />
+          <SidebarBody pathname={pathname} activeCount={activeCount} onNavigate={(href) => router.push(href)} />
         </View>
 
         {/* Main column */}

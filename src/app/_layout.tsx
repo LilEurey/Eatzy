@@ -65,12 +65,12 @@ export default function RootLayout() {
       .maybeSingle();
 
     if (profile?.role === 'vendor') {
-      router.replace('/(vendor)/overview' as any);
+      router.replace('/(vendor)/overview');
       return;
     }
 
     if (profile?.role === 'admin') {
-      router.replace('/(admin)/new-vendor' as any);
+      router.replace('/(admin)/new-vendor');
       return;
     }
 

@@ -152,7 +152,7 @@ export default function VendorProfileScreen() {
         )}
 
         <Tap
-          onPress={() => router.push('/(vendor)/profile/location' as any)}
+          onPress={() => router.push('/(vendor)/profile/location')}
           style={{
             flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10,
             borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12,

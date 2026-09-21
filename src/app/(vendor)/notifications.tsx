@@ -47,7 +47,7 @@ export default function VendorNotificationsScreen() {
             return (
               <Tap
                 key={n.id}
-                onPress={() => router.push('/(vendor)/orders' as any)}
+                onPress={() => router.push('/(vendor)/orders')}
                 style={{
                   flexDirection: 'row', gap: 12,
                   backgroundColor: isNew ? Brand.vendorAccentLight + '33' : '#fff',

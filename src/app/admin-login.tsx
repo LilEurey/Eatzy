@@ -27,7 +27,7 @@ export default function AdminLoginScreen() {
         throw new Error('This account is not registered as an admin.');
       }
 
-      router.replace('/(admin)/new-vendor' as any);
+      router.replace('/(admin)/new-vendor');
     } catch (e: any) {
       showAlert(t('auth.signInFailedTitle'), e.message);
       setLoading(false);
