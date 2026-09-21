@@ -12,6 +12,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
 const MIN_PASSWORD_LENGTH = 10; // Mirror auth.minimum_password_length in config.toml.
+const USER_ROW_RETRY_DELAY_MS = 250; // handle_new_user's public.users row may lag createUser() briefly.
 
 function normalizeTags(input: unknown): string[] {
   const raw = Array.isArray(input)
@@ -110,7 +111,7 @@ Deno.serve(async (req) => {
     // the public.users row before createUser() returned. If provision_vendor
     // still can't see it, retry once before giving up.
     if (rpcError.message.includes('user_not_found')) {
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, USER_ROW_RETRY_DELAY_MS));
       ({ error: rpcError } = await provision());
     }
 

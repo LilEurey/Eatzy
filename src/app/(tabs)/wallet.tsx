@@ -23,6 +23,8 @@ const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
 };
 
 const TOP_UP_AMOUNTS = [100, 200, 500];
+// PaymentSheet success only means Stripe confirmed; stripe-webhook credits the wallet a moment later.
+const WEBHOOK_CREDIT_WAIT_MS = 1500;
 
 const baht = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -122,7 +124,7 @@ export default function WalletScreen() {
     // client-side — the wallet is credited by stripe-webhook (payment_intent.
     // succeeded), which typically lands within a second or two of this point
     // but isn't guaranteed to have run yet.
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, WEBHOOK_CREDIT_WAIT_MS));
     const { balance, txns } = await loadWallet(user.id);
     if (cancelledRef.current) return;
     setBalance(balance);

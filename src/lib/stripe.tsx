@@ -7,6 +7,8 @@ import type * as StripeSdk from '@stripe/stripe-react-native';
 // top-up flow then reports a normal error instead of crashing the whole app.
 let sdk: typeof StripeSdk | null = null;
 try {
+  // Must be a lazy require: a static import is exactly what crashes without the native module.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   sdk = require('@stripe/stripe-react-native');
 } catch {
   sdk = null;
