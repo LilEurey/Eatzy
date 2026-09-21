@@ -6,35 +6,24 @@
 // Deploy: supabase functions deploy create-topup-intent
 // Secrets:  supabase secrets set STRIPE_SECRET_KEY=sk_test_...
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
 import Stripe from 'npm:stripe@18';
-import { corsHeaders } from '../_shared/cors.ts';
+import { callerClient, corsAndJson } from '../_shared/http.ts';
 
 const MIN_TOPUP_THB = 20; // ponytail: rough floor so Stripe's fixed per-charge fee doesn't dwarf tiny top-ups; tune once real pricing is set.
 const MAX_TOPUP_THB = 10000;
 
 Deno.serve(async (req) => {
-  const cors = corsHeaders(req);
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    });
+  const { cors, json } = corsAndJson(req);
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return json({ error: 'Missing authorization header' }, 401);
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
   if (!stripeSecretKey) return json({ error: 'Stripe is not configured', code: 'STRIPE_NOT_CONFIGURED' }, 500);
 
-  const callerClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: { user: caller } } = await callerClient.auth.getUser();
+  const { data: { user: caller } } = await callerClient(authHeader).auth.getUser();
   if (!caller) return json({ error: 'Invalid session' }, 401);
 
   let body: { amount?: number };

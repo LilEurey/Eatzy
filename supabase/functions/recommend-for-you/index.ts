@@ -10,8 +10,7 @@
 //
 // Deploy: supabase functions deploy recommend-for-you
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
+import { callerClient, corsAndJson } from '../_shared/http.ts';
 import { getRankingCatalog } from '../_shared/catalog.ts';
 import { rankForPreferences } from '../_shared/ranking.ts';
 
@@ -55,21 +54,11 @@ function preferenceDoc(prefs: UserPreferences): string {
 }
 
 Deno.serve(async (req) => {
-  const cors = corsHeaders(req);
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    });
+  const { cors, json } = corsAndJson(req);
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const authHeader = req.headers.get('Authorization') ?? '';
-  const supabase = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
+  const supabase = callerClient(req.headers.get('Authorization') ?? '');
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return json({ results: [] }); // not signed in — nothing personal to rank on
