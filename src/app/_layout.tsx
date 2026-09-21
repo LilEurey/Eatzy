@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { Stack, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { StripeProvider } from '@stripe/stripe-react-native';
+import { StripeProvider } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { I18nProvider } from '@/lib/i18n';
 import type { Session } from '@supabase/supabase-js';
