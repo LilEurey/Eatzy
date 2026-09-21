@@ -9,6 +9,7 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
+import { mapOrderItems } from '@/lib/order-view';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
@@ -58,13 +59,15 @@ export default function OrdersScreen() {
     const userId = user.id;
 
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('orders')
-        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,menu_items(name,name_th),order_item_addons(name,name_th))')
+        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (isCancelled()) return;
+      // Keep the list on a failed live refetch — [] would flash "no orders".
+      if (error) { console.warn('load orders failed:', error.message); setLoading(false); return; }
       setOrders((data ?? []).map(o => ({
         id: o.id,
         vendor_id: o.vendor_id,
@@ -75,10 +78,7 @@ export default function OrdersScreen() {
         pickup_end: o.pickup_end,
         created_at: o.created_at,
         vendor_name: o.vendors?.name ?? '—',
-        items: o.order_items.map((oi) => ({
-          name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null, quantity: oi.quantity,
-          addons: oi.order_item_addons.map((a) => ({ name: a.name, name_th: a.name_th ?? null })),
-        })),
+        items: mapOrderItems(o.order_items),
       })));
       setLoading(false);
     }

@@ -9,6 +9,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
+import { mapOrderItems } from '@/lib/order-view';
 import { confirmHandoff, transitionOrder, type OrderStatus } from '@/lib/order-lifecycle';
 
 // 'rejected' / 'cancelled' are reachable while this screen is mounted — the
@@ -79,11 +80,7 @@ export default function TrackScreen() {
         // payments.order_id is unique, so PostgREST embeds it to-ONE: an object
         // when the order was charged, null when it wasn't — not an array.
         was_charged: !!data.payments,
-        items: data.order_items.map((oi) => ({
-          name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null,
-          quantity: oi.quantity, unit_price: oi.unit_price,
-          addons: oi.order_item_addons.map((a) => ({ name: a.name, name_th: a.name_th ?? null, price: a.price })),
-        })),
+        items: mapOrderItems(data.order_items),
       });
       setStatus(data.status as Status);
     }
@@ -105,11 +102,9 @@ export default function TrackScreen() {
   useEffect(() => {
     if (!vendorId) return;
     async function fetchOrdersAhead() {
-      // get_orders_ahead (20260915000000, returns int) is missing from the
-      // generated database.types.ts, so the name/args are cast and the result
-      // narrowed to its real SQL return type.
-      const { data } = await supabase.rpc('get_orders_ahead' as never, { p_order_id: id } as never);
-      setOrdersAhead((data as number | null) ?? null);
+      const { data, error } = await supabase.rpc('get_orders_ahead', { p_order_id: id });
+      if (error) { console.warn('get_orders_ahead failed:', error.message); return; }
+      setOrdersAhead(data ?? null);
     }
     void fetchOrdersAhead();
 

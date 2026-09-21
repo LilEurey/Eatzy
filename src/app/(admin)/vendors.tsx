@@ -41,12 +41,13 @@ export default function AdminVendorsScreen() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('vendors')
       .select(
         'id,name,stall_number,is_on_campus,address,cuisine_tags,is_halal_certified,is_open,open_time,close_time,created_at,current_queue_count,estimated_wait_min,owner_user_id,owner:users(name,email)'
       )
       .order('name', { ascending: true });
+    if (error) { console.warn('load vendors failed:', error.message); setLoading(false); return; }
     const rows = ((data as unknown as RawVendorRow[] | null) ?? []).map((row): VendorRow => ({
       ...row,
       owner: Array.isArray(row.owner) ? (row.owner[0] ?? null) : row.owner,

@@ -58,7 +58,7 @@ export default function MenuItemAddonsScreen() {
     setGroups(
       ((grps ?? []) as Group[]).map(g => ({
         ...g,
-        menu_item_addons: (g.menu_item_addons ?? []).sort((a, b) => a.sort_order - b.sort_order),
+        menu_item_addons: [...(g.menu_item_addons ?? [])].sort((a, b) => a.sort_order - b.sort_order),
       })),
     );
   }, [id]);

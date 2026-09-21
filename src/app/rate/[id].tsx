@@ -9,6 +9,7 @@ import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
+import { mapOrderItems } from '@/lib/order-view';
 
 // Index 1–5 maps to a star score; index 0 has no label (nothing selected yet).
 const LABEL_KEYS: (TranslationKey | null)[] = [
@@ -51,19 +52,15 @@ export default function RateScreen() {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,vendors(name),order_items(menu_item_id,menu_items(name,name_th),order_item_addons(name,name_th))')
+        .select('id,vendors(name),order_items(menu_item_id,quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
-      const orderItems = data.order_items;
       setOrder({
         id: data.id,
         vendor_name: data.vendors?.name ?? '',
-        items: orderItems.map((oi) => ({
-          name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null,
-          addons: oi.order_item_addons.map((a) => ({ name: a.name, name_th: a.name_th ?? null })),
-        })),
-        primary_menu_item_id: orderItems[0]?.menu_item_id ?? null,
+        items: mapOrderItems(data.order_items),
+        primary_menu_item_id: data.order_items[0]?.menu_item_id ?? null,
       });
     }
     void load();

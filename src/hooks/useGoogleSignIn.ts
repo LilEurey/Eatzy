@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as ExpoLinking from 'expo-linking';
 import { supabase } from '@/lib/supabase';
-import { showAlert } from '@/lib/alert';
+import { showAlert, errorMessage } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -65,7 +65,7 @@ export function useGoogleSignIn() {
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
       if (exchangeError) throw exchangeError;
     } catch (e) {
-      showAlert(t('auth.signInFailedTitle'), (e as Error).message);
+      showAlert(t('auth.signInFailedTitle'), errorMessage(e));
     } finally {
       setLoading(false);
     }

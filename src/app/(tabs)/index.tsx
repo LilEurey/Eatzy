@@ -1,11 +1,9 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
-import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, type Href } from 'expo-router';
+import { router } from 'expo-router';
+import { Tap } from '@/components/Tap';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
-import Svg, { Path } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -14,159 +12,17 @@ import { bangkokHour, getMealSegment, type MealSegment } from '@/lib/time';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { isDrinkCategory } from '@/lib/menu-categories';
 import { DRINK_CATEGORY_FILTER, getTimeBasedCategories, restoreRank } from '@/lib/home-feed';
-import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
-
-// Exact path from the Figma export — the 🔔 emoji it replaced renders with
-// its own baked-in colors on most platforms instead of a clean flat icon.
-function BellIcon({ size = 20 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size * 1.25} viewBox="0 0 16 20" fill="none">
-      <Path
-        d="M0 17V15H2V8C2 6.61667 2.41667 5.3875 3.25 4.3125C4.08333 3.2375 5.16667 2.53333 6.5 2.2V1.5C6.5 1.08333 6.64583 0.729167 6.9375 0.4375C7.22917 0.145833 7.58333 0 8 0C8.41667 0 8.77083 0.145833 9.0625 0.4375C9.35417 0.729167 9.5 1.08333 9.5 1.5V2.2C10.8333 2.53333 11.9167 3.2375 12.75 4.3125C13.5833 5.3875 14 6.61667 14 8V15H16V17H0V17M8 9.5V9.5V9.5V9.5V9.5V9.5V9.5V9.5V9.5M8 20C7.45 20 6.97917 19.8042 6.5875 19.4125C6.19583 19.0208 6 18.55 6 18H10C10 18.55 9.80417 19.0208 9.4125 19.4125C9.02083 19.8042 8.55 20 8 20V20M4 15H12V8C12 6.9 11.6083 5.95833 10.825 5.175C10.0417 4.39167 9.1 4 8 4C6.9 4 5.95833 4.39167 5.175 5.175C4.39167 5.95833 4 6.9 4 8V15V15"
-        fill="#5A4136"
-      />
-    </Svg>
-  );
-}
-
-// One row shape for all three vendor surfaces. Store Options lists every
-// stall (closed ones dimmed with a "Closed" badge); the queue banner and
-// "No Queue Right Now" use the open subset, derived client-side rather than
-// re-queried — the two used to be separate round trips fetching overlapping
-// columns from the same 16-row table.
-type Vendor = {
-  id: string;
-  name: string;
-  is_halal_certified: boolean | null;
-  estimated_wait_min: number | null;
-  current_queue_count: number | null;
-  cuisine_tags: string[] | null;
-  cover_image_url: string | null;
-  is_open: boolean | null;
-};
-
-type MenuItem = {
-  id: string;
-  name: string;
-  name_th: string | null;
-  price: number;
-  category: string | null;
-  image_url: string | null;
-  vendor_id: string;
-  vendors: { name: string } | null;
-  is_halal: boolean;
-  is_vegetarian: boolean;
-  is_jay: boolean;
-  allergens: string[] | null;
-};
+import { usePreferences, passesDietary } from '@/hooks/usePreferences';
+import { CardRow, ItemCard } from '@/components/home/ItemCard';
+import {
+  TopBar, QueueBanner, PromotedSection, TrendingSection, NoQueueSection, StoreOptions, MenuItemCard,
+  type Vendor, type MenuItem,
+} from '@/components/home/sections';
 
 // Hard dietary filter (is_halal/is_vegetarian/is_jay hide the item) and the
 // warn-only allergen match both live in usePreferences (passesDietary /
 // matchAllergens) — shared with search, item/[id], cart and store/[id] so the
 // vocabulary can't drift.
-
-// Small red pill shown on a menu card when the dish carries an allergen the
-// student listed. Same "warn, don't hide" treatment as search.tsx. Sections
-// fed by edge functions (recommend-for-you, similar) have no allergens field,
-// so they can't show it — a known gap, not a bug.
-function AllergenPill({ allergens }: { allergens: string[] | null }) {
-  const { t } = useI18n();
-  const { prefs } = usePreferences();
-  if (matchAllergens(allergens, prefs).length === 0) return null;
-  return (
-    <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start', marginBottom: 6 }}>
-      <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
-    </View>
-  );
-}
-
-// Titled block used by every home section (same title style + bottom gap).
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <View style={{ marginBottom: 28 }}>
-      <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function EmptyCard({ text, marginBottom }: { text: string; marginBottom?: number }) {
-  return (
-    <View style={{
-      borderRadius: 24, backgroundColor: Brand.card, height: 120,
-      alignItems: 'center', justifyContent: 'center', marginBottom,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
-    }}>
-      <Text style={{ color: Brand.textSecondary }}>{text}</Text>
-    </View>
-  );
-}
-
-function CardRow({ children }: { children: ReactNode }) {
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-      {children}
-    </ScrollView>
-  );
-}
-
-const CARD_STYLE = {
-  width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden' as const,
-  shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-  shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
-};
-
-// The 150px carousel card shared by every item row. `allergens` is passed only
-// by rows whose data carries it (undefined → no pill; see AllergenPill).
-function ItemCard({ href, imageUrl, emoji = '🍽️', badge, name, vendorName, allergens, price }: {
-  href: Href;
-  imageUrl: string | null;
-  emoji?: string;
-  badge?: ReactNode;
-  name: string;
-  vendorName: string;
-  allergens?: string[] | null;
-  price: number;
-}) {
-  return (
-    <Tap onPress={() => router.push(href)} activeOpacity={0.85} style={CARD_STYLE}>
-      <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-        {imageUrl
-          ? <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-          : <Text style={{ fontSize: 36 }}>{emoji}</Text>
-        }
-        {badge}
-      </View>
-      <View style={{ padding: 10 }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>
-          {name}
-        </Text>
-        <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>
-          {vendorName}
-        </Text>
-        {allergens !== undefined && <AllergenPill allergens={allergens} />}
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{price}</Text>
-      </View>
-    </Tap>
-  );
-}
-
-// ItemCard for a full menu_items row (localized name, allergen pill).
-function MenuItemCard({ item, rec, emoji, badge }: { item: MenuItem; rec?: boolean; emoji?: string; badge?: ReactNode }) {
-  const { locale } = useI18n();
-  return (
-    <ItemCard
-      href={`/item/${item.id}${rec ? '?rec=1' : ''}`}
-      imageUrl={item.image_url}
-      emoji={emoji}
-      badge={badge}
-      name={localizedText(item.name, item.name_th, locale)}
-      vendorName={item.vendors?.name ?? ''}
-      allergens={item.allergens}
-      price={item.price}
-    />
-  );
-}
 
 // recommend-for-you returns flat rows (no vendors() join — computed server-side).
 type PersonalizedItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
@@ -403,38 +259,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      {/* Top bar */}
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: 20, height: 64,
-      }}>
-        <Tap onPress={() => router.push('/(tabs)/profile')}>
-          <View style={{
-            width: 40, height: 40, borderRadius: 20, overflow: 'hidden',
-            backgroundColor: Brand.orangeLight, borderWidth: 2, borderColor: Brand.card,
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            {avatarUrl
-              ? <Image source={{ uri: avatarUrl }} style={{ width: 40, height: 40 }} />
-              : <Text style={{ fontSize: 16, fontWeight: '800', color: Brand.orange }}>{firstName.charAt(0).toUpperCase() || '?'}</Text>}
-          </View>
-        </Tap>
-        <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -1.2 }}>
-          <Text style={{ color: '#020202' }}>Eat</Text>
-          <Text style={{ color: Brand.orange }}>zy</Text>
-        </Text>
-        <Tap onPress={() => router.push('/notifications')}>
-          <View style={{ position: 'relative' }}>
-            <BellIcon size={18} />
-            {hasUnreadNotifications && (
-              <View style={{
-                position: 'absolute', top: -1, right: -1, width: 8, height: 8, borderRadius: 4,
-                backgroundColor: Brand.orange, borderWidth: 1.5, borderColor: Brand.bg,
-              }} />
-            )}
-          </View>
-        </Tap>
-      </View>
+      <TopBar avatarUrl={avatarUrl} firstName={firstName} hasUnreadNotifications={hasUnreadNotifications} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Greeting */}
@@ -457,409 +282,79 @@ export default function HomeScreen() {
           <Text style={{ color: '#5a4136', fontSize: 16 }}>{t('home.searchPlaceholder')}</Text>
         </Tap>
 
-        {/* Queue banner */}
-        {topVendor && (
-          <View style={{
-            backgroundColor: '#f8ddd2', borderRadius: 24,
-            paddingHorizontal: 16, paddingVertical: 16,
-            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-            marginBottom: 28,
-            shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: 0.04, shadowRadius: 15, elevation: 2,
-          }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{
-                width: 40, height: 40, borderRadius: 20,
-                backgroundColor: '#fff8f6', alignItems: 'center', justifyContent: 'center',
-                shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05, shadowRadius: 1, elevation: 1,
-              }}>
-                <Text style={{ fontSize: 18 }}>🏪</Text>
-              </View>
-              <View>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>
-                  {topVendor.name}
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: queue.color }} />
-                  <Text style={{ fontSize: 12, color: '#5a4136' }}>
-                    {t(queue.labelKey)} • {topVendor.estimated_wait_min ?? 5}–{(topVendor.estimated_wait_min ?? 5) + 3} min
-                  </Text>
-                </View>
-              </View>
-            </View>
-            <Tap onPress={() => router.push(`/store/${topVendor.id}`)}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>{t('home.view')}</Text>
-            </Tap>
-          </View>
-        )}
+
+        {topVendor && <QueueBanner vendor={topVendor} queue={queue} />}
 
         {/* Promoted Foods — sponsored items (is_featured), not personalized */}
-        <Section title={t('home.promoted')}>
-          {/* Featured card */}
-          {featured ? (
-            <View style={{
-              borderRadius: 24, overflow: 'hidden', marginBottom: 12,
-              shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-              shadowOpacity: 0.04, shadowRadius: 30, elevation: 3,
-            }}>
-              {/* Orange gradient border */}
-              <View style={{ padding: 2, borderRadius: 24, backgroundColor: Brand.orange }}>
-                <View style={{ borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.88)', padding: 16 }}>
-                  {/* New menu badge */}
-                  <View style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 4,
-                    backgroundColor: '#f8ddd2', borderRadius: 99,
-                    paddingHorizontal: 8, paddingVertical: 4,
-                    alignSelf: 'flex-start', marginBottom: 12,
-                  }}>
-                    <Text style={{ fontSize: 9 }}>✨</Text>
-                    <Text style={{ fontSize: 12, color: '#5a4136' }}>{t('home.newMenu')}</Text>
-                  </View>
-
-                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                    <View style={{ flex: 1, marginRight: 12 }}>
-                      <Text style={{ fontSize: 22, fontWeight: '700', color: '#261812', lineHeight: 29, marginBottom: 4 }}>
-                        {localizedText(featured.name, featured.name_th, locale)}
-                      </Text>
-                      <Text style={{ fontSize: 15, color: '#5a4136', marginBottom: 14 }}>
-                        {featured.category ?? t('home.thaiFood')}
-                      </Text>
-                      <AllergenPill allergens={featured.allergens} />
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <Text style={{ fontSize: 20, fontWeight: '700', color: '#a04100' }}>
-                          ฿{featured.price}
-                        </Text>
-                        <Tap
-                          onPress={() => router.push(`/item/${featured.id}`)}
-                          style={{
-                            backgroundColor: '#a04100', borderRadius: 16,
-                            paddingHorizontal: 16, paddingVertical: 8,
-                            shadowColor: '#FF6B00', shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.39, shadowRadius: 7, elevation: 3,
-                          }}
-                        >
-                          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{t('home.addToCart')}</Text>
-                        </Tap>
-                      </View>
-                    </View>
-                    {/* Food image */}
-                    <View style={{
-                      width: 110, height: 110, borderRadius: 12,
-                      backgroundColor: Brand.orangeLight, overflow: 'hidden',
-                      alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {featured.image_url
-                        ? <Image source={{ uri: featured.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                        : <Text style={{ fontSize: 44 }}>🍽️</Text>
-                      }
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </View>
-          ) : (
-            <EmptyCard text={t('home.noFeaturedItems')} marginBottom={12} />
-          )}
-        </Section>
+        <PromotedSection featured={featured} />
 
         {/* Trending Meals Today — real order volume; own empty state when none */}
-        <Section title={t('home.trendingToday')}>
-          {trending.length > 0 ? (
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              {trending.map(item => (
-                <Tap
-                  key={item.id}
-                  onPress={() => router.push(`/item/${item.id}`)}
-                  activeOpacity={0.85}
-                  style={{
-                    flex: 1, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-                    shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
-                  }}
-                >
-                  {/* Image area */}
-                  <View style={{ height: 150, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-                    {item.image_url
-                      ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                      : <Text style={{ fontSize: 40 }}>🍽️</Text>
-                    }
-                    {/* Trending badge */}
-                    <View style={{
-                      position: 'absolute', top: 8, right: 8,
-                      backgroundColor: 'rgba(255,255,255,0.9)',
-                      borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4,
-                      flexDirection: 'row', alignItems: 'center', gap: 3,
-                    }}>
-                      <Text style={{ fontSize: 9 }}>🔥</Text>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('home.trending')}</Text>
-                    </View>
-                  </View>
-                  {/* Info */}
-                  <View style={{ padding: 12 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }} numberOfLines={2}>
-                      {localizedText(item.name, item.name_th, locale)}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 8 }} numberOfLines={1}>
-                      {item.vendors?.name ?? '—'}
-                    </Text>
-                    <AllergenPill allergens={item.allergens} />
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>
-                        ฿{item.price}
-                      </Text>
-                      <View style={{
-                        width: 32, height: 32, borderRadius: 16,
-                        backgroundColor: '#ffeae1', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <Text style={{ fontSize: 18, color: Brand.orange, lineHeight: 20 }}>+</Text>
-                      </View>
-                    </View>
-                  </View>
-                </Tap>
-              ))}
-            </View>
-          ) : (
-            <EmptyCard text={t('home.noTrending')} />
-          )}
-        </Section>
+        <TrendingSection trending={trending} />
 
         {/* No Queue Right Now — open vendors under the same "no queue"
             threshold queueStatus() uses for the banner above; a real
             section instead of just Store Options' sort order. Sits below
             Promoted — paid placement ranks above organic queue picks. */}
-        <Section title={t('home.noQueueRightNow')}>
-          {noQueueVendors.length > 0 ? (
-            <CardRow>
-              {noQueueVendors.map(vendor => (
-                <Tap
-                  key={vendor.id}
-                  onPress={() => router.push(`/store/${vendor.id}`)}
-                  activeOpacity={0.85}
-                  style={CARD_STYLE}
-                >
-                  <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-                    {vendor.cover_image_url
-                      ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                      : <Text style={{ fontSize: 36 }}>🏪</Text>
-                    }
-                    <View style={{
-                      position: 'absolute', top: 8, right: 8,
-                      backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 99,
-                      paddingHorizontal: 8, paddingVertical: 4,
-                      flexDirection: 'row', alignItems: 'center', gap: 3,
-                    }}>
-                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('common.noQueue')}</Text>
-                    </View>
-                  </View>
-                  <View style={{ padding: 10 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={1}>
-                      {vendor.name}
-                    </Text>
-                    <Text style={{ fontSize: 11, color: '#5a4136' }} numberOfLines={1}>
-                      {vendor.estimated_wait_min ?? 5}–{(vendor.estimated_wait_min ?? 5) + 3} min
-                    </Text>
-                  </View>
-                </Tap>
-              ))}
-            </CardRow>
-          ) : (
-            <EmptyCard text={t('home.noQueueEmpty')} />
-          )}
-        </Section>
+        <NoQueueSection vendors={noQueueVendors} />
 
         {/* Similar Foods — content-based (TF-IDF + cosine over ingredients/
             tags/category), anchored on today's Promoted item. The only other
             place this renders is item/[id].tsx (anchored on whatever dish
             the student is viewing); the home feed has no "current dish" to
             anchor on, so Promoted stands in for that. */}
-        {featured && similarToFeatured.length > 0 && (
-          <Section title={t('home.similarFoodsTo', { name: localizedText(featured.name, featured.name_th, locale) })}>
-            <CardRow>
-              {similarToFeatured.map(item => (
-                <ItemCard
-                  key={item.id}
-                  // ?rec=1 → item/[id] logs this view as was_recommended, so
-                  // ml_interactions can tell a recommended tap from a browse.
-                  href={`/item/${item.id}?rec=1`}
-                  imageUrl={item.image_url}
-                  name={item.name}
-                  vendorName={item.vendor_name}
-                  price={item.price}
-                />
-              ))}
-            </CardRow>
-          </Section>
+        {featured && (
+          <CardRow title={t('home.similarFoodsTo', { name: localizedText(featured.name, featured.name_th, locale) })} count={similarToFeatured.length}>
+            {similarToFeatured.map(item => (
+              <ItemCard key={item.id} itemId={item.id} recommended imageUrl={item.image_url}
+                title={item.name} vendorName={item.vendor_name} price={item.price} />
+            ))}
+          </CardRow>
         )}
 
         {/* Time-Based — items fitting the current meal segment by category
             (see getTimeBasedCategories). */}
-        <Section title={t(getTimeBasedHeaderKey(mealSegment))}>
-          {timeBasedItems.length > 0 ? (
-            <CardRow>
-              {timeBasedItems.map(item => (
-                <MenuItemCard key={item.id} item={item} />
-              ))}
-            </CardRow>
-          ) : (
-            <EmptyCard text={t('home.noTimeBased')} />
-          )}
-        </Section>
+        <CardRow title={t(getTimeBasedHeaderKey(mealSegment))} count={timeBasedItems.length} emptyText={t('home.noTimeBased')}>
+          {timeBasedItems.map(item => <MenuItemCard key={item.id} item={item} />)}
+        </CardRow>
 
         {/* Recommended For You — personalized TF-IDF ranking (cold-started
             from user_preferences until real order history exists) */}
-        {recommendedForYou.length > 0 && (
-          <Section title={t('home.recommendedForYou')}>
-            <CardRow>
-              {recommendedForYou.map(item => (
-                <ItemCard
-                  key={item.id}
-                  href={`/item/${item.id}?rec=1`}
-                  imageUrl={item.image_url}
-                  name={localizedText(item.name, item.name_th, locale)}
-                  vendorName={item.vendor_name}
-                  price={item.price}
-                />
-              ))}
-            </CardRow>
-          </Section>
-        )}
+        <CardRow title={t('home.recommendedForYou')} count={recommendedForYou.length}>
+          {recommendedForYou.map(item => (
+            <ItemCard key={item.id} itemId={item.id} recommended imageUrl={item.image_url}
+              title={localizedText(item.name, item.name_th, locale)} vendorName={item.vendor_name} price={item.price} />
+          ))}
+        </CardRow>
 
         {/* Because You Ordered — collaborative filtering off the caller's
             own order history; empty until real orders exist */}
-        {becauseYouOrdered.length > 0 && (
-          <Section title={t('home.becauseYouOrdered')}>
-            <CardRow>
-              {becauseYouOrdered.map(item => (
-                <MenuItemCard key={item.id} item={item} rec />
-              ))}
-            </CardRow>
-          </Section>
-        )}
+        <CardRow title={t('home.becauseYouOrdered')} count={becauseYouOrdered.length}>
+          {becauseYouOrdered.map(item => <MenuItemCard key={item.id} item={item} recommended />)}
+        </CardRow>
 
-        {/* Latest Release — newest items (release_date DESC, no date window); own empty state when none */}
-        <Section title={t('home.latestRelease')}>
-          {latestRelease.length > 0 ? (
-            <CardRow>
-              {latestRelease.map(item => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  badge={
-                    <View style={{
-                      position: 'absolute', top: 8, right: 8,
-                      backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 99,
-                      paddingHorizontal: 8, paddingVertical: 4,
-                    }}>
-                      <Text style={{ fontSize: 9, fontWeight: '700', color: '#261812' }}>✨ {t('home.new')}</Text>
-                    </View>
-                  }
-                />
-              ))}
-            </CardRow>
-          ) : (
-            <EmptyCard text={t('home.noLatestRelease')} />
-          )}
-        </Section>
+        {/* Latest Release — newest items in the catalog; own empty state when none */}
+        <CardRow title={t('home.latestRelease')} count={latestRelease.length} emptyText={t('home.noLatestRelease')}>
+          {latestRelease.map(item => (
+            <MenuItemCard key={item.id} item={item} badge={
+              <View style={{
+                position: 'absolute', top: 8, right: 8,
+                backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 99,
+                paddingHorizontal: 8, paddingVertical: 4,
+              }}>
+                <Text style={{ fontSize: 9, fontWeight: '700', color: '#261812' }}>✨ {t('home.new')}</Text>
+              </View>
+            } />
+          ))}
+        </CardRow>
 
         {/* Drinks You Might Like — same shape as Latest Release, filtered to
             drink categories instead of excluding them (see isDrinkCategory) so
             drinks get their own section instead of mixing into food lists. */}
-        <Section title={t('home.drinksForYou')}>
-          {drinks.length > 0 ? (
-            <CardRow>
-              {drinks.map(item => (
-                <MenuItemCard key={item.id} item={item} emoji="🥤" />
-              ))}
-            </CardRow>
-          ) : (
-            <EmptyCard text={t('home.noDrinks')} />
-          )}
-        </Section>
+        <CardRow title={t('home.drinksForYou')} count={drinks.length} emptyText={t('home.noDrinks')}>
+          {drinks.map(item => <MenuItemCard key={item.id} item={item} emoji="🥤" />)}
+        </CardRow>
 
-
-        {/* Store Options */}
-        <View>
-          <View style={{
-            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-            marginBottom: 16,
-          }}>
-            <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812' }}>
-              {t('home.storeOptions')}
-            </Text>
-            {allVendors.length > 0 && (
-              <Tap onPress={() => router.push('/stores')} haptic={false}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.orange }}>
-                  {t('home.seeAll')} ›
-                </Text>
-              </Tap>
-            )}
-          </View>
-          <View style={{ gap: 12 }}>
-            {allVendors.slice(0, 6).map(vendor => {
-              const closed = vendor.is_open === false;
-              return (
-              <Tap
-                key={vendor.id}
-                onPress={() => router.push(`/store/${vendor.id}`)}
-                activeOpacity={0.85}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 16,
-                  backgroundColor: Brand.card, borderRadius: 24, padding: 12,
-                  opacity: closed ? 0.5 : 1,
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-                  shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
-                }}
-              >
-                <View style={{
-                  width: 62, height: 62, borderRadius: 12,
-                  backgroundColor: Brand.orangeLight, overflow: 'hidden',
-                  alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {vendor.cover_image_url
-                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                    : <Text style={{ fontSize: 28 }}>🏪</Text>
-                  }
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>
-                      {vendor.name}
-                    </Text>
-                    {closed && (
-                      <View style={{
-                        backgroundColor: Brand.border, borderRadius: 4,
-                        paddingHorizontal: 6, paddingVertical: 2,
-                      }}>
-                        <Text style={{ fontSize: 10, color: Brand.textSecondary, fontWeight: '600' }}>
-                          {t('common.closed')}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 6 }}>
-                    {vendor.cuisine_tags?.[0] ?? t('home.thaiFood')}
-                  </Text>
-                  {vendor.is_halal_certified && (
-                    <View style={{
-                      backgroundColor: '#ffeae1', borderRadius: 4,
-                      paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start',
-                    }}>
-                      <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
-                    </View>
-                  )}
-                </View>
-              </Tap>
-              );
-            })}
-            {allVendors.length === 0 && (
-              <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-                <Text style={{ color: Brand.textSecondary }}>{t('home.noStores')}</Text>
-              </View>
-            )}
-          </View>
-        </View>
+        <StoreOptions vendors={allVendors} />
       </ScrollView>
     </SafeAreaView>
   );

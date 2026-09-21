@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { showAlert } from '@/lib/alert';
+import { showAlert, errorMessage } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { getTopMenuCategories } from '@/lib/menu-categories';
 import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
@@ -90,11 +90,15 @@ export default function OnboardingScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      await supabase.from('user_preferences').upsert({ user_id: user.id });
+      const { error } = await supabase.from('user_preferences').upsert({ user_id: user.id });
+      if (error) throw error;
       await refreshPreferences();
-    } catch {}
-    router.replace('/(tabs)');
-    setSaving(false);
+      router.replace('/(tabs)');
+    } catch (e) {
+      showAlert(t('onboarding.errorSavingTitle'), errorMessage(e));
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleContinue() {
@@ -118,7 +122,7 @@ export default function OnboardingScreen() {
       await refreshPreferences();
       router.replace('/(tabs)');
     } catch (e) {
-      showAlert(t('onboarding.errorSavingTitle'), (e as Error).message);
+      showAlert(t('onboarding.errorSavingTitle'), errorMessage(e));
       setSaving(false);
     }
   }

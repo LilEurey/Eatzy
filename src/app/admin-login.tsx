@@ -5,9 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { showAlert } from '@/lib/alert';
+import { showAlert, errorMessage } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { getUserRole } from '@/lib/user-role';
 
 export default function AdminLoginScreen() {
   const { t } = useI18n();
@@ -21,15 +22,14 @@ export default function AdminLoginScreen() {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      const { data: profile } = await supabase.from('users').select('role').eq('id', data.user.id).maybeSingle();
-      if (profile?.role !== 'admin') {
+      if (await getUserRole(data.user.id) !== 'admin') {
         await supabase.auth.signOut();
         throw new Error('This account is not registered as an admin.');
       }
 
       router.replace('/(admin)/new-vendor');
     } catch (e) {
-      showAlert(t('auth.signInFailedTitle'), e instanceof Error ? e.message : String(e));
+      showAlert(t('auth.signInFailedTitle'), errorMessage(e));
       setLoading(false);
     }
   }

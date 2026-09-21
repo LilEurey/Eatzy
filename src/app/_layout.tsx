@@ -4,6 +4,7 @@ import { Stack, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StripeProvider } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
+import { getUserRole } from '@/lib/user-role';
 import { I18nProvider } from '@/lib/i18n';
 import type { Session } from '@supabase/supabase-js';
 
@@ -58,18 +59,14 @@ export default function RootLayout() {
     // dismissAll's POP_TO_TOP actually needs.
     if (router.canDismiss()) router.dismissAll();
 
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', userId)
-      .maybeSingle();
+    const role = await getUserRole(userId);
 
-    if (profile?.role === 'vendor') {
+    if (role === 'vendor') {
       router.replace('/(vendor)/overview');
       return;
     }
 
-    if (profile?.role === 'admin') {
+    if (role === 'admin') {
       router.replace('/(admin)/new-vendor');
       return;
     }
