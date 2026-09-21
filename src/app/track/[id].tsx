@@ -9,6 +9,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
+import { mapOrderItems } from '@/lib/order-view';
 import { confirmHandoff, transitionOrder, type OrderStatus } from '@/lib/order-lifecycle';
 
 // 'rejected' / 'cancelled' are reachable while this screen is mounted — the
@@ -74,16 +75,12 @@ export default function TrackScreen() {
         pickup_start: data.pickup_start,
         pickup_end: data.pickup_end,
         total_amount: data.total_amount,
-        vendor_name: (data as any).vendors?.name ?? '',
+        vendor_name: data.vendors?.name ?? '',
         student_picked_up_at: data.student_picked_up_at,
         // payments.order_id is unique, so PostgREST embeds it to-ONE: an object
         // when the order was charged, null when it wasn't — not an array.
-        was_charged: !!(data as any).payments,
-        items: ((data as any).order_items ?? []).map((oi: any) => ({
-          name: oi.menu_items?.name ?? '', name_th: oi.menu_items?.name_th ?? null,
-          quantity: oi.quantity, unit_price: oi.unit_price,
-          addons: (oi.order_item_addons ?? []).map((a: any) => ({ name: a.name, name_th: a.name_th ?? null, price: a.price })),
-        })),
+        was_charged: !!data.payments,
+        items: mapOrderItems(data.order_items),
       });
       setStatus(data.status as Status);
     }

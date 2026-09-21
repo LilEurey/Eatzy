@@ -68,8 +68,8 @@ export default function ItemDetailScreen() {
     async function load() {
       const { data } = await supabase.from('menu_items').select('*, vendors(name,is_open)').eq('id', id).maybeSingle();
       setItem(data ?? null);
-      setVendorName((data as any)?.vendors?.name ?? '');
-      setStoreOpen((data as any)?.vendors?.is_open !== false);
+      setVendorName(data?.vendors?.name ?? '');
+      setStoreOpen(data?.vendors?.is_open !== false);
     }
     void load();
 
