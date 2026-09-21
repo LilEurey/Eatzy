@@ -139,8 +139,8 @@ export default function EditPreferencesScreen() {
       await refreshPreferences();
 
       showAlert(t('editPreferences.savedTitle'), t('editPreferences.savedMsg'), () => router.back());
-    } catch (e: any) {
-      showAlert(t('onboarding.errorSavingTitle'), e.message);
+    } catch (e) {
+      showAlert(t('onboarding.errorSavingTitle'), (e as Error).message);
     } finally {
       setSaving(false);
     }

@@ -154,7 +154,7 @@ export default function LoginScreen() {
               </Text>
             </Tap>
 
-            <Tap onPress={() => router.push('/vendor-login' as any)} style={{ alignItems: 'center' }}>
+            <Tap onPress={() => router.push('/vendor-login')} style={{ alignItems: 'center' }}>
               <Text style={{ color: '#5a4136', fontSize: 13, fontWeight: '600' }}>{t('auth.vendorLoginCta')}</Text>
             </Tap>
           </View>
