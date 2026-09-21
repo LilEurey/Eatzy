@@ -26,6 +26,12 @@ type VendorRow = {
   owner: VendorOwner | null;
 };
 
+// PostgREST returns an embedded to-one relation as an object, but the client
+// types can surface it as an array — normalised in load().
+type RawVendorRow = Omit<VendorRow, 'owner'> & { owner: VendorOwner | VendorOwner[] | null };
+
+type TFn = ReturnType<typeof useI18n>['t'];
+
 export default function AdminVendorsScreen() {
   const { t } = useI18n();
   const [vendors, setVendors] = useState<VendorRow[]>([]);
@@ -42,10 +48,10 @@ export default function AdminVendorsScreen() {
       )
       .order('name', { ascending: true });
     if (error) { console.warn('load vendors failed:', error.message); setLoading(false); return; }
-    const rows = (data ?? []).map((row) => ({
+    const rows = ((data as unknown as RawVendorRow[] | null) ?? []).map((row): VendorRow => ({
       ...row,
       owner: Array.isArray(row.owner) ? (row.owner[0] ?? null) : row.owner,
-    })) as VendorRow[];
+    }));
     setVendors(rows);
     setLoading(false);
   }, []);
@@ -58,16 +64,18 @@ export default function AdminVendorsScreen() {
 
   async function handleToggleOpen(vendor: VendorRow) {
     const nextOpen = !vendor.is_open;
+    const applyOpen = (isOpen: boolean) => {
+      setVendors((prev) => prev.map((v) => (v.id === vendor.id ? { ...v, is_open: isOpen } : v)));
+      setSelected((prev) => (prev && prev.id === vendor.id ? { ...prev, is_open: isOpen } : prev));
+    };
     setBusy(true);
-    setVendors((prev) => prev.map((v) => (v.id === vendor.id ? { ...v, is_open: nextOpen } : v)));
-    setSelected((prev) => (prev && prev.id === vendor.id ? { ...prev, is_open: nextOpen } : prev));
+    applyOpen(nextOpen);
 
     const { error } = await supabase.from('vendors').update({ is_open: nextOpen }).eq('id', vendor.id);
     setBusy(false);
 
     if (error) {
-      setVendors((prev) => prev.map((v) => (v.id === vendor.id ? { ...v, is_open: vendor.is_open } : v)));
-      setSelected((prev) => (prev && prev.id === vendor.id ? { ...prev, is_open: vendor.is_open } : prev));
+      applyOpen(vendor.is_open);
       showAlert(t('admin.vendors.errorTitle'), error.message);
       return;
     }
@@ -175,7 +183,7 @@ export default function AdminVendorsScreen() {
   );
 }
 
-function StatusPill({ isOpen, t }: { isOpen: boolean; t: ReturnType<typeof useI18n>['t'] }) {
+function StatusPill({ isOpen, t }: { isOpen: boolean; t: TFn }) {
   return (
     <View
       style={{

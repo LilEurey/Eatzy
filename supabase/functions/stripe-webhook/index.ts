@@ -20,8 +20,8 @@
 // Subscribe that endpoint to both payment_intent.succeeded and
 // charge.dispute.created.)
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
 import Stripe from 'npm:stripe@18';
+import { serviceClient } from '../_shared/http.ts';
 
 // Deno has no synchronous Node crypto, so signature verification needs the
 // async/SubtleCrypto variant — see Supabase's own stripe-webhooks example.
@@ -51,10 +51,7 @@ Deno.serve(async (req) => {
     return new Response(`Webhook signature verification failed: ${err instanceof Error ? err.message : err}`, { status: 400 });
   }
 
-  const adminClient = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  const adminClient = serviceClient();
 
   if (event.type === 'payment_intent.succeeded') {
     const intent = event.data.object as Stripe.PaymentIntent;

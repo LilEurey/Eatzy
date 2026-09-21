@@ -138,7 +138,7 @@ export default function VendorOverviewScreen() {
         </View>
       </View>
 
-      {/* Stat cards — delta badges are decorative (no historical order data to diff against yet) */}
+      {/* Stat cards — delta badges are real period-over-period changes (hidden when there's no prior data) */}
       <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap' }}>
         <StatCard label={t('vendor.overview.totalOrders')} value={String(totalOrders)} delta={ordersDelta} sub={ordersDelta ? deltaSub : rangeSub} icon="bag-handle-outline" />
         <StatCard label={t('vendor.overview.revenueToday')} value={`฿${revenueToday.toLocaleString()}`} delta={revenueDelta} sub={revenueDelta ? deltaSub : rangeSub} icon="cash-outline" />

@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 // shapes into one place.
 type EdgeFunctionError = { message: string; code?: string };
 
-export async function invokeEdgeFunction<T = any>(
+export async function invokeEdgeFunction<T = unknown>(
   name: string,
   options?: { body?: Record<string, unknown> },
 ): Promise<{ data: T | null; error: EdgeFunctionError | null }> {

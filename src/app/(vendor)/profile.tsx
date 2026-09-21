@@ -11,6 +11,19 @@ import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { hasCoords } from '@/lib/geo';
 
+const INPUT_STYLE = { borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary } as const;
+const MULTILINE_STYLE = { minHeight: 70, textAlignVertical: 'top' } as const;
+
+function Field({ label, hint, ...inputProps }: { label: string; hint?: string } & React.ComponentProps<typeof TextInput>) {
+  return (
+    <View>
+      <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{label}</Text>
+      <TextInput placeholderTextColor="#B0B4BF" {...inputProps} style={[INPUT_STYLE, inputProps.style]} />
+      {hint && <Text style={{ fontSize: 11, color: '#8A8F9B', marginTop: 4 }}>{hint}</Text>}
+    </View>
+  );
+}
+
 export default function VendorProfileScreen() {
   const { t } = useI18n();
   const vendor = useVendorProfile();
@@ -92,15 +105,7 @@ export default function VendorProfileScreen() {
       </View>
 
       <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5', gap: 14, maxWidth: 480 }}>
-        <View>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.nameLabel')}</Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholderTextColor="#B0B4BF"
-            style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-          />
-        </View>
+        <Field label={t('vendor.profile.nameLabel')} value={name} onChangeText={setName} />
 
         <View>
           <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.locationTypeLabel')}</Text>
@@ -130,25 +135,9 @@ export default function VendorProfileScreen() {
         </View>
 
         {isOnCampus ? (
-          <View>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.stallNumberLabel')}</Text>
-            <TextInput
-              value={stallNumber}
-              onChangeText={setStallNumber}
-              placeholderTextColor="#B0B4BF"
-              style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-            />
-          </View>
+          <Field label={t('vendor.profile.stallNumberLabel')} value={stallNumber} onChangeText={setStallNumber} />
         ) : (
-          <View>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.addressLabel')}</Text>
-            <TextInput
-              value={address}
-              onChangeText={setAddress}
-              placeholderTextColor="#B0B4BF"
-              style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-            />
-          </View>
+          <Field label={t('vendor.profile.addressLabel')} value={address} onChangeText={setAddress} />
         )}
 
         <Tap
@@ -167,64 +156,18 @@ export default function VendorProfileScreen() {
           </View>
         </Tap>
 
-        <View>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.bioLabel')}</Text>
-          <TextInput
-            value={bio}
-            onChangeText={setBio}
-            placeholder={t('vendor.profile.bioPlaceholder')}
-            placeholderTextColor="#B0B4BF"
-            multiline
-            numberOfLines={3}
-            style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary, minHeight: 70, textAlignVertical: 'top' }}
-          />
-        </View>
+        <Field label={t('vendor.profile.bioLabel')} value={bio} onChangeText={setBio} placeholder={t('vendor.profile.bioPlaceholder')} multiline numberOfLines={3} style={MULTILINE_STYLE} />
 
-        <View>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.bioThLabel')}</Text>
-          <TextInput
-            value={bioTh}
-            onChangeText={setBioTh}
-            placeholder={t('vendor.profile.bioThPlaceholder')}
-            placeholderTextColor="#B0B4BF"
-            multiline
-            numberOfLines={3}
-            style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary, minHeight: 70, textAlignVertical: 'top' }}
-          />
-        </View>
+        <Field label={t('vendor.profile.bioThLabel')} value={bioTh} onChangeText={setBioTh} placeholder={t('vendor.profile.bioThPlaceholder')} multiline numberOfLines={3} style={MULTILINE_STYLE} />
 
-        <View>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.cuisineTagsLabel')}</Text>
-          <TextInput
-            value={cuisineTags}
-            onChangeText={setCuisineTags}
-            placeholder={t('vendor.profile.cuisineTagsPlaceholder')}
-            placeholderTextColor="#B0B4BF"
-            style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-          />
-          <Text style={{ fontSize: 11, color: '#8A8F9B', marginTop: 4 }}>{t('vendor.profile.cuisineTagsHint')}</Text>
-        </View>
+        <Field label={t('vendor.profile.cuisineTagsLabel')} value={cuisineTags} onChangeText={setCuisineTags} placeholder={t('vendor.profile.cuisineTagsPlaceholder')} hint={t('vendor.profile.cuisineTagsHint')} />
 
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.openTimeLabel')}</Text>
-            <TextInput
-              value={openTime}
-              onChangeText={setOpenTime}
-              placeholder={t('vendor.profile.timePlaceholder')}
-              placeholderTextColor="#B0B4BF"
-              style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-            />
+            <Field label={t('vendor.profile.openTimeLabel')} value={openTime} onChangeText={setOpenTime} placeholder={t('vendor.profile.timePlaceholder')} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.profile.closeTimeLabel')}</Text>
-            <TextInput
-              value={closeTime}
-              onChangeText={setCloseTime}
-              placeholder={t('vendor.profile.timePlaceholder')}
-              placeholderTextColor="#B0B4BF"
-              style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary }}
-            />
+            <Field label={t('vendor.profile.closeTimeLabel')} value={closeTime} onChangeText={setCloseTime} placeholder={t('vendor.profile.timePlaceholder')} />
           </View>
         </View>
 

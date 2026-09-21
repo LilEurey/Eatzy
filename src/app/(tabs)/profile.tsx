@@ -122,7 +122,7 @@ export default function ProfileScreen() {
 
         const order = orderRes.data;
         if (!order) { setRecentOrder(null); return; }
-        const items = order.order_items ?? [];
+        const items = order.order_items;
         const itemSummary = items.length
           ? localizedText(items[0].menu_items?.name ?? '', items[0].menu_items?.name_th ?? null, locale) + (items.length > 1 ? ` +${items.length - 1}` : '')
           : '';

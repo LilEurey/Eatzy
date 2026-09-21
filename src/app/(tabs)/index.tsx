@@ -20,9 +20,9 @@ import {
 } from '@/components/home/sections';
 
 // Hard dietary filter (is_halal/is_vegetarian/is_jay hide the item) and the
-// warn-only allergen match both live in usePreferences now — shared with
-// search, item/[id], cart and store/[id] so the vocabulary can't drift.
-const passesDietaryFilters = passesDietary;
+// warn-only allergen match both live in usePreferences (passesDietary /
+// matchAllergens) — shared with search, item/[id], cart and store/[id] so the
+// vocabulary can't drift.
 
 // recommend-for-you returns flat rows (no vendors() join — computed server-side).
 type PersonalizedItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
@@ -84,7 +84,7 @@ export default function HomeScreen() {
       const asRows = (data: unknown) => (data as MenuItem[] | null) ?? [];
       // Every food section: what this student can eat, minus drinks (drinks
       // have their own row).
-      const foodForMe = (rows: MenuItem[]) => rows.filter(i => passesDietaryFilters(i, prefs) && !isDrinkCategory(i.category));
+      const foodForMe = (rows: MenuItem[]) => rows.filter(i => passesDietary(i, prefs) && !isDrinkCategory(i.category));
 
       const { data: { user } } = await supabase.auth.getUser();
       const [profileRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
@@ -167,7 +167,7 @@ export default function HomeScreen() {
 
       setLatestRelease(foodForMe(asRows(latestReleaseRes.data)));
 
-      setDrinks(asRows(drinksRes.data).filter(i => passesDietaryFilters(i, prefs)));
+      setDrinks(asRows(drinksRes.data).filter(i => passesDietary(i, prefs)));
 
       setBecauseYouOrdered(restoreRank(byoIds, foodForMe(asRows(byoRowsRes.data))));
 

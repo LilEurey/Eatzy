@@ -37,6 +37,25 @@ const TABLET_BREAKPOINT = 760;
 // content, so this range gets a hamburger-triggered overlay drawer instead.
 const DESKTOP_BREAKPOINT = 1024;
 
+const isActive = (pathname: string, item: NavItem) =>
+  pathname === item.match || pathname.startsWith(item.match + '/');
+
+const logOut = () => signOutVendor().then(() => router.replace('/(auth)'));
+
+function PickerModal({ visible, onClose, children }: { visible: boolean; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Tap
+        activeOpacity={1}
+        onPress={onClose}
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
+      >
+        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>{children}</View>
+      </Tap>
+    </Modal>
+  );
+}
+
 function NavRow({ item, active, badge, onPress }: { item: NavItem; active: boolean; badge: number; onPress: () => void }) {
   const { t } = useI18n();
   return (
@@ -77,12 +96,9 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
         </View>
 
         <View style={{ gap: 2, paddingHorizontal: 12 }}>
-          {NAV.map(item => {
-            const active = pathname === item.match || pathname.startsWith(item.match + '/');
-            return (
-              <NavRow key={item.match} item={item} active={active} badge={activeCount} onPress={() => onNavigate(item.href)} />
-            );
-          })}
+          {NAV.map(item => (
+            <NavRow key={item.match} item={item} active={isActive(pathname, item)} badge={activeCount} onPress={() => onNavigate(item.href)} />
+          ))}
         </View>
       </View>
 
@@ -95,7 +111,7 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
           <Text style={{ fontSize: 13, color: '#4B4F58', fontWeight: '500' }}>{t('vendor.nav.helpCenter')}</Text>
         </Tap>
         <Tap
-          onPress={() => signOutVendor().then(() => router.replace('/(auth)'))}
+          onPress={logOut}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
         >
           <Ionicons name="log-out-outline" size={18} color="#8A8F9B" />
@@ -112,7 +128,7 @@ function BottomTabBar({ pathname, badge }: { pathname: string; badge: number }) 
     <SafeAreaView edges={['bottom']} style={{ backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#EEF0F5' }}>
       <View style={{ flexDirection: 'row', paddingTop: 8 }}>
         {NAV.map(item => {
-          const active = pathname === item.match || pathname.startsWith(item.match + '/');
+          const active = isActive(pathname, item);
           return (
             <Tap
               key={item.match}
@@ -247,7 +263,7 @@ export default function VendorLayout() {
         </Tap>
         {!isDesktop && (
           <Tap
-            onPress={() => signOutVendor().then(() => router.replace('/(auth)'))}
+            onPress={logOut}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="log-out-outline" size={20} color="#8A8F9B" />
@@ -264,68 +280,52 @@ export default function VendorLayout() {
   );
 
   const langPickerModal = (
-    <Modal visible={langPickerOpen} transparent animationType="fade" onRequestClose={() => setLangPickerOpen(false)}>
-      <Tap
-        activeOpacity={1}
-        onPress={() => setLangPickerOpen(false)}
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
-      >
-        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>
-          <Text style={{
-            fontSize: 15, fontWeight: '700', color: Brand.textPrimary,
-            paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
-          }}>
-            {t('profile.languagePickerTitle')}
+    <PickerModal visible={langPickerOpen} onClose={() => setLangPickerOpen(false)}>
+      <Text style={{
+        fontSize: 15, fontWeight: '700', color: Brand.textPrimary,
+        paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
+      }}>
+        {t('profile.languagePickerTitle')}
+      </Text>
+      {(Object.keys(LOCALE_LABELS) as Locale[]).map((code) => (
+        <Tap
+          key={code}
+          onPress={() => { setLocale(code); setLangPickerOpen(false); }}
+          style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+            paddingHorizontal: 16, paddingVertical: 14,
+          }}
+        >
+          <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: locale === code ? '700' : '500' }}>
+            {LOCALE_LABELS[code]}
           </Text>
-          {(Object.keys(LOCALE_LABELS) as Locale[]).map((code) => (
-            <Tap
-              key={code}
-              onPress={() => { setLocale(code); setLangPickerOpen(false); }}
-              style={{
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                paddingHorizontal: 16, paddingVertical: 14,
-              }}
-            >
-              <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: locale === code ? '700' : '500' }}>
-                {LOCALE_LABELS[code]}
-              </Text>
-              {locale === code && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
-            </Tap>
-          ))}
-        </View>
-      </Tap>
-    </Modal>
+          {locale === code && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
+        </Tap>
+      ))}
+    </PickerModal>
   );
 
   const storePickerModal = (
-    <Modal visible={storePickerOpen} transparent animationType="fade" onRequestClose={() => setStorePickerOpen(false)}>
-      <Tap
-        activeOpacity={1}
-        onPress={() => setStorePickerOpen(false)}
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
-      >
-        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>
-          {[true, false].map((open) => (
-            <Tap
-              key={String(open)}
-              onPress={() => { setStoreOpen(open); setStorePickerOpen(false); }}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'space-between',
-                paddingHorizontal: 16, paddingVertical: 14,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: open ? '#22c55e' : '#ef4444' }} />
-                <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: storeOpen === open ? '700' : '500' }}>
-                  {open ? t('vendor.topbar.storeOpen') : t('vendor.topbar.storeClosed')}
-                </Text>
-              </View>
-              {storeOpen === open && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
-            </Tap>
-          ))}
-        </View>
-      </Tap>
-    </Modal>
+    <PickerModal visible={storePickerOpen} onClose={() => setStorePickerOpen(false)}>
+      {[true, false].map((open) => (
+        <Tap
+          key={String(open)}
+          onPress={() => { setStoreOpen(open); setStorePickerOpen(false); }}
+          style={{
+            flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'space-between',
+            paddingHorizontal: 16, paddingVertical: 14,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: open ? '#22c55e' : '#ef4444' }} />
+            <Text style={{ fontSize: 16, color: Brand.textPrimary, fontWeight: storeOpen === open ? '700' : '500' }}>
+              {open ? t('vendor.topbar.storeOpen') : t('vendor.topbar.storeClosed')}
+            </Text>
+          </View>
+          {storeOpen === open && <Text style={{ color: Brand.vendorAccent, fontSize: 16, fontWeight: '700' }}>✓</Text>}
+        </Tap>
+      ))}
+    </PickerModal>
   );
 
   if (!isTablet) {
