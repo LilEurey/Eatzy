@@ -3,7 +3,7 @@ import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
-import { useStripe } from '@/lib/stripe';
+import { COLLECT_NEVER, useStripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert, comingSoonAlert } from '@/lib/alert';
@@ -94,6 +94,13 @@ export default function WalletScreen() {
       // PromptPay is a redirect-based method: without returnURL the iOS sheet
       // hides it, and it's our only method. Deep link lands back on this tab.
       returnURL: 'eatzy://wallet',
+      // PromptPay requires an email. Prefill from the account and tell the
+      // sheet not to ask, so students don't retype it on every top-up.
+      defaultBillingDetails: { email: user.email },
+      billingDetailsCollectionConfiguration: {
+        email: COLLECT_NEVER,
+        attachDefaultsToPaymentMethod: true,
+      },
     });
     if (cancelledRef.current) return;
     if (initError) {
