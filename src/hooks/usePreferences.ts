@@ -49,13 +49,18 @@ export function matchAllergens(
 
 let prefs: Preferences = DEFAULT_PREFERENCES;
 let loading = true;
+// True when the last load attempt failed — lets consumers tell "no prefs
+// saved" (prefs = defaults, error = false) apart from "failed to load"
+// (prefs = stale/defaults, error = true), since the two must not be treated
+// the same for hard filters / allergy gates.
+let loadError = false;
 // Rebuilt on every emit so useSyncExternalStore sees a new reference only when
 // something actually changed.
-let snapshot: { prefs: Preferences; loading: boolean } = { prefs, loading };
+let snapshot: { prefs: Preferences; loading: boolean; error: boolean } = { prefs, loading, error: loadError };
 
 const listeners = new Set<() => void>();
 function emit() {
-  snapshot = { prefs, loading };
+  snapshot = { prefs, loading, error: loadError };
   listeners.forEach(l => l());
 }
 
@@ -66,6 +71,7 @@ async function load(): Promise<void> {
   if (!user) {
     prefs = DEFAULT_PREFERENCES;
     loading = false;
+    loadError = false;
     emit();
     return;
   }
@@ -79,6 +85,7 @@ async function load(): Promise<void> {
     // vegetarian / jay hard filters for a student who has them saved.
     console.warn('load preferences failed:', error.message);
     loading = false;
+    loadError = true;
     emit();
     return;
   }
@@ -89,6 +96,7 @@ async function load(): Promise<void> {
     allergies: data?.allergies ?? [],
   };
   loading = false;
+  loadError = false;
   emit();
 }
 
@@ -114,7 +122,7 @@ supabase.auth.onAuthStateChange((event) => {
   }
 });
 
-export function usePreferences(): { prefs: Preferences; loading: boolean } {
+export function usePreferences(): { prefs: Preferences; loading: boolean; error: boolean } {
   const state = useSyncExternalStore(
     cb => { listeners.add(cb); return () => listeners.delete(cb); },
     () => snapshot,

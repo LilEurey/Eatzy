@@ -32,6 +32,7 @@ export const en = {
   'common.pickupRange': 'Pickup {start}–{end}',
   'common.permissionNeededTitle': 'Permission needed',
   'common.errorTitle': 'Something went wrong',
+  'common.tryAgain': 'Try Again',
 
   // Auth / login
   'auth.tagline': 'Your smart dining companion.',
@@ -54,6 +55,7 @@ export const en = {
   'onboarding.continue': 'Continue',
   'onboarding.saving': 'Saving…',
   'onboarding.errorSavingTitle': 'Error saving preferences',
+  'onboarding.loadErrorMsg': 'Couldn’t load your saved settings. Continuing now would overwrite your real allergy and dietary preferences, so Continue is disabled until this loads.',
   'onboarding.dietary.halal': 'Halal',
   'onboarding.dietary.vegetarian': 'Vegetarian',
   'onboarding.dietary.jay': 'Jay',
@@ -159,6 +161,7 @@ export const en = {
   'cart.orderPlacedTitle': 'Order placed',
   'cart.orderPlacedMsg': 'Pickup at {slot}. Total ฿{total}.',
   'cart.orderFailedTitle': 'Couldn’t place order',
+  'cart.prefsNotReadyMsg': 'Still checking your allergy and dietary settings — please try again in a moment.',
   'cart.signInAgainMsg': 'Your session expired. Please sign in again.',
   'cart.storeClosedTitle': 'Store is closed',
   'cart.storeClosedMsg': 'This store closed and isn’t taking orders right now. Your cart is saved for when it reopens.',
@@ -198,6 +201,9 @@ export const en = {
   'item.allergyWarningTitle': '⚠️ Allergy Warning',
   'item.allergyWarningMsg': 'This dish contains {allergens}, which you\'ve marked as an allergy. Add it to your cart anyway?',
   'item.addAnyway': 'Add Anyway',
+  'item.vendorMismatchTitle': 'Start a new cart?',
+  'item.vendorMismatchMsg': 'Adding this item will clear your current cart from another store. Continue?',
+  'item.vendorMismatchConfirm': 'Clear Cart & Add',
   'item.similarFoods': 'Similar Foods',
   'item.noteToVendor': 'Note for the kitchen',
   'item.noteToVendorPlaceholder': 'e.g. no chili, no peanuts, extra rice',
@@ -287,6 +293,7 @@ export const en = {
 
   // Edit Preferences & Allergies (Account Details)
   'editPreferences.subtitle': 'Customize your AI recommendations by letting us know your dietary needs.',
+  'editPreferences.loadErrorMsg': 'Couldn’t load your saved settings. Saving now would overwrite your real allergy and dietary preferences, so Save is disabled until this loads.',
   'editPreferences.name': 'Name',
   'editPreferences.namePlaceholder': 'Your name',
   'editPreferences.nameRequired': 'Please enter your name.',

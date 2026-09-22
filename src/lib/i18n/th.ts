@@ -34,6 +34,7 @@ export const th: Record<TranslationKey, string> = {
   'common.pickupRange': 'รับที่ {start}–{end}',
   'common.permissionNeededTitle': 'ต้องได้รับอนุญาต',
   'common.errorTitle': 'เกิดข้อผิดพลาด',
+  'common.tryAgain': 'ลองอีกครั้ง',
 
   // Auth / login
   'auth.tagline': 'ผู้ช่วยมื้ออาหารอัจฉริยะของคุณ',
@@ -56,6 +57,7 @@ export const th: Record<TranslationKey, string> = {
   'onboarding.continue': 'ดำเนินการต่อ',
   'onboarding.saving': 'กำลังบันทึก…',
   'onboarding.errorSavingTitle': 'เกิดข้อผิดพลาดในการบันทึกค่ากำหนด',
+  'onboarding.loadErrorMsg': 'ไม่สามารถโหลดการตั้งค่าที่บันทึกไว้ได้ การดำเนินการต่อตอนนี้อาจเขียนทับข้อมูลภูมิแพ้และการกินจริงของคุณ จึงปิดปุ่มดำเนินการต่อไว้จนกว่าจะโหลดสำเร็จ',
   'onboarding.dietary.halal': 'ฮาลาล',
   'onboarding.dietary.vegetarian': 'มังสวิรัติ',
   'onboarding.dietary.jay': 'เจ',
@@ -161,6 +163,7 @@ export const th: Record<TranslationKey, string> = {
   'cart.orderPlacedTitle': 'สั่งซื้อสำเร็จ',
   'cart.orderPlacedMsg': 'รับที่ {slot} ยอดรวม ฿{total}',
   'cart.orderFailedTitle': 'สั่งซื้อไม่สำเร็จ',
+  'cart.prefsNotReadyMsg': 'กำลังตรวจสอบข้อมูลภูมิแพ้และการกินของคุณ กรุณาลองใหม่อีกครั้งในอีกสักครู่',
   'cart.signInAgainMsg': 'เซสชันของคุณหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
   'cart.storeClosedTitle': 'ร้านปิดอยู่',
   'cart.storeClosedMsg': 'ร้านนี้ปิดและยังไม่รับออร์เดอร์ตอนนี้ ตะกร้าของคุณถูกบันทึกไว้จนกว่าร้านจะเปิดอีกครั้ง',
@@ -200,6 +203,9 @@ export const th: Record<TranslationKey, string> = {
   'item.allergyWarningTitle': '⚠️ คำเตือนภูมิแพ้',
   'item.allergyWarningMsg': 'เมนูนี้มี {allergens} ซึ่งคุณระบุว่าแพ้ ต้องการใส่ตะกร้าต่อไปหรือไม่?',
   'item.addAnyway': 'ใส่ตะกร้าต่อไป',
+  'item.vendorMismatchTitle': 'เริ่มตะกร้าใหม่หรือไม่?',
+  'item.vendorMismatchMsg': 'การเพิ่มเมนูนี้จะล้างตะกร้าปัจจุบันจากร้านอื่น ต้องการดำเนินการต่อหรือไม่?',
+  'item.vendorMismatchConfirm': 'ล้างตะกร้าแล้วเพิ่ม',
   'item.similarFoods': 'เมนูใกล้เคียง',
   'item.noteToVendor': 'โน้ตถึงครัว',
   'item.noteToVendorPlaceholder': 'เช่น ไม่เผ็ด ไม่ใส่ถั่ว เพิ่มข้าว',
@@ -289,6 +295,7 @@ export const th: Record<TranslationKey, string> = {
 
   // Edit Preferences & Allergies (Account Details)
   'editPreferences.subtitle': 'ปรับแต่งคำแนะนำ AI ของคุณด้วยการบอกความต้องการด้านอาหาร',
+  'editPreferences.loadErrorMsg': 'ไม่สามารถโหลดการตั้งค่าที่บันทึกไว้ได้ การบันทึกตอนนี้อาจเขียนทับข้อมูลภูมิแพ้และการกินจริงของคุณ จึงปิดการบันทึกไว้จนกว่าจะโหลดสำเร็จ',
   'editPreferences.name': 'ชื่อ',
   'editPreferences.namePlaceholder': 'ชื่อของคุณ',
   'editPreferences.nameRequired': 'กรุณากรอกชื่อของคุณ',

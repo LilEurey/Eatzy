@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
+import { clearCart } from '@/lib/cart-store';
 import { showAlert, comingSoonAlert } from '@/lib/alert';
 import { useI18n, LOCALE_LABELS, type Locale, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
@@ -189,6 +190,7 @@ export default function ProfileScreen() {
   }
 
   async function signOut() {
+    clearCart(); // the next account signed in on this device must not inherit this cart
     await supabase.auth.signOut();
     router.replace('/(auth)');
   }

@@ -28,18 +28,27 @@ export default function OnboardingScreen() {
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [favoriteCategories, setFavoriteCategories] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   async function loadPreferences() {
+    setLoadError(false);
     void getTopMenuCategories().then(setCategoryOptions).catch(() => {});
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('user_preferences')
       .select('is_halal,is_vegetarian,is_jay,allergies,budget_max,favorite_categories')
       .eq('user_id', user.id)
       .maybeSingle();
+    if (error) {
+      // A re-onboarding student may already have real saved prefs — don't
+      // let Continue upsert blank defaults over them while this is broken.
+      console.warn('load preferences failed:', error.message);
+      setLoadError(true);
+      return;
+    }
     if (!data) return; // first-time onboarding: keep blank defaults
 
     const nextDietary = new Set<Dietary>();
@@ -167,6 +176,22 @@ export default function OnboardingScreen() {
             {t('onboarding.subtitle')}
           </Text>
         </View>
+
+        {loadError && (
+          <View style={{
+            backgroundColor: '#fee2e2', borderRadius: 12, borderWidth: 1, borderColor: '#fecaca',
+            paddingHorizontal: 14, paddingVertical: 12, marginBottom: 20,
+          }}>
+            <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', marginBottom: 8 }}>
+              {t('onboarding.loadErrorMsg')}
+            </Text>
+            <Tap onPress={() => void loadPreferences()}>
+              <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', textDecorationLine: 'underline' }}>
+                {t('common.tryAgain')}
+              </Text>
+            </Tap>
+          </View>
+        )}
 
         {/* Dietary Preferences */}
         <View style={{ marginBottom: 32 }}>
@@ -389,7 +414,7 @@ export default function OnboardingScreen() {
       >
         <Tap
           onPress={handleContinue}
-          disabled={saving}
+          disabled={saving || loadError}
           style={{
             backgroundColor: Brand.orange,
             borderRadius: 50,
@@ -398,7 +423,7 @@ export default function OnboardingScreen() {
             flexDirection: 'row',
             justifyContent: 'center',
             gap: 8,
-            opacity: saving ? 0.6 : 1,
+            opacity: (saving || loadError) ? 0.6 : 1,
           }}
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>

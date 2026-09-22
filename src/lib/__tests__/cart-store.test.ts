@@ -1,4 +1,4 @@
-import { lineUnitTotal, cartSubtotal, cartCount } from '@/lib/cart-store';
+import { lineUnitTotal, cartSubtotal, cartCount, addToCart, clearCart, hasVendorMismatch } from '@/lib/cart-store';
 
 const addon = (price: number) => ({ id: `a${price}`, name: 'x', name_th: null, price, allergens: [] });
 const line = (unit_price: number, quantity: number, addons: ReturnType<typeof addon>[] = []) => ({
@@ -42,5 +42,23 @@ describe('cartCount', () => {
   it('sums quantities across lines', () => {
     const c = { vendor_id: 'v1', items: [line(10, 3), line(10, 2)] };
     expect(cartCount(c)).toBe(5);
+  });
+});
+
+describe('hasVendorMismatch', () => {
+  afterEach(() => clearCart());
+
+  it('is false when the cart is empty', () => {
+    expect(hasVendorMismatch('v1')).toBe(false);
+  });
+
+  it('is false for the vendor already in the cart', () => {
+    addToCart({ id: 'm1', vendor_id: 'v1', name: 'Dish', price: 50 });
+    expect(hasVendorMismatch('v1')).toBe(false);
+  });
+
+  it('is true for a different vendor than the one already in the cart', () => {
+    addToCart({ id: 'm1', vendor_id: 'v1', name: 'Dish', price: 50 });
+    expect(hasVendorMismatch('v2')).toBe(true);
   });
 });

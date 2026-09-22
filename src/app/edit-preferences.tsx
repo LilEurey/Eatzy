@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
@@ -35,52 +35,63 @@ export default function EditPreferencesScreen() {
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [favoriteCategories, setFavoriteCategories] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      void getTopMenuCategories().then(setCategoryOptions).catch(() => {});
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    void getTopMenuCategories().then(setCategoryOptions).catch(() => {});
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
 
-      const [{ data: userRow }, { data }] = await Promise.all([
-        supabase.from('users').select('name').eq('id', user.id).maybeSingle(),
-        supabase
-          .from('user_preferences')
-          .select('is_halal,is_vegetarian,is_jay,allergies,budget_max,favorite_categories')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-      ]);
+    const [{ data: userRow }, { data, error }] = await Promise.all([
+      supabase.from('users').select('name').eq('id', user.id).maybeSingle(),
+      supabase
+        .from('user_preferences')
+        .select('is_halal,is_vegetarian,is_jay,allergies,budget_max,favorite_categories')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+    ]);
 
-      setName(
-        userRow?.name ??
-        (user.user_metadata?.full_name as string) ??
-        user.email?.split('@')[0] ??
-        '',
-      );
+    setName(
+      userRow?.name ??
+      (user.user_metadata?.full_name as string) ??
+      user.email?.split('@')[0] ??
+      '',
+    );
 
-      if (data) {
-        const nextDietary = new Set<Dietary>();
-        if (data.is_halal) nextDietary.add('Halal');
-        if (data.is_vegetarian) nextDietary.add('Vegetarian');
-        if (data.is_jay) nextDietary.add('Jay');
-        setDietary(nextDietary);
-
-        const nextAllergies = new Set<Allergy>();
-        for (const saved of data.allergies ?? []) {
-          const option = ALLERGY_OPTIONS.find(o => ALLERGY_VALUES[o] === saved);
-          if (option) nextAllergies.add(option);
-        }
-        setAllergies(nextAllergies);
-
-        setBudget(data.budget_max ?? 150);
-        setFavoriteCategories(new Set(data.favorite_categories ?? []));
-      }
+    if (error) {
+      // Don't proceed with blank defaults — Save would upsert them over the
+      // student's real halal/vegetarian/jay flags and allergies.
+      console.warn('load preferences failed:', error.message);
+      setLoadError(true);
       setLoading(false);
+      return;
     }
-    void load();
+
+    if (data) {
+      const nextDietary = new Set<Dietary>();
+      if (data.is_halal) nextDietary.add('Halal');
+      if (data.is_vegetarian) nextDietary.add('Vegetarian');
+      if (data.is_jay) nextDietary.add('Jay');
+      setDietary(nextDietary);
+
+      const nextAllergies = new Set<Allergy>();
+      for (const saved of data.allergies ?? []) {
+        const option = ALLERGY_OPTIONS.find(o => ALLERGY_VALUES[o] === saved);
+        if (option) nextAllergies.add(option);
+      }
+      setAllergies(nextAllergies);
+
+      setBudget(data.budget_max ?? 150);
+      setFavoriteCategories(new Set(data.favorite_categories ?? []));
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
 
   function toggleDietary(item: Dietary) {
     setDietary(prev => {
@@ -162,6 +173,22 @@ export default function EditPreferencesScreen() {
         <Text style={{ color: Brand.textSecondary, fontSize: 15, lineHeight: 22, marginBottom: 20 }}>
           {t('editPreferences.subtitle')}
         </Text>
+
+        {loadError && (
+          <View style={{
+            backgroundColor: '#fee2e2', borderRadius: 12, borderWidth: 1, borderColor: '#fecaca',
+            paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16,
+          }}>
+            <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', marginBottom: 8 }}>
+              {t('editPreferences.loadErrorMsg')}
+            </Text>
+            <Tap onPress={() => void load()}>
+              <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', textDecorationLine: 'underline' }}>
+                {t('common.tryAgain')}
+              </Text>
+            </Tap>
+          </View>
+        )}
 
         {/* Name card */}
         <View style={{
@@ -323,10 +350,10 @@ export default function EditPreferencesScreen() {
       }}>
         <Tap
           onPress={handleSave}
-          disabled={saving || loading}
+          disabled={saving || loading || loadError}
           style={{
             backgroundColor: Brand.orange, borderRadius: 50, paddingVertical: 16,
-            alignItems: 'center', opacity: saving || loading ? 0.6 : 1,
+            alignItems: 'center', opacity: (saving || loading || loadError) ? 0.6 : 1,
           }}
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
