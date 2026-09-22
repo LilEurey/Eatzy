@@ -76,6 +76,7 @@ function makeBuilder(call: FromCall): any {
     delete: () => { call.deleted = true; return builder; },
     eq: (col: string, val: unknown) => { call.filters.push([col, val]); return builder; },
     in: () => builder,
+    or: () => builder,
     order: () => builder,
     limit: () => builder,
     maybeSingle: () => Promise.resolve(takeResult()),
@@ -105,6 +106,10 @@ export const supabase = {
     getUser: () => Promise.resolve({ data: { user: authUser }, error: null }),
     getSession: () => Promise.resolve({ data: { session: authSession }, error: null }),
     signOut: () => Promise.resolve({ error: null }),
+    // usePreferences.ts subscribes at module load time; a no-op stub keeps
+    // any test that transitively imports it (e.g. via home-feed.ts) from
+    // crashing on an undefined method.
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
   },
   channel: () => channelStub,
   removeChannel: () => Promise.resolve('ok'),
