@@ -76,7 +76,7 @@ export default function SearchScreen() {
   const [diet, setDiet] = useState<Set<DietFilter>>(new Set());
 
   const { prefs, error: prefsError } = usePreferences();
-  const cancelledRef = useFocusGuard();
+  const focusGuard = useFocusGuard();
 
   // Refetch on focus (not just mount) — a vendor toggling is_available, or
   // editing price/allergens, while a student has Search backgrounded (e.g.
@@ -84,6 +84,7 @@ export default function SearchScreen() {
   // pattern as wallet.tsx / profile.tsx.
   useFocusEffect(
     useCallback(() => {
+      const cancelledRef = focusGuard.snapshot();
       async function load() {
         const { data } = await supabase
           .from('menu_items')
@@ -96,7 +97,7 @@ export default function SearchScreen() {
         setLoading(false);
       }
       void load();
-    }, [cancelledRef])
+    }, [focusGuard])
   );
 
   function toggleDiet(f: DietFilter) {
