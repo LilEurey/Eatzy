@@ -79,13 +79,18 @@ export default function ProfileScreen() {
   // immediately, without needing a full remount.
   useFocusEffect(
     useCallback(() => {
-      // getSession() (not getUser()) — reads the stored session with no network
-      // round-trip, so email/notifications can paint on first focus instead of
-      // waiting on getUser(). Name is NOT set from session here: user_metadata
-      // (Google display name) can be Thai/foreign and would flash before the
-      // in-app users.name row below replaces it — users.name is the only source.
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
-        const user = session?.user;
+      // getUser() (not getSession()) — getSession() reads local/unverified
+      // storage, which can still hold the just-signed-out empty state for a
+      // beat right after a fresh sign-in (this app's LargeSecureStore adapter
+      // needs a SecureStore + AsyncStorage round trip to persist a session),
+      // hitting the `!user` branch below and leaving name stuck on the
+      // 'Student' placeholder. getUser() verifies against the server instead,
+      // matching every other per-focus fetch in this app (wallet.tsx,
+      // orders.tsx, index.tsx). Name is NOT set from user_metadata here:
+      // the Google display name can be Thai/foreign and would flash before
+      // the in-app users.name row below replaces it — users.name is the
+      // only source.
+      supabase.auth.getUser().then(async ({ data: { user } }) => {
         if (!user) { setRecentOrder(null); setHasUnreadNotifications(false); return; } // dev skip-login: keep defaults
         setEmail(user.email ?? '');
 
