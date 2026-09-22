@@ -48,6 +48,18 @@ export function matchAllergens(
   return itemAllergens.filter(a => prefs.allergies.includes(a));
 }
 
+// A cart/order line's allergens are the dish's own plus whatever its selected
+// add-ons carry (e.g. "Fried Egg" can trip the warning even on an
+// allergen-free dish) — item/[id].tsx and cart.tsx both need that combined,
+// deduped set matched against saved allergies.
+export function matchLineAllergens(
+  dishAllergens: string[],
+  addonAllergens: string[],
+  prefs: Preferences,
+): string[] {
+  return matchAllergens([...new Set([...dishAllergens, ...addonAllergens])], prefs);
+}
+
 let prefs: Preferences = DEFAULT_PREFERENCES;
 let loading = true;
 // True when the last load attempt failed — lets consumers tell "no prefs
