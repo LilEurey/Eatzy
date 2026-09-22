@@ -119,12 +119,14 @@ export default function ItemDetailScreen() {
       const seconds = Math.round((Date.now() - openedAt) / 1000);
       void supabase.auth.getUser().then(({ data: { user } }) => {
         if (!user) return;
-        void supabase.from('ml_interactions').insert({
+        supabase.from('ml_interactions').insert({
           user_id: user.id,
           menu_item_id: id,
           action: 'view',
           view_duration_sec: seconds,
           was_recommended: rec === '1',
+        }).then(({ error }) => {
+          if (error) console.warn('ml_interactions insert failed', error);
         });
       });
     };
