@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
@@ -108,7 +108,14 @@ export default function VendorOverviewScreen() {
   const maxBar = Math.max(0, ...bars.map(b => b.value));
   const hasSales = maxBar > 0;
   const [selectedBarIndex, setSelectedBarIndex] = useState<number | null>(null);
-  useEffect(() => setSelectedBarIndex(null), [bars]);
+  // Reset the selection when `bars` changes by adjusting state during render
+  // (React's documented pattern for this) instead of an effect, which would
+  // run one render late and flash the old bar's selection first.
+  const [prevBars, setPrevBars] = useState(bars);
+  if (bars !== prevBars) {
+    setPrevBars(bars);
+    setSelectedBarIndex(null);
+  }
   const selectedBar = selectedBarIndex != null ? bars[selectedBarIndex] : null;
   // The heatmap needs a wide window to be meaningful, so it ignores the
   // header range and always looks at the last 4 weeks.

@@ -57,7 +57,10 @@
           "merchantIdentifier": "merchant.com.anonymous.eatzy",
           "enableGooglePay": false
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

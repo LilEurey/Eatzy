@@ -19,6 +19,6 @@ module.exports = {
   transform: {
     // Transpile-only (isolatedModules is set in tsconfig.json) — `npm run lint`
     // and the editor cover types, and skipping the type-check cuts suite time ~10x.
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: { jsx: 'react-jsx' } }],
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: { jsx: 'react-jsx', rootDir: '.' } }],
   },
 };
