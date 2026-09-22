@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { getUserRole } from '@/lib/user-role';
 import { showAlert } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
-import { confirmHandoff, isEarned, transitionOrder, type OrderStatus } from '@/lib/order-lifecycle';
+import { confirmHandoff, isEarned, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 import { createEmitter } from '@/lib/create-emitter';
 
 // Vendor-side state — orders, menu, store-open — backed by real Supabase
@@ -298,9 +298,12 @@ export async function rejectOrder(id: string) {
   // there's nothing to refund. Guard on status='pending' so a race with
   // an accept that just landed (or a stale second device) can't flip an
   // already-charged order to 'rejected' with no way to unwind the debit.
-  const result = await transitionOrder(id, 'pending', 'rejected');
-  if (typeof result === 'object') { showAlert('Could not reject order', result.error); return; }
-  if (result === 'lost-race') showAlert('Could not reject order', 'This order is no longer pending.');
+  const ok = await transitionOrderWithAlert(id, 'pending', 'rejected', {
+    errorTitle: 'Could not reject order',
+    lostRaceTitle: 'Could not reject order',
+    lostRaceMessage: 'This order is no longer pending.',
+  });
+  if (!ok) return;
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
@@ -312,9 +315,12 @@ export async function markReady(id: string) {
   // food that was never paid for. The DB enforces this too — see
   // enforce_order_status_transition — but matching here turns a raw Postgres
   // exception into the same "no longer …" message reject already shows.
-  const result = await transitionOrder(id, 'accepted', 'ready');
-  if (typeof result === 'object') { showAlert('Could not update order', result.error); return; }
-  if (result === 'lost-race') showAlert('Could not update order', 'This order is no longer accepted.');
+  const ok = await transitionOrderWithAlert(id, 'accepted', 'ready', {
+    errorTitle: 'Could not update order',
+    lostRaceTitle: 'Could not update order',
+    lostRaceMessage: 'This order is no longer accepted.',
+  });
+  if (!ok) return;
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }

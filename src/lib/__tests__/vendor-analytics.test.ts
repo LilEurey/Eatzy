@@ -9,6 +9,13 @@ import {
 } from '@/lib/vendor-analytics';
 import { bangkokWeekday } from '@/lib/time';
 
+// vendor-analytics.ts only imports OrderStatus/isEarned/isVoided from
+// order-lifecycle.ts, but that module now also pulls in '@/lib/alert' (for
+// transitionOrderWithAlert), which pulls in react-native — stub it out, same
+// as vendor-store.test.ts already does, so this pure-logic suite still runs
+// on plain node.
+jest.mock('@/lib/alert', () => ({ showAlert: jest.fn() }));
+
 // Bangkok is a fixed UTC+7, no DST. 2026-06-15 is a Monday; 2026-06-14 a Sunday.
 const NOW = new Date('2026-06-15T05:00:00Z'); // 12:00 Bangkok, Mon
 
