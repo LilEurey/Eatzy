@@ -4,6 +4,7 @@ import { getUserRole } from '@/lib/user-role';
 import { showAlert } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { confirmHandoff, isEarned, transitionOrder, type OrderStatus } from '@/lib/order-lifecycle';
+import { createEmitter } from '@/lib/create-emitter';
 
 // Vendor-side state — orders, menu, store-open — backed by real Supabase
 // queries + Realtime, scoped to whichever vendor the signed-in user owns.
@@ -84,30 +85,26 @@ let orders: VendorOrder[] = [];
 let notifications: VendorNotification[] = [];
 let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
-const listeners = new Set<() => void>();
+const emitter = createEmitter();
 function emit() {
   menuItems = [...menuItems];
   orders = [...orders];
   notifications = [...notifications];
-  listeners.forEach(l => l());
-}
-function subscribe(cb: () => void) {
-  listeners.add(cb);
-  return () => listeners.delete(cb);
+  emitter.emit();
 }
 
-export function useVendorProfile() { return useSyncExternalStore(subscribe, () => vendorProfile, () => vendorProfile); }
+export function useVendorProfile() { return useSyncExternalStore(emitter.subscribe, () => vendorProfile, () => vendorProfile); }
 /** Test-only: read the mapped profile without a React renderer (the jest
  * harness is pure-logic / node — no hooks). Not used by app code. */
 export function __getVendorProfileForTest() { return vendorProfile; }
-export function useVendorLoading() { return useSyncExternalStore(subscribe, () => loading, () => loading); }
-export function useVendorOrders() { return useSyncExternalStore(subscribe, () => orders, () => orders); }
-export function useVendorMenu() { return useSyncExternalStore(subscribe, () => menuItems, () => menuItems); }
-export function useStoreOpen() { return useSyncExternalStore(subscribe, () => storeOpen, () => storeOpen); }
-export function useVendorNotifications() { return useSyncExternalStore(subscribe, () => notifications, () => notifications); }
+export function useVendorLoading() { return useSyncExternalStore(emitter.subscribe, () => loading, () => loading); }
+export function useVendorOrders() { return useSyncExternalStore(emitter.subscribe, () => orders, () => orders); }
+export function useVendorMenu() { return useSyncExternalStore(emitter.subscribe, () => menuItems, () => menuItems); }
+export function useStoreOpen() { return useSyncExternalStore(emitter.subscribe, () => storeOpen, () => storeOpen); }
+export function useVendorNotifications() { return useSyncExternalStore(emitter.subscribe, () => notifications, () => notifications); }
 export function useVendorUnreadNotifications() {
   return useSyncExternalStore(
-    subscribe,
+    emitter.subscribe,
     () => notifications.some(n => !n.read),
     () => notifications.some(n => !n.read),
   );

@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
+import { createEmitter } from '@/lib/create-emitter';
 
 // Single source of truth for the current student's dietary prefs + allergies.
 // Before this, item/[id], search, home, cart and store/[id] each ran their own
@@ -58,10 +59,10 @@ let loadError = false;
 // something actually changed.
 let snapshot: { prefs: Preferences; loading: boolean; error: boolean } = { prefs, loading, error: loadError };
 
-const listeners = new Set<() => void>();
+const emitter = createEmitter();
 function emit() {
   snapshot = { prefs, loading, error: loadError };
-  listeners.forEach(l => l());
+  emitter.emit();
 }
 
 let inFlight: Promise<void> | null = null;
@@ -123,11 +124,7 @@ supabase.auth.onAuthStateChange((event) => {
 });
 
 export function usePreferences(): { prefs: Preferences; loading: boolean; error: boolean } {
-  const state = useSyncExternalStore(
-    cb => { listeners.add(cb); return () => listeners.delete(cb); },
-    () => snapshot,
-    () => snapshot,
-  );
+  const state = useSyncExternalStore(emitter.subscribe, () => snapshot, () => snapshot);
   useEffect(() => { ensureLoaded(); }, []);
   return state;
 }
