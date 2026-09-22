@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
+import { createEmitter } from '@/lib/create-emitter';
 
 // Single source of truth for the current student's dietary prefs + allergies.
 // Before this, item/[id], search, home, cart and store/[id] each ran their own
@@ -47,6 +48,18 @@ export function matchAllergens(
   return itemAllergens.filter(a => prefs.allergies.includes(a));
 }
 
+// A cart/order line's allergens are the dish's own plus whatever its selected
+// add-ons carry (e.g. "Fried Egg" can trip the warning even on an
+// allergen-free dish) — item/[id].tsx and cart.tsx both need that combined,
+// deduped set matched against saved allergies.
+export function matchLineAllergens(
+  dishAllergens: string[],
+  addonAllergens: string[],
+  prefs: Preferences,
+): string[] {
+  return matchAllergens([...new Set([...dishAllergens, ...addonAllergens])], prefs);
+}
+
 let prefs: Preferences = DEFAULT_PREFERENCES;
 let loading = true;
 // True when the last load attempt failed — lets consumers tell "no prefs
@@ -58,10 +71,10 @@ let loadError = false;
 // something actually changed.
 let snapshot: { prefs: Preferences; loading: boolean; error: boolean } = { prefs, loading, error: loadError };
 
-const listeners = new Set<() => void>();
+const emitter = createEmitter();
 function emit() {
   snapshot = { prefs, loading, error: loadError };
-  listeners.forEach(l => l());
+  emitter.emit();
 }
 
 let inFlight: Promise<void> | null = null;
@@ -123,11 +136,7 @@ supabase.auth.onAuthStateChange((event) => {
 });
 
 export function usePreferences(): { prefs: Preferences; loading: boolean; error: boolean } {
-  const state = useSyncExternalStore(
-    cb => { listeners.add(cb); return () => listeners.delete(cb); },
-    () => snapshot,
-    () => snapshot,
-  );
+  const state = useSyncExternalStore(emitter.subscribe, () => snapshot, () => snapshot);
   useEffect(() => { ensureLoaded(); }, []);
   return state;
 }

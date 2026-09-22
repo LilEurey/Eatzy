@@ -10,7 +10,7 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
-import { confirmHandoff, transitionOrder, type OrderStatus } from '@/lib/order-lifecycle';
+import { confirmHandoff, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 
 // 'rejected' / 'cancelled' are reachable while this screen is mounted — the
 // realtime UPDATE below pushes whatever the vendor (or accept_order_and_charge's
@@ -133,12 +133,12 @@ export default function TrackScreen() {
         // Guarded on 'pending': if the vendor accepted between this screen's
         // last render and this tap, the transition loses the race instead of
         // silently cancelling an order the vendor already committed to.
-        const result = await transitionOrder(order.id, 'pending', 'cancelled');
-        if (typeof result === 'object') { showAlert(t('common.orderNotFound'), result.error); return; }
-        if (result === 'lost-race') {
-          showAlert(t('track.cancelFailedTitle'), t('track.cancelFailedMsg'));
-          return;
-        }
+        const ok = await transitionOrderWithAlert(order.id, 'pending', 'cancelled', {
+          errorTitle: t('common.orderNotFound'),
+          lostRaceTitle: t('track.cancelFailedTitle'),
+          lostRaceMessage: t('track.cancelFailedMsg'),
+        });
+        if (!ok) return;
         router.replace('/(tabs)/orders');
       },
       { confirmLabel: t('track.cancelConfirmAction'), cancelLabel: t('common.cancel'), destructive: true },

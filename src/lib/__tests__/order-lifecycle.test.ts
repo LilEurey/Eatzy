@@ -12,11 +12,14 @@ import {
   isInVendorQueue,
   isVoided,
   transitionOrder,
+  transitionOrderWithAlert,
   type OrderStatus,
 } from '@/lib/order-lifecycle';
 import { invokeEdgeFunction } from '@/lib/edge-function';
+import { showAlert } from '@/lib/alert';
 
 jest.mock('@/lib/edge-function', () => ({ invokeEdgeFunction: jest.fn() }));
+jest.mock('@/lib/alert', () => ({ showAlert: jest.fn() }));
 
 const ALL: OrderStatus[] = ['pending', 'accepted', 'ready', 'completed', 'rejected', 'cancelled'];
 const pick = (fn: (s: OrderStatus) => boolean) => ALL.filter(fn);
@@ -59,6 +62,33 @@ describe('transitionOrder', () => {
   it('returns the error message when the update fails', async () => {
     __setNextResult({ error: { message: 'boom' } });
     await expect(transitionOrder('o1', 'accepted', 'ready')).resolves.toEqual({ error: 'boom' });
+  });
+});
+
+describe('transitionOrderWithAlert', () => {
+  beforeEach(() => {
+    __resetMock();
+    (showAlert as jest.Mock).mockClear();
+  });
+
+  const messages = { lostRaceTitle: 'lost title', lostRaceMessage: 'lost msg', errorTitle: 'err title' };
+
+  it('returns true and shows no alert on ok', async () => {
+    __setNextResult({ data: [{ id: 'o1' }] });
+    await expect(transitionOrderWithAlert('o1', 'pending', 'rejected', messages)).resolves.toBe(true);
+    expect(showAlert).not.toHaveBeenCalled();
+  });
+
+  it('returns false and shows the lost-race message on lost-race', async () => {
+    __setNextResult({ data: [] });
+    await expect(transitionOrderWithAlert('o1', 'pending', 'rejected', messages)).resolves.toBe(false);
+    expect(showAlert).toHaveBeenCalledWith('lost title', 'lost msg');
+  });
+
+  it('returns false and shows the error message on error', async () => {
+    __setNextResult({ error: { message: 'boom' } });
+    await expect(transitionOrderWithAlert('o1', 'pending', 'rejected', messages)).resolves.toBe(false);
+    expect(showAlert).toHaveBeenCalledWith('err title', 'boom');
   });
 });
 

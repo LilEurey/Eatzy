@@ -8,11 +8,9 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { bangkokHour, getMealSegment, type MealSegment } from '@/lib/time';
-import { invokeEdgeFunction } from '@/lib/edge-function';
-import { isDrinkCategory } from '@/lib/menu-categories';
-import { DRINK_CATEGORY_FILTER, getTimeBasedCategories, restoreRank } from '@/lib/home-feed';
-import { usePreferences, passesDietary } from '@/hooks/usePreferences';
+import { bangkokHour, type MealSegment } from '@/lib/time';
+import { loadHomeFeed, type PersonalizedItem, type SimilarToItem } from '@/lib/home-feed';
+import { usePreferences } from '@/hooks/usePreferences';
 import { CardRow, ItemCard } from '@/components/home/ItemCard';
 import {
   TopBar, QueueBanner, PromotedSection, TrendingSection, NoQueueSection, StoreOptions, MenuItemCard,
@@ -22,13 +20,9 @@ import {
 // Hard dietary filter (is_halal/is_vegetarian/is_jay hide the item) and the
 // warn-only allergen match both live in usePreferences (passesDietary /
 // matchAllergens) — shared with search, item/[id], cart and store/[id] so the
-// vocabulary can't drift.
-
-// recommend-for-you returns flat rows (no vendors() join — computed server-side).
-type PersonalizedItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
-
-// recommend-similar's response shape (same as item/[id].tsx's SimilarItem) — no name_th, unlocalized.
-type SimilarToItem = { id: string; name: string; price: number; image_url: string | null; vendor_name: string; score: number };
+// vocabulary can't drift. loadHomeFeed (lib/home-feed.ts) is where the home
+// screen applies passesDietary to each section — see that module for the
+// query fanout itself.
 
 // Bangkok hours, not device hours — the greeting sits directly above a meal
 // row that getMealSegment() already picks in Bangkok time, so a device in
@@ -75,143 +69,37 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
+  // The whole fetch-filter-rank fanout (9 concurrent queries, dietary +
+  // drink-category filtering, rank restore, Similar Foods) lives in
+  // loadHomeFeed (lib/home-feed.ts) so it's unit-tested without a React tree.
+  // It never throws — a failed load comes back with every section already
+  // emptied, so there's one plain spread into state here, not a try/catch.
   async function loadData() {
-    try {
-      const segment = getMealSegment();
-      const timeFilter = `available_time_segment.eq.${segment},available_time_segment.eq.all`;
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name),is_halal,is_vegetarian,is_jay,allergens';
-      const asRows = (data: unknown) => (data as MenuItem[] | null) ?? [];
-      // Every food section: what this student can eat, minus drinks (drinks
-      // have their own row).
-      const foodForMe = (rows: MenuItem[]) => rows.filter(i => passesDietary(i, prefs) && !isDrinkCategory(i.category));
-
-      const { data: { user } } = await supabase.auth.getUser();
-      const [profileRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
-        user
-          ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
-          : Promise.resolve({ data: null, error: null }),
-        // Every stall, open first then by queue. Closed stalls stay visible in
-        // Store Options (dimmed + "Closed" badge); the queue banner and
-        // "No Queue Right Now" filter this same list down to the open ones.
-        supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url,is_open').order('is_open', { ascending: false }).order('current_queue_count', { ascending: true }),
-        // Fetch a few candidates, not just 1 — the featured item can fail
-        // the caller's dietary filter, and we need another to fall back to.
-        supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).order('id').limit(10),
-        // Trending Meals Today — real order volume, most-ordered first (see get_trending_items).
-        supabase.rpc('get_trending_items', { since: sevenDaysAgo, limit_n: 10 }),
-        // Latest Release — the newest items in the catalog, matching the current
-        // meal time. There is deliberately no "released in the last 7 days"
-        // window: menu_items.release_date is only ever set by its column
-        // default, so a bulk-seeded catalog shares one date and any fixed
-        // window empties the section permanently once that date ages out.
-        // Migration 20260910010000 spreads the seeded dates so "newest" means
-        // something; ordering alone keeps the row populated forever.
-        supabase.from('menu_items').select(menuFields).eq('is_available', true).or(timeFilter)
-          .order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
-        // Because You Ordered — collaborative filtering off the caller's own order
-        // history (see get_because_you_ordered); anonymous or order-less users
-        // just get zero rows back, not an error.
-        user ? supabase.rpc('get_because_you_ordered', { limit_n: 10 }) : Promise.resolve({ data: null, error: null }),
-        // Recommended For You — personalized TF-IDF ranking, cold-started from
-        // user_preferences until real order history exists (see recommend-for-you).
-        invokeEdgeFunction<{ results: PersonalizedItem[] }>('recommend-for-you'),
-        // Time-Based — items fitting the current meal segment by category
-        // (see getTimeBasedCategories: available_time_segment itself is 'all'
-        // on every seeded row, so category is the real signal here).
-        supabase.from('menu_items').select(menuFields).eq('is_available', true)
-          .in('category', getTimeBasedCategories(segment)).order('name', { ascending: true }).limit(10),
-        // Drinks You Might Like — mirrors Latest Release's query, filtered to
-        // drink categories instead of excluding them (see isDrinkCategory).
-        supabase.from('menu_items').select(menuFields).eq('is_available', true)
-          .or(DRINK_CATEGORY_FILTER)
-          .order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
-      ]);
-
-      if (profileRes.data?.name) setFirstName(profileRes.data.name.split(' ')[0]);
-      if (profileRes.data?.avatar_url) setAvatarUrl(profileRes.data.avatar_url);
-
-      const eligibleFeatured = foodForMe(asRows(featuredRes.data));
-      // One promoted item per week, same for every student — a per-load
-      // Math.random() pick showed a different item per user and per refresh.
-      // Ordered query + week-number seed keeps the index (and so the item)
-      // fixed all week, then rotates automatically the next week.
-      const weekNumber = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
-      const dbFeatured = eligibleFeatured.length > 0
-        ? eligibleFeatured[weekNumber % eligibleFeatured.length]
-        : undefined;
-
-      setAllVendors((allVendorsRes.data as Vendor[] | null) ?? []);
-      setFeatured(dbFeatured ?? null);
-
-      // Trending and Because You Ordered both come back from their RPCs as
-      // ranked id lists; each needs a follow-up fetch for the full rows
-      // (filtered to what's still available now), then the RPC order restored.
-      // The two follow-ups are independent — run them together, not in series.
-      const trendingRanked = trendingRankRes.data as { menu_item_id: string; order_count: number }[] | null;
-      const byoRanked = becauseYouOrderedRankRes.data as { menu_item_id: string; co_orders: number }[] | null;
-      const trendingIds = trendingRanked?.map(r => r.menu_item_id) ?? [];
-      const byoIds = byoRanked?.map(r => r.menu_item_id) ?? [];
-
-      const [trendingRowsRes, byoRowsRes] = await Promise.all([
-        trendingIds.length
-          ? supabase.from('menu_items').select(menuFields).in('id', trendingIds).eq('is_available', true).or(timeFilter)
-          : Promise.resolve({ data: null }),
-        byoIds.length
-          ? supabase.from('menu_items').select(menuFields).in('id', byoIds).eq('is_available', true)
-          : Promise.resolve({ data: null }),
-      ]);
-
-      const dbTrending = restoreRank(trendingIds, foodForMe(asRows(trendingRowsRes.data)));
-      setTrending(dbTrending.slice(0, 2));
-
-      setLatestRelease(foodForMe(asRows(latestReleaseRes.data)));
-
-      setDrinks(asRows(drinksRes.data).filter(i => passesDietary(i, prefs)));
-
-      setBecauseYouOrdered(restoreRank(byoIds, foodForMe(asRows(byoRowsRes.data))));
-
-      setRecommendedForYou(recommendedRes.data?.results ?? []);
-
-      setMealSegment(segment);
-      setTimeBasedItems(foodForMe(asRows(timeBasedRes.data)));
-    } catch {
-      // Supabase unreachable — show empty states, not fake data. Every list
-      // has to be cleared, not just four of them: leaving the rest holding the
-      // previous load's rows renders a half-stale feed that looks live.
-      setAllVendors([]);
-      setFeatured(null);
-      setTrending([]);
-      setDrinks([]);
-      setLatestRelease([]);
-      setTimeBasedItems([]);
-      setRecommendedForYou([]);
-      setBecauseYouOrdered([]);
-      setSimilarToFeatured([]);
-    }
+    const result = await loadHomeFeed(prefs);
+    if (result.profile?.name) setFirstName(result.profile.name.split(' ')[0]);
+    if (result.profile?.avatarUrl) setAvatarUrl(result.profile.avatarUrl);
+    setMealSegment(result.mealSegment);
+    setAllVendors(result.allVendors);
+    setFeatured(result.featured);
+    setTrending(result.trending);
+    setLatestRelease(result.latestRelease);
+    setDrinks(result.drinks);
+    setRecommendedForYou(result.recommendedForYou);
+    setBecauseYouOrdered(result.becauseYouOrdered);
+    setTimeBasedItems(result.timeBasedItems);
+    setSimilarToFeatured(result.similarToFeatured);
     setLoading(false);
   }
 
   // Re-run when the shared prefs change so the hard dietary filter and the
   // allergen badges reflect the real values. Waiting on prefsLoading matters:
   // usePreferences emits twice on a cold start (DEFAULT_PREFERENCES, then the
-  // loaded row), and firing on the first emit ran this whole ~10-query fanout
+  // loaded row), and firing on the first emit ran this whole ~12-query fanout
   // for a prefs object that was about to be replaced — the results were
   // thrown away a moment later. The screen is already showing its spinner
   // during that window, so nothing renders later than before.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!prefsLoading) void loadData(); }, [prefs, prefsLoading]);
-
-  // Similar Foods — home page had no presence for this feature at all
-  // (item/[id].tsx is the only other place it renders); anchor it on
-  // today's Promoted item so the home feed gets one too. Best-effort:
-  // hide the section on error rather than surface a broken state.
-  useEffect(() => {
-    if (!featured) return;
-    invokeEdgeFunction<{ results: SimilarToItem[] }>('recommend-similar', { body: { item_id: featured.id } })
-      .then(({ data }) => setSimilarToFeatured(data?.results ?? []))
-      .catch(() => setSimilarToFeatured([]));
-  }, [featured]);
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();

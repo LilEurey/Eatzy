@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { invokeEdgeFunction } from '@/lib/edge-function';
+import { showAlert } from '@/lib/alert';
 
 // One place for what an order's status *means* and how it moves. The SQL
 // transition guard (20260910000000_order_status_transition_guard.sql) is the
@@ -37,6 +38,22 @@ export async function transitionOrder(id: string, from: OrderStatus, to: OrderSt
     .select('id');
   if (error) return { error: error.message };
   return data && data.length > 0 ? 'ok' : 'lost-race';
+}
+
+/** transitionOrder + the alert every caller already showed for its two
+ * failure branches, collapsed to one line. Messages stay caller-supplied —
+ * the wording genuinely differs per call site, only the discrimination was
+ * duplicated. Returns true only on 'ok'; the caller's happy path runs there. */
+export async function transitionOrderWithAlert(
+  id: string,
+  from: OrderStatus,
+  to: OrderStatus,
+  messages: { lostRaceTitle: string; lostRaceMessage: string; errorTitle: string },
+): Promise<boolean> {
+  const result = await transitionOrder(id, from, to);
+  if (typeof result === 'object') { showAlert(messages.errorTitle, result.error); return false; }
+  if (result === 'lost-race') { showAlert(messages.lostRaceTitle, messages.lostRaceMessage); return false; }
+  return true;
 }
 
 /** Records one side's handoff confirmation, then nudges the payout. Returns

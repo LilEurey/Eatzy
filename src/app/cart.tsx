@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, NOTE_MAX } from '@/lib/cart-store';
-import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
+import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
@@ -26,7 +26,7 @@ export default function CartScreen() {
   // add-ons). The Add to Cart popup on item/[id] is a one-time gate; this keeps
   // the warning present on the cart and at checkout.
   const lineAllergens = (line: (typeof items)[number]) =>
-    matchAllergens([...line.allergens, ...line.addons.flatMap(a => a.allergens)], prefs);
+    matchLineAllergens(line.allergens, line.addons.flatMap(a => a.allergens), prefs);
   const orderAllergens = [...new Set(items.flatMap(lineAllergens))];
   // Computed once per visit (not on every render) so the offered windows
   // don't shift under the student while they're picking one — real "next

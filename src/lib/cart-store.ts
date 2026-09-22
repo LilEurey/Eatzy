@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { createEmitter } from '@/lib/create-emitter';
 
 // Minimal cross-screen cart. No dependency — module-level state + useSyncExternalStore.
 // ponytail: single active vendor per cart; adding from another vendor replaces it.
@@ -37,10 +38,10 @@ type Cart = {
 let cart: Cart = { vendor_id: null, items: [] };
 let lineSeq = 0;
 
-const listeners = new Set<() => void>();
+const emitter = createEmitter();
 function emit() {
   cart = { ...cart, items: [...cart.items] }; // new refs so useSyncExternalStore re-renders
-  listeners.forEach(l => l());
+  emitter.emit();
 }
 
 // Two lines stack (quantity +) only when they're the same dish, the same
@@ -123,12 +124,5 @@ export function cartCount(c: Cart) {
 }
 
 export function useCart() {
-  return useSyncExternalStore(
-    cb => {
-      listeners.add(cb);
-      return () => listeners.delete(cb);
-    },
-    () => cart,
-    () => cart,
-  );
+  return useSyncExternalStore(emitter.subscribe, () => cart, () => cart);
 }

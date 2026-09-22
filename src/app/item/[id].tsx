@@ -8,7 +8,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { addToCart, hasVendorMismatch, NOTE_MAX } from '@/lib/cart-store';
-import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
+import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { showAlert, showConfirm } from '@/lib/alert';
@@ -188,8 +188,7 @@ export default function ItemDetailScreen() {
   const total = (item.price + addonSum) * qty;
   // Base dish AND any selected add-on — selecting "Fried Egg" can newly trip
   // the warning even when the dish itself is allergen-free.
-  const allAllergens = [...new Set([...item.allergens, ...selectedOptions.flatMap(o => o.allergens)])];
-  const matchedAllergens = matchAllergens(allAllergens, prefs);
+  const matchedAllergens = matchLineAllergens(item.allergens, selectedOptions.flatMap(o => o.allergens), prefs);
 
   function confirmAddToCart() {
     if (!groupsValid || !item || prefsLoading) return;
