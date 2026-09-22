@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Tap } from '@/components/Tap';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
+import { useFocusGuard } from '@/hooks/useFocusGuard';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { bangkokHour, type MealSegment } from '@/lib/time';
 import { loadHomeFeed, type PersonalizedItem, type SimilarToItem } from '@/lib/home-feed';
-import { usePreferences } from '@/hooks/usePreferences';
+import { usePreferences, refreshPreferences } from '@/hooks/usePreferences';
 import { CardRow, ItemCard } from '@/components/home/ItemCard';
 import {
   TopBar, QueueBanner, PromotedSection, TrendingSection, NoQueueSection, StoreOptions, MenuItemCard,
@@ -53,7 +54,7 @@ function getTimeBasedHeaderKey(segment: MealSegment): TranslationKey {
 
 export default function HomeScreen() {
   const { t, locale } = useI18n();
-  const { prefs, loading: prefsLoading } = usePreferences();
+  const { prefs, loading: prefsLoading, error: prefsError } = usePreferences();
   const [firstName, setFirstName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [allVendors, setAllVendors] = useState<Vendor[]>([]);
@@ -69,37 +70,47 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
+  const focusGuard = useFocusGuard();
+
   // The whole fetch-filter-rank fanout (9 concurrent queries, dietary +
   // drink-category filtering, rank restore, Similar Foods) lives in
   // loadHomeFeed (lib/home-feed.ts) so it's unit-tested without a React tree.
   // It never throws — a failed load comes back with every section already
   // emptied, so there's one plain spread into state here, not a try/catch.
-  async function loadData() {
-    const result = await loadHomeFeed(prefs);
-    if (result.profile?.name) setFirstName(result.profile.name.split(' ')[0]);
-    if (result.profile?.avatarUrl) setAvatarUrl(result.profile.avatarUrl);
-    setMealSegment(result.mealSegment);
-    setAllVendors(result.allVendors);
-    setFeatured(result.featured);
-    setTrending(result.trending);
-    setLatestRelease(result.latestRelease);
-    setDrinks(result.drinks);
-    setRecommendedForYou(result.recommendedForYou);
-    setBecauseYouOrdered(result.becauseYouOrdered);
-    setTimeBasedItems(result.timeBasedItems);
-    setSimilarToFeatured(result.similarToFeatured);
-    setLoading(false);
-  }
-
-  // Re-run when the shared prefs change so the hard dietary filter and the
-  // allergen badges reflect the real values. Waiting on prefsLoading matters:
-  // usePreferences emits twice on a cold start (DEFAULT_PREFERENCES, then the
-  // loaded row), and firing on the first emit ran this whole ~12-query fanout
-  // for a prefs object that was about to be replaced — the results were
-  // thrown away a moment later. The screen is already showing its spinner
-  // during that window, so nothing renders later than before.
-  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect -- fetch-on-mount/prefs-change is the intended pattern here
-  useEffect(() => { if (!prefsLoading) void loadData(); }, [prefs, prefsLoading]);
+  //
+  // Runs on focus (not just mount) — a vendor's queue count, an item going
+  // unavailable, or a new trending item must show up on return from another
+  // tab, same pattern as wallet.tsx / search.tsx. It also re-runs whenever
+  // prefs finish loading (or change) while Home is already the focused tab,
+  // since that changes this callback's identity and useFocusEffect
+  // re-invokes immediately for an already-focused screen. Waiting on
+  // prefsLoading matters: usePreferences emits twice on a cold start
+  // (DEFAULT_PREFERENCES, then the loaded row), and firing on the first
+  // emit ran this whole ~12-query fanout for a prefs object that was about
+  // to be replaced — the results were thrown away a moment later.
+  useFocusEffect(
+    useCallback(() => {
+      if (prefsLoading) return;
+      const cancelledRef = focusGuard.snapshot();
+      void (async () => {
+        const result = await loadHomeFeed(prefs);
+        if (cancelledRef.current) return;
+        if (result.profile?.name) setFirstName(result.profile.name.split(' ')[0]);
+        if (result.profile?.avatarUrl) setAvatarUrl(result.profile.avatarUrl);
+        setMealSegment(result.mealSegment);
+        setAllVendors(result.allVendors);
+        setFeatured(result.featured);
+        setTrending(result.trending);
+        setLatestRelease(result.latestRelease);
+        setDrinks(result.drinks);
+        setRecommendedForYou(result.recommendedForYou);
+        setBecauseYouOrdered(result.becauseYouOrdered);
+        setTimeBasedItems(result.timeBasedItems);
+        setSimilarToFeatured(result.similarToFeatured);
+        setLoading(false);
+      })();
+    }, [focusGuard, prefs, prefsLoading])
+  );
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -134,6 +145,33 @@ export default function HomeScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={Brand.orange} size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  if (prefsError) {
+    // Saved halal/vegetarian/jay prefs failed to load — loadHomeFeed would
+    // silently filter this fanout on stale/default prefs (no restriction),
+    // showing a restricted student items they can't eat. Skip rendering the
+    // feed entirely rather than risk that; same "don't proceed on a failed
+    // prefs load" call as cart.tsx / search.tsx.
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 }}>
+          <View style={{
+            backgroundColor: '#fee2e2', borderRadius: 12, borderWidth: 1, borderColor: '#fecaca',
+            paddingHorizontal: 14, paddingVertical: 12,
+          }}>
+            <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', marginBottom: 8 }}>
+              {t('cart.prefsNotReadyMsg')}
+            </Text>
+            <Tap onPress={() => void refreshPreferences()} haptic={false}>
+              <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', textDecorationLine: 'underline' }}>
+                {t('common.tryAgain')}
+              </Text>
+            </Tap>
+          </View>
+        </View>
       </SafeAreaView>
     );
   }
