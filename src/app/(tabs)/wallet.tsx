@@ -37,7 +37,7 @@ export default function WalletScreen() {
   const [balance, setBalance] = useState(0);
   const [txns, setTxns] = useState<WalletTxn[]>([]);
   const [loading, setLoading] = useState(true);
-  const cancelledRef = useFocusGuard();
+  const focusGuard = useFocusGuard();
 
   async function loadWallet(userId: string) {
     const [profileRes, txnsRes] = await Promise.all([
@@ -55,6 +55,7 @@ export default function WalletScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const cancelledRef = focusGuard.snapshot();
       supabase.auth.getUser().then(async ({ data: { user } }) => {
         if (!user) { if (!cancelledRef.current) setLoading(false); return; }
         const { balance, txns } = await loadWallet(user.id);
@@ -63,7 +64,7 @@ export default function WalletScreen() {
         setTxns(txns);
         setLoading(false);
       });
-    }, [cancelledRef])
+    }, [focusGuard])
   );
 
   const comingSoon = () => comingSoonAlert(t);

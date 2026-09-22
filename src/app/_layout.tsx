@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StripeProvider } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { getUserRole } from '@/lib/user-role';
+import { showAlert } from '@/lib/alert';
 import { I18nProvider } from '@/lib/i18n';
 import type { Session } from '@supabase/supabase-js';
 
@@ -44,7 +45,7 @@ export default function RootLayout() {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function routeAfterAuth(userId: string) {
+  async function routeAfterAuth(userId: string, originPath: string) {
     // router.replace() below only swaps the current stack frame — it doesn't
     // clear frames underneath. A pre-auth link (e.g. login -> vendor-login)
     // pushes a second screen on top of Login, so replacing just that top
@@ -60,6 +61,18 @@ export default function RootLayout() {
     if (router.canDismiss()) router.dismissAll();
 
     const role = await getUserRole(userId);
+
+    // admin-login.tsx defers entirely to this function for role-checking and
+    // routing (it only does the signInWithPassword call itself) — this is
+    // the one place a sign-in from that screen gets rejected if the account
+    // isn't an admin. Keeping this the sole role-check-and-route path avoids
+    // the old race where admin-login.tsx's own role check and this listener
+    // independently redirected the same sign-in event.
+    if (originPath === '/admin-login' && role !== 'admin') {
+      await supabase.auth.signOut();
+      showAlert('Sign in failed', 'This account is not registered as an admin.');
+      return;
+    }
 
     if (role === 'vendor') {
       router.replace('/(vendor)/overview');
@@ -86,21 +99,21 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (session === undefined) return; // still loading
+    // usePathname() can still report the previous/default path on a hard
+    // web reload — the router hook hasn't hydrated from the real URL yet
+    // even though session has already resolved. window.location is the
+    // synchronous source of truth there; native has no equivalent lag
+    // (no hard-reload concept), so pathname alone is correct off-web.
+    const currentPath = Platform.OS === 'web' && typeof window !== 'undefined'
+      ? window.location.pathname
+      : pathname;
     if (!session) {
       routedUserId.current = null;
-      // usePathname() can still report the previous/default path on a hard
-      // web reload — the router hook hasn't hydrated from the real URL yet
-      // even though session has already resolved. window.location is the
-      // synchronous source of truth there; native has no equivalent lag
-      // (no hard-reload concept), so pathname alone is correct off-web.
-      const currentPath = Platform.OS === 'web' && typeof window !== 'undefined'
-        ? window.location.pathname
-        : pathname;
       if (!PUBLIC_ROUTES.includes(currentPath)) router.replace('/(auth)');
     } else {
       if (session.user.id === routedUserId.current) return; // token refresh, not a new sign-in
       routedUserId.current = session.user.id;
-      routeAfterAuth(session.user.id);
+      routeAfterAuth(session.user.id, currentPath);
     }
     // pathname deliberately excluded: this only needs pathname's value at
     // the moment `session` first resolves (to decide whether a hard load

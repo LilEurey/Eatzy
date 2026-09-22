@@ -30,10 +30,11 @@ export default function StoresScreen() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [halalOnly, setHalalOnly] = useState(false);
-  const cancelledRef = useFocusGuard();
+  const focusGuard = useFocusGuard();
 
   useFocusEffect(
     useCallback(() => {
+      const cancelledRef = focusGuard.snapshot();
       supabase
         .from('vendors')
         .select(VENDOR_FIELDS)
@@ -44,7 +45,7 @@ export default function StoresScreen() {
           setVendors(error || !data ? [] : (data as Vendor[]));
           setLoading(false);
         });
-    }, [cancelledRef])
+    }, [focusGuard])
   );
 
   const results = useMemo(() => {

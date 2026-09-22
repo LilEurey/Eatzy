@@ -61,7 +61,7 @@ export default function ItemDetailScreen() {
   // groupId -> selected option ids
   const [selected, setSelected] = useState<Record<string, string[]>>({});
   const [note, setNote] = useState('');
-  const { prefs, loading: prefsLoading } = usePreferences();
+  const { prefs, loading: prefsLoading, error: prefsError } = usePreferences();
   const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
@@ -191,7 +191,15 @@ export default function ItemDetailScreen() {
   const matchedAllergens = matchLineAllergens(item.allergens, selectedOptions.flatMap(o => o.allergens), prefs);
 
   function confirmAddToCart() {
-    if (!groupsValid || !item || prefsLoading) return;
+    if (!groupsValid || !item) return;
+    // Allergen/dietary warnings below read from usePreferences() — adding while
+    // it's still loading, or after a failed fetch, would silently skip the
+    // allergy confirm for a student whose real prefs never arrived. Mirrors
+    // cart.tsx's placeOrder guard.
+    if (prefsLoading || prefsError) {
+      showAlert(t('common.errorTitle'), t('cart.prefsNotReadyMsg'));
+      return;
+    }
     if (!storeOpen) {
       showAlert(t('item.storeClosedTitle'), t('item.storeClosedMsg'));
       return;
@@ -567,12 +575,12 @@ export default function ItemDetailScreen() {
           {/* Add to cart button */}
           <Tap
             activeOpacity={0.85}
-            disabled={!groupsValid || !storeOpen || prefsLoading}
+            disabled={!groupsValid || !storeOpen || prefsLoading || prefsError}
             onPress={confirmAddToCart}
             style={{
               flex: 1, backgroundColor: storeOpen ? Brand.orange : Brand.border, borderRadius: 14,
               height: 44, alignItems: 'center', justifyContent: 'center',
-              flexDirection: 'row', gap: 8, opacity: (!storeOpen || groupsValid) && !prefsLoading ? 1 : 0.5,
+              flexDirection: 'row', gap: 8, opacity: (!storeOpen || groupsValid) && !prefsLoading && !prefsError ? 1 : 0.5,
               shadowColor: Brand.orange, shadowOffset: { width: 0, height: 4 },
               shadowOpacity: storeOpen ? 0.35 : 0, shadowRadius: 8, elevation: storeOpen ? 4 : 0,
             }}

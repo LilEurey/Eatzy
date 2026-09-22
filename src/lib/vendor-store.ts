@@ -364,6 +364,12 @@ type NewMenuItemInput = {
   category: string;
   spice_level: number;
   preparation_time_min: number;
+  // Hard dietary filters (menu_items defaults all three to false) — only the
+  // creation form sets these. Items created before this field existed still
+  // default false on all three and need a manual DB backfill if that matters.
+  is_halal: boolean;
+  is_vegetarian: boolean;
+  is_jay: boolean;
   allergens: string[];
   // Both feed itemDoc() in the ranking pipeline (ingredients + tags +
   // category); an item saved without them is near-invisible to the

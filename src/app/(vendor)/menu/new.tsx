@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput, Image, Modal, ScrollView } from 'react-native';
+import { View, Text, TextInput, Image, Modal, ScrollView, Switch } from 'react-native';
 import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
 import * as ImagePicker from 'expo-image-picker';
@@ -43,6 +43,11 @@ export default function AddMenuItemScreen() {
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [prepTime, setPrepTime] = useState('15');
   const [spiceLevel, setSpiceLevel] = useState(0);
+  // Default false, matching menu_items' not-null-default-false columns — an
+  // item's diet isn't guessable, so the vendor must opt each one in.
+  const [isHalal, setIsHalal] = useState(false);
+  const [isVegetarian, setIsVegetarian] = useState(false);
+  const [isJay, setIsJay] = useState(false);
   const [allergens, setAllergens] = useState<Set<string>>(new Set());
   const [otherAllergen, setOtherAllergen] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -143,6 +148,9 @@ export default function AddMenuItemScreen() {
       category: category || categories[0],
       spice_level: spiceLevel,
       preparation_time_min: parseInt(prepTime, 10) || 0,
+      is_halal: isHalal,
+      is_vegetarian: isVegetarian,
+      is_jay: isJay,
       allergens: allergenList,
       ingredients: splitList(ingredients),
       tags: splitList(tags),
@@ -222,6 +230,24 @@ export default function AddMenuItemScreen() {
                   </Text>
                   <Ionicons name="chevron-down" size={14} color="#8A8F9B" />
                 </Tap>
+              </View>
+            </View>
+
+            {/* Hard dietary filters (CLAUDE.md: halal/vegetarian/jay exclude an
+                item everywhere for students with that filter on) — default off,
+                the vendor opts each one in. */}
+            <View style={{ gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.menuNew.halalLabel')}</Text>
+                <Switch value={isHalal} onValueChange={setIsHalal} trackColor={{ false: '#E2E4EC', true: Brand.vendorAccent }} />
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.menuNew.vegetarianLabel')}</Text>
+                <Switch value={isVegetarian} onValueChange={setIsVegetarian} trackColor={{ false: '#E2E4EC', true: Brand.vendorAccent }} />
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.menuNew.jayLabel')}</Text>
+                <Switch value={isJay} onValueChange={setIsJay} trackColor={{ false: '#E2E4EC', true: Brand.vendorAccent }} />
               </View>
             </View>
           </View>
