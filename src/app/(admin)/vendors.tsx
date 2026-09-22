@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, Modal, ActivityIndicator, ScrollView } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Tap } from '@/components/Tap';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
@@ -56,8 +57,10 @@ export default function AdminVendorsScreen() {
     setLoading(false);
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount is the intended pattern here
-  useEffect(() => { void load(); }, [load]);
+  // useFocusEffect (not a mount-only effect) so a vendor's own dashboard
+  // toggling is_open while this tab stays mounted doesn't leave admin
+  // acting on a stale read — matches wallet.tsx / profile.tsx.
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   function closeModal() {
     setSelected(null);
