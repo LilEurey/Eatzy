@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
+import { usePreferences, passesDietary, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
+import { useFocusGuard } from '@/hooks/useFocusGuard';
 
 type SearchItem = {
   id: string;
@@ -74,21 +75,29 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [diet, setDiet] = useState<Set<DietFilter>>(new Set());
 
-  const { prefs } = usePreferences();
+  const { prefs, error: prefsError } = usePreferences();
+  const cancelledRef = useFocusGuard();
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from('menu_items')
-        .select('id,vendor_id,name,name_th,description,description_th,price,category,spice_level,is_available,is_halal,is_vegetarian,is_jay,allergens,tags,ingredients,image_url,vendors(name)')
-        .eq('is_available', true);
+  // Refetch on focus (not just mount) — a vendor toggling is_available, or
+  // editing price/allergens, while a student has Search backgrounded (e.g.
+  // switched to Home and back) must show up without a full remount, same
+  // pattern as wallet.tsx / profile.tsx.
+  useFocusEffect(
+    useCallback(() => {
+      async function load() {
+        const { data } = await supabase
+          .from('menu_items')
+          .select('id,vendor_id,name,name_th,description,description_th,price,category,spice_level,is_available,is_halal,is_vegetarian,is_jay,allergens,tags,ingredients,image_url,vendors(name)')
+          .eq('is_available', true);
+        if (cancelledRef.current) return;
 
-      const dbItems = (data ?? []) as unknown as (SearchItem & { vendors: { name: string } | null })[];
-      setItems(dbItems.map(i => ({ ...i, vendorName: i.vendors?.name ?? '' })));
-      setLoading(false);
-    }
-    void load();
-  }, []);
+        const dbItems = (data ?? []) as unknown as (SearchItem & { vendors: { name: string } | null })[];
+        setItems(dbItems.map(i => ({ ...i, vendorName: i.vendors?.name ?? '' })));
+        setLoading(false);
+      }
+      void load();
+    }, [cancelledRef])
+  );
 
   function toggleDiet(f: DietFilter) {
     setDiet(prev => {
@@ -173,6 +182,27 @@ export default function SearchScreen() {
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={Brand.orange} size="large" />
+        </View>
+      ) : prefsError ? (
+        // Saved halal/vegetarian/jay prefs failed to load — passesDietary would
+        // silently fall back to all-false (no filter) on the stale/default
+        // prefs, showing a restricted student items they can't eat. Skip
+        // rendering results entirely rather than risk that; same "don't
+        // proceed on a failed prefs load" call as cart.tsx's checkout guard.
+        <View style={{ paddingHorizontal: 20, paddingTop: 4 }}>
+          <View style={{
+            backgroundColor: '#fee2e2', borderRadius: 12, borderWidth: 1, borderColor: '#fecaca',
+            paddingHorizontal: 14, paddingVertical: 12,
+          }}>
+            <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', marginBottom: 8 }}>
+              {t('cart.prefsNotReadyMsg')}
+            </Text>
+            <Tap onPress={() => void refreshPreferences()} haptic={false}>
+              <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', textDecorationLine: 'underline' }}>
+                {t('common.tryAgain')}
+              </Text>
+            </Tap>
+          </View>
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
