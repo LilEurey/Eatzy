@@ -17,7 +17,10 @@ export default function AdminNewVendorScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<Created | null>(null);
 
-  const canSubmit = !!email.trim() && password.length >= 6 && !!businessName.trim() && !submitting;
+  // Must match the edge function's MIN_PASSWORD_LENGTH (supabase/functions/admin-create-vendor/index.ts) —
+  // literal constant, not shared, since edge functions (Deno) and the RN app (Node) can't import across that boundary.
+  const MIN_PASSWORD_LENGTH = 10;
+  const canSubmit = !!email.trim() && password.length >= MIN_PASSWORD_LENGTH && !!businessName.trim() && !submitting;
 
   async function handleSubmit() {
     if (!canSubmit) return;
@@ -106,6 +109,7 @@ export default function AdminNewVendorScreen() {
           placeholderTextColor="#B0B4BF"
           autoCapitalize="none"
           autoCorrect={false}
+          secureTextEntry
           style={inputStyle}
         />
       </Field>
