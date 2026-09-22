@@ -370,7 +370,7 @@ export const en = {
 
   // Vendor — overview
   'vendor.overview.title': 'Dashboard Overview',
-  'vendor.overview.subtitle': 'ภาพรวมร้านค้า',
+  'vendor.overview.subtitle': 'Store overview',
   'vendor.overview.today': 'Today',
   'vendor.overview.downloadReport': 'Download Report',
   'vendor.overview.totalOrders': 'TOTAL ORDERS',
@@ -426,7 +426,7 @@ export const en = {
 
   // Vendor — menu catalog
   'vendor.menu.title': 'Menu Catalog',
-  'vendor.menu.subtitle': 'คลังเมนู',
+  'vendor.menu.subtitle': 'Menu catalog',
   'vendor.menu.addNewItem': '+ Add New Item',
   'vendor.menu.allItems': 'All Items',
   'vendor.menu.availability': 'Availability',
@@ -502,6 +502,9 @@ export const en = {
   'vendor.menuNew.priceLabel': 'Price',
   'vendor.menuNew.categoryLabel': 'Category',
   'vendor.menuNew.categoryPlaceholder': 'Select a category',
+  'vendor.menuNew.halalLabel': 'Halal',
+  'vendor.menuNew.vegetarianLabel': 'Vegetarian',
+  'vendor.menuNew.jayLabel': 'Jay',
   'vendor.menuNew.imageTitle': 'Item Image',
   'vendor.menuNew.imageDropText': 'Click to upload or drag and drop',
   'vendor.menuNew.imageDropHint': 'SVG, PNG, JPG or GIF (max. 800×400px)',
