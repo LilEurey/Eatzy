@@ -80,14 +80,14 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       // getSession() (not getUser()) — reads the stored session with no network
-      // round-trip, so the card can paint a real name on first focus instead of
-      // flashing the "Student" placeholder while getUser()/the users row load.
+      // round-trip, so email/notifications can paint on first focus instead of
+      // waiting on getUser(). Name is NOT set from session here: user_metadata
+      // (Google display name) can be Thai/foreign and would flash before the
+      // in-app users.name row below replaces it — users.name is the only source.
       supabase.auth.getSession().then(async ({ data: { session } }) => {
         const user = session?.user;
         if (!user) { setRecentOrder(null); setHasUnreadNotifications(false); return; } // dev skip-login: keep defaults
         setEmail(user.email ?? '');
-        const sessionName = (user.user_metadata?.full_name as string) ?? user.email?.split('@')[0];
-        if (sessionName) setName(sessionName);
 
         const [profileRes, prefsRes, orderRes, notifRes] = await Promise.all([
           supabase.from('users').select('name,avatar_url,notifications_enabled').eq('id', user.id).maybeSingle(),
