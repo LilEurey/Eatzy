@@ -68,6 +68,7 @@ export default function OnboardingScreen() {
     setFavoriteCategories(new Set(data.favorite_categories ?? []));
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount is the intended pattern here
   useEffect(() => { void loadPreferences(); }, []);
 
   function toggleDietary(item: Dietary) {

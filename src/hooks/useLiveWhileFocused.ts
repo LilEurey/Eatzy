@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { startGuarded, type Cleanup } from '@/lib/focus-lifecycle';
 
@@ -8,8 +8,9 @@ import { startGuarded, type Cleanup } from '@/lib/focus-lifecycle';
  * before touching state after an await. See lib/focus-lifecycle.ts. */
 export function useLiveWhileFocused(start: (isCancelled: () => boolean) => Promise<Cleanup | void>) {
   // Latest closure without re-running the effect (and re-subscribing) on
-  // every render.
+  // every render. Synced in an effect, not during render, so refs stay
+  // side-effect-free for the React Compiler.
   const startRef = useRef(start);
-  startRef.current = start;
+  useEffect(() => { startRef.current = start; });
   useFocusEffect(useCallback(() => startGuarded(isCancelled => startRef.current(isCancelled)), []));
 }

@@ -98,7 +98,7 @@ export default function HomeScreen() {
   // for a prefs object that was about to be replaced — the results were
   // thrown away a moment later. The screen is already showing its spinner
   // during that window, so nothing renders later than before.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect -- fetch-on-mount/prefs-change is the intended pattern here
   useEffect(() => { if (!prefsLoading) void loadData(); }, [prefs, prefsLoading]);
 
   useLiveWhileFocused(async isCancelled => {

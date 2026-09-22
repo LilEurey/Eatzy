@@ -91,6 +91,7 @@ export default function EditPreferencesScreen() {
     setLoading(false);
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount is the intended pattern here
   useEffect(() => { void load(); }, [load]);
 
   function toggleDietary(item: Dietary) {
