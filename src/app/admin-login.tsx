@@ -8,7 +8,6 @@ import { Brand } from '@/constants/theme';
 import { showAlert, errorMessage } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
-import { getUserRole } from '@/lib/user-role';
 
 export default function AdminLoginScreen() {
   const { t } = useI18n();
@@ -19,17 +18,15 @@ export default function AdminLoginScreen() {
   async function signIn() {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-
-      if (await getUserRole(data.user.id) !== 'admin') {
-        await supabase.auth.signOut();
-        throw new Error('This account is not registered as an admin.');
-      }
-
-      router.replace('/(admin)/new-vendor');
+      // Role check + redirect (or sign-out with a "not an admin" alert) is
+      // handled by the root layout's routeAfterAuth — the single place that
+      // reacts to this sign-in via onAuthStateChange — so it doesn't race
+      // a second, independent role check/redirect done here.
     } catch (e) {
       showAlert(t('auth.signInFailedTitle'), errorMessage(e));
+    } finally {
       setLoading(false);
     }
   }
