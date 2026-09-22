@@ -12,7 +12,7 @@ import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { hasCoords } from '@/lib/geo';
 import { localizedText } from '@/lib/localize';
-import { usePreferences, passesDietary, matchAllergens } from '@/hooks/usePreferences';
+import { usePreferences, passesDietary, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
 import type { Database } from '@/types/database.types';
 
 type Tables = Database['public']['Tables'];
@@ -43,7 +43,7 @@ function spiceLabel(level: number, t: ReturnType<typeof useI18n>['t']) {
 
 export default function StoreDetailScreen() {
   const { t, locale } = useI18n();
-  const { prefs } = usePreferences();
+  const { prefs, error: prefsError } = usePreferences();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -85,7 +85,11 @@ export default function StoreDetailScreen() {
   // Hard dietary filter applies here too (was missing) — a halal/veg/jay
   // student shouldn't see items they can't eat in a stall's menu, same as the
   // home feed and search. Allergies still only warn (pill below), never hide.
-  const visibleItems = allItems.filter(i => passesDietary(i, prefs));
+  // If the prefs fetch failed, prefs stayed at stale/default (all-false) —
+  // filtering against that would show a restricted student a fully unfiltered
+  // menu, so show nothing rather than silently treat them as unrestricted
+  // (banner below explains and offers retry).
+  const visibleItems = prefsError ? [] : allItems.filter(i => passesDietary(i, prefs));
   const categories = ['All', ...Array.from(new Set(visibleItems.map(i => i.category).filter((c): c is string => !!c)))];
   const filteredItems = activeCategory === 'All'
     ? visibleItems
@@ -295,6 +299,26 @@ export default function StoreDetailScreen() {
 
           {activeTab === 'menus' ? (
           <>
+          {/* Dietary prefs failed to load — same severity as cart.tsx's guard:
+              don't silently show an unfiltered menu, inline banner + retry
+              instead of blocking the whole screen. */}
+          {prefsError && (
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', gap: 12,
+              backgroundColor: '#fee2e2', borderRadius: 12, borderWidth: 1, borderColor: '#fecaca',
+              paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16,
+            }}>
+              <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', flex: 1 }}>
+                {t('cart.prefsNotReadyMsg')}
+              </Text>
+              <Tap onPress={() => void refreshPreferences()}>
+                <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '800', textDecorationLine: 'underline' }}>
+                  {t('common.tryAgain')}
+                </Text>
+              </Tap>
+            </View>
+          )}
+
           {/* Category tabs */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -397,7 +421,7 @@ export default function StoreDetailScreen() {
               </Tap>
             ))}
 
-            {filteredItems.length === 0 && (
+            {filteredItems.length === 0 && !prefsError && (
               <View style={{ alignItems: 'center', paddingVertical: 40 }}>
                 <Text style={{ fontSize: 32, marginBottom: 8 }}>🍽️</Text>
                 <Text style={{ color: Brand.textSecondary }}>{t('store.noItemsInCategory')}</Text>
