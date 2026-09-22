@@ -2,15 +2,13 @@ import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
-import { COLLECT_NEVER, useStripe } from '@/lib/stripe';
+import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { showAlert, comingSoonAlert } from '@/lib/alert';
+import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
-import { invokeEdgeFunction } from '@/lib/edge-function';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
 type WalletTxn = { id: string; type: TxType; amount: number; description: string | null; created_at: string };
@@ -21,10 +19,6 @@ const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
   refund:   { icon: '↩', color: '#2563eb' },
   transfer: { icon: '⇄', color: '#7c3aed' },
 };
-
-const TOP_UP_AMOUNTS = [100, 200, 500];
-// PaymentSheet success only means Stripe confirmed; stripe-webhook credits the wallet a moment later.
-const WEBHOOK_CREDIT_WAIT_MS = 1500;
 
 const baht = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -40,11 +34,9 @@ function formatDate(iso: string, t: ReturnType<typeof useI18n>['t']) {
 
 export default function WalletScreen() {
   const { t } = useI18n();
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [balance, setBalance] = useState(0);
   const [txns, setTxns] = useState<WalletTxn[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toppingUp, setToppingUp] = useState(false);
   const cancelledRef = useFocusGuard();
 
   async function loadWallet(userId: string) {
@@ -73,64 +65,6 @@ export default function WalletScreen() {
       });
     }, [cancelledRef])
   );
-
-  async function topUp(amount: number) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { comingSoonAlert(t); return; }
-    setToppingUp(true);
-
-    const { data: intentData, error: intentError } = await invokeEdgeFunction<{ client_secret: string }>(
-      'create-topup-intent',
-      { body: { amount } },
-    );
-    if (cancelledRef.current) return;
-    if (intentError || !intentData?.client_secret) {
-      showAlert(t('wallet.topUpFailedTitle'), intentError?.message ?? 'Could not start payment');
-      setToppingUp(false);
-      return;
-    }
-
-    const { error: initError } = await initPaymentSheet({
-      paymentIntentClientSecret: intentData.client_secret,
-      merchantDisplayName: 'Eatzy',
-      // PromptPay is a redirect-based method: without returnURL the iOS sheet
-      // hides it, and it's our only method. Deep link lands back on this tab.
-      returnURL: 'eatzy://wallet',
-      // PromptPay requires an email. Prefill from the account and tell the
-      // sheet not to ask, so students don't retype it on every top-up.
-      defaultBillingDetails: { email: user.email },
-      billingDetailsCollectionConfiguration: {
-        email: COLLECT_NEVER,
-        attachDefaultsToPaymentMethod: true,
-      },
-    });
-    if (cancelledRef.current) return;
-    if (initError) {
-      showAlert(t('wallet.topUpFailedTitle'), initError.message);
-      setToppingUp(false);
-      return;
-    }
-
-    const { error: presentError } = await presentPaymentSheet();
-    if (cancelledRef.current) return;
-    if (presentError) {
-      // 'Canceled' means the student closed the sheet — not a failure.
-      if (presentError.code !== 'Canceled') showAlert(t('wallet.topUpFailedTitle'), presentError.message);
-      setToppingUp(false);
-      return;
-    }
-
-    // PaymentSheet resolving success only means Stripe confirmed the charge
-    // client-side — the wallet is credited by stripe-webhook (payment_intent.
-    // succeeded), which typically lands within a second or two of this point
-    // but isn't guaranteed to have run yet.
-    await new Promise((resolve) => setTimeout(resolve, WEBHOOK_CREDIT_WAIT_MS));
-    const { balance, txns } = await loadWallet(user.id);
-    if (cancelledRef.current) return;
-    setBalance(balance);
-    setTxns(txns);
-    setToppingUp(false);
-  }
 
   const comingSoon = () => comingSoonAlert(t);
 
@@ -179,29 +113,21 @@ export default function WalletScreen() {
               ฿{baht(balance)}
             </Text>
 
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              {TOP_UP_AMOUNTS.map(amount => (
-                <Tap
-                  key={amount}
-                  onPress={() => topUp(amount)}
-                  disabled={toppingUp}
-                  style={{
-                    flex: 1, backgroundColor: 'rgba(255,255,255,0.2)',
-                    borderRadius: 12, paddingVertical: 10, alignItems: 'center',
-                    opacity: toppingUp ? 0.6 : 1,
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>+฿{amount}</Text>
-                </Tap>
-              ))}
-            </View>
+            <Tap
+              onPress={() => router.push('/wallet-topup')}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                borderRadius: 12, paddingVertical: 12, alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{t('wallet.topUp')}</Text>
+            </Tap>
           </View>
         </View>
 
         {/* Quick actions */}
         <View style={{ flexDirection: 'row', gap: 12, marginHorizontal: 20, marginBottom: 28 }}>
           {[
-            { icon: '↓', label: t('wallet.topUp'), onPress: () => topUp(100) },
             { icon: '⇄', label: t('wallet.transfer'), onPress: comingSoon },
             { icon: '📄', label: t('wallet.statement'), onPress: comingSoon },
           ].map(({ icon, label, onPress }) => (
