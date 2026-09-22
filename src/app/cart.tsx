@@ -18,7 +18,7 @@ type Vendor = Database['public']['Tables']['vendors']['Row'];
 
 export default function CartScreen() {
   const { t, locale } = useI18n();
-  const { prefs } = usePreferences();
+  const { prefs, loading: prefsLoading, error: prefsError } = usePreferences();
   const cart = useCart();
   const items = cart.items;
 
@@ -49,6 +49,13 @@ export default function CartScreen() {
 
   function placeOrder() {
     if (!cart.vendor_id) return;
+    // Allergy prefs must be loaded (and correct) before checkout can decide
+    // whether to warn — proceeding on stale/default prefs would silently
+    // skip the allergen confirm for a student whose prefs failed to load.
+    if (prefsLoading || prefsError) {
+      showAlert(t('cart.orderFailedTitle'), t('cart.prefsNotReadyMsg'));
+      return;
+    }
     if (vendor?.is_open === false) {
       showAlert(t('cart.storeClosedTitle'), t('cart.storeClosedMsg'));
       return;
@@ -296,10 +303,10 @@ export default function CartScreen() {
         <Tap
           activeOpacity={0.85}
           onPress={placeOrder}
-          disabled={placing}
+          disabled={placing || prefsLoading || prefsError}
           style={{
             backgroundColor: Brand.orange, borderRadius: 16,
-            paddingVertical: 16, alignItems: 'center', opacity: placing ? 0.7 : 1,
+            paddingVertical: 16, alignItems: 'center', opacity: (placing || prefsLoading || prefsError) ? 0.7 : 1,
             shadowColor: Brand.orange, shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.35, shadowRadius: 8, elevation: 4,
           }}
