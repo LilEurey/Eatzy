@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { addToCart, NOTE_MAX } from '@/lib/cart-store';
+import { addToCart, hasVendorMismatch, NOTE_MAX } from '@/lib/cart-store';
 import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
@@ -197,17 +197,32 @@ export default function ItemDetailScreen() {
       showAlert(t('item.storeClosedTitle'), t('item.storeClosedMsg'));
       return;
     }
-    if (matchedAllergens.length > 0) {
+    const currentItem = item;
+
+    const addNow = () => {
+      if (matchedAllergens.length > 0) {
+        showConfirm(
+          t('item.allergyWarningTitle'),
+          t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
+          () => { addToCart(currentItem, qty, selectedOptions, note); router.push('/cart'); },
+          { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
+        );
+        return;
+      }
+      addToCart(currentItem, qty, selectedOptions, note);
+      router.push('/cart');
+    };
+
+    if (hasVendorMismatch(currentItem.vendor_id)) {
       showConfirm(
-        t('item.allergyWarningTitle'),
-        t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
-        () => { addToCart(item, qty, selectedOptions, note); router.push('/cart'); },
-        { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
+        t('item.vendorMismatchTitle'),
+        t('item.vendorMismatchMsg'),
+        addNow,
+        { confirmLabel: t('item.vendorMismatchConfirm'), cancelLabel: t('common.cancel'), destructive: true },
       );
       return;
     }
-    addToCart(item, qty, selectedOptions, note);
-    router.push('/cart');
+    addNow();
   }
 
   return (

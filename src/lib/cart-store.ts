@@ -99,6 +99,11 @@ export function setQty(lineId: string, delta: number) {
   emit();
 }
 
+/** True when adding an item from `vendorId` would replace the current cart (different vendor already in it). */
+export function hasVendorMismatch(vendorId: string): boolean {
+  return cart.vendor_id !== null && cart.vendor_id !== vendorId;
+}
+
 export function clearCart() {
   cart = { vendor_id: null, items: [] };
   emit();
