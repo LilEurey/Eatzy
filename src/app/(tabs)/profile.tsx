@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Modal, Image, ActivityIndicator, Switch } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { clearCart } from '@/lib/cart-store';
+import { usePreferences } from '@/hooks/usePreferences';
 import { showAlert, comingSoonAlert } from '@/lib/alert';
 import { useI18n, LOCALE_LABELS, type Locale, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
@@ -68,8 +69,21 @@ export default function ProfileScreen() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [languagePickerOpen, setLanguagePickerOpen] = useState(false);
-  const [dietaryChips, setDietaryChips] = useState<string[]>([]);
-  const [allergyChips, setAllergyChips] = useState<string[]>([]);
+  // Through the shared prefs cache (refreshed by edit-preferences on save),
+  // not a private query: that one showed a failed load as "None set", i.e.
+  // "no dietary restrictions".
+  const { prefs, loading: prefsLoading, error: prefsError } = usePreferences();
+  const prefsReady = !prefsLoading && !prefsError;
+  const dietaryChips = useMemo(() => [
+    ...(prefs.is_halal ? [t('onboarding.dietary.halal')] : []),
+    ...(prefs.is_vegetarian ? [t('onboarding.dietary.vegetarian')] : []),
+    ...(prefs.is_jay ? [t('onboarding.dietary.jay')] : []),
+  ], [prefs, t]);
+  const allergyChips = useMemo(
+    () => prefs.allergies.map(a => a.charAt(0).toUpperCase() + a.slice(1)),
+    [prefs],
+  );
+  const noChipsLabel = prefsError ? t('common.errorTitle') : prefsLoading ? '…' : t('profile.noneSet');
   const [recentOrder, setRecentOrder] = useState<RecentOrder | null | undefined>(undefined);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
@@ -94,9 +108,8 @@ export default function ProfileScreen() {
         if (!user) { setRecentOrder(null); setHasUnreadNotifications(false); return; } // dev skip-login: keep defaults
         setEmail(user.email ?? '');
 
-        const [profileRes, prefsRes, orderRes, notifRes] = await Promise.all([
+        const [profileRes, orderRes, notifRes] = await Promise.all([
           supabase.from('users').select('name,avatar_url,notifications_enabled').eq('id', user.id).maybeSingle(),
-          supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay,allergies').eq('user_id', user.id).maybeSingle(),
           supabase
             .from('orders')
             .select('id,status,total_amount,created_at,order_items(quantity,menu_items(name,name_th))')
@@ -118,14 +131,6 @@ export default function ProfileScreen() {
           'Student',
         );
 
-        const prefs = prefsRes.data;
-        const dietary: string[] = [];
-        if (prefs?.is_halal) dietary.push(t('onboarding.dietary.halal'));
-        if (prefs?.is_vegetarian) dietary.push(t('onboarding.dietary.vegetarian'));
-        if (prefs?.is_jay) dietary.push(t('onboarding.dietary.jay'));
-        setDietaryChips(dietary);
-        setAllergyChips((prefs?.allergies ?? []).map(a => a.charAt(0).toUpperCase() + a.slice(1)));
-
         const order = orderRes.data;
         if (!order) { setRecentOrder(null); return; }
         const items = order.order_items;
@@ -134,7 +139,7 @@ export default function ProfileScreen() {
           : '';
         setRecentOrder({ id: order.id, status: order.status, total_amount: order.total_amount, created_at: order.created_at, itemSummary });
       });
-    }, [t, locale]),
+    }, [locale]),
   );
 
   const comingSoon = () => comingSoonAlert(t);
@@ -289,12 +294,12 @@ export default function ProfileScreen() {
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>{t('profile.dietary')}</Text>
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {dietaryChips.length > 0 ? dietaryChips.map(chip => (
+              {prefsReady && dietaryChips.length > 0 ? dietaryChips.map(chip => (
                 <View key={chip} style={{ backgroundColor: '#F8DDD2', borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 4 }}>
                   <Text style={{ fontSize: 12, fontWeight: '500', color: '#261812' }}>{chip}</Text>
                 </View>
               )) : (
-                <Text style={{ fontSize: 12, color: '#5A4136' }}>{t('profile.noneSet')}</Text>
+                <Text style={{ fontSize: 12, color: '#5A4136' }}>{noChipsLabel}</Text>
               )}
             </View>
           </View>
@@ -304,12 +309,12 @@ export default function ProfileScreen() {
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', letterSpacing: 0.7, textTransform: 'uppercase' }}>{t('profile.allergies')}</Text>
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {allergyChips.length > 0 ? allergyChips.map(chip => (
+              {prefsReady && allergyChips.length > 0 ? allergyChips.map(chip => (
                 <View key={chip} style={{ backgroundColor: '#F8DDD2', borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 4 }}>
                   <Text style={{ fontSize: 12, fontWeight: '500', color: '#261812' }}>{chip}</Text>
                 </View>
               )) : (
-                <Text style={{ fontSize: 12, color: '#5A4136' }}>{t('profile.noneSet')}</Text>
+                <Text style={{ fontSize: 12, color: '#5A4136' }}>{noChipsLabel}</Text>
               )}
             </View>
           </View>

@@ -61,12 +61,21 @@ export default function TrackScreen() {
   const [ordersAhead, setOrdersAhead] = useState<number | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .select('id,vendor_id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),payments(status),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
+      if (cancelled) return;
+      if (error) {
+        // A refetch blip keeps the last good order on screen; only a failed
+        // first load falls through to "not found".
+        console.warn('load order failed:', error.message);
+        setOrder(prev => (prev === undefined ? null : prev));
+        return;
+      }
       if (!data) { setOrder(null); return; }
       setOrder({
         id: data.id,
@@ -84,15 +93,18 @@ export default function TrackScreen() {
       });
       setStatus(data.status as Status);
     }
-    void load();
-
+    // Subscribe before the first fetch so an update landing in between isn't
+    // lost. Each update refetches the whole row: status alone isn't enough —
+    // was_charged (payments) and the handoff timestamps change too, and the
+    // terminal "no charge" vs "refunded" copy depends on them.
     const channel = supabase
       .channel(`track-order-${id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => {
-        setStatus(payload.new.status as Status);
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, () => {
+        void load();
       })
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    void load();
+    return () => { cancelled = true; void supabase.removeChannel(channel); };
   }, [id]);
 
   // Queue position ("N orders ahead of you") — the RPC itself returns null
@@ -120,7 +132,7 @@ export default function TrackScreen() {
   async function markPickedUp() {
     if (!order) return;
     const error = await confirmHandoff('student', order.id);
-    if (error) { showAlert(t('common.orderNotFound'), error); return; }
+    if (error) { showAlert(t('common.errorTitle'), error); return; }
     setOrder({ ...order, student_picked_up_at: new Date().toISOString() });
   }
 
@@ -134,7 +146,7 @@ export default function TrackScreen() {
         // last render and this tap, the transition loses the race instead of
         // silently cancelling an order the vendor already committed to.
         const ok = await transitionOrderWithAlert(order.id, 'pending', 'cancelled', {
-          errorTitle: t('common.orderNotFound'),
+          errorTitle: t('common.errorTitle'),
           lostRaceTitle: t('track.cancelFailedTitle'),
           lostRaceMessage: t('track.cancelFailedMsg'),
         });

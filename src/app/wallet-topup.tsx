@@ -8,7 +8,7 @@ import { useI18n } from '@/lib/i18n';
 import { useStripe, COLLECT_NEVER } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { invokeEdgeFunction } from '@/lib/edge-function';
-import { showAlert, comingSoonAlert } from '@/lib/alert';
+import { showAlert } from '@/lib/alert';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
 
 const PRESET_AMOUNTS = [100, 200, 500, 1000];
@@ -37,7 +37,7 @@ export default function WalletTopUpScreen() {
 
   async function payNow() {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { comingSoonAlert(t); return; }
+    if (!user) { showAlert(t('wallet.topUpFailedTitle'), t('cart.signInAgainMsg')); return; }
     setPaying(true);
 
     const { data: intentData, error: intentError } = await invokeEdgeFunction<{ client_secret: string }>(
