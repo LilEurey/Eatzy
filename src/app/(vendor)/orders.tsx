@@ -3,8 +3,8 @@ import { View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone } from '@/lib/vendor-store';
-import { comingSoonAlert } from '@/lib/alert';
+import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone, cancelAcceptedOrder } from '@/lib/vendor-store';
+import { showConfirm } from '@/lib/alert';
 import { useI18n, type Locale } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock12, formatFriendlyDateTime } from '@/lib/time';
@@ -134,7 +134,12 @@ function IncomingCard({ order, t, locale }: { order: VendorOrder; t: TFn; locale
 }
 
 function PreparingCard({ order, t, locale }: { order: VendorOrder; t: TFn; locale: Locale }) {
-  const comingSoon = () => comingSoonAlert(t);
+  const confirmCancel = () => showConfirm(
+    t('vendor.orders.cancelTitle'),
+    t('vendor.orders.cancelMsg'),
+    () => { void cancelAcceptedOrder(order.id); },
+    { confirmLabel: t('vendor.orders.cancelConfirm'), cancelLabel: t('common.cancel'), destructive: true },
+  );
   return (
     <CardShell
       accent="#f59e0b"
@@ -146,7 +151,7 @@ function PreparingCard({ order, t, locale }: { order: VendorOrder; t: TFn; local
       }
       footer={
         <>
-          <ActionButton label={t('vendor.orders.issue')} onPress={comingSoon} bg="#F0F1F5" color="#4B4F58" />
+          <ActionButton label={t('vendor.orders.cancelRefund')} onPress={confirmCancel} bg="#F0F1F5" color="#4B4F58" />
           <ActionButton label={t('vendor.orders.markReady')} onPress={() => markReady(order.id)} bg={Brand.vendorAccent} color="#fff" />
         </>
       }

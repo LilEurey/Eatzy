@@ -8,6 +8,9 @@ import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { isBangkokToday, isBangkokDateInRange, formatFriendlyDateTime, type DateRangeFilter } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
+import { supabase } from '@/lib/supabase';
+import { formatBaht } from '@/lib/money';
+import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 
 const TABLE_MIN_WIDTH = 560;
 
@@ -20,7 +23,16 @@ export default function VendorFinanceScreen() {
 
   const todayPayments = payments.filter(p => isBangkokToday(p.created_at));
   const totalRevenueToday = todayPayments.reduce((sum, p) => sum + p.amount, 0);
-  const availableToWithdraw = payments.reduce((sum, p) => sum + p.amount, 0);
+  // The vendor's in-app balance is "earned, not yet paid out": credited by
+  // finalize_order_handoff, debited by record_vendor_payout when the Stripe
+  // transfer lands — not the lifetime sum of completed orders.
+  const [availableToWithdraw, setAvailableToWithdraw] = useState<number | null>(null);
+  useLiveWhileFocused(async isCancelled => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || isCancelled()) return;
+    const { data, error } = await supabase.from('users').select('wallet_balance').eq('id', user.id).maybeSingle();
+    if (!isCancelled() && !error && data) setAvailableToWithdraw(data.wallet_balance);
+  });
   const visiblePayments = payments.filter(p => isBangkokDateInRange(p.created_at, historyFilter));
 
   const historyFilterOptions: { key: DateRangeFilter; label: string }[] = [
@@ -44,7 +56,7 @@ export default function VendorFinanceScreen() {
               <Ionicons name="cash-outline" size={14} color={Brand.vendorAccent} />
             </View>
           </View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>฿{totalRevenueToday.toLocaleString()}.00</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>฿{formatBaht(totalRevenueToday)}</Text>
         </View>
 
         <View style={{ flex: 1, minWidth: 200, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
@@ -61,7 +73,7 @@ export default function VendorFinanceScreen() {
           <Text style={{ fontSize: 10.5, fontWeight: '700', color: 'rgba(255,255,255,0.75)', letterSpacing: 0.5, marginBottom: 14 }}>
             {t('vendor.finance.availableToWithdraw')}
           </Text>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14 }}>฿{availableToWithdraw.toLocaleString()}.00</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14 }}>{availableToWithdraw == null ? '—' : `฿${formatBaht(availableToWithdraw)}`}</Text>
           <Tap onPress={comingSoon} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.withdraw')}</Text>
           </Tap>
@@ -104,7 +116,7 @@ export default function VendorFinanceScreen() {
                   <View key={p.order_id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
                     <Text style={{ flex: 2, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{formatFriendlyDateTime(p.created_at, t('common.today'))}</Text>
                     <Text style={{ flex: 1.4, fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{p.display_id}</Text>
-                    <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>฿{p.amount.toFixed(2)}</Text>
+                    <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>฿{formatBaht(p.amount)}</Text>
                     <Text style={{ flex: 1.6, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{t('vendor.finance.campusWallet')}</Text>
                     <View style={{ flex: 1.2 }}>
                       <View style={{ alignSelf: 'flex-start', backgroundColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>

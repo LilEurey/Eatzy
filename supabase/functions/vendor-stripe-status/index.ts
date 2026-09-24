@@ -6,10 +6,10 @@
 // that's a *thin* event on the newer v2 Events/Event Destinations system
 // (separate registration from the classic /v1/webhook_endpoints this app
 // already uses for payment_intent.succeeded, and a different SDK parsing
-// path). The order-completion transfer function also re-checks this status
-// live via the Stripe API right before transferring, so a webhook here
-// would only ever be a UI-freshness nice-to-have, not a correctness
-// requirement — not worth standing up a second event system for yet.
+// path). transfer-order-payout reads the stored stripe_payouts_enabled flag
+// this function writes (it does not re-check Stripe live); if the flag is
+// stale-true, Stripe itself rejects the transfer and the payout is retried
+// on the next call, so a webhook here would only be a freshness nice-to-have.
 //
 // Deploy: supabase functions deploy vendor-stripe-status
 

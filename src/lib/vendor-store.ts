@@ -325,6 +325,16 @@ export async function markReady(id: string) {
   emit();
 }
 
+// After accept (charged) the only way out is this RPC: it locks the order
+// and its payment, refunds the student exactly once and moves the order to
+// 'rejected' (see vendor_cancel_order in 20260924010000_escrow_settlement.sql).
+export async function cancelAcceptedOrder(id: string) {
+  const { error } = await supabase.rpc('vendor_cancel_order', { p_order_id: id });
+  if (error) { showAlert('Could not cancel order', error.message); return; }
+  if (vendorProfile) await fetchOrders(vendorProfile.id);
+  emit();
+}
+
 export async function handOff(id: string) {
   const error = await confirmHandoff('vendor', id);
   if (error) { showAlert('Could not confirm hand-off', error); return; }
