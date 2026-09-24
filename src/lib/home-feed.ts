@@ -105,6 +105,15 @@ export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): 
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name),is_halal,is_vegetarian,is_jay,allergens';
     const asRows = (data: unknown) => (data as MenuItem[] | null) ?? [];
+    // Hard dietary filters go into the SQL too, so each section's .limit(10)
+    // counts only dishes this student can eat — filtering 10 arbitrary rows
+    // client-side left jay/vegetarian students with near-empty sections.
+    // foodForMe() below stays as the backstop.
+    const dietMatch = {
+      ...(prefs.is_halal && { is_halal: true }),
+      ...(prefs.is_vegetarian && { is_vegetarian: true }),
+      ...(prefs.is_jay && { is_jay: true }),
+    };
 
     const { data: { user } } = await supabase.auth.getUser();
     const [profileRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
@@ -117,7 +126,7 @@ export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): 
       supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url,is_open').order('is_open', { ascending: false }).order('current_queue_count', { ascending: true }),
       // Fetch a few candidates, not just 1 — the featured item can fail
       // the caller's dietary filter, and we need another to fall back to.
-      supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).order('id').limit(10),
+      supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).match(dietMatch).order('id').limit(10),
       // Trending Meals Today — real order volume, most-ordered first (see get_trending_items).
       supabase.rpc('get_trending_items', { since: sevenDaysAgo, limit_n: 10 }),
       // Latest Release — the newest items in the catalog, matching the current
@@ -127,7 +136,7 @@ export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): 
       // window empties the section permanently once that date ages out.
       // Migration 20260910010000 spreads the seeded dates so "newest" means
       // something; ordering alone keeps the row populated forever.
-      supabase.from('menu_items').select(menuFields).eq('is_available', true).or(timeFilter)
+      supabase.from('menu_items').select(menuFields).eq('is_available', true).match(dietMatch).or(timeFilter)
         .order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
       // Because You Ordered — collaborative filtering off the caller's own order
       // history (see get_because_you_ordered); anonymous or order-less users
@@ -139,11 +148,11 @@ export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): 
       // Time-Based — items fitting the current meal segment by category
       // (see getTimeBasedCategories: available_time_segment itself is 'all'
       // on every seeded row, so category is the real signal here).
-      supabase.from('menu_items').select(menuFields).eq('is_available', true)
+      supabase.from('menu_items').select(menuFields).eq('is_available', true).match(dietMatch)
         .in('category', getTimeBasedCategories(segment)).order('name', { ascending: true }).limit(10),
       // Drinks You Might Like — mirrors Latest Release's query, filtered to
       // drink categories instead of excluding them (see isDrinkCategory).
-      supabase.from('menu_items').select(menuFields).eq('is_available', true)
+      supabase.from('menu_items').select(menuFields).eq('is_available', true).match(dietMatch)
         .or(DRINK_CATEGORY_FILTER)
         .order('release_date', { ascending: false }).order('name', { ascending: true }).limit(10),
     ]);

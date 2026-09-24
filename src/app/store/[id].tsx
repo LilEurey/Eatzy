@@ -12,7 +12,7 @@ import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { hasCoords } from '@/lib/geo';
 import { localizedText } from '@/lib/localize';
-import { usePreferences, passesDietary, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
+import { usePreferences, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
 import type { Database } from '@/types/database.types';
 
 type Tables = Database['public']['Tables'];
@@ -43,7 +43,8 @@ function spiceLabel(level: number, t: ReturnType<typeof useI18n>['t']) {
 
 export default function StoreDetailScreen() {
   const { t, locale } = useI18n();
-  const { prefs, error: prefsError } = usePreferences();
+  const { prefs, gate } = usePreferences();
+  const prefsError = gate.status === 'error';
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -85,11 +86,11 @@ export default function StoreDetailScreen() {
   // Hard dietary filter applies here too (was missing) — a halal/veg/jay
   // student shouldn't see items they can't eat in a stall's menu, same as the
   // home feed and search. Allergies still only warn (pill below), never hide.
-  // If the prefs fetch failed, prefs stayed at stale/default (all-false) —
-  // filtering against that would show a restricted student a fully unfiltered
-  // menu, so show nothing rather than silently treat them as unrestricted
-  // (banner below explains and offers retry).
-  const visibleItems = prefsError ? [] : allItems.filter(i => passesDietary(i, prefs));
+  // gate.visible hides everything until prefs are loaded: while loading (or
+  // after a failed load) they're the all-false defaults, which would show a
+  // restricted student a fully unfiltered menu (banner below explains a
+  // failure and offers retry).
+  const visibleItems = allItems.filter(gate.visible);
   const categories = ['All', ...Array.from(new Set(visibleItems.map(i => i.category).filter((c): c is string => !!c)))];
   const filteredItems = activeCategory === 'All'
     ? visibleItems
@@ -430,7 +431,7 @@ export default function StoreDetailScreen() {
               </Tap>
             ))}
 
-            {filteredItems.length === 0 && !prefsError && (
+            {filteredItems.length === 0 && gate.status === 'ready' && (
               <View style={{ alignItems: 'center', paddingVertical: 40 }}>
                 <Text style={{ fontSize: 32, marginBottom: 8 }}>🍽️</Text>
                 <Text style={{ color: Brand.textSecondary }}>{t('store.noItemsInCategory')}</Text>

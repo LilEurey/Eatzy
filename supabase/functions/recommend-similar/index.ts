@@ -7,7 +7,7 @@
 
 import { callerClient, corsAndJson } from '../_shared/http.ts';
 import { getRankingCatalog } from '../_shared/catalog.ts';
-import { rankSimilar } from '../_shared/ranking.ts';
+import { callerDietFrom, rankSimilar } from '../_shared/ranking.ts';
 
 type MenuItemRow = {
   id: string;
@@ -46,14 +46,18 @@ Deno.serve(async (req) => {
 
   const supabase = callerClient(req.headers.get('Authorization') ?? '');
 
-  // Best-effort: an anonymous caller (or one with no saved preferences yet)
-  // just gets the unfiltered ranking, same cold-start behavior as
-  // recommend-for-you.
+  // Anonymous or no saved row: unfiltered ranking (nothing to filter on). A
+  // FAILED prefs read is not "no restrictions" — fail closed rather than show
+  // a halal/vegetarian/jay student dishes they can't eat.
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: prefsRow } = user
-    ? await supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay').eq('user_id', user.id).maybeSingle()
-    : { data: null };
-  const prefs: UserPreferences = prefsRow ?? { is_halal: false, is_vegetarian: false, is_jay: false };
+  const diet = callerDietFrom<UserPreferences>(
+    user?.id ?? null,
+    user
+      ? await supabase.from('user_preferences').select('is_halal,is_vegetarian,is_jay').eq('user_id', user.id).maybeSingle()
+      : { data: null, error: null },
+  );
+  if (diet.kind === 'error') return json({ error: diet.message }, 500);
+  const prefs: UserPreferences = diet.kind === 'saved' ? diet.prefs : { is_halal: false, is_vegetarian: false, is_jay: false };
 
   const { rows: catalog, error } = await getRankingCatalog<MenuItemRow>(supabase);
   if (error) return json({ error }, 500);

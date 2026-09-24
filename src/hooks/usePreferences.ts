@@ -1,13 +1,12 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
 import { createEmitter } from '@/lib/create-emitter';
 
-// Single source of truth for the current student's dietary prefs + allergies.
-// Before this, item/[id], search, home, cart and store/[id] each ran their own
-// `supabase.from('user_preferences')` query — six copies that had already
-// drifted once (the 'shellfish' vs 'seafood' value mismatch, migration
-// 20260830181128). Module-level cache + useSyncExternalStore, same shape as
-// cart-store.ts / vendor-store.ts.
+// Shared cache of the current student's dietary prefs + allergies for every
+// screen that filters or warns on them (item/[id], search, home, cart,
+// store/[id], profile). Module-level cache + useSyncExternalStore, same shape
+// as cart-store.ts / vendor-store.ts. The onboarding / edit-preferences forms
+// still read and write the full row themselves.
 
 export type Preferences = {
   is_halal: boolean;
@@ -36,6 +35,19 @@ export function passesDietary(item: DietaryFlags, prefs: Preferences): boolean {
   if (prefs.is_vegetarian && !item.is_vegetarian) return false;
   if (prefs.is_jay && !item.is_jay) return false;
   return true;
+}
+
+export type DietaryGate = {
+  status: 'loading' | 'error' | 'ready';
+  /** False for everything until prefs are loaded — a screen can't show a
+   * restricted student something they can't eat during the cold-start gap
+   * (prefs are still the all-false defaults) or after a failed load. */
+  visible: (item: DietaryFlags) => boolean;
+};
+
+export function dietaryGate(state: { prefs: Preferences; loading: boolean; error: boolean }): DietaryGate {
+  const status = state.error ? 'error' : state.loading ? 'loading' : 'ready';
+  return { status, visible: item => status === 'ready' && passesDietary(item, state.prefs) };
 }
 
 // The allergens on this item (or add-on) that the student saved as their own.
@@ -135,8 +147,9 @@ supabase.auth.onAuthStateChange((event) => {
   }
 });
 
-export function usePreferences(): { prefs: Preferences; loading: boolean; error: boolean } {
+export function usePreferences(): { prefs: Preferences; loading: boolean; error: boolean; gate: DietaryGate } {
   const state = useSyncExternalStore(emitter.subscribe, () => snapshot, () => snapshot);
   useEffect(() => { ensureLoaded(); }, []);
-  return state;
+  const gate = useMemo(() => dietaryGate(state), [state]);
+  return { ...state, gate };
 }

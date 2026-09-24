@@ -1,4 +1,4 @@
-import { rankForPreferences, rankSimilar, TOP_K, type RankableItem } from '../_shared/ranking';
+import { callerDietFrom, rankForPreferences, rankSimilar, TOP_K, type RankableItem } from '../_shared/ranking';
 
 const item = (id: string, over: Partial<RankableItem> = {}): RankableItem => ({
   id, price: 50, is_halal: false, is_vegetarian: false, is_jay: false,
@@ -28,6 +28,16 @@ describe('rankForPreferences', () => {
     expect(ids(halal)).not.toContain('a');           // filtered out for the halal caller...
     expect(score(halal, 'b')).toBe(score(open, 'b')); // ...but b scores identically
     expect(score(halal, 'e')).toBe(score(open, 'e'));
+  });
+
+  it("doesn't let the caller's own preference doc shift the catalog IDF", () => {
+    // A term only the preference doc contains must not change any score: with
+    // the doc fitted into the corpus, 'rice' IDF depended on the doc's length/terms.
+    const plain = rankForPreferences(CATALOG, 'rice', NO_DIET);
+    const noisy = rankForPreferences(CATALOG, 'rice zzunknown', NO_DIET);
+    expect(ids(noisy)).toEqual(ids(plain));
+    const scoreB = (r: typeof plain) => r.find(x => x.item.id === 'b')!.score;
+    expect(scoreB(noisy)).toBeCloseTo(scoreB(plain), 10);
   });
 
   it('never surfaces drinks', () => {
@@ -74,5 +84,22 @@ describe('rankSimilar', () => {
   it('is deterministic under input reordering', () => {
     const forward = ids(rankSimilar(CATALOG, 'a', OPEN));
     expect(ids(rankSimilar([...CATALOG].reverse(), 'a', OPEN))).toEqual(forward);
+  });
+});
+
+describe('callerDietFrom', () => {
+  const PREFS = { is_halal: true };
+
+  it('anonymous callers have no diet to apply', () => {
+    expect(callerDietFrom(null, { data: null, error: null })).toEqual({ kind: 'anonymous' });
+  });
+  it('a signed-in caller with no saved row is unrestricted', () => {
+    expect(callerDietFrom('u1', { data: null, error: null })).toEqual({ kind: 'none' });
+  });
+  it('a saved row is applied', () => {
+    expect(callerDietFrom('u1', { data: PREFS, error: null })).toEqual({ kind: 'saved', prefs: PREFS });
+  });
+  it('a failed read is an error, never "no restrictions"', () => {
+    expect(callerDietFrom('u1', { data: null, error: { message: 'timeout' } })).toEqual({ kind: 'error', message: 'timeout' });
   });
 });

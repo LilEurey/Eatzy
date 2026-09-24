@@ -34,23 +34,34 @@ export function tokenize(doc: string): string[] {
   return doc.match(TOKEN_PATTERN) ?? [];
 }
 
-export function buildTfidfVectors(docs: string[]): Map<string, number>[] {
+/** Fit IDF over `docs` (sklearn's fit_transform): the fitted vectors, plus a
+ * `transform` for a query doc that must NOT shift the IDF — like sklearn's
+ * transform(), terms the corpus never saw are dropped. */
+export function fitTfidf(docs: string[]): {
+  vectors: Map<string, number>[];
+  transform: (doc: string) => Map<string, number>;
+} {
   const tokenized = docs.map(tokenize);
   const df = new Map<string, number>();
   for (const tokens of tokenized) {
     for (const term of new Set(tokens)) df.set(term, (df.get(term) ?? 0) + 1);
   }
   const n = docs.length;
-  return tokenized.map((tokens) => {
+  const vectorize = (tokens: string[]) => {
     const tf = new Map<string, number>();
-    for (const term of tokens) tf.set(term, (tf.get(term) ?? 0) + 1);
+    for (const term of tokens) if (df.has(term)) tf.set(term, (tf.get(term) ?? 0) + 1);
     const vec = new Map<string, number>();
     for (const [term, count] of tf) {
-      const idf = Math.log((1 + n) / (1 + (df.get(term) ?? 0))) + 1;
+      const idf = Math.log((1 + n) / (1 + df.get(term)!)) + 1;
       vec.set(term, count * idf);
     }
     return vec;
-  });
+  };
+  return { vectors: tokenized.map(vectorize), transform: doc => vectorize(tokenize(doc)) };
+}
+
+export function buildTfidfVectors(docs: string[]): Map<string, number>[] {
+  return fitTfidf(docs).vectors;
 }
 
 export function cosineSimilarity(a: Map<string, number>, b: Map<string, number>): number {
