@@ -171,6 +171,8 @@ export const en = {
   'cart.signInAgainMsg': 'Your session expired. Please sign in again.',
   'cart.storeClosedTitle': 'Store is closed',
   'cart.storeClosedMsg': 'This store closed and isn’t taking orders right now. Your cart is saved for when it reopens.',
+  'cart.itemUnavailableMsg': 'Something in your cart just sold out or changed. Please review your cart and try again.',
+  'cart.slotExpiredMsg': 'That pickup time has passed. Please choose a new pickup time.',
   'cart.addonPlus': '+ {name}',
   'cart.allergyBanner': '⚠️ Some items contain an allergen you listed.',
   'cart.allergyLineWarning': '⚠️ Contains {allergens}',
@@ -223,6 +225,7 @@ export const en = {
   'item.addons.chooseOne': 'Choose 1',
   'item.addons.plusPrice': '+฿{price}',
   'item.addons.pickRequired': 'Pick the required options to continue',
+  'item.optionsUnavailable': 'Required options for this dish are unavailable right now',
 
   // Store detail
   'store.notFound': 'Store not found',
@@ -233,6 +236,7 @@ export const en = {
   'store.menu': 'Menu',
   'store.all': 'All',
   'store.veg': 'Veg 🌿',
+  'store.soldOut': 'Sold out',
   'store.noItemsInCategory': 'No items in this category',
   'store.allMenusTab': 'All Menus',
   'store.reviewsTab': 'Review',

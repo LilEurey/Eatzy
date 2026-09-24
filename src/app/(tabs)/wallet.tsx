@@ -4,6 +4,7 @@ import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { formatBaht } from '@/lib/money';
 import { Brand } from '@/constants/theme';
 import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
@@ -20,7 +21,6 @@ const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
   transfer: { icon: '⇄', color: '#7c3aed' },
 };
 
-const baht = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function formatDate(iso: string, t: ReturnType<typeof useI18n>['t']) {
   const d = new Date(iso);
@@ -111,7 +111,7 @@ export default function WalletScreen() {
               {t('wallet.balanceLabel')}
             </Text>
             <Text style={{ fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1, marginBottom: 20 }}>
-              ฿{baht(balance)}
+              ฿{formatBaht(balance)}
             </Text>
 
             <Tap
@@ -204,7 +204,7 @@ export default function WalletScreen() {
 
                     {/* Amount */}
                     <Text style={{ fontSize: 15, fontWeight: '700', color: isPositive ? '#16a34a' : Brand.textPrimary }}>
-                      {isPositive ? '+' : ''}฿{baht(Math.abs(tx.amount))}
+                      {isPositive ? '+' : ''}฿{formatBaht(Math.abs(tx.amount))}
                     </Text>
                   </View>
                 </View>

@@ -914,7 +914,15 @@ export type Database = {
         }[]
       }
       is_admin: { Args: never; Returns: boolean }
-      next_queue_number: { Args: { p_vendor_id: string }; Returns: number }
+      place_order: {
+        Args: {
+          p_lines: Json
+          p_pickup_end: string
+          p_pickup_start: string
+          p_vendor_id: string
+        }
+        Returns: string
+      }
       provision_vendor: {
         Args: {
           p_business_name: string

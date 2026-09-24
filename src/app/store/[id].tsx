@@ -17,9 +17,9 @@ import type { Database } from '@/types/database.types';
 
 type Tables = Database['public']['Tables'];
 const VENDOR_COLUMNS = 'id,name,stall_number,is_open,open_time,close_time,bio,bio_th,cuisine_tags,estimated_wait_min,current_queue_count,cover_image_url,is_halal_certified,latitude,longitude';
-const MENU_ITEM_COLUMNS = 'id,category,name,name_th,description,description_th,price,spice_level,image_url,allergens,is_halal,is_vegetarian,is_jay';
+const MENU_ITEM_COLUMNS = 'id,category,name,name_th,description,description_th,price,spice_level,image_url,allergens,is_halal,is_vegetarian,is_jay,is_available';
 type Vendor = Pick<Tables['vendors']['Row'], 'id' | 'name' | 'stall_number' | 'is_open' | 'open_time' | 'close_time' | 'bio' | 'bio_th' | 'cuisine_tags' | 'estimated_wait_min' | 'current_queue_count' | 'cover_image_url' | 'is_halal_certified' | 'latitude' | 'longitude'>;
-type MenuItem = Pick<Tables['menu_items']['Row'], 'id' | 'category' | 'name' | 'name_th' | 'description' | 'description_th' | 'price' | 'spice_level' | 'image_url' | 'allergens' | 'is_halal' | 'is_vegetarian' | 'is_jay'>;
+type MenuItem = Pick<Tables['menu_items']['Row'], 'id' | 'category' | 'name' | 'name_th' | 'description' | 'description_th' | 'price' | 'spice_level' | 'image_url' | 'allergens' | 'is_halal' | 'is_vegetarian' | 'is_jay' | 'is_available'>;
 type StoreReview = {
   id: string;
   score: number;
@@ -359,6 +359,9 @@ export default function StoreDetailScreen() {
                   backgroundColor: Brand.card, borderRadius: 20, padding: 14,
                   shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
+                  // Sold out stays tappable (details still useful); the item
+                  // page blocks Add to Cart.
+                  opacity: item.is_available ? 1 : 0.5,
                 }}
               >
                 {/* Image */}
@@ -410,12 +413,18 @@ export default function StoreDetailScreen() {
                     <Text style={{ fontSize: 16, fontWeight: '700', color: '#a04100' }}>
                       ฿{item.price}
                     </Text>
-                    <View style={{
-                      width: 30, height: 30, borderRadius: 15,
-                      backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <Text style={{ fontSize: 18, color: Brand.orange, lineHeight: 20 }}>+</Text>
-                    </View>
+                    {item.is_available ? (
+                      <View style={{
+                        width: 30, height: 30, borderRadius: 15,
+                        backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Text style={{ fontSize: 18, color: Brand.orange, lineHeight: 20 }}>+</Text>
+                      </View>
+                    ) : (
+                      <View style={{ backgroundColor: Brand.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.textSecondary }}>{t('store.soldOut')}</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
               </Tap>

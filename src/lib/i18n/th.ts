@@ -173,6 +173,8 @@ export const th: Record<TranslationKey, string> = {
   'cart.signInAgainMsg': 'เซสชันของคุณหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
   'cart.storeClosedTitle': 'ร้านปิดอยู่',
   'cart.storeClosedMsg': 'ร้านนี้ปิดและยังไม่รับออร์เดอร์ตอนนี้ ตะกร้าของคุณถูกบันทึกไว้จนกว่าร้านจะเปิดอีกครั้ง',
+  'cart.itemUnavailableMsg': 'มีรายการในตะกร้าที่หมดหรือเปลี่ยนแปลง กรุณาตรวจสอบตะกร้าแล้วลองอีกครั้ง',
+  'cart.slotExpiredMsg': 'เวลารับอาหารที่เลือกผ่านไปแล้ว กรุณาเลือกเวลาใหม่',
   'cart.addonPlus': '+ {name}',
   'cart.allergyBanner': '⚠️ บางรายการมีสารก่อภูมิแพ้ที่คุณระบุไว้',
   'cart.allergyLineWarning': '⚠️ มี {allergens}',
@@ -225,6 +227,7 @@ export const th: Record<TranslationKey, string> = {
   'item.addons.chooseOne': 'เลือก 1 อย่าง',
   'item.addons.plusPrice': '+฿{price}',
   'item.addons.pickRequired': 'เลือกตัวเลือกที่จำเป็นก่อนดำเนินการต่อ',
+  'item.optionsUnavailable': 'ตัวเลือกที่จำเป็นของเมนูนี้ไม่พร้อมให้บริการตอนนี้',
 
   // Store detail
   'store.notFound': 'ไม่พบร้านนี้',
@@ -235,6 +238,7 @@ export const th: Record<TranslationKey, string> = {
   'store.menu': 'เมนู',
   'store.all': 'ทั้งหมด',
   'store.veg': 'มังสวิรัติ 🌿',
+  'store.soldOut': 'หมดแล้ว',
   'store.noItemsInCategory': 'ไม่มีเมนูในหมวดนี้',
   'store.allMenusTab': 'เมนูทั้งหมด',
   'store.reviewsTab': 'รีวิว',

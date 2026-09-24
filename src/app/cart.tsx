@@ -11,6 +11,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { nextPickupSlots } from '@/lib/time';
+import { formatBaht } from '@/lib/money';
 import { placeOrder as placeOrderInDb } from '@/lib/place-order';
 import type { Database } from '@/types/database.types';
 
@@ -31,8 +32,9 @@ export default function CartScreen() {
   // Computed once per visit (not on every render) so the offered windows
   // don't shift under the student while they're picking one — real "next
   // available" slots rolling from right now in Thailand time, not a fixed
-  // noon-only list.
-  const [slots] = useState(() => nextPickupSlots());
+  // noon-only list. Re-rolled at submit if the picked one has already
+  // started (cart left open), since place_order rejects past windows.
+  const [slots, setSlots] = useState(() => nextPickupSlots());
   const [selectedIndex, setSelectedIndex] = useState(1);
   const selectedSlot = slots[selectedIndex];
   const [vendor, setVendor] = useState<Pick<Vendor, 'name' | 'stall_number' | 'is_open'> | null>(null);
@@ -74,13 +76,16 @@ export default function CartScreen() {
 
   async function submitOrder() {
     if (!cart.vendor_id) return;
+    if (selectedSlot.start.getTime() <= Date.now()) {
+      setSlots(nextPickupSlots());
+      showAlert(t('cart.orderFailedTitle'), t('cart.slotExpiredMsg'));
+      return;
+    }
     setPlacing(true);
     try {
       const result = await placeOrderInDb({
         vendorId: cart.vendor_id,
         lines: items,
-        subtotal,
-        total,
         slot: selectedSlot,
       });
       if (result.ok) {
@@ -88,8 +93,11 @@ export default function CartScreen() {
         router.replace(`/track/${result.orderId}`);
         return;
       }
+      if (result.reason === 'slot-expired') setSlots(nextPickupSlots());
       const message = result.reason === 'no-session' ? t('cart.signInAgainMsg')
         : result.reason === 'vendor-closed' ? t('cart.storeClosedMsg')
+        : result.reason === 'item-unavailable' ? t('cart.itemUnavailableMsg')
+        : result.reason === 'slot-expired' ? t('cart.slotExpiredMsg')
         : result.message;
       showAlert(t('cart.orderFailedTitle'), message);
     } finally {
@@ -222,7 +230,7 @@ export default function CartScreen() {
                 </View>
 
                 <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, minWidth: 52, textAlign: 'right' }}>
-                  ฿{lineUnitTotal(item) * item.quantity}
+                  ฿{formatBaht(lineUnitTotal(item) * item.quantity)}
                 </Text>
               </View>
 
@@ -282,12 +290,12 @@ export default function CartScreen() {
         }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.subtotal')}</Text>
-            <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{subtotal}</Text>
+            <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{formatBaht(subtotal)}</Text>
           </View>
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary }}>{t('common.total')}</Text>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.orange }}>฿{total}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.orange }}>฿{formatBaht(total)}</Text>
           </View>
         </View>
       </ScrollView>
@@ -316,7 +324,7 @@ export default function CartScreen() {
           ) : (
             <>
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
-                {t('cart.placeOrder', { total })}
+                {t('cart.placeOrder', { total: formatBaht(total) })}
               </Text>
               <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>
                 {t('cart.pickupAt', { slot: selectedSlot.label })}

@@ -8,6 +8,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { addToCart, hasVendorMismatch, NOTE_MAX } from '@/lib/cart-store';
+import { formatBaht } from '@/lib/money';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
@@ -89,7 +90,10 @@ export default function ItemDetailScreen() {
               .filter(o => o.is_available)
               .sort((a, b) => a.sort_order - b.sort_order),
           }))
-          .filter(g => g.menu_item_addons.length > 0);
+          // A required group whose options are all unavailable stays, so the
+          // dish can't be added (place_order would reject it) — dropping it
+          // would let the student check out an order the stall can't accept.
+          .filter(g => g.menu_item_addons.length > 0 || g.min_select > 0);
         setGroups(rows);
       });
 
@@ -186,6 +190,10 @@ export default function ItemDetailScreen() {
     return count >= g.min_select && (g.max_select == null || count <= g.max_select);
   });
   const total = (item.price + addonSum) * qty;
+  const soldOut = !item.is_available;
+  const optionsUnavailable = groups.some(g => g.min_select > 0 && g.menu_item_addons.length === 0);
+  // Store open and the dish itself orderable — add-on validity is separate.
+  const orderable = storeOpen && !soldOut;
   // Base dish AND any selected add-on — selecting "Fried Egg" can newly trip
   // the warning even when the dish itself is allergen-free.
   const matchedAllergens = matchLineAllergens(item.allergens, selectedOptions.flatMap(o => o.allergens), prefs);
@@ -204,6 +212,7 @@ export default function ItemDetailScreen() {
       showAlert(t('item.storeClosedTitle'), t('item.storeClosedMsg'));
       return;
     }
+    if (soldOut) return;
     const currentItem = item;
 
     const addNow = () => {
@@ -534,12 +543,12 @@ export default function ItemDetailScreen() {
             {t('item.storeClosedNotice')}
           </Text>
         )}
-        {storeOpen && !groupsValid && (
+        {orderable && !groupsValid && (
           <Text style={{ fontSize: 12, color: '#b91c1c', marginBottom: 10, textAlign: 'center' }}>
-            {t('item.addons.pickRequired')}
+            {optionsUnavailable ? t('item.optionsUnavailable') : t('item.addons.pickRequired')}
           </Text>
         )}
-        {storeOpen && matchedAllergens.length > 0 && (
+        {orderable && matchedAllergens.length > 0 && (
           <View style={{
             backgroundColor: '#fee2e2', borderRadius: 10, borderWidth: 1, borderColor: '#fecaca',
             paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10,
@@ -575,18 +584,19 @@ export default function ItemDetailScreen() {
           {/* Add to cart button */}
           <Tap
             activeOpacity={0.85}
-            disabled={!groupsValid || !storeOpen || prefsLoading || prefsError}
+            disabled={!groupsValid || !orderable || prefsLoading || prefsError}
             onPress={confirmAddToCart}
             style={{
-              flex: 1, backgroundColor: storeOpen ? Brand.orange : Brand.border, borderRadius: 14,
+              flex: 1, backgroundColor: orderable ? Brand.orange : Brand.border, borderRadius: 14,
               height: 44, alignItems: 'center', justifyContent: 'center',
-              flexDirection: 'row', gap: 8, opacity: (!storeOpen || groupsValid) && !prefsLoading && !prefsError ? 1 : 0.5,
+              flexDirection: 'row', gap: 8, opacity: (!orderable || groupsValid) && !prefsLoading && !prefsError ? 1 : 0.5,
               shadowColor: Brand.orange, shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: storeOpen ? 0.35 : 0, shadowRadius: 8, elevation: storeOpen ? 4 : 0,
+              shadowOpacity: orderable ? 0.35 : 0, shadowRadius: 8, elevation: orderable ? 4 : 0,
             }}
           >
-            <Text style={{ color: storeOpen ? '#fff' : Brand.textSecondary, fontSize: 15, fontWeight: '700' }}>
-              {storeOpen ? t('item.addToCart', { total }) : t('item.storeClosedButton')}
+            <Text style={{ color: orderable ? '#fff' : Brand.textSecondary, fontSize: 15, fontWeight: '700' }}>
+              {orderable ? t('item.addToCart', { total: formatBaht(total) })
+                : !storeOpen ? t('item.storeClosedButton') : t('store.soldOut')}
             </Text>
           </Tap>
         </View>
