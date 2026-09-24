@@ -9,7 +9,7 @@ import { comingSoonAlert } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
-import { isEarned, isInVendorQueue } from '@/lib/order-lifecycle';
+import { isEarned, isInVendorQueue, isVoided } from '@/lib/order-lifecycle';
 import { PillDropdown } from '@/components/PillDropdown';
 
 // 0 = Monday … 6 = Sunday, matching lib/time bangkokWeekday / vendor-analytics.
@@ -69,7 +69,9 @@ export default function VendorOverviewScreen() {
   ];
   const rangedOrders = orders.filter(o => isBangkokDateInRange(o.created_at, range));
 
-  const totalOrders = rangedOrders.length;
+  // Same definition as ordersDelta (periodDelta): rejected/cancelled
+  // orders aren't real demand.
+  const totalOrders = rangedOrders.filter(o => !isVoided(o.status)).length;
   // Money only actually lands in the vendor's wallet once both sides confirm
   // handoff — accepted/ready orders are still held in student-side escrow.
   const revenueToday = rangedOrders

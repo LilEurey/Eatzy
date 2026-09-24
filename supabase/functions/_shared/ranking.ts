@@ -12,7 +12,7 @@
 //    norm at this scale — every zero-score item ties.
 //  - Allergies are NOT a filter: they warn at Add to Cart, they never hide.
 
-import { buildTfidfVectors, cosineSimilarity, itemDoc, type DocFields } from './tfidf.ts';
+import { buildTfidfVectors, cosineSimilarity, fitTfidf, itemDoc, type DocFields } from './tfidf.ts';
 
 export const TOP_K = 5;
 
@@ -35,6 +35,24 @@ const DRINK_CATEGORIES = ['beverages', 'drinks'];
 
 export function isDrinkCategory(category: string | null): boolean {
   return !!category && DRINK_CATEGORIES.includes(category.toLowerCase());
+}
+
+/** The caller's hard dietary filters, loaded server-side. `error` must fail
+ * closed: treating a failed read as "no restrictions" would serve a
+ * halal/vegetarian/jay student dishes they can't eat. */
+export type CallerDiet<P> =
+  | { kind: 'anonymous' }
+  | { kind: 'none' }
+  | { kind: 'saved'; prefs: P }
+  | { kind: 'error'; message: string };
+
+export function callerDietFrom<P>(
+  userId: string | null,
+  row: { data: P | null; error: { message: string } | null },
+): CallerDiet<P> {
+  if (!userId) return { kind: 'anonymous' };
+  if (row.error) return { kind: 'error', message: row.error.message };
+  return row.data ? { kind: 'saved', prefs: row.data } : { kind: 'none' };
 }
 
 function passesDiet(item: RankableItem, diet: Diet): boolean {
@@ -68,9 +86,10 @@ export function rankForPreferences<T extends RankableItem>(
   preferenceDoc: string,
   prefs: Diet & { budget_max: number | null },
 ): Scored<T>[] {
-  const vectors = buildTfidfVectors([...catalog.map(itemDoc), preferenceDoc]);
-  const userVec = vectors[vectors.length - 1];
-  return rankAgainst(catalog, vectors, userVec, item =>
+  // Fit on the catalog alone and transform the preference doc: fitting it in
+  // too would make every term's IDF depend on this student's own doc.
+  const { vectors, transform } = fitTfidf(catalog.map(itemDoc));
+  return rankAgainst(catalog, vectors, transform(preferenceDoc), item =>
     !isDrinkCategory(item.category)
     && (prefs.budget_max == null || item.price <= prefs.budget_max)
     && passesDiet(item, prefs));

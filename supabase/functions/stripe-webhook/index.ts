@@ -11,14 +11,16 @@
 //     ponytail: doesn't attempt to reverse any Stripe transfers already
 //     sent to vendors from that money — see the migration's comment for why
 //     that's out of scope here and where the resulting loss lands.
+//   - charge.dispute.closed with status 'won': gives back what the dispute
+//     debit took (recredit_wallet_for_dispute, idempotent per dispute).
 //
 // Deploy: supabase functions deploy stripe-webhook --no-verify-jwt
 // Secrets:  supabase secrets set STRIPE_SECRET_KEY=sk_test_...
 //           supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
 // (STRIPE_WEBHOOK_SECRET comes from the Dashboard webhook endpoint you
 // register pointing at this function's URL, or from `stripe listen` locally.
-// Subscribe that endpoint to both payment_intent.succeeded and
-// charge.dispute.created.)
+// Subscribe that endpoint to payment_intent.succeeded, charge.dispute.created
+// and charge.dispute.closed.)
 
 import Stripe from 'npm:stripe@18';
 import { serviceClient } from '../_shared/http.ts';
@@ -56,14 +58,16 @@ Deno.serve(async (req) => {
   if (event.type === 'payment_intent.succeeded') {
     const intent = event.data.object as Stripe.PaymentIntent;
     const userId = intent.metadata.user_id;
-    if (!userId) {
-      console.error(`payment_intent.succeeded ${intent.id} has no metadata.user_id — ignoring`);
+    // Only intents create-topup-intent made are wallet top-ups — any other
+    // succeeded PaymentIntent on the platform account must not mint balance.
+    if (!userId || intent.metadata.kind !== 'topup' || intent.currency !== 'thb') {
+      console.error(`payment_intent.succeeded ${intent.id} is not a THB wallet top-up (user_id=${userId}, kind=${intent.metadata.kind}, currency=${intent.currency}) — ignoring`);
       return Response.json({ ok: true });
     }
 
     const { error } = await adminClient.rpc('topup_wallet', {
       p_user_id: userId,
-      p_amount: intent.amount / 100,
+      p_amount: intent.amount_received / 100,
       p_reference: intent.id,
     });
     if (error) {
@@ -105,6 +109,19 @@ Deno.serve(async (req) => {
     if (error) {
       console.error(`debit_wallet_for_dispute failed for ${dispute.id}:`, error.message);
       return new Response(error.message, { status: 500 });
+    }
+  }
+
+  if (event.type === 'charge.dispute.closed') {
+    const dispute = event.data.object as Stripe.Dispute;
+    if (dispute.status === 'won') {
+      const { error } = await adminClient.rpc('recredit_wallet_for_dispute', {
+        p_reference: `dispute:${dispute.id}`,
+      });
+      if (error) {
+        console.error(`recredit_wallet_for_dispute failed for ${dispute.id}:`, error.message);
+        return new Response(error.message, { status: 500 });
+      }
     }
   }
 

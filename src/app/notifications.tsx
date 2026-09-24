@@ -28,9 +28,22 @@ export default function NotificationsScreen() {
   const { t } = useI18n();
   const [notifications, setNotifications] = useState<NotificationRow[] | undefined>(undefined);
 
+  const [loadFailed, setLoadFailed] = useState(false);
+
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { if (!isCancelled()) setNotifications([]); return; }
+
+    // Subscribe before the initial fetch, so a row inserted while the fetch
+    // is in flight isn't lost between the two; the merge below dedupes.
+    const channel = supabase
+      .channel(`notifications-${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
+        const row = payload.new as NotificationRow;
+        if (!isCancelled()) setNotifications(prev => [row, ...(prev ?? []).filter(n => n.id !== row.id)]);
+      })
+      .subscribe();
+    const cleanup = () => { void supabase.removeChannel(channel); };
 
     const { data, error } = await supabase
       .from('notifications')
@@ -41,24 +54,27 @@ export default function NotificationsScreen() {
       // query grows for the life of the account and the whole history is
       // parsed on every open. 100 is far past what anyone scrolls to.
       .limit(100);
-    if (isCancelled()) return;
-    if (error) { console.warn('load notifications failed:', error.message); return; }
+    if (isCancelled()) return cleanup;
+    if (error) {
+      // Keep whatever was already shown (or an empty list) instead of an
+      // endless spinner; live inserts still arrive via the channel above.
+      console.warn('load notifications failed:', error.message);
+      setLoadFailed(true);
+      setNotifications(prev => prev ?? []);
+      return cleanup;
+    }
+    setLoadFailed(false);
     const rows = data ?? [];
-    setNotifications(rows);
+    setNotifications(prev => {
+      const live = (prev ?? []).filter(n => !rows.some(r => r.id === n.id) && n.created_at > (rows[0]?.created_at ?? ''));
+      return [...live, ...rows];
+    });
 
     const unreadIds = rows.filter(r => !r.read).map(r => r.id);
     if (unreadIds.length) {
       await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
     }
-    if (isCancelled()) return;
-
-    const channel = supabase
-      .channel(`notifications-${user.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
-        if (!isCancelled()) setNotifications(prev => [payload.new as NotificationRow, ...(prev ?? [])]);
-      })
-      .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return cleanup;
   });
 
   if (notifications === undefined) {
@@ -80,6 +96,11 @@ export default function NotificationsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 }}>
+        {loadFailed && (
+          <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', marginBottom: 12 }}>
+            {t('common.errorTitle')}
+          </Text>
+        )}
         {notifications.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 60 }}>
             <Text style={{ fontSize: 40, marginBottom: 12 }}>🔔</Text>

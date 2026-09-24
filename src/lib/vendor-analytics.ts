@@ -36,6 +36,8 @@ function clampHour(value: number, fallback: number): number {
 
 // Revenue (฿) per time bucket. today/yesterday → one bar per hour across the
 // vendor's open window; week/month → one bar per Bangkok calendar day.
+// Completed orders only — same definition as the Revenue KPI; pending /
+// accepted orders haven't paid the vendor anything yet.
 export function salesVelocity(
   orders: AnalyticsOrder[],
   range: DateRangeFilter,
@@ -43,7 +45,7 @@ export function salesVelocity(
   closeHour: number,
   now: Date = new Date(),
 ): VelocityBar[] {
-  const rows = fulfilled(orders);
+  const rows = earned(orders);
 
   if (range === 'today' || range === 'yesterday') {
     const targetDay = bangkokDayKey(range === 'today' ? now : new Date(now.getTime() - DAY_MS));

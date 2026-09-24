@@ -27,6 +27,18 @@ import { callerClient, corsAndJson, serviceClient } from '../_shared/http.ts';
 // if Stripe cuts a newer version before this ships.
 const STRIPE_API_VERSION = '2026-08-26.dahlia';
 
+// Stripe redirects the vendor here after onboarding — only ever back into the
+// app (native scheme, Expo Go, or an https web build), never an arbitrary site.
+const ALLOWED_REDIRECT_PROTOCOLS = new Set(['eatzy:', 'exp:', 'exps:', 'https:']);
+function isAllowedRedirect(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return ALLOWED_REDIRECT_PROTOCOLS.has(u.protocol) || (u.protocol === 'http:' && u.hostname === 'localhost');
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   const { cors, json } = corsAndJson(req);
 
@@ -51,6 +63,9 @@ Deno.serve(async (req) => {
   const returnUrl = body.return_url?.trim();
   if (!returnUrl) return json({ error: 'return_url is required', code: 'MISSING_FIELDS' }, 400);
   const refreshUrl = body.refresh_url?.trim() || returnUrl;
+  if (!isAllowedRedirect(returnUrl) || !isAllowedRedirect(refreshUrl)) {
+    return json({ error: 'return_url/refresh_url must point back into the app', code: 'INVALID_REDIRECT' }, 400);
+  }
 
   const { data: vendor, error: vendorError } = await adminClient
     .from('vendors')
@@ -94,11 +109,26 @@ Deno.serve(async (req) => {
     }
     accountId = account.id;
 
-    const { error: updateError } = await adminClient
+    // Only claim the slot if it's still empty — two concurrent taps would
+    // otherwise each create an account and the second silently overwrite the
+    // first. The loser keeps using the winner's account.
+    const { data: claimed, error: updateError } = await adminClient
       .from('vendors')
       .update({ stripe_account_id: accountId })
-      .eq('id', vendor.id);
+      .eq('id', vendor.id)
+      .is('stripe_account_id', null)
+      .select('id');
     if (updateError) return json({ error: updateError.message }, 500);
+    if (!claimed?.length) {
+      console.error(`Orphaned Stripe account ${accountId} for vendor ${vendor.id} (lost a concurrent onboarding race) — close it in the Dashboard`);
+      const { data: current, error: rereadError } = await adminClient
+        .from('vendors')
+        .select('stripe_account_id')
+        .eq('id', vendor.id)
+        .maybeSingle();
+      if (rereadError || !current?.stripe_account_id) return json({ error: rereadError?.message ?? 'Could not resolve Stripe account' }, 500);
+      accountId = current.stripe_account_id;
+    }
   }
 
   let link;

@@ -76,6 +76,8 @@ function makeBuilder(call: FromCall): any {
     delete: () => { call.deleted = true; return builder; },
     eq: (col: string, val: unknown) => { call.filters.push([col, val]); return builder; },
     in: () => builder,
+    is: () => builder,
+    match: (obj: Record<string, unknown>) => { for (const [k, v] of Object.entries(obj)) call.filters.push([k, v]); return builder; },
     or: () => builder,
     order: () => builder,
     limit: () => builder,

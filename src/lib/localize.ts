@@ -9,12 +9,13 @@ export function localizedText(base: string, th: string | null | undefined, local
   return base;
 }
 
-type NotificationEvent = 'order_accepted' | 'order_ready' | 'order_rejected' | 'order_completed' | 'vendor_new_order';
+type NotificationEvent = 'order_accepted' | 'order_ready' | 'order_rejected' | 'order_refunded' | 'order_completed' | 'vendor_new_order';
 
 const NOTIF_KEYS: Record<NotificationEvent, { title: TranslationKey; body: TranslationKey }> = {
   order_accepted:   { title: 'notif.orderAccepted.title',  body: 'notif.orderAccepted.body' },
   order_ready:      { title: 'notif.orderReady.title',     body: 'notif.orderReady.body' },
   order_rejected:   { title: 'notif.orderRejected.title',  body: 'notif.orderRejected.body' },
+  order_refunded:   { title: 'notif.orderRefunded.title',  body: 'notif.orderRefunded.body' },
   order_completed:  { title: 'notif.orderCompleted.title', body: 'notif.orderCompleted.body' },
   vendor_new_order: { title: 'notif.vendorNewOrder.title', body: 'notif.vendorNewOrder.body' },
 };

@@ -7,7 +7,7 @@ import {
   __setAuthUser,
   __resetMock,
 } from './__mocks__/supabase';
-import { acceptOrder, rejectOrder, markReady, initVendorSession, updateVendorProfile, paymentsFromOrders, __getVendorProfileForTest } from '@/lib/vendor-store';
+import { acceptOrder, rejectOrder, markReady, initVendorSession, updateVendorProfile, paymentsFromOrders, toggleItemDone, __getVendorProfileForTest, __getVendorOrdersForTest } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 
 jest.mock('@/lib/alert', () => ({ showAlert: jest.fn() }));
@@ -225,7 +225,7 @@ describe('paymentsFromOrders', () => {
   const order = (over: Partial<Parameters<typeof paymentsFromOrders>[0][number]>) => ({
     id: 'aaaaaaaa-1111', queue_number: 7, status: 'completed' as const, total_amount: 50,
     pickup_start: null, payment_method: 'wallet', created_at: '2026-06-15T05:00:00Z',
-    prep_seconds: null, special_request: null, vendor_handed_off_at: null, items: [],
+    prep_seconds: null, vendor_handed_off_at: null, items: [],
     ...over,
   });
 
@@ -248,5 +248,45 @@ describe('paymentsFromOrders', () => {
     ]);
     expect(rows.map(r => r.order_id)).toEqual(['abcdef123456', 'old']);
     expect(rows[0].display_id).toBe('#ABCDEF12');
+  });
+});
+
+describe('vendor order lines', () => {
+  const line = (menu_item_id: string, special_instructions: string | null) => ({
+    menu_item_id, quantity: 1, unit_price: 40, special_instructions,
+    menu_items: { name: menu_item_id, name_th: null }, order_item_addons: [],
+  });
+
+  beforeEach(async () => {
+    __resetMock();
+    __setAuthUser({ id: 'owner-1' });
+    __queueResults(
+      { data: { role: 'vendor' }, error: null },
+      { data: { id: 'vendor-1', name: 'Stall', estimated_wait_min: 5, current_queue_count: 0, is_open: true, is_on_campus: true, stall_number: null, address: null, bio: null, bio_th: null, cuisine_tags: [], is_halal_certified: false, open_time: null, close_time: null }, error: null },
+      { data: [], error: null }, // fetchMenu
+      {
+        data: [{
+          id: 'o1', queue_number: 1, status: 'accepted', total_amount: 80, pickup_start: null,
+          payment_method: 'wallet', created_at: '2026-09-24T05:00:00Z', estimated_prep_minutes: null,
+          vendor_handed_off_at: null, order_items: [line('rice', 'no egg'), line('soup', null)],
+        }],
+        error: null,
+      }, // fetchOrders
+      { data: [], error: null }, // fetchNotifications
+    );
+    expect(await initVendorSession()).toBe('ok');
+  });
+
+  it('keeps each special instruction on its own line, not merged order-wide', () => {
+    expect(__getVendorOrdersForTest()[0].items.map(i => i.note)).toEqual(['no egg', null]);
+  });
+
+  it('toggling a prep checkbox yields a new orders reference (no in-place mutation)', () => {
+    const before = __getVendorOrdersForTest();
+    toggleItemDone('o1', 0);
+    const after = __getVendorOrdersForTest();
+    expect(after).not.toBe(before);
+    expect(after[0].items[0].done).toBe(true);
+    expect(before[0].items[0].done).toBe(false);
   });
 });

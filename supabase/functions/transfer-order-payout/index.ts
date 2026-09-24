@@ -1,4 +1,8 @@
-// Sends a completed order's payout to the vendor's Stripe connected account.
+// Sends a completed order's payout to the vendor's Stripe connected account,
+// then record_vendor_payout() stamps orders.stripe_transfer_id and debits the
+// vendor's in-app wallet_balance ("earned, not yet paid out") in one
+// transaction — so the in-app credit and the Stripe transfer are never both
+// kept.
 // Called by the client right after either handoff-confirmation RPC succeeds
 // (student_confirm_pickup / vendor_confirm_handoff) — since finalize_order_handoff
 // only actually completes the order once BOTH sides have confirmed, most
@@ -85,7 +89,11 @@ Deno.serve(async (req) => {
 
   let transfer;
   try {
-    transfer = await stripe.transfers.create(
+    // The idempotency key below only lives 24h. If an earlier call's Stripe
+    // transfer succeeded but recording it failed, a later retry must reuse
+    // that transfer, not send a second one.
+    const existing = await stripe.transfers.list({ transfer_group: order.id, limit: 1 });
+    transfer = existing.data[0] ?? await stripe.transfers.create(
       {
         amount: Math.round(payment.amount * 100),
         currency: 'thb',
@@ -98,12 +106,11 @@ Deno.serve(async (req) => {
     return json({ error: err instanceof Error ? err.message : 'Transfer failed', code: 'TRANSFER_FAILED' }, 502);
   }
 
-  const { error: updateError } = await adminClient
-    .from('orders')
-    .update({ stripe_transfer_id: transfer.id })
-    .eq('id', order.id)
-    .is('stripe_transfer_id', null);
-  if (updateError) return json({ error: updateError.message }, 500);
+  const { error: recordError } = await adminClient.rpc('record_vendor_payout', {
+    p_order_id: order.id,
+    p_transfer_id: transfer.id,
+  });
+  if (recordError) return json({ error: recordError.message }, 500);
 
   return json({ ok: true, transfer_id: transfer.id });
 });

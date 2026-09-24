@@ -4,10 +4,11 @@ import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { formatBaht } from '@/lib/money';
 import { Brand } from '@/constants/theme';
 import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
-import { BANGKOK_TZ } from '@/lib/time';
+import { BANGKOK_TZ, bangkokDayKey } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
@@ -20,16 +21,32 @@ const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
   transfer: { icon: '⇄', color: '#7c3aed' },
 };
 
-const baht = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Today / Yesterday by Bangkok calendar day, not elapsed 24h — a top-up at
+// 23:00 last night is "Yesterday" at 10:00 this morning.
 function formatDate(iso: string, t: ReturnType<typeof useI18n>['t']) {
   const d = new Date(iso);
   const now = new Date();
-  const diff = (now.getTime() - d.getTime()) / 1000;
-  if (diff < 86400) return t('common.today') + ' ' + d.toLocaleTimeString('th-TH', { timeZone: BANGKOK_TZ, hour: '2-digit', minute: '2-digit' });
-  if (diff < 172800) return t('common.yesterday') + ' ' + d.toLocaleTimeString('th-TH', { timeZone: BANGKOK_TZ, hour: '2-digit', minute: '2-digit' });
+  const day = bangkokDayKey(d);
+  if (day === bangkokDayKey(now)) return t('common.today') + ' ' + d.toLocaleTimeString('th-TH', { timeZone: BANGKOK_TZ, hour: '2-digit', minute: '2-digit' });
+  if (day === bangkokDayKey(new Date(now.getTime() - 86400000))) return t('common.yesterday') + ' ' + d.toLocaleTimeString('th-TH', { timeZone: BANGKOK_TZ, hour: '2-digit', minute: '2-digit' });
   return d.toLocaleDateString('en-GB', { timeZone: BANGKOK_TZ, day: 'numeric', month: 'short' }) + ' ' +
     d.toLocaleTimeString('th-TH', { timeZone: BANGKOK_TZ, hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadWallet(userId: string) {
+  const [profileRes, txnsRes] = await Promise.all([
+    supabase.from('users').select('wallet_balance').eq('id', userId).maybeSingle(),
+    // Append-only ledger, no pagination in the UI — cap it so the query
+    // doesn't grow for the life of the account. Balance comes from
+    // users.wallet_balance, not from summing these, so a cap is display-only.
+    supabase.from('wallet_transactions').select('id,type,amount,description,created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(100),
+  ]);
+  if (profileRes.error || txnsRes.error || !profileRes.data) return null;
+  return {
+    balance: profileRes.data.wallet_balance,
+    txns: (txnsRes.data ?? []) as WalletTxn[],
+  };
 }
 
 export default function WalletScreen() {
@@ -37,35 +54,26 @@ export default function WalletScreen() {
   const [balance, setBalance] = useState(0);
   const [txns, setTxns] = useState<WalletTxn[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const focusGuard = useFocusGuard();
 
-  async function loadWallet(userId: string) {
-    const [profileRes, txnsRes] = await Promise.all([
-      supabase.from('users').select('wallet_balance').eq('id', userId).maybeSingle(),
-      // Append-only ledger, no pagination in the UI — cap it so the query
-      // doesn't grow for the life of the account. Balance comes from
-      // users.wallet_balance, not from summing these, so a cap is display-only.
-      supabase.from('wallet_transactions').select('id,type,amount,description,created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(100),
-    ]);
-    return {
-      balance: profileRes.data?.wallet_balance ?? 0,
-      txns: (txnsRes.data ?? []) as WalletTxn[],
-    };
-  }
+  const refresh = useCallback((cancelledRef: { current: boolean }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { if (!cancelledRef.current) setLoading(false); return; }
+      const result = await loadWallet(user.id);
+      if (cancelledRef.current) return;
+      // On failure keep whatever was last shown instead of a fake ฿0.00 /
+      // empty history, and say so.
+      setLoadFailed(!result);
+      if (result) {
+        setBalance(result.balance);
+        setTxns(result.txns);
+      }
+      setLoading(false);
+    });
+  }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      const cancelledRef = focusGuard.snapshot();
-      supabase.auth.getUser().then(async ({ data: { user } }) => {
-        if (!user) { if (!cancelledRef.current) setLoading(false); return; }
-        const { balance, txns } = await loadWallet(user.id);
-        if (cancelledRef.current) return;
-        setBalance(balance);
-        setTxns(txns);
-        setLoading(false);
-      });
-    }, [focusGuard])
-  );
+  useFocusEffect(useCallback(() => { refresh(focusGuard.snapshot()); }, [focusGuard, refresh]));
 
   const comingSoon = () => comingSoonAlert(t);
 
@@ -86,6 +94,17 @@ export default function WalletScreen() {
             {t('wallet.title')}
           </Text>
         </View>
+
+        {loadFailed && (
+          <Tap onPress={() => refresh(focusGuard.snapshot())} haptic={false} style={{
+            marginHorizontal: 20, marginBottom: 16, backgroundColor: '#fee2e2', borderRadius: 12,
+            borderWidth: 1, borderColor: '#fecaca', paddingHorizontal: 14, paddingVertical: 12,
+          }}>
+            <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700' }}>
+              {t('common.errorTitle')} · {t('common.tryAgain')}
+            </Text>
+          </Tap>
+        )}
 
         {/* Balance card */}
         <View style={{ marginHorizontal: 20, marginBottom: 24 }}>
@@ -111,7 +130,7 @@ export default function WalletScreen() {
               {t('wallet.balanceLabel')}
             </Text>
             <Text style={{ fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1, marginBottom: 20 }}>
-              ฿{baht(balance)}
+              ฿{formatBaht(balance)}
             </Text>
 
             <Tap
@@ -204,7 +223,7 @@ export default function WalletScreen() {
 
                     {/* Amount */}
                     <Text style={{ fontSize: 15, fontWeight: '700', color: isPositive ? '#16a34a' : Brand.textPrimary }}>
-                      {isPositive ? '+' : ''}฿{baht(Math.abs(tx.amount))}
+                      {isPositive ? '+' : ''}฿{formatBaht(Math.abs(tx.amount))}
                     </Text>
                   </View>
                 </View>

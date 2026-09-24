@@ -20,7 +20,7 @@ type RateOrder = {
   id: string;
   vendor_name: string;
   items: { name: string; name_th: string | null; addons: { name: string; name_th: string | null }[] }[];
-  primary_menu_item_id: string | null;
+  menu_item_ids: string[];
 };
 
 export default function RateScreen() {
@@ -60,7 +60,11 @@ export default function RateScreen() {
         id: data.id,
         vendor_name: data.vendors?.name ?? '',
         items: mapOrderItems(data.order_items),
-        primary_menu_item_id: data.order_items[0]?.menu_item_id ?? null,
+        // The review is order-level ("rate your order from X"), so it applies
+        // to every dish in it — not to whichever order_items row an unordered
+        // embed happened to return first (which also made a re-rate upsert
+        // against a different dish and create a second review).
+        menu_item_ids: [...new Set(data.order_items.map(oi => oi.menu_item_id))].sort(),
       });
     }
     void load();
@@ -93,7 +97,7 @@ export default function RateScreen() {
   const vendor = order.vendor_name;
 
   async function submit() {
-    if (!order?.primary_menu_item_id) return;
+    if (!order?.menu_item_ids.length) return;
     setSubmitting(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSubmitting(false); return; }
@@ -121,17 +125,17 @@ export default function RateScreen() {
     // with no already-rated check — so re-rating one raised a raw 23505
     // duplicate-key error under a "not found" alert. Re-rating now just
     // revises the existing review, which is what the student meant anyway.
-    const { error } = await supabase.from('ratings').upsert({
+    const { error } = await supabase.from('ratings').upsert(order.menu_item_ids.map(menuItemId => ({
       user_id: user.id,
-      menu_item_id: order.primary_menu_item_id,
+      menu_item_id: menuItemId,
       order_id: order.id,
       score,
       comment: comment.trim() || null,
       photo_urls: photoUrls,
-    }, { onConflict: 'user_id,menu_item_id,order_id' });
+    })), { onConflict: 'user_id,menu_item_id,order_id' });
     setSubmitting(false);
     if (error) {
-      showAlert(t('common.orderNotFound'), error.message);
+      showAlert(t('common.errorTitle'), error.message);
       return;
     }
     showAlert(t('rate.thanksTitle'), t('rate.thanksMsg', { vendor, score }), () =>
@@ -237,7 +241,7 @@ export default function RateScreen() {
       }}>
         <Tap
           activeOpacity={0.85}
-          disabled={score === 0 || submitting || !order.primary_menu_item_id}
+          disabled={score === 0 || submitting || !order.menu_item_ids.length}
           onPress={submit}
           style={{
             backgroundColor: score === 0 ? Brand.border : Brand.orange,

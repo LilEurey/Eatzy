@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { usePreferences, passesDietary, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
+import { usePreferences, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
 
 type SearchItem = {
@@ -75,7 +75,7 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [diet, setDiet] = useState<Set<DietFilter>>(new Set());
 
-  const { prefs, error: prefsError } = usePreferences();
+  const { prefs, gate } = usePreferences();
   const focusGuard = useFocusGuard();
 
   // Refetch on focus (not just mount) — a vendor toggling is_available, or
@@ -115,7 +115,7 @@ export default function SearchScreen() {
       // (home, store/[id], both recommend-* functions) — search was the one
       // surface that skipped them, so a halal student searching "pork" got
       // pork. The chips below stack on top: they narrow further, never widen.
-      .filter(item => passesDietary(item, prefs))
+      .filter(gate.visible)
       // Allergies don't hide results here — a search is browsing, same as
       // store/[id].tsx. The actual gate is the confirm popup on Add to
       // Cart (item/[id].tsx), the moment the student commits to the dish;
@@ -125,7 +125,7 @@ export default function SearchScreen() {
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score)
       .map(({ item }) => item);
-  }, [items, query, diet, prefs]);
+  }, [items, query, diet, gate]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -180,11 +180,11 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      {loading ? (
+      {loading || gate.status === 'loading' ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={Brand.orange} size="large" />
         </View>
-      ) : prefsError ? (
+      ) : gate.status === 'error' ? (
         // Saved halal/vegetarian/jay prefs failed to load — passesDietary would
         // silently fall back to all-false (no filter) on the stale/default
         // prefs, showing a restricted student items they can't eat. Skip

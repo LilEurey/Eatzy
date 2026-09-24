@@ -22,6 +22,15 @@ function translate(locale: Locale, key: TranslationKey, params?: Record<string, 
   return template.replace(/\{(\w+)\}/g, (match, name) => (name in params ? String(params[name]) : match));
 }
 
+// Locale for code outside the React tree (module-level stores like
+// vendor-store.ts that raise alerts). Kept in step by I18nProvider.
+let activeLocale: Locale = 'en';
+
+/** t() for non-component code — uses whichever locale the provider last set. */
+export function translateActive(key: TranslationKey, params?: Record<string, string | number>): string {
+  return translate(activeLocale, key, params);
+}
+
 type I18nContextValue = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
@@ -43,6 +52,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLocaleState(next);
     AsyncStorage.setItem(STORAGE_KEY, next);
   }
+
+  useEffect(() => { activeLocale = locale; }, [locale]);
 
   const value = useMemo<I18nContextValue>(() => ({
     locale,

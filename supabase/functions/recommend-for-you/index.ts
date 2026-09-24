@@ -12,7 +12,7 @@
 
 import { callerClient, corsAndJson } from '../_shared/http.ts';
 import { getRankingCatalog } from '../_shared/catalog.ts';
-import { rankForPreferences } from '../_shared/ranking.ts';
+import { callerDietFrom, rankForPreferences } from '../_shared/ranking.ts';
 
 type MenuItemRow = {
   id: string;
@@ -63,16 +63,15 @@ Deno.serve(async (req) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return json({ results: [] }); // not signed in — nothing personal to rank on
 
-  const { data: prefsRow } = await supabase
+  const diet = callerDietFrom<UserPreferences>(user.id, await supabase
     .from('user_preferences')
     .select('is_halal,is_vegetarian,is_jay,budget_max,liked_cuisines,favorite_categories')
     .eq('user_id', user.id)
-    .maybeSingle();
-
-  const prefs: UserPreferences = prefsRow ?? {
-    is_halal: false, is_vegetarian: false, is_jay: false,
-    budget_max: null, liked_cuisines: [], favorite_categories: [],
-  };
+    .maybeSingle());
+  // A failed read must not fall back to "no restrictions" (fail closed).
+  if (diet.kind === 'error') return json({ error: diet.message }, 500);
+  if (diet.kind !== 'saved') return json({ results: [] }); // no preferences yet — no taste signal
+  const prefs = diet.prefs;
 
   const doc = preferenceDoc(prefs);
   if (!doc) return json({ results: [] }); // no taste signal yet (fresh account) — nothing to personalize on

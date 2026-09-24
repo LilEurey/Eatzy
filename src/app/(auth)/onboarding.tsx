@@ -29,9 +29,21 @@ export default function OnboardingScreen() {
   const [favoriteCategories, setFavoriteCategories] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  // Continue stays disabled until saved prefs are in: tapping it before the
+  // load lands upserted blank defaults over a re-onboarding student's prefs.
+  const [loadingPrefs, setLoadingPrefs] = useState(true);
 
   async function loadPreferences() {
     setLoadError(false);
+    setLoadingPrefs(true);
+    try {
+      await loadSavedPreferences();
+    } finally {
+      setLoadingPrefs(false);
+    }
+  }
+
+  async function loadSavedPreferences() {
     void getTopMenuCategories().then(setCategoryOptions).catch(() => {});
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -68,7 +80,7 @@ export default function OnboardingScreen() {
     setFavoriteCategories(new Set(data.favorite_categories ?? []));
   }
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount is the intended pattern here
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- fetch-on-mount is the intended pattern here (retry calls loadPreferences directly)
   useEffect(() => { void loadPreferences(); }, []);
 
   function toggleDietary(item: Dietary) {
@@ -415,7 +427,7 @@ export default function OnboardingScreen() {
       >
         <Tap
           onPress={handleContinue}
-          disabled={saving || loadError}
+          disabled={saving || loadError || loadingPrefs}
           style={{
             backgroundColor: Brand.orange,
             borderRadius: 50,
@@ -424,7 +436,7 @@ export default function OnboardingScreen() {
             flexDirection: 'row',
             justifyContent: 'center',
             gap: 8,
-            opacity: (saving || loadError) ? 0.6 : 1,
+            opacity: (saving || loadError || loadingPrefs) ? 0.6 : 1,
           }}
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>

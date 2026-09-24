@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       amount: Math.round(amount * 100), // THB smallest unit (satang)
       currency: 'thb',
       payment_method_types: ['promptpay'],
-      metadata: { user_id: caller.id },
+      metadata: { user_id: caller.id, kind: 'topup' }, // stripe-webhook only credits kind=topup
     });
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : 'Could not start payment', code: 'PAYMENT_INTENT_FAILED' }, 502);

@@ -3,8 +3,8 @@ import { View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone } from '@/lib/vendor-store';
-import { comingSoonAlert } from '@/lib/alert';
+import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone, cancelAcceptedOrder } from '@/lib/vendor-store';
+import { showConfirm } from '@/lib/alert';
 import { useI18n, type Locale } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock12, formatFriendlyDateTime } from '@/lib/time';
@@ -30,12 +30,15 @@ function formatCountdown(seconds: number) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function CountdownChip({ initialSeconds }: { initialSeconds: number }) {
-  const [seconds, setSeconds] = useState(initialSeconds);
+// Counts down to created_at + prep time, so switching tabs or a remount
+// doesn't reset every ticket to a fresh 15:00.
+function CountdownChip({ deadline }: { deadline: number }) {
+  const remaining = () => Math.max(0, Math.round((deadline - Date.now()) / 1000));
+  const [seconds, setSeconds] = useState(remaining);
   useEffect(() => {
-    const id = setInterval(() => setSeconds(s => Math.max(0, s - 1)), 1000);
+    const id = setInterval(() => setSeconds(Math.max(0, Math.round((deadline - Date.now()) / 1000))), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [deadline]);
   const low = seconds < 120;
   return (
     <View style={{
@@ -106,7 +109,7 @@ function IncomingCard({ order, t, locale }: { order: VendorOrder; t: TFn; locale
               {t('vendor.orders.pickup')} {formatBangkokClock12(order.pickup_start)}
             </Text>
           </View>
-          <CountdownChip initialSeconds={order.prep_seconds ?? 900} />
+          <CountdownChip deadline={new Date(order.created_at).getTime() + (order.prep_seconds ?? 900) * 1000} />
         </View>
       }
       footer={
@@ -125,16 +128,21 @@ function IncomingCard({ order, t, locale }: { order: VendorOrder; t: TFn; locale
                 + {localizedText(a.name, a.name_th, locale)}
               </Text>
             ))}
+            {it.note && <View style={{ marginTop: 4 }}><SpecialBanner text={it.note} t={t} /></View>}
           </View>
         ))}
       </View>
-      {order.special_request && <SpecialBanner text={order.special_request} t={t} />}
     </CardShell>
   );
 }
 
 function PreparingCard({ order, t, locale }: { order: VendorOrder; t: TFn; locale: Locale }) {
-  const comingSoon = () => comingSoonAlert(t);
+  const confirmCancel = () => showConfirm(
+    t('vendor.orders.cancelTitle'),
+    t('vendor.orders.cancelMsg'),
+    () => { void cancelAcceptedOrder(order.id); },
+    { confirmLabel: t('vendor.orders.cancelConfirm'), cancelLabel: t('common.cancel'), destructive: true },
+  );
   return (
     <CardShell
       accent="#f59e0b"
@@ -146,7 +154,7 @@ function PreparingCard({ order, t, locale }: { order: VendorOrder; t: TFn; local
       }
       footer={
         <>
-          <ActionButton label={t('vendor.orders.issue')} onPress={comingSoon} bg="#F0F1F5" color="#4B4F58" />
+          <ActionButton label={t('vendor.orders.cancelRefund')} onPress={confirmCancel} bg="#F0F1F5" color="#4B4F58" />
           <ActionButton label={t('vendor.orders.markReady')} onPress={() => markReady(order.id)} bg={Brand.vendorAccent} color="#fff" />
         </>
       }
@@ -171,11 +179,11 @@ function PreparingCard({ order, t, locale }: { order: VendorOrder; t: TFn; local
                   + {localizedText(a.name, a.name_th, locale)}
                 </Text>
               ))}
+              {it.note && <View style={{ marginTop: 4 }}><SpecialBanner text={it.note} t={t} /></View>}
             </View>
           </Tap>
         ))}
       </View>
-      {order.special_request && <SpecialBanner text={order.special_request} t={t} />}
     </CardShell>
   );
 }

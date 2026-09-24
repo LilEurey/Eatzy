@@ -3,6 +3,7 @@ import {
   __setNextRpcResult,
   __setAuthUser,
   __resetMock,
+  __getFromCalls,
 } from './__mocks__/supabase';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { DRINK_CATEGORY_FILTER, getTimeBasedCategories, restoreRank, loadHomeFeed } from '@/lib/home-feed';
@@ -86,6 +87,18 @@ describe('loadHomeFeed', () => {
     expect(result.latestRelease.map(i => i.id)).toEqual(['m1']);
     expect(result.timeBasedItems.map(i => i.id)).toEqual(['m1']);
     expect(result.drinks.map(i => i.id)).toEqual(['m3']);
+  });
+
+  it('filters the limited menu_items queries by the hard dietary flags in SQL, not just after .limit(10)', async () => {
+    await loadHomeFeed(PREFS, NOW);
+
+    const menuQueries = __getFromCalls().filter(c => c.table === 'menu_items');
+    // featured, latestRelease, timeBased, drinks
+    expect(menuQueries).toHaveLength(4);
+    for (const q of menuQueries) {
+      expect(q.filters).toContainEqual(['is_vegetarian', true]);
+      expect(q.filters).not.toContainEqual(['is_halal', true]);
+    }
   });
 
   it('restores the trending RPC rank order and keeps only the top 2', async () => {

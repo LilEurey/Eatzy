@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Expo SDK 54** is in use — always check versioned docs at https://docs.expo.dev/versions/v54.0.0/ before writing Expo/RN code.
+> **Expo SDK 57** is in use — always check versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing Expo/RN code.
 
 ## Project Overview
 
@@ -12,7 +12,7 @@ Eatzy is a campus food ordering & recommendation app ("Fuel your day the easy wa
 
 ## Tech Stack
 
-- **Frontend:** React Native + Expo (SDK 54), Expo Router, NativeWind v4 (Tailwind CSS)
+- **Frontend:** React Native + Expo (SDK 57), Expo Router, NativeWind v4 (Tailwind CSS)
 - **Backend:** Supabase (Postgres, Auth, Storage, Realtime, RPC/database functions)
 - **ML:** Python, pandas, scikit-learn (TF-IDF + cosine similarity for content-based; collaborative filtering for "because you ordered")
 - **Infra:** GitHub, Expo EAS
@@ -45,10 +45,10 @@ Eatzy/
 │   │   ├── (vendor)/     # Vendor dashboard — index.tsx redirects to overview; orders, menu, analytics, reviews, profile, notifications (real Supabase, not mock)
 │   │   ├── (admin)/      # Admin portal — create vendor store accounts + vendor store monitoring/force open-close (email/password auth, not Google)
 │   │   ├── (auth)/       # Login/onboarding stack
-│   │   ├── admin-login.tsx, vendor-login.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx, search.tsx, stores.tsx  # Public entry points outside the tab groups
+│   │   ├── admin-login.tsx, vendor-login.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx, search.tsx, stores.tsx, wallet-topup.tsx  # Screens outside the tab groups
 │   │   └── store/, item/, track/, rate/  # Detail screens
 │   ├── components/       # Reusable RN components (Tap, PillDropdown, ReviewCard, StoreMiniMap / StoreLocationPicker — each has a .web.tsx stub since react-native-maps is native-only)
-│   ├── hooks/            # useGoogleSignIn, useFocusGuard (blur/unmount race guard), usePreferences
+│   ├── hooks/            # useGoogleSignIn, useFocusGuard + useLiveWhileFocused (focus-scoped loads), usePreferences (shared prefs cache + fail-closed dietary gate)
 │   ├── constants/        # theme.ts (Brand colors/tokens)
 │   ├── lib/
 │   │   ├── supabase.ts   # Supabase client singleton
@@ -59,7 +59,11 @@ Eatzy/
 │   │   ├── alert.ts      # Cross-platform alert helper
 │   │   ├── geo.ts, vendor-analytics.ts, relative-time.ts, allergy-options.ts, scroll-lock.ts  # small helpers (geo, vendor-analytics have tests)
 │   │   ├── time.ts       # Bangkok timezone formatting / pickup-slot helpers
-│   │   └── menu-categories.ts  # Drinks/Beverages category reconciliation + top-category picker (cold-start User Vector)
+│   │   ├── menu-categories.ts  # Drinks/Beverages category reconciliation + top-category picker (cold-start User Vector)
+│   │   ├── place-order.ts  # Checkout → one place_order() RPC (atomic; server owns queue#, prices, availability)
+│   │   ├── order-lifecycle.ts, order-view.ts  # Status predicates/transitions + order_items mapping
+│   │   ├── home-feed.ts  # Home screen fanout (loadHomeFeed), tested
+│   │   └── create-emitter.ts, focus-lifecycle.ts, user-role.ts, money.ts (formatBaht), stripe.tsx
 │   └── types/
 │       └── database.types.ts  # Generated Supabase types
 ├── supabase/
@@ -67,7 +71,7 @@ Eatzy/
 │   └── functions/        # Edge fns (Deno): admin-create-vendor, recommend-for-you,
 │                         #   recommend-similar (ranking pipeline), create-topup-intent,
 │                         #   stripe-webhook, transfer-order-payout, vendor-stripe-{onboarding,status};
-│                         #   _shared/ = tfidf, catalog, cors. (bootstrap-admin is no longer in the repo.)
+│                         #   _shared/ = tfidf, ranking (shared pipeline + callerDietFrom), catalog, http. (bootstrap-admin is no longer in the repo.)
 ├── ml/                    # recommend.py (TF-IDF + cosine demo), data/*.csv fixtures
 ├── eas.json               # EAS build/submit profiles (iOS-first)
 ├── global.css            # Tailwind directives (imported in app/_layout)
@@ -90,7 +94,7 @@ Default to TF-IDF + cosine for content-based and collaborative filtering for "be
 
 ### Dietary Filtering: hard filter vs. warn
 
-- **Halal / Vegetarian / Jay** — hard filters. Items the student cannot eat are excluded everywhere (home feed, search, `recommend-for-you`, `recommend-similar`).
+- **Halal / Vegetarian / Jay** — hard filters. Items the student cannot eat are excluded everywhere (home feed, search, `recommend-for-you`, `recommend-similar`). Fail closed: screens filter through `usePreferences().gate` (nothing visible until prefs load; banner on error), home pushes the flags into SQL before `.limit()`, and the edge functions return 500 on a failed prefs read (`callerDietFrom`) instead of serving unfiltered results.
 - **Allergies** — NOT a filter. Saved allergies never hide items. The gate is a `showConfirm` ("Add Anyway") popup on Add to Cart in `item/[id].tsx` — the single funnel every add-to-cart path goes through — fired when the dish's `allergens` intersect the user's saved `allergies`. Search results show a red '⚠️ Allergen' badge; the item page underlines the matched allergen. Changed 2026-09-02 (`4d2370e`, reverting the hide-from-search approach in `a1e9df9`).
 
 ### ML Pipeline (User Vector approach)
@@ -115,7 +119,11 @@ Escrow: student payment held → on completion, transferred to vendor wallet (re
 
 Real money (Stripe, added 2026-09-15) sits on either side of the in-app ledger:
 - **Top-up (PromptPay only)** — `wallet.tsx` → `create-topup-intent` (PaymentIntent, ฿ min/max enforced server-side) → PaymentSheet → `stripe-webhook` verifies the signature → `topup_wallet` RPC (service-role only; idempotent on the PaymentIntent id, since Stripe retries). The client never credits the wallet. `charge.dispute.created` → `debit_wallet_for_dispute`.
-- **Vendor payout** — vendor onboards via `vendor-stripe-onboarding` / `vendor-stripe-status` (Connect). After either handoff-confirm RPC, the client calls `transfer-order-payout`; it no-ops until `finalize_order_handoff` completes the order, pays out `payments.amount` (not recomputed `orders.total_amount`), and is idempotent on `orders.stripe_transfer_id`. Orders auto-finalized by the stale-handoff cron are not transferred until reconciled (`ponytail:` in the function).
+- **Vendor payout** — vendor onboards via `vendor-stripe-onboarding` / `vendor-stripe-status` (Connect). After either handoff-confirm RPC, the client calls `transfer-order-payout`; it no-ops until `finalize_order_handoff` completes the order, pays out `payments.amount` (not recomputed `orders.total_amount`), reuses an existing transfer for the order's `transfer_group`, then `record_vendor_payout` stamps `orders.stripe_transfer_id` and debits the vendor's wallet in one transaction. Orders auto-finalized by the stale-handoff cron are not transferred until reconciled (`ponytail:` in the function).
+- **Vendor wallet semantics** — a vendor's `users.wallet_balance` means "earned, not yet paid out": credited by `finalize_order_handoff`, debited by `record_vendor_payout`. Vendors can't spend it (`place_order` is student-only). Finance "Available to withdraw" reads it.
+- **Order placement** — `place_order()` RPC only (no client INSERT policies on orders/order_items/order_item_addons). It validates stall open, dish from this stall + available, add-ons available, add-on min/max, pickup window; server sets queue number (Bangkok day), created_at, time_segment.
+- **Cancel after accept** — only `vendor_cancel_order()` (vendor, accepted|ready → rejected, locked single refund, `order_refunded` notification). Students can cancel only while pending. `refund_escrow` was dropped (unlocked double-refund).
+- **Top-up credit rule** — `stripe-webhook` credits only THB PaymentIntents with `metadata.kind = 'topup'`, using `amount_received`; a won dispute is re-credited via `recredit_wallet_for_dispute`.
 - Setup steps still manual — see `scripts/stripe-setup.sh`.
 
 ### Localization
@@ -161,3 +169,4 @@ All surfaces read real Supabase — the DB carries real seeded KMUTT data (16 st
 - **Student side** — Home (`/(tabs)/index.tsx`) and search query Supabase directly. Empty-state copy: `home.noStallsOpen`, `home.noFeaturedItems`, `search.noResults`. Client state: `cart-store.ts` (single-vendor-per-cart rule), local component state for wallet.
 - **Vendor & admin side** — `vendor-store.ts` (orders/menu/profile, with Realtime) and the admin new-vendor / store-monitoring screens hit live tables.
 - Known shortcuts are `ponytail:` comments — `cart-store.ts` (single-vendor-per-cart) and the Stripe edge functions (`create-topup-intent`, `stripe-webhook`, `vendor-stripe-onboarding`, `transfer-order-payout`). Grep `ponytail:` before trusting this list — it drifts.
+- Vendor-store alerts use `translateActive()` from `lib/i18n` (non-React translator kept in step by `I18nProvider`) — don't hardcode English there.

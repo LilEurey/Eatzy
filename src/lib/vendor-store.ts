@@ -2,6 +2,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getUserRole } from '@/lib/user-role';
 import { showAlert } from '@/lib/alert';
+import { translateActive as tr } from '@/lib/i18n';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { confirmHandoff, isEarned, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 import { createEmitter } from '@/lib/create-emitter';
@@ -62,7 +63,7 @@ type VendorNotification = {
 };
 
 type OrderItemAddon = { name: string; name_th: string | null; price: number };
-type OrderItem = { menu_item_id: string; name: string; name_th: string | null; quantity: number; unit_price: number; addons: OrderItemAddon[]; done: boolean };
+type OrderItem = { menu_item_id: string; name: string; name_th: string | null; quantity: number; unit_price: number; addons: OrderItemAddon[]; note: string | null; done: boolean };
 type VendorOrder = {
   id: string;
   queue_number: number | null;
@@ -72,7 +73,6 @@ type VendorOrder = {
   payment_method: string;
   created_at: string;
   prep_seconds: number | null;
-  special_request: string | null;
   vendor_handed_off_at: string | null;
   items: OrderItem[];
 };
@@ -85,11 +85,12 @@ let orders: VendorOrder[] = [];
 let notifications: VendorNotification[] = [];
 let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
+// Every mutation below assigns a NEW array (never mutates in place), so
+// emit() doesn't need to clone. It used to clone all three on every emit,
+// which handed useVendorMenu() subscribers (e.g. reviews.tsx's [menu]
+// dependency) a new reference on every incoming order and refetched them.
 const emitter = createEmitter();
 function emit() {
-  menuItems = [...menuItems];
-  orders = [...orders];
-  notifications = [...notifications];
   emitter.emit();
 }
 
@@ -97,6 +98,7 @@ export function useVendorProfile() { return useSyncExternalStore(emitter.subscri
 /** Test-only: read the mapped profile without a React renderer (the jest
  * harness is pure-logic / node — no hooks). Not used by app code. */
 export function __getVendorProfileForTest() { return vendorProfile; }
+export function __getVendorOrdersForTest() { return orders; }
 export function useVendorLoading() { return useSyncExternalStore(emitter.subscribe, () => loading, () => loading); }
 export function useVendorOrders() { return useSyncExternalStore(emitter.subscribe, () => orders, () => orders); }
 export function useVendorMenu() { return useSyncExternalStore(emitter.subscribe, () => menuItems, () => menuItems); }
@@ -125,11 +127,11 @@ function mapOrder(row: OrderRow): VendorOrder {
     addons: oi.order_item_addons.map(a => ({
       name: a.name, name_th: a.name_th ?? null, price: a.price,
     })),
+    // Per line, not joined into one order-level string — with three dishes
+    // the kitchen has to know which one "no egg" belongs to.
+    note: oi.special_instructions || null,
     done: false,
   }));
-  const specialNotes = row.order_items
-    .map(oi => oi.special_instructions)
-    .filter(s => !!s);
   return {
     id: row.id,
     queue_number: row.queue_number,
@@ -139,7 +141,6 @@ function mapOrder(row: OrderRow): VendorOrder {
     payment_method: row.payment_method,
     created_at: row.created_at,
     prep_seconds: row.estimated_prep_minutes ? row.estimated_prep_minutes * 60 : null,
-    special_request: specialNotes.length ? specialNotes.join('; ') : null,
     vendor_handed_off_at: row.vendor_handed_off_at,
     items,
   };
@@ -156,8 +157,14 @@ async function fetchMenu(vendorId: string) {
   menuItems = (data as MenuItem[] | null) ?? [];
 }
 
+// A burst of realtime events fires overlapping fetches; only the latest one
+// may land, or an older response resolving last puts a stale status back.
+let ordersRequest = 0;
+
 async function fetchOrders(vendorId: string) {
+  const request = ++ordersRequest;
   const { data, error } = await queryOrders(vendorId);
+  if (request !== ordersRequest) return;
   // Keep the last good queue on a failed refetch — [] would tell the vendor nothing is waiting.
   if (error) { console.warn('fetchOrders failed:', error.message); return; }
   orders = data.map(mapOrder);
@@ -196,6 +203,12 @@ function subscribeRealtime(vendorId: string, userId: string) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items', filter: `vendor_id=eq.${vendorId}` }, () => {
       void fetchMenu(vendorId).then(emit);
     })
+    // An admin can force the stall open/closed from (admin)/vendors — keep
+    // the vendor's own toggle in step instead of showing a stale "Open".
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'vendors', filter: `id=eq.${vendorId}` }, (payload) => {
+      storeOpen = (payload.new as { is_open: boolean }).is_open;
+      emit();
+    })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (payload) => {
       notifications = [payload.new as VendorNotification, ...notifications];
       emit();
@@ -214,17 +227,14 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
 
   if (await getUserRole(user.id) !== 'vendor') { loading = false; emit(); return 'not-vendor'; }
 
-  // select('*') (not a column list) so a not-yet-live column — latitude /
-  // longitude land with 20260908000000_vendor_geo.sql, still pending on the
-  // hosted DB — can't 42703 the whole query and bounce every vendor to login.
-  // Matches how the student side (store/[id].tsx) reads vendors.
+  // select('*') (not a column list) — matches how the student side reads vendors.
   const { data: vendor, error: vendorError } = await supabase
     .from('vendors')
     .select('*')
     .eq('owner_user_id', user.id)
     .maybeSingle();
   if (vendorError) {
-    showAlert('Could not load your store', vendorError.message);
+    showAlert(tr('vendor.err.loadStore'), vendorError.message);
     loading = false;
     emit();
     return 'no-session';
@@ -239,9 +249,6 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
     is_on_campus: vendor.is_on_campus,
     stall_number: vendor.stall_number,
     address: vendor.address,
-    // `?? null` not just for the type: until the geo migration lands on the
-    // hosted DB the column is absent from the row entirely (undefined), and
-    // `latitude: number | null` should stay honest.
     latitude: vendor.latitude ?? null,
     longitude: vendor.longitude ?? null,
     bio: vendor.bio,
@@ -250,8 +257,6 @@ export async function initVendorSession(): Promise<'ok' | 'not-vendor' | 'no-ses
     is_halal_certified: vendor.is_halal_certified,
     open_time: vendor.open_time,
     close_time: vendor.close_time,
-    // `?? null`/`?? false`: same not-yet-migrated-on-hosted-DB defensiveness
-    // as latitude/longitude above, until 20260915020000 lands there.
     stripe_account_id: vendor.stripe_account_id ?? null,
     stripe_payouts_enabled: vendor.stripe_payouts_enabled ?? false,
   };
@@ -285,9 +290,9 @@ export async function acceptOrder(id: string) {
   // vendor accepts — not at order placement. See accept_order_and_charge
   // in 20260904010000_charge_on_vendor_accept.sql.
   const { data, error } = await supabase.rpc('accept_order_and_charge', { p_order_id: id });
-  if (error) { showAlert('Could not accept order', error.message); return; }
+  if (error) { showAlert(tr('vendor.err.acceptOrder'), error.message); return; }
   if (data === 'insufficient_balance') {
-    showAlert('Order auto-rejected', "Customer's balance changed and is no longer enough to cover this order.");
+    showAlert(tr('vendor.err.autoRejectedTitle'), tr('vendor.err.autoRejectedMsg'));
   }
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
@@ -299,9 +304,9 @@ export async function rejectOrder(id: string) {
   // an accept that just landed (or a stale second device) can't flip an
   // already-charged order to 'rejected' with no way to unwind the debit.
   const ok = await transitionOrderWithAlert(id, 'pending', 'rejected', {
-    errorTitle: 'Could not reject order',
-    lostRaceTitle: 'Could not reject order',
-    lostRaceMessage: 'This order is no longer pending.',
+    errorTitle: tr('vendor.err.rejectOrder'),
+    lostRaceTitle: tr('vendor.err.rejectOrder'),
+    lostRaceMessage: tr('vendor.err.notPending'),
   });
   if (!ok) return;
   if (vendorProfile) await fetchOrders(vendorProfile.id);
@@ -316,18 +321,28 @@ export async function markReady(id: string) {
   // enforce_order_status_transition — but matching here turns a raw Postgres
   // exception into the same "no longer …" message reject already shows.
   const ok = await transitionOrderWithAlert(id, 'accepted', 'ready', {
-    errorTitle: 'Could not update order',
-    lostRaceTitle: 'Could not update order',
-    lostRaceMessage: 'This order is no longer accepted.',
+    errorTitle: tr('vendor.err.updateOrder'),
+    lostRaceTitle: tr('vendor.err.updateOrder'),
+    lostRaceMessage: tr('vendor.err.notAccepted'),
   });
   if (!ok) return;
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
 
+// After accept (charged) the only way out is this RPC: it locks the order
+// and its payment, refunds the student exactly once and moves the order to
+// 'rejected' (see vendor_cancel_order in 20260924010000_escrow_settlement.sql).
+export async function cancelAcceptedOrder(id: string) {
+  const { error } = await supabase.rpc('vendor_cancel_order', { p_order_id: id });
+  if (error) { showAlert(tr('vendor.err.cancelOrder'), error.message); return; }
+  if (vendorProfile) await fetchOrders(vendorProfile.id);
+  emit();
+}
+
 export async function handOff(id: string) {
   const error = await confirmHandoff('vendor', id);
-  if (error) { showAlert('Could not confirm hand-off', error); return; }
+  if (error) { showAlert(tr('vendor.err.handoff'), error); return; }
   if (vendorProfile) await fetchOrders(vendorProfile.id);
   emit();
 }
@@ -335,8 +350,10 @@ export async function handOff(id: string) {
 // No order_items column backs a per-item prep checklist in the current schema
 // — stays local/ephemeral (resets on refetch), same as before.
 export function toggleItemDone(orderId: string, index: number) {
-  const o = orders.find(o => o.id === orderId);
-  if (o?.items[index]) o.items[index].done = !o.items[index].done;
+  orders = orders.map(o => o.id !== orderId ? o : {
+    ...o,
+    items: o.items.map((it, i) => i === index ? { ...it, done: !it.done } : it),
+  });
   emit();
 }
 
@@ -346,13 +363,15 @@ export async function toggleAvailability(itemId: string) {
   const item = menuItems.find(i => i.id === itemId);
   if (!item) return;
   const next = !item.is_available;
-  item.is_available = next; // optimistic
-  emit();
+  const setAvailable = (value: boolean) => {
+    menuItems = menuItems.map(i => i.id === itemId ? { ...i, is_available: value } : i);
+    emit();
+  };
+  setAvailable(next); // optimistic
   const { error } = await supabase.from('menu_items').update({ is_available: next }).eq('id', itemId);
   if (error) {
-    item.is_available = !next; // revert
-    emit();
-    showAlert('Could not update availability', error.message);
+    setAvailable(!next); // revert
+    showAlert(tr('vendor.err.availability'), error.message);
   }
 }
 
@@ -387,7 +406,7 @@ export async function addMenuItem(input: NewMenuItemInput): Promise<boolean> {
     .select('id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
     .single();
   if (error || !data) {
-    showAlert('Could not save item', error?.message ?? 'Unknown error');
+    showAlert(tr('vendor.err.saveItem'), error?.message ?? tr('vendor.err.tryAgain'));
     return false;
   }
   menuItems = [data as MenuItem, ...menuItems];
@@ -419,7 +438,7 @@ export async function setStoreOpen(open: boolean) {
   if (error) {
     storeOpen = !open;
     emit();
-    showAlert('Could not update store status', error.message);
+    showAlert(tr('vendor.err.storeStatus'), error.message);
   }
 }
 
@@ -438,7 +457,7 @@ export async function updateVendorProfile(patch: VendorProfilePatch): Promise<bo
   if (error) {
     vendorProfile = previous;
     emit();
-    showAlert('Could not save profile', error.message);
+    showAlert(tr('vendor.err.saveProfile'), error.message);
     return false;
   }
   return true;
@@ -475,7 +494,7 @@ export async function startVendorStripeOnboarding(returnUrl: string): Promise<st
     body: { return_url: returnUrl, refresh_url: returnUrl },
   });
   if (error || !data?.url) {
-    showAlert('Could not start payout setup', error?.message ?? 'Please try again.');
+    showAlert(tr('vendor.err.payoutSetup'), error?.message ?? tr('vendor.err.tryAgain'));
     return null;
   }
   return data.url;

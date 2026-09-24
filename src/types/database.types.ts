@@ -914,7 +914,15 @@ export type Database = {
         }[]
       }
       is_admin: { Args: never; Returns: boolean }
-      next_queue_number: { Args: { p_vendor_id: string }; Returns: number }
+      place_order: {
+        Args: {
+          p_lines: Json
+          p_pickup_end: string
+          p_pickup_start: string
+          p_vendor_id: string
+        }
+        Returns: string
+      }
       provision_vendor: {
         Args: {
           p_business_name: string
@@ -923,7 +931,14 @@ export type Database = {
         }
         Returns: string
       }
-      refund_escrow: { Args: { p_order_id: string }; Returns: undefined }
+      record_vendor_payout: {
+        Args: { p_order_id: string; p_transfer_id: string }
+        Returns: boolean
+      }
+      recredit_wallet_for_dispute: {
+        Args: { p_reference: string }
+        Returns: number
+      }
       student_confirm_pickup: {
         Args: { p_order_id: string }
         Returns: undefined
@@ -932,6 +947,7 @@ export type Database = {
         Args: { p_amount: number; p_reference: string; p_user_id: string }
         Returns: undefined
       }
+      vendor_cancel_order: { Args: { p_order_id: string }; Returns: undefined }
       vendor_confirm_handoff: {
         Args: { p_order_id: string }
         Returns: undefined
