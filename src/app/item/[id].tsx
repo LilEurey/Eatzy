@@ -17,7 +17,7 @@ import { invokeEdgeFunction } from '@/lib/edge-function';
 import type { Database } from '@/types/database.types';
 
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
-type SimilarItem = { id: string; name: string; price: number; image_url: string | null; vendor_name: string; score: number };
+type SimilarItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
 type Review = {
   id: string;
   score: number;
@@ -493,7 +493,7 @@ export default function ItemDetailScreen() {
                       }
                     </View>
                     <View style={{ padding: 10 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>{s.name}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>{localizedText(s.name, s.name_th, locale)}</Text>
                       <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>{s.vendor_name}</Text>
                       <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{s.price}</Text>
                     </View>

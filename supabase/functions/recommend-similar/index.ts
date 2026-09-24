@@ -12,6 +12,7 @@ import { callerDietFrom, rankSimilar } from '../_shared/ranking.ts';
 type MenuItemRow = {
   id: string;
   name: string;
+  name_th: string | null;
   price: number;
   image_url: string | null;
   ingredients: string[] | null;
@@ -85,6 +86,7 @@ Deno.serve(async (req) => {
     results: scored.map(({ item, score }) => ({
       id: item.id,
       name: item.name,
+      name_th: item.name_th,
       price: item.price,
       image_url: item.image_url,
       vendor_name: item.vendors?.name ?? '',
