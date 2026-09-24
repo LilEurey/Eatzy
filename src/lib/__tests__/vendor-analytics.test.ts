@@ -27,13 +27,14 @@ describe('salesVelocity — hourly (today / yesterday)', () => {
   const orders: AnalyticsOrder[] = [
     order('2026-06-15T04:00:00Z', 100), // 11:00 BKK today
     order('2026-06-15T04:30:00Z', 50), //  11:00 BKK today
-    order('2026-06-15T05:00:00Z', 200, 'accepted'), // 12:00 BKK today (the "now" hour)
+    order('2026-06-15T05:00:00Z', 200), // 12:00 BKK today (the "now" hour)
+    order('2026-06-15T05:10:00Z', 777, 'accepted'), // not paid out yet — excluded, same as the Revenue KPI
     order('2026-06-15T04:15:00Z', 999, 'rejected'), // excluded
     order('2026-06-15T04:20:00Z', 999, 'cancelled'), // excluded
     order('2026-06-14T04:00:00Z', 500), // 11:00 BKK yesterday
   ];
 
-  it('emits one bar per hour across the open window with per-hour revenue sums', () => {
+  it('emits one bar per hour across the open window with per-hour completed-revenue sums', () => {
     const bars = salesVelocity(orders, 'today', 10, 14, NOW);
     expect(bars.map(b => b.label)).toEqual(['10AM', '11AM', '12PM', '1PM', '2PM']);
     expect(bars.map(b => b.value)).toEqual([0, 150, 200, 0, 0]);
