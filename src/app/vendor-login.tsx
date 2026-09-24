@@ -8,7 +8,6 @@ import { Brand } from '@/constants/theme';
 import { showAlert, errorMessage } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
-import { getUserRole } from '@/lib/user-role';
 
 export default function VendorLoginScreen() {
   const { t } = useI18n();
@@ -23,17 +22,14 @@ export default function VendorLoginScreen() {
   async function signIn() {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-
-      if (await getUserRole(data.user.id) !== 'vendor') {
-        await supabase.auth.signOut();
-        throw new Error('This account is not registered as a vendor.');
-      }
-
-      router.replace('/(vendor)/overview');
+      // Role check + redirect (or sign-out with a "not a vendor" alert) is
+      // handled by the root layout's routeAfterAuth, the single place that
+      // reacts to this sign-in — same as admin-login.tsx.
     } catch (e) {
       showAlert(t('auth.signInFailedTitle'), errorMessage(e));
+    } finally {
       setLoading(false);
     }
   }

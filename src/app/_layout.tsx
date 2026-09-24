@@ -4,8 +4,8 @@ import { Stack, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StripeProvider } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
-import { getUserRole } from '@/lib/user-role';
-import { showAlert } from '@/lib/alert';
+import { loadUserRole } from '@/lib/user-role';
+import { showAlert, showConfirm } from '@/lib/alert';
 import { I18nProvider } from '@/lib/i18n';
 import type { Session } from '@supabase/supabase-js';
 
@@ -60,17 +60,40 @@ export default function RootLayout() {
     // dismissAll's POP_TO_TOP actually needs.
     if (router.canDismiss()) router.dismissAll();
 
-    const role = await getUserRole(userId);
+    // A failed read must not route as if it were data: a null role would
+    // send a vendor/admin into student onboarding, and a failed prefs read
+    // would send an onboarded student back through onboarding. Un-mark the
+    // user as routed and offer a retry instead.
+    const retryLater = () => {
+      routedUserId.current = null;
+      showConfirm(
+        'Couldn’t load your account',
+        'Check your connection and try again.',
+        () => {
+          routedUserId.current = userId;
+          void routeAfterAuth(userId, originPath);
+        },
+        { confirmLabel: 'Try again' },
+      );
+    };
 
-    // admin-login.tsx defers entirely to this function for role-checking and
-    // routing (it only does the signInWithPassword call itself) — this is
-    // the one place a sign-in from that screen gets rejected if the account
-    // isn't an admin. Keeping this the sole role-check-and-route path avoids
-    // the old race where admin-login.tsx's own role check and this listener
-    // independently redirected the same sign-in event.
+    const { role, error: roleError } = await loadUserRole(userId);
+    if (roleError) { retryLater(); return; }
+
+    // admin-login.tsx and vendor-login.tsx defer entirely to this function
+    // for role-checking and routing (they only call signInWithPassword) —
+    // this is the one place a sign-in from those screens gets rejected if
+    // the account has the wrong role. Keeping this the sole
+    // role-check-and-route path avoids the old race where the login
+    // screen's own check and this listener redirected the same sign-in.
     if (originPath === '/admin-login' && role !== 'admin') {
       await supabase.auth.signOut();
       showAlert('Sign in failed', 'This account is not registered as an admin.');
+      return;
+    }
+    if (originPath === '/vendor-login' && role !== 'vendor') {
+      await supabase.auth.signOut();
+      showAlert('Sign in failed', 'This account is not registered as a vendor.');
       return;
     }
 
@@ -84,11 +107,12 @@ export default function RootLayout() {
       return;
     }
 
-    const { data } = await supabase
+    const { data, error: prefsError } = await supabase
       .from('user_preferences')
       .select('user_id')
       .eq('user_id', userId)
       .maybeSingle();
+    if (prefsError) { retryLater(); return; }
 
     if (!data) {
       router.replace('/(auth)/onboarding');
