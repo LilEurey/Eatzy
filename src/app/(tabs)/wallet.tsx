@@ -6,13 +6,19 @@ import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { formatBaht } from '@/lib/money';
 import { Brand } from '@/constants/theme';
-import { comingSoonAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ, bangkokDayKey } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
+import type { OrderStatus } from '@/lib/order-lifecycle';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
 type WalletTxn = { id: string; type: TxType; amount: number; description: string | null; created_at: string };
+
+// Active orders only: their payment has left the wallet but isn't final yet
+// (completes to the vendor, or refunds on reject/cancel).
+type HeldOrder = { id: string; queue_number: number | null; status: OrderStatus; total_amount: number; vendors: { name: string } | null };
+const HELD_STATUSES: OrderStatus[] = ['pending', 'accepted', 'ready'];
+const STATUS_KEY = { pending: 'orders.status.pending', accepted: 'orders.status.preparing', ready: 'orders.status.ready' } as const;
 
 const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
   topup:    { icon: '↓', color: '#16a34a' },
@@ -35,17 +41,19 @@ function formatDate(iso: string, t: ReturnType<typeof useI18n>['t']) {
 }
 
 async function loadWallet(userId: string) {
-  const [profileRes, txnsRes] = await Promise.all([
+  const [profileRes, txnsRes, heldRes] = await Promise.all([
     supabase.from('users').select('wallet_balance').eq('id', userId).maybeSingle(),
     // Append-only ledger, no pagination in the UI — cap it so the query
     // doesn't grow for the life of the account. Balance comes from
     // users.wallet_balance, not from summing these, so a cap is display-only.
     supabase.from('wallet_transactions').select('id,type,amount,description,created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(100),
+    supabase.from('orders').select('id,queue_number,status,total_amount,vendors(name)').eq('user_id', userId).in('status', HELD_STATUSES).order('created_at', { ascending: false }),
   ]);
-  if (profileRes.error || txnsRes.error || !profileRes.data) return null;
+  if (profileRes.error || txnsRes.error || heldRes.error || !profileRes.data) return null;
   return {
     balance: profileRes.data.wallet_balance,
     txns: (txnsRes.data ?? []) as WalletTxn[],
+    held: (heldRes.data ?? []) as unknown as HeldOrder[],
   };
 }
 
@@ -53,6 +61,8 @@ export default function WalletScreen() {
   const { t } = useI18n();
   const [balance, setBalance] = useState(0);
   const [txns, setTxns] = useState<WalletTxn[]>([]);
+  const [held, setHeld] = useState<HeldOrder[]>([]);
+  const [showHeld, setShowHeld] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const focusGuard = useFocusGuard();
@@ -68,6 +78,7 @@ export default function WalletScreen() {
       if (result) {
         setBalance(result.balance);
         setTxns(result.txns);
+        setHeld(result.held);
       }
       setLoading(false);
     });
@@ -75,7 +86,7 @@ export default function WalletScreen() {
 
   useFocusEffect(useCallback(() => { refresh(focusGuard.snapshot()); }, [focusGuard, refresh]));
 
-  const comingSoon = () => comingSoonAlert(t);
+  const heldTotal = held.reduce((sum, o) => sum + o.total_amount, 0);
 
   if (loading) {
     return (
@@ -148,13 +159,14 @@ export default function WalletScreen() {
         {/* Quick actions */}
         <View style={{ flexDirection: 'row', gap: 12, marginHorizontal: 20, marginBottom: 28 }}>
           {[
-            { icon: '⇄', label: t('wallet.transfer'), onPress: comingSoon },
-            { icon: '📄', label: t('wallet.statement'), onPress: comingSoon },
-          ].map(({ icon, label, onPress }) => (
+            { icon: '⏳', label: t('wallet.escrow', { amount: formatBaht(heldTotal) }), onPress: () => setShowHeld(v => !v), dim: held.length === 0 },
+            { icon: '📄', label: t('wallet.statement'), onPress: () => router.push('/wallet-statement'), dim: false },
+          ].map(({ icon, label, onPress, dim }) => (
             <Tap
-              key={label}
+              key={icon}
               onPress={onPress}
               style={{
+                opacity: dim ? 0.5 : 1,
                 flex: 1, backgroundColor: Brand.card, borderRadius: 16,
                 paddingVertical: 16, alignItems: 'center', gap: 6,
                 shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
@@ -171,6 +183,35 @@ export default function WalletScreen() {
             </Tap>
           ))}
         </View>
+
+        {showHeld && (
+          <View style={{ marginHorizontal: 20, marginTop: -12, marginBottom: 28, backgroundColor: Brand.card, borderRadius: 20, overflow: 'hidden' }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, padding: 16, paddingBottom: 8 }}>
+              {t('wallet.escrowTitle')}
+            </Text>
+            {held.length === 0 && (
+              <Text style={{ fontSize: 13, color: Brand.textSecondary, paddingHorizontal: 16, paddingBottom: 16 }}>
+                {t('wallet.escrowEmpty')}
+              </Text>
+            )}
+            {held.map((o, i) => (
+              <View key={o.id}>
+                {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
+                <Tap onPress={() => router.push(`/track/${o.id}`)} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>
+                      {o.vendors?.name ?? ''}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
+                      {o.queue_number != null ? t('wallet.escrowQueue', { n: o.queue_number }) + ' · ' : ''}{t(STATUS_KEY[o.status as keyof typeof STATUS_KEY])}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>฿{formatBaht(o.total_amount)}</Text>
+                </Tap>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Transactions */}
         <View style={{ paddingHorizontal: 20 }}>
