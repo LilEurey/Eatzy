@@ -389,7 +389,7 @@ export default function ProfileScreen() {
             />
           </View>
 
-          <Tap onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 }}>
+          <Tap onPress={() => router.push('/help')} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
               <Ionicons name="help-circle-outline" size={20} color="#261812" />
               <Text style={{ fontSize: 16, color: '#261812' }}>{t('profile.help')}</Text>
