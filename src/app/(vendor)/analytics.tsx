@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, useWindowDimensions } from 'react-native';
+import { Platform, View, Text, ScrollView, useWindowDimensions } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorPayments } from '@/lib/vendor-store';
-import { comingSoonAlert } from '@/lib/alert';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { comingSoonAlert, showAlert, errorMessage } from '@/lib/alert';
+import { paymentsCsv } from '@/lib/payments-csv';
 import { useI18n } from '@/lib/i18n';
 import { isBangkokToday, isBangkokDateInRange, formatFriendlyDateTime, type DateRangeFilter } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
@@ -43,6 +46,27 @@ export default function VendorFinanceScreen() {
   ];
 
   const comingSoon = () => comingSoonAlert(t);
+
+  const exportCsv = async () => {
+    const csv = paymentsCsv(visiblePayments);
+    const name = `eatzy-payments-${historyFilter}-${new Date().toISOString().slice(0, 10)}.csv`;
+    try {
+      if (Platform.OS === 'web') {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        return;
+      }
+      const file = new File(Paths.cache, name);
+      file.create({ overwrite: true });
+      file.write(csv);
+      await Sharing.shareAsync(file.uri, { mimeType: 'text/csv', UTI: 'public.comma-separated-values-text' });
+    } catch (e) {
+      showAlert(t('vendor.finance.export'), errorMessage(e));
+    }
+  };
 
   return (
     <View style={{ gap: 20 }}>
@@ -92,7 +116,7 @@ export default function VendorFinanceScreen() {
               selected={historyFilter}
               onSelect={setHistoryFilter}
             />
-            <Tap onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }}>
+            <Tap onPress={exportCsv} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }}>
               <Ionicons name="download-outline" size={12} color={Brand.textPrimary} />
               <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.finance.export')}</Text>
             </Tap>
