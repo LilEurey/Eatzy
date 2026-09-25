@@ -401,6 +401,9 @@ deno_version = 2
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.vendor-stripe-onboarding]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
