@@ -616,7 +616,7 @@ export const en = {
   'vendor.profile.halalCertifiedLabel': 'Halal Certified',
   'vendor.profile.openTimeLabel': 'Open Time',
   'vendor.profile.closeTimeLabel': 'Close Time',
-  'vendor.profile.timePlaceholder': 'HH:MM',
+  'vendor.profile.timeNotSet': 'Not set',
   'vendor.profile.cancel': 'Cancel',
   'vendor.profile.save': 'Save Changes',
   'vendor.profile.saving': 'Saving…',

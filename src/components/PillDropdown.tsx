@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { View, Text, Modal, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, Modal, Pressable, useWindowDimensions, ScrollView } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -61,18 +61,20 @@ export function PillDropdown<T extends string>({
               shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6,
             }}
           >
-            {options.map(opt => (
-              <Tap
-                key={opt.key}
-                onPress={() => { onSelect(opt.key); setOpen(false); }}
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10 }}
-              >
-                <Text style={{ fontSize: 13, fontWeight: opt.key === selected ? '700' : '500', color: opt.key === selected ? Brand.vendorAccent : Brand.textPrimary }}>
-                  {opt.label}
-                </Text>
-                {opt.key === selected && <Ionicons name="checkmark" size={15} color={Brand.vendorAccent} />}
-              </Tap>
-            ))}
+            <ScrollView style={{ maxHeight: 320 }}>
+              {options.map(opt => (
+                <Tap
+                  key={opt.key}
+                  onPress={() => { onSelect(opt.key); setOpen(false); }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10 }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: opt.key === selected ? '700' : '500', color: opt.key === selected ? Brand.vendorAccent : Brand.textPrimary }}>
+                    {opt.label}
+                  </Text>
+                  {opt.key === selected && <Ionicons name="checkmark" size={15} color={Brand.vendorAccent} />}
+                </Tap>
+              ))}
+            </ScrollView>
           </View>
         </Pressable>
       </Modal>
