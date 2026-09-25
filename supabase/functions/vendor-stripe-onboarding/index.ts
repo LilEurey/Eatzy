@@ -89,6 +89,8 @@ Deno.serve(async (req) => {
         contact_email: caller.email,
         display_name: vendor.name,
         dashboard: 'none',
+        // Stripe requires country before defaults.currency; every stall is on KMUTT campus.
+        identity: { country: 'th' },
         configuration: {
           recipient: {
             capabilities: {
