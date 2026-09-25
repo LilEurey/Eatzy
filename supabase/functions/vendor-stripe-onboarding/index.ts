@@ -44,6 +44,16 @@ Deno.serve(async (req) => {
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
+  // Stripe only accepts https:// return/refresh URLs, so app deep links
+  // (eatzy://, exp://) go through this GET bounce: Stripe lands here over
+  // https, we 302 on to the app. Needs verify_jwt = false (config.toml);
+  // the POST path below still checks the caller's session itself.
+  if (req.method === 'GET') {
+    const to = new URL(req.url).searchParams.get('to');
+    if (!to || !isAllowedRedirect(to)) return new Response('Invalid redirect', { status: 400 });
+    return new Response(null, { status: 302, headers: { Location: to } });
+  }
+
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return json({ error: 'Missing authorization header' }, 401);
 
@@ -137,6 +147,10 @@ Deno.serve(async (req) => {
     }
   }
 
+  const bounce = (url: string) => url.startsWith('https://') || url.startsWith('http://')
+    ? url
+    : `${Deno.env.get('SUPABASE_URL')}/functions/v1/vendor-stripe-onboarding?to=${encodeURIComponent(url)}`;
+
   let link;
   try {
     link = await stripe.v2.core.accountLinks.create({
@@ -145,8 +159,8 @@ Deno.serve(async (req) => {
         type: 'account_onboarding',
         account_onboarding: {
           configurations: ['merchant', 'recipient'],
-          return_url: returnUrl,
-          refresh_url: refreshUrl,
+          return_url: bounce(returnUrl),
+          refresh_url: bounce(refreshUrl),
           collection_options: { fields: 'eventually_due' },
         },
       },
