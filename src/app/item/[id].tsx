@@ -1,3 +1,4 @@
+import { isStoreOpen } from '@/lib/time';
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { Image } from 'expo-image';
@@ -67,10 +68,10 @@ export default function ItemDetailScreen() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('menu_items').select('*, vendors(name,is_open)').eq('id', id).maybeSingle();
+      const { data } = await supabase.from('menu_items').select('*, vendors(name,is_open,open_time,close_time)').eq('id', id).maybeSingle();
       setItem(data ?? null);
       setVendorName(data?.vendors?.name ?? '');
-      setStoreOpen(data?.vendors?.is_open !== false);
+      setStoreOpen(!data?.vendors || isStoreOpen(data.vendors));
     }
     void load();
 

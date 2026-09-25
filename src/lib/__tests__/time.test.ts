@@ -1,4 +1,6 @@
 import {
+  isWithinOpenHours,
+  isStoreOpen,
   getMealSegment,
   nextPickupSlots,
   isBangkokDateInRange,
@@ -103,5 +105,26 @@ describe('isBangkokDateInRange with an injected now', () => {
     expect(isBangkokDateInRange('2026-06-08T05:00:00Z', 'week', NOW)).toBe(true);
     expect(isBangkokDateInRange('2026-06-08T04:59:59Z', 'week', NOW)).toBe(false);
     expect(isBangkokDateInRange('2026-06-15T05:00:01Z', 'week', NOW)).toBe(false);
+  });
+});
+
+describe('isWithinOpenHours', () => {
+  // 03:00 UTC = 10:00 Bangkok
+  const at10 = new Date('2026-09-25T03:00:00Z');
+  const at23 = new Date('2026-09-25T16:00:00Z');
+  it('treats missing hours as unlimited', () => expect(isWithinOpenHours(null, '20:00:00', at23)).toBe(true));
+  it('day window', () => {
+    expect(isWithinOpenHours('09:00:00', '20:00:00', at10)).toBe(true);
+    expect(isWithinOpenHours('09:00:00', '20:00:00', at23)).toBe(false);
+    expect(isWithinOpenHours('10:00', '20:00', at10)).toBe(true);
+    expect(isWithinOpenHours('08:00', '10:00', at10)).toBe(false);
+  });
+  it('overnight window', () => {
+    expect(isWithinOpenHours('18:00', '02:00', at23)).toBe(true);
+    expect(isWithinOpenHours('18:00', '02:00', at10)).toBe(false);
+  });
+  it('needs toggle on too', () => {
+    expect(isStoreOpen({ is_open: false, open_time: null, close_time: null }, at10)).toBe(false);
+    expect(isStoreOpen({ is_open: true, open_time: '09:00', close_time: '20:00' }, at23)).toBe(false);
   });
 });
