@@ -19,7 +19,7 @@
 // Deploy: supabase functions deploy vendor-stripe-onboarding
 // Secrets:  supabase secrets set STRIPE_SECRET_KEY=sk_test_...
 
-import Stripe from 'npm:stripe@18';
+import Stripe from 'npm:stripe@22';
 import { callerClient, corsAndJson, serviceClient } from '../_shared/http.ts';
 
 // ponytail: pinned to the API version documented for v2 core accounts at
@@ -133,12 +133,17 @@ Deno.serve(async (req) => {
 
   let link;
   try {
-    link = await stripe.accountLinks.create({
+    link = await stripe.v2.core.accountLinks.create({
       account: accountId,
-      type: 'account_onboarding',
-      return_url: returnUrl,
-      refresh_url: refreshUrl,
-      collection_options: { fields: 'eventually_due' },
+      use_case: {
+        type: 'account_onboarding',
+        account_onboarding: {
+          configurations: ['recipient'],
+          return_url: returnUrl,
+          refresh_url: refreshUrl,
+          collection_options: { fields: 'eventually_due' },
+        },
+      },
     });
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : 'Could not create onboarding link', code: 'ACCOUNT_LINK_FAILED' }, 502);
