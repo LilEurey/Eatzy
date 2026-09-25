@@ -56,7 +56,7 @@ export default function VendorFinanceScreen() {
         a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
         a.download = name;
         a.click();
-        URL.revokeObjectURL(a.href);
+        setTimeout(() => URL.revokeObjectURL(a.href), 0);
         return;
       }
       const file = new File(Paths.cache, name);
