@@ -1,5 +1,5 @@
 // Starts (or resumes) a vendor's Stripe Connect onboarding. Creates a v2
-// connected account on first call — dashboard: 'none', recipient
+// connected account on first call — dashboard: 'full', recipient
 // configuration, platform-owned fee collection and negative balance
 // liability (see docs/superpowers/specs 2026-09-15 Stripe Connect design) —
 // then always issues a fresh Account Link, since links expire after a few
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
   let accountId = vendor.stripe_account_id;
   if (!accountId) {
     // Identity (country, entity type, legal name...) is deliberately left
-    // unset here — dashboard: 'none' with Stripe-owned requirement
+    // unset here — dashboard: 'full' with Stripe-owned requirement
     // collection means the hosted onboarding form collects it directly from
     // the vendor instead of us guessing it up front.
     let account;
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       account = await stripe.v2.core.accounts.create({
         contact_email: caller.email,
         display_name: vendor.name,
-        dashboard: 'none',
+        dashboard: 'full', // TH platforms can't be loss-liable, so Stripe owns losses + dashboard.
         // Stripe requires country before defaults.currency; every stall is on KMUTT campus.
         identity: { country: 'th' },
         configuration: {
@@ -105,8 +105,8 @@ Deno.serve(async (req) => {
         defaults: {
           currency: 'thb',
           responsibilities: {
-            fees_collector: 'application',
-            losses_collector: 'application',
+            fees_collector: 'stripe',
+            losses_collector: 'stripe',
           },
         },
       });
