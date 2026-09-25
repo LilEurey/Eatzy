@@ -123,7 +123,7 @@ export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): 
       // Every stall, open first then by queue. Closed stalls stay visible in
       // Store Options (dimmed + "Closed" badge); the queue banner and
       // "No Queue Right Now" filter this same list down to the open ones.
-      supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url,is_open').order('is_open', { ascending: false }).order('current_queue_count', { ascending: true }),
+      supabase.from('vendors').select('id,name,is_halal_certified,estimated_wait_min,current_queue_count,cuisine_tags,cover_image_url,is_open,open_time,close_time').order('is_open', { ascending: false }).order('current_queue_count', { ascending: true }),
       // Fetch a few candidates, not just 1 — the featured item can fail
       // the caller's dietary filter, and we need another to fall back to.
       supabase.from('menu_items').select(menuFields).eq('is_featured', true).eq('is_available', true).match(dietMatch).order('id').limit(10),

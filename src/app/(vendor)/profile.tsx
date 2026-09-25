@@ -6,6 +6,7 @@ import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
+import { PillDropdown } from '@/components/PillDropdown';
 import { useVendorProfile, updateVendorProfile, startVendorStripeOnboarding, refreshVendorProfile } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
@@ -13,6 +14,25 @@ import { hasCoords } from '@/lib/geo';
 
 const INPUT_STYLE = { borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary } as const;
 const MULTILINE_STYLE = { minHeight: 70, textAlignVertical: 'top' } as const;
+
+// Every 30 min; the stored value is kept as an option if it sits off that grid.
+const HALF_HOURS = Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`);
+
+function TimeField({ label, value, onChange, notSetLabel }: { label: string; value: string; onChange: (v: string) => void; notSetLabel: string }) {
+  const times = value && !HALF_HOURS.includes(value) ? [value, ...HALF_HOURS] : HALF_HOURS;
+  return (
+    <View>
+      <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{label}</Text>
+      <PillDropdown
+        icon="time-outline"
+        label={value || notSetLabel}
+        selected={value}
+        onSelect={onChange}
+        options={[{ key: '', label: notSetLabel }, ...times.map(t => ({ key: t, label: t }))]}
+      />
+    </View>
+  );
+}
 
 function Field({ label, hint, ...inputProps }: { label: string; hint?: string } & React.ComponentProps<typeof TextInput>) {
   return (
@@ -48,8 +68,8 @@ export default function VendorProfileScreen() {
   const [bioTh, setBioTh] = useState(vendor?.bio_th ?? '');
   const [cuisineTags, setCuisineTags] = useState((vendor?.cuisine_tags ?? []).join(', '));
   const [halalCertified, setHalalCertified] = useState(vendor?.is_halal_certified ?? false);
-  const [openTime, setOpenTime] = useState(vendor?.open_time ?? '');
-  const [closeTime, setCloseTime] = useState(vendor?.close_time ?? '');
+  const [openTime, setOpenTime] = useState(vendor?.open_time?.slice(0, 5) ?? '');
+  const [closeTime, setCloseTime] = useState(vendor?.close_time?.slice(0, 5) ?? '');
   const [saving, setSaving] = useState(false);
 
   async function save() {
@@ -63,8 +83,8 @@ export default function VendorProfileScreen() {
       bio_th: bioTh.trim() || null,
       cuisine_tags: cuisineTags.split(',').map(tag => tag.trim()).filter(Boolean),
       is_halal_certified: halalCertified,
-      open_time: openTime.trim() || null,
-      close_time: closeTime.trim() || null,
+      open_time: openTime || null,
+      close_time: closeTime || null,
     });
     setSaving(false);
     if (ok) showAlert(t('vendor.profile.savedTitle'), t('vendor.profile.savedMsg'), () => router.back());
@@ -164,10 +184,10 @@ export default function VendorProfileScreen() {
 
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <Field label={t('vendor.profile.openTimeLabel')} value={openTime} onChangeText={setOpenTime} placeholder={t('vendor.profile.timePlaceholder')} />
+            <TimeField label={t('vendor.profile.openTimeLabel')} value={openTime} onChange={setOpenTime} notSetLabel={t('vendor.profile.timeNotSet')} />
           </View>
           <View style={{ flex: 1 }}>
-            <Field label={t('vendor.profile.closeTimeLabel')} value={closeTime} onChangeText={setCloseTime} placeholder={t('vendor.profile.timePlaceholder')} />
+            <TimeField label={t('vendor.profile.closeTimeLabel')} value={closeTime} onChange={setCloseTime} notSetLabel={t('vendor.profile.timeNotSet')} />
           </View>
         </View>
 

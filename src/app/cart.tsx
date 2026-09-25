@@ -10,7 +10,7 @@ import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { nextPickupSlots } from '@/lib/time';
+import { nextPickupSlots, isStoreOpen } from '@/lib/time';
 import { formatBaht } from '@/lib/money';
 import { placeOrder as placeOrderInDb } from '@/lib/place-order';
 import type { Database } from '@/types/database.types';
@@ -37,7 +37,7 @@ export default function CartScreen() {
   const [slots, setSlots] = useState(() => nextPickupSlots());
   const [selectedIndex, setSelectedIndex] = useState(1);
   const selectedSlot = slots[selectedIndex];
-  const [vendor, setVendor] = useState<Pick<Vendor, 'name' | 'stall_number' | 'is_open'> | null>(null);
+  const [vendor, setVendor] = useState<Pick<Vendor, 'name' | 'stall_number' | 'is_open' | 'open_time' | 'close_time'> | null>(null);
   const [placing, setPlacing] = useState(false);
 
   const subtotal = cartSubtotal(cart);
@@ -45,7 +45,7 @@ export default function CartScreen() {
 
   useEffect(() => {
     if (!cart.vendor_id) return; // cart empty — the empty-state branch below renders instead
-    supabase.from('vendors').select('name,stall_number,is_open').eq('id', cart.vendor_id).maybeSingle()
+    supabase.from('vendors').select('name,stall_number,is_open,open_time,close_time').eq('id', cart.vendor_id).maybeSingle()
       .then(({ data }) => setVendor(data ?? null));
   }, [cart.vendor_id]);
 
@@ -58,7 +58,7 @@ export default function CartScreen() {
       showAlert(t('cart.orderFailedTitle'), t('cart.prefsNotReadyMsg'));
       return;
     }
-    if (vendor?.is_open === false) {
+    if (vendor && !isStoreOpen(vendor)) {
       showAlert(t('cart.storeClosedTitle'), t('cart.storeClosedMsg'));
       return;
     }

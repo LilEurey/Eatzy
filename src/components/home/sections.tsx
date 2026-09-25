@@ -1,3 +1,4 @@
+import { isStoreOpen } from '@/lib/time';
 import type { ReactNode } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
@@ -36,6 +37,8 @@ export type Vendor = {
   cuisine_tags: string[] | null;
   cover_image_url: string | null;
   is_open: boolean | null;
+  open_time: string | null;
+  close_time: string | null;
 };
 
 export type MenuItem = {
@@ -342,7 +345,7 @@ export function StoreOptions({ vendors }: { vendors: Vendor[] }) {
       </View>
       <View style={{ gap: 12 }}>
         {vendors.slice(0, 6).map(vendor => {
-          const closed = vendor.is_open === false;
+          const closed = !isStoreOpen(vendor);
           return (
           <Tap
             key={vendor.id}

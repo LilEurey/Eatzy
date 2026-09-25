@@ -618,7 +618,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.profile.halalCertifiedLabel': 'รับรองฮาลาล',
   'vendor.profile.openTimeLabel': 'เวลาเปิด',
   'vendor.profile.closeTimeLabel': 'เวลาปิด',
-  'vendor.profile.timePlaceholder': 'ชม:นาที',
+  'vendor.profile.timeNotSet': 'ไม่ระบุ',
   'vendor.profile.cancel': 'ยกเลิก',
   'vendor.profile.save': 'บันทึกการเปลี่ยนแปลง',
   'vendor.profile.saving': 'กำลังบันทึก…',

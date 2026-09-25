@@ -1,3 +1,4 @@
+import { isStoreOpen } from '@/lib/time';
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
@@ -154,16 +155,16 @@ export default function StoreDetailScreen() {
           {/* Open badge */}
           <View style={{
             position: 'absolute', top: 16, right: 16,
-            backgroundColor: vendor.is_open ? '#22c55e' : '#ef4444',
+            backgroundColor: isStoreOpen(vendor) ? '#22c55e' : '#ef4444',
             borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4,
           }}>
             <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
-              {vendor.is_open ? t('common.open') : t('common.closed')}
+              {isStoreOpen(vendor) ? t('common.open') : t('common.closed')}
             </Text>
           </View>
         </View>
 
-        {vendor.is_open === false && (
+        {!isStoreOpen(vendor) && (
           <View style={{
             backgroundColor: '#fdecec', borderLeftWidth: 3, borderLeftColor: '#ef4444',
             paddingHorizontal: 20, paddingVertical: 12,

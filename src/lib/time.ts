@@ -96,3 +96,24 @@ export function nextPickupSlots(count = 5, leadMinutes = 15, slotMinutes = 15): 
     return { start, end, label: `${formatBangkokClock(start.toISOString())} – ${formatBangkokClock(end.toISOString())}` };
   });
 }
+
+function clockMinutes(value: string): number {
+  const [h, m] = value.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+// Mirrors public.within_open_hours(): no hours set = no limit, close < open =
+// overnight window. Bangkok is fixed UTC+7 (no DST).
+export function isWithinOpenHours(open: string | null, close: string | null, now: Date = new Date()): boolean {
+  if (!open || !close) return true;
+  const o = clockMinutes(open);
+  const c = clockMinutes(close);
+  if (o === c) return true;
+  const t = (now.getUTCHours() * 60 + now.getUTCMinutes() + 7 * 60) % 1440;
+  return o < c ? t >= o && t < c : t >= o || t < c;
+}
+
+// Effective open state: vendor toggle on AND inside the stall's hours.
+export function isStoreOpen(v: { is_open: boolean | null; open_time?: string | null; close_time?: string | null }, now: Date = new Date()): boolean {
+  return v.is_open === true && isWithinOpenHours(v.open_time ?? null, v.close_time ?? null, now);
+}
