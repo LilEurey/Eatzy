@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { bangkokHour, type MealSegment } from '@/lib/time';
+import { bangkokHour, type MealSegment, isStoreOpen } from '@/lib/time';
 import { loadHomeFeed, type PersonalizedItem, type SimilarToItem } from '@/lib/home-feed';
 import { usePreferences, refreshPreferences } from '@/hooks/usePreferences';
 import { CardRow, ItemCard } from '@/components/home/ItemCard';
@@ -178,7 +178,7 @@ export default function HomeScreen() {
 
   // allVendors is already ordered open-first, then by queue — so the open
   // subset keeps the lowest-queue-first order the banner and section want.
-  const openVendors = allVendors.filter(v => v.is_open === true);
+  const openVendors = allVendors.filter(v => isStoreOpen(v));
   const topVendor = openVendors[0] ?? null;
   const queue = queueStatus(topVendor?.current_queue_count ?? null);
   const noQueueVendors = openVendors.filter(v => (v.current_queue_count ?? 0) <= NO_QUEUE_THRESHOLD).slice(0, 6);

@@ -10,7 +10,6 @@ import {
   setStoreOpen, initVendorSession, signOutVendor,
 } from '@/lib/vendor-store';
 import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
-import { showAlert } from '@/lib/alert';
 import { useScrollLocked } from '@/lib/scroll-lock';
 import { isInVendorQueue } from '@/lib/order-lifecycle';
 
@@ -104,7 +103,7 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
 
       <View style={{ borderTopWidth: 1, borderTopColor: '#EEF0F5', paddingTop: 8 }}>
         <Tap
-          onPress={() => showAlert(t('common.comingSoonTitle'), t('common.comingSoonMsg'))}
+          onPress={() => router.push('/help')}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}
         >
           <Ionicons name="help-circle-outline" size={18} color="#8A8F9B" />

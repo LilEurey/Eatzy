@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, useWindowDimensions } from 'react-native';
+import { Platform, View, Text, ScrollView, useWindowDimensions } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorPayments } from '@/lib/vendor-store';
-import { comingSoonAlert } from '@/lib/alert';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { showAlert, errorMessage } from '@/lib/alert';
+import { router } from 'expo-router';
+import { paymentsCsv } from '@/lib/payments-csv';
 import { useI18n } from '@/lib/i18n';
 import { isBangkokToday, isBangkokDateInRange, formatFriendlyDateTime, type DateRangeFilter } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
@@ -42,7 +46,26 @@ export default function VendorFinanceScreen() {
     { key: 'month', label: t('common.thisMonth') },
   ];
 
-  const comingSoon = () => comingSoonAlert(t);
+  const exportCsv = async () => {
+    const csv = paymentsCsv(visiblePayments);
+    const name = `eatzy-payments-${historyFilter}-${new Date().toISOString().slice(0, 10)}.csv`;
+    try {
+      if (Platform.OS === 'web') {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 0);
+        return;
+      }
+      const file = new File(Paths.cache, name);
+      file.create({ overwrite: true });
+      file.write(csv);
+      await Sharing.shareAsync(file.uri, { mimeType: 'text/csv', UTI: 'public.comma-separated-values-text' });
+    } catch (e) {
+      showAlert(t('vendor.finance.export'), errorMessage(e));
+    }
+  };
 
   return (
     <View style={{ gap: 20 }}>
@@ -74,7 +97,7 @@ export default function VendorFinanceScreen() {
             {t('vendor.finance.availableToWithdraw')}
           </Text>
           <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14 }}>{availableToWithdraw == null ? '—' : `฿${formatBaht(availableToWithdraw)}`}</Text>
-          <Tap onPress={comingSoon} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
+          <Tap onPress={() => router.push('/(vendor)/profile')} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.withdraw')}</Text>
           </Tap>
         </View>
@@ -92,7 +115,7 @@ export default function VendorFinanceScreen() {
               selected={historyFilter}
               onSelect={setHistoryFilter}
             />
-            <Tap onPress={comingSoon} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }}>
+            <Tap onPress={exportCsv} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }}>
               <Ionicons name="download-outline" size={12} color={Brand.textPrimary} />
               <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.finance.export')}</Text>
             </Tap>
@@ -127,9 +150,6 @@ export default function VendorFinanceScreen() {
                 ))}
               </View>
             </ScrollView>
-            <Tap onPress={comingSoon} style={{ alignItems: 'center', paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
-              <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.viewAll')}</Text>
-            </Tap>
           </>
         )}
       </View>

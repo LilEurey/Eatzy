@@ -1,6 +1,6 @@
 // Starts (or resumes) a vendor's Stripe Connect onboarding. Creates a v2
-// connected account on first call — dashboard: 'none', recipient
-// configuration, platform-owned fee collection and negative balance
+// connected account on first call — dashboard: 'full', recipient
+// configuration, Stripe-owned fee collection and negative balance
 // liability (see docs/superpowers/specs 2026-09-15 Stripe Connect design) —
 // then always issues a fresh Account Link, since links expire after a few
 // minutes and can only be used once.
@@ -19,7 +19,7 @@
 // Deploy: supabase functions deploy vendor-stripe-onboarding
 // Secrets:  supabase secrets set STRIPE_SECRET_KEY=sk_test_...
 
-import Stripe from 'npm:stripe@18';
+import Stripe from 'npm:stripe@22';
 import { callerClient, corsAndJson, serviceClient } from '../_shared/http.ts';
 
 // ponytail: pinned to the API version documented for v2 core accounts at
@@ -43,6 +43,16 @@ Deno.serve(async (req) => {
   const { cors, json } = corsAndJson(req);
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+
+  // Stripe only accepts https:// return/refresh URLs, so app deep links
+  // (eatzy://, exp://) go through this GET bounce: Stripe lands here over
+  // https, we 302 on to the app. Needs verify_jwt = false (config.toml);
+  // the POST path below still checks the caller's session itself.
+  if (req.method === 'GET') {
+    const to = new URL(req.url).searchParams.get('to');
+    if (!to || /^https?:/i.test(to) || !isAllowedRedirect(to)) return new Response('Invalid redirect', { status: 400 });
+    return new Response(null, { status: 302, headers: { Location: to } });
+  }
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return json({ error: 'Missing authorization header' }, 401);
@@ -80,7 +90,7 @@ Deno.serve(async (req) => {
   let accountId = vendor.stripe_account_id;
   if (!accountId) {
     // Identity (country, entity type, legal name...) is deliberately left
-    // unset here — dashboard: 'none' with Stripe-owned requirement
+    // unset here — dashboard: 'full' with Stripe-owned requirement
     // collection means the hosted onboarding form collects it directly from
     // the vendor instead of us guessing it up front.
     let account;
@@ -88,8 +98,14 @@ Deno.serve(async (req) => {
       account = await stripe.v2.core.accounts.create({
         contact_email: caller.email,
         display_name: vendor.name,
-        dashboard: 'none',
+        dashboard: 'full', // TH platforms can't be loss-liable, so Stripe owns losses + dashboard.
+        // Stripe requires country before defaults.currency; every stall is on KMUTT campus.
+        identity: { country: 'th' },
         configuration: {
+          // TH accounts can't hold stripe_transfers without card_payments.
+          merchant: {
+            capabilities: { card_payments: { requested: true } },
+          },
           recipient: {
             capabilities: {
               stripe_balance: { stripe_transfers: { requested: true } },
@@ -99,8 +115,8 @@ Deno.serve(async (req) => {
         defaults: {
           currency: 'thb',
           responsibilities: {
-            fees_collector: 'application',
-            losses_collector: 'application',
+            fees_collector: 'stripe',
+            losses_collector: 'stripe',
           },
         },
       });
@@ -131,14 +147,23 @@ Deno.serve(async (req) => {
     }
   }
 
+  const bounce = (url: string) => url.startsWith('https://') || url.startsWith('http://')
+    ? url
+    : `${Deno.env.get('SUPABASE_URL')}/functions/v1/vendor-stripe-onboarding?to=${encodeURIComponent(url)}`;
+
   let link;
   try {
-    link = await stripe.accountLinks.create({
+    link = await stripe.v2.core.accountLinks.create({
       account: accountId,
-      type: 'account_onboarding',
-      return_url: returnUrl,
-      refresh_url: refreshUrl,
-      collection_options: { fields: 'eventually_due' },
+      use_case: {
+        type: 'account_onboarding',
+        account_onboarding: {
+          configurations: ['merchant', 'recipient'],
+          return_url: bounce(returnUrl),
+          refresh_url: bounce(refreshUrl),
+          collection_options: { fields: 'eventually_due' },
+        },
+      },
     });
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : 'Could not create onboarding link', code: 'ACCOUNT_LINK_FAILED' }, 502);

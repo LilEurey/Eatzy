@@ -13,7 +13,7 @@
 //
 // Deploy: supabase functions deploy vendor-stripe-status
 
-import Stripe from 'npm:stripe@18';
+import Stripe from 'npm:stripe@22';
 import { callerClient, corsAndJson, serviceClient } from '../_shared/http.ts';
 
 const STRIPE_API_VERSION = '2026-08-26.dahlia';

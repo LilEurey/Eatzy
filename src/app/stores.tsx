@@ -1,3 +1,4 @@
+import { isStoreOpen } from '@/lib/time';
 import { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
@@ -14,6 +15,8 @@ type Vendor = {
   id: string;
   name: string;
   is_open: boolean | null;
+  open_time: string | null;
+  close_time: string | null;
   is_halal_certified: boolean | null;
   current_queue_count: number | null;
   estimated_wait_min: number | null;
@@ -22,7 +25,7 @@ type Vendor = {
 };
 
 const VENDOR_FIELDS =
-  'id,name,is_open,is_halal_certified,current_queue_count,estimated_wait_min,cuisine_tags,cover_image_url';
+  'id,name,is_open,open_time,close_time,is_halal_certified,current_queue_count,estimated_wait_min,cuisine_tags,cover_image_url';
 
 export default function StoresScreen() {
   const { t } = useI18n();
@@ -56,7 +59,7 @@ export default function StoresScreen() {
   }, [vendors, query, halalOnly]);
 
   function statusLine(v: Vendor): string {
-    if (v.is_open !== true) return t('stores.closed');
+    if (!isStoreOpen(v)) return t('stores.closed');
     if ((v.current_queue_count ?? 0) === 0 || !v.estimated_wait_min) return t('stores.noQueue');
     return t('stores.waitMin', { n: v.estimated_wait_min });
   }
@@ -134,7 +137,7 @@ export default function StoresScreen() {
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 16,
                   backgroundColor: Brand.card, borderRadius: 24, padding: 12,
-                  opacity: vendor.is_open === true ? 1 : 0.5,
+                  opacity: isStoreOpen(vendor) ? 1 : 0.5,
                   shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
                   shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
                 }}
@@ -157,7 +160,7 @@ export default function StoresScreen() {
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 6 }}>
                     <View style={{
-                      backgroundColor: vendor.is_open === true ? '#e7f5e9' : '#e7ded9',
+                      backgroundColor: isStoreOpen(vendor) ? '#e7f5e9' : '#e7ded9',
                       borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2,
                     }}>
                       <Text style={{ fontSize: 10, color: '#565656' }}>{statusLine(vendor)}</Text>
