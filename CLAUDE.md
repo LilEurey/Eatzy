@@ -26,7 +26,6 @@ npx expo start --android
 npx expo start --web    # Web preview
 npm run lint            # ESLint
 npm test                # Jest (ts-jest, node env) — pure logic only: src/lib/__tests__, supabase/functions/__tests__; no RN component tests; @/lib/supabase is mocked
-npm run reset-project    # Reset to blank starter app/ (scripts/reset-project.js)
 npx supabase db push    # Apply pending migrations (requires Supabase CLI)
 npx supabase gen types typescript --local > src/types/database.types.ts  # Regenerate DB types
 eas build --platform ios --profile preview   # EAS build (see eas.json: development/preview/production)
