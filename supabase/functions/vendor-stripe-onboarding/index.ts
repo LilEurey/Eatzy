@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
   // the POST path below still checks the caller's session itself.
   if (req.method === 'GET') {
     const to = new URL(req.url).searchParams.get('to');
-    if (!to || !isAllowedRedirect(to)) return new Response('Invalid redirect', { status: 400 });
+    if (!to || /^https?:/i.test(to) || !isAllowedRedirect(to)) return new Response('Invalid redirect', { status: 400 });
     return new Response(null, { status: 302, headers: { Location: to } });
   }
 
