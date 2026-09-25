@@ -1,6 +1,6 @@
 // Starts (or resumes) a vendor's Stripe Connect onboarding. Creates a v2
 // connected account on first call — dashboard: 'full', recipient
-// configuration, platform-owned fee collection and negative balance
+// configuration, Stripe-owned fee collection and negative balance
 // liability (see docs/superpowers/specs 2026-09-15 Stripe Connect design) —
 // then always issues a fresh Account Link, since links expire after a few
 // minutes and can only be used once.
