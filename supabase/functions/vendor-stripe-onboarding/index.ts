@@ -92,6 +92,10 @@ Deno.serve(async (req) => {
         // Stripe requires country before defaults.currency; every stall is on KMUTT campus.
         identity: { country: 'th' },
         configuration: {
+          // TH accounts can't hold stripe_transfers without card_payments.
+          merchant: {
+            capabilities: { card_payments: { requested: true } },
+          },
           recipient: {
             capabilities: {
               stripe_balance: { stripe_transfers: { requested: true } },
@@ -140,7 +144,7 @@ Deno.serve(async (req) => {
       use_case: {
         type: 'account_onboarding',
         account_onboarding: {
-          configurations: ['recipient'],
+          configurations: ['merchant', 'recipient'],
           return_url: returnUrl,
           refresh_url: refreshUrl,
           collection_options: { fields: 'eventually_due' },
