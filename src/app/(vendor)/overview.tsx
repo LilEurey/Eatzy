@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
-import { View, Text } from 'react-native';
+import { Platform, View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { useVendorOrders, useVendorProfile, useVendorMenu } from '@/lib/vendor-store';
 import { salesVelocity, busyGrid, itemSales, periodDelta, avgFulfilmentMinutes, type PeriodDelta } from '@/lib/vendor-analytics';
-import { comingSoonAlert } from '@/lib/alert';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import { showAlert, errorMessage } from '@/lib/alert';
+import { salesReportHtml } from '@/lib/sales-report';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
@@ -123,7 +126,26 @@ export default function VendorOverviewScreen() {
   // header range and always looks at the last 4 weeks.
   const grid = useMemo(() => busyGrid(orders), [orders]);
 
-  const comingSoon = () => comingSoonAlert(t);
+  const downloadReport = async () => {
+    const html = salesReportHtml({
+      vendorName: vendor?.name ?? 'Store',
+      rangeLabel: rangeOptions.find(o => o.key === range)!.label,
+      generatedAt: new Date().toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' }),
+      orders: rangedOrders,
+      revenueDelta,
+      ordersDelta,
+      avgFulfilmentMin: fulfilment,
+      items: sales,
+    });
+    try {
+      // Web has no file share sheet — open the browser print dialog (Save as PDF).
+      if (Platform.OS === 'web') return await Print.printAsync({ html });
+      const { uri } = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
+    } catch (e) {
+      showAlert(t('vendor.overview.downloadReport'), errorMessage(e));
+    }
+  };
 
   return (
     <View style={{ gap: 20 }}>
@@ -141,7 +163,7 @@ export default function VendorOverviewScreen() {
             selected={range}
             onSelect={setRange}
           />
-          <Tap onPress={comingSoon} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }}>
+          <Tap onPress={downloadReport} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{t('vendor.overview.downloadReport')}</Text>
           </Tap>
         </View>
