@@ -6,7 +6,8 @@ import { Brand } from '@/constants/theme';
 import { useVendorPayments } from '@/lib/vendor-store';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { comingSoonAlert, showAlert, errorMessage } from '@/lib/alert';
+import { showAlert, errorMessage } from '@/lib/alert';
+import { router } from 'expo-router';
 import { paymentsCsv } from '@/lib/payments-csv';
 import { useI18n } from '@/lib/i18n';
 import { isBangkokToday, isBangkokDateInRange, formatFriendlyDateTime, type DateRangeFilter } from '@/lib/time';
@@ -44,8 +45,6 @@ export default function VendorFinanceScreen() {
     { key: 'week', label: t('common.thisWeek') },
     { key: 'month', label: t('common.thisMonth') },
   ];
-
-  const comingSoon = () => comingSoonAlert(t);
 
   const exportCsv = async () => {
     const csv = paymentsCsv(visiblePayments);
@@ -98,7 +97,7 @@ export default function VendorFinanceScreen() {
             {t('vendor.finance.availableToWithdraw')}
           </Text>
           <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14 }}>{availableToWithdraw == null ? '—' : `฿${formatBaht(availableToWithdraw)}`}</Text>
-          <Tap onPress={comingSoon} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
+          <Tap onPress={() => router.push('/(vendor)/profile')} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.withdraw')}</Text>
           </Tap>
         </View>
@@ -151,9 +150,6 @@ export default function VendorFinanceScreen() {
                 ))}
               </View>
             </ScrollView>
-            <Tap onPress={comingSoon} style={{ alignItems: 'center', paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
-              <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.viewAll')}</Text>
-            </Tap>
           </>
         )}
       </View>
