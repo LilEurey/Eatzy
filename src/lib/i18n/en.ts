@@ -583,7 +583,7 @@ export const en = {
   'vendor.finance.totalRevenueToday': 'TOTAL REVENUE (TODAY)',
   'vendor.finance.amountPayment': 'PAYMENTS TODAY',
   'vendor.finance.availableToWithdraw': 'AVAILABLE TO WITHDRAW',
-  'vendor.finance.withdraw': 'Withdraw',
+  'vendor.finance.withdraw': 'Payout Settings',
   'vendor.finance.paymentHistory': 'Payment History',
   'vendor.finance.filter': 'Filter',
   'vendor.finance.export': 'Export',
@@ -593,7 +593,6 @@ export const en = {
   'vendor.finance.colMethod': 'METHOD',
   'vendor.finance.colStatus': 'STATUS',
   'vendor.finance.completed': 'COMPLETED',
-  'vendor.finance.viewAll': 'View All Transactions',
   'vendor.finance.campusWallet': 'Campus Wallet',
   'vendor.finance.empty': 'No payments yet',
 

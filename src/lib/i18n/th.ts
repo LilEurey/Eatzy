@@ -585,7 +585,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.finance.totalRevenueToday': 'รายได้รวม (วันนี้)',
   'vendor.finance.amountPayment': 'การชำระเงินวันนี้',
   'vendor.finance.availableToWithdraw': 'ยอดเงินพร้อมถอน',
-  'vendor.finance.withdraw': 'ถอนเงิน',
+  'vendor.finance.withdraw': 'ตั้งค่าการรับเงิน',
   'vendor.finance.paymentHistory': 'ประวัติการชำระเงิน',
   'vendor.finance.filter': 'ตัวกรอง',
   'vendor.finance.export': 'ส่งออก',
@@ -595,7 +595,6 @@ export const th: Record<TranslationKey, string> = {
   'vendor.finance.colMethod': 'วิธีชำระ',
   'vendor.finance.colStatus': 'สถานะ',
   'vendor.finance.completed': 'สำเร็จ',
-  'vendor.finance.viewAll': 'ดูธุรกรรมทั้งหมด',
   'vendor.finance.campusWallet': 'Campus Wallet',
   'vendor.finance.empty': 'ยังไม่มีรายการชำระเงิน',
 
