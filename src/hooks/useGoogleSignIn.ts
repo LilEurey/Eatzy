@@ -30,9 +30,8 @@ export function useGoogleSignIn() {
   async function signIn() {
     setLoading(true);
     try {
-      const redirectTo = ExpoLinking.createURL('/');
-
       if (Platform.OS === 'web') {
+        const redirectTo = ExpoLinking.createURL('/');
         // Full-page redirect — no popup involved, so there's nothing for a
         // popup blocker to kill. The page navigates away here; when Google
         // sends it back with ?code=..., detectSessionInUrl (supabase.ts)
@@ -45,6 +44,11 @@ export function useGoogleSignIn() {
         return;
       }
 
+      // Always the app scheme, even in Expo Go: Supabase rejects exp://<LAN IP>
+      // redirects, and ASWebAuthenticationSession catches eatzy:// itself
+      // without the host app registering it.
+      // ponytail: Android Expo Go can't catch eatzy:// — use a dev build there.
+      const redirectTo = 'eatzy://';
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo, skipBrowserRedirect: true },
