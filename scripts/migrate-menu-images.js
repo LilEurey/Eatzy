@@ -28,6 +28,15 @@ function extFromContentType(ct) {
   return 'bin';
 }
 
+// Quote an untrusted string for the terminal: everything outside printable
+// ASCII (ESC, C1 controls, bidi overrides, ...) comes out as a \uXXXX escape.
+function printable(s) {
+  return JSON.stringify(s).replace(
+    /[^\x20-\x7e]/g,
+    (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`,
+  );
+}
+
 async function main() {
   const { data: items, error } = await supabase
     .from('menu_items')
@@ -42,8 +51,11 @@ async function main() {
   const byDriveId = new Map();
   for (const item of driveItems) {
     const m = item.image_url.match(/[?&]id=([^&]+)/);
-    if (!m) {
-      console.warn(`  skip ${item.id}: can't parse Drive id from ${item.image_url}`);
+    // image_url is vendor-writable. Only a plain Drive file id may reach the
+    // logs, the fetch URL and the storage key below; anything else is skipped
+    // and printed escaped so control bytes never hit the operator's terminal.
+    if (!m || !/^[\w-]+$/.test(m[1])) {
+      console.warn(`  skip ${item.id}: can't parse Drive id from ${printable(item.image_url)}`);
       continue;
     }
     const driveId = m[1];

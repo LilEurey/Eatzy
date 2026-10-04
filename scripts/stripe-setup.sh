@@ -189,15 +189,23 @@ WEBHOOK_URL="https://${PROJECT_REF}.supabase.co/functions/v1/stripe-webhook"
 
 # set_supabase_secret NAME VALUE pushes a secret to the linked Supabase
 # project's edge function runtime (not GitHub — these run inside Deno).
+#
+# The value travels in a 0600 temp env file, never in argv: process arguments
+# are readable by every local user (ps) for the whole CLI round trip. printf
+# is a shell builtin, so writing the file spawns no process either.
 set_supabase_secret() {
   local name="$1" value="$2"
-  if npx supabase secrets set "${name}=${value}" >/dev/null 2>&1; then
+  SECRET_TMP=$(mktemp) # global, so the EXIT trap still sees it after return
+  trap 'rm -f "$SECRET_TMP"' EXIT
+  printf "%s='%s'\n" "$name" "$value" > "$SECRET_TMP"
+  if npx supabase secrets set --env-file "$SECRET_TMP" >/dev/null 2>&1; then
     WRITTEN_SECRET+=("$name (Supabase)")
     printf '  %s✓ set%s Supabase secret %s\n' "$GREEN" "$RESET" "$name"
   else
     SKIPPED+=("Supabase secret $name (run: npx supabase secrets set ${name}=...)")
     warn "couldn't set Supabase secret $name — set it manually later"
   fi
+  rm -f "$SECRET_TMP"
 }
 
 TOTAL_STAGES=7

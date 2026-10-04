@@ -4,6 +4,7 @@ import { Tap } from '@/components/Tap';
 import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { timeAgo } from '@/lib/relative-time';
+import { supabase } from '@/lib/supabase';
 
 export type ReviewCardProps = {
   name: string;
@@ -15,6 +16,13 @@ export type ReviewCardProps = {
   menuItemName?: string;
   photoUrls?: string[];
 };
+
+// photo_urls is reviewer-writable via the REST API — only render images from
+// this project's review-photos bucket, never an arbitrary (tracking) host.
+const REVIEW_PHOTO_PREFIX = supabase.storage.from('review-photos').getPublicUrl('x').data.publicUrl.slice(0, -1);
+function isReviewPhoto(url: string): boolean {
+  return url.startsWith(REVIEW_PHOTO_PREFIX) && !/\.\.|%2e|\\|[?#]/i.test(url);
+}
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -28,6 +36,7 @@ export function ReviewCard({
 }: ReviewCardProps) {
   const { t } = useI18n();
   const [preview, setPreview] = useState<string | null>(null);
+  const photos = (photoUrls ?? []).filter(isReviewPhoto).slice(0, 3);
 
   return (
     <View style={{
@@ -68,9 +77,9 @@ export function ReviewCard({
         <Text style={{ fontSize: 14, color: Brand.textPrimary, lineHeight: 20 }}>{comment}</Text>
       ) : null}
 
-      {photoUrls && photoUrls.length > 0 ? (
+      {photos.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          {photoUrls.map((url, i) => (
+          {photos.map((url, i) => (
             <Tap key={`${url}-${i}`} onPress={() => setPreview(url)}>
               <Image source={{ uri: url }} style={{ width: 96, height: 96, borderRadius: 12 }} />
             </Tap>

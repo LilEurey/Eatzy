@@ -74,6 +74,8 @@ def load_supabase(base: str, key: str):
 
     for col in LIST_COLUMNS:
         items[col] = items[col].apply(lambda v: "|".join(v or []))
+    # Vendor-written names reach the terminal — strip control chars (escape-sequence injection).
+    items["name"] = items["name"].str.replace(r"[\x00-\x1f\x7f-\x9f]", "", regex=True)
     return items.fillna(""), orders
 
 
