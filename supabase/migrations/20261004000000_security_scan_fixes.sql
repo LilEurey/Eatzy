@@ -40,3 +40,12 @@ alter table public.order_items
 alter table public.ratings
   add constraint ratings_photo_urls_max3
   check (cardinality(photo_urls) <= 3) not valid;
+
+-- ─── Set aside by F9 reviewers: other unbounded client-shown text ───────────
+alter table public.ratings
+  add constraint ratings_comment_len
+  check (char_length(comment) <= 1000) not valid;
+
+alter table public.users
+  add constraint users_name_len
+  check (char_length(name) <= 100) not valid;
