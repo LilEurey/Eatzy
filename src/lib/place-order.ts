@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 // are all decided server-side — nothing here is trusted beyond "which dishes,
 // how many, which add-ons, which pickup window".
 
-export type PlaceOrderLine = {
+type PlaceOrderLine = {
   menu_item_id: string;
   quantity: number;
   note: string;
