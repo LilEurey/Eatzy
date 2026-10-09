@@ -29,7 +29,8 @@ const STRIPE_API_VERSION = '2026-08-26.dahlia';
 
 // Stripe redirects the vendor here after onboarding — only ever back into the
 // app (native scheme, Expo Go, or an https web build), never an arbitrary site.
-const ALLOWED_REDIRECT_PROTOCOLS = new Set(['eatzy:', 'exp:', 'exps:', 'https:']);
+const APP_SCHEMES = new Set(['eatzy:', 'exp:', 'exps:']);
+const ALLOWED_REDIRECT_PROTOCOLS = new Set([...APP_SCHEMES, 'https:']);
 function isAllowedRedirect(url: string): boolean {
   try {
     const u = new URL(url);
@@ -49,9 +50,17 @@ Deno.serve(async (req) => {
   // https, we 302 on to the app. Needs verify_jwt = false (config.toml);
   // the POST path below still checks the caller's session itself.
   if (req.method === 'GET') {
-    const to = new URL(req.url).searchParams.get('to');
-    if (!to || /^https?:/i.test(to) || !isAllowedRedirect(to)) return new Response('Invalid redirect', { status: 400 });
-    return new Response(null, { status: 302, headers: { Location: to } });
+    // Decide on the parsed URL and emit its href: the parser strips
+    // whitespace/tabs, so checking the raw string let " https://evil" through.
+    let to: URL;
+    try {
+      to = new URL(new URL(req.url).searchParams.get('to') ?? '');
+    } catch {
+      return new Response('Invalid redirect', { status: 400 });
+    }
+    // ponytail: exp:/exps: (Expo Go) accepted for any host; drop them for production builds.
+    if (!APP_SCHEMES.has(to.protocol)) return new Response('Invalid redirect', { status: 400 });
+    return new Response(null, { status: 302, headers: { Location: to.href } });
   }
 
   const authHeader = req.headers.get('Authorization');
