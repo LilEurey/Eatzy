@@ -1,9 +1,8 @@
--- Turn every current dish on so the whole catalog can be checked in the app.
--- Retired dishes (dropped from the CSV but kept for past orders by the v3/v4
--- syncs) stay hidden.
-update public.menu_items set is_available = true
-where is_available is distinct from true
-  and id not in (
+-- 20261008010000 originally set is_available on every row, which re-exposed
+-- dishes the v3/v4 CSV syncs had retired (e.g. Pa Kaew's Pork Tom Yum Noodles).
+-- Hide them again. Ids already deleted are no-ops.
+update public.menu_items set is_available = false, updated_at = now()
+where is_available and id in (
   'be1f16f6-a840-4535-871d-810748b91778',
   '0b402aad-b9c7-4f5b-9c15-1ecb47bbb451',
   'ad4e7c85-aba8-413f-8696-3a37b4bbd2cb',
@@ -14,4 +13,4 @@ where is_available is distinct from true
   '483b448c-6269-4dd4-aa71-9cd728758bdf',
   'b4761f8a-17c8-4c23-b18c-4c23bd5b2cf6',
   'd4433995-9c8d-4d56-be36-c56daf7dc9ca'
-  );
+);
