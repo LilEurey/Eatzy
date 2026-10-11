@@ -59,9 +59,13 @@ export function useGoogleSignIn() {
       // Android: the Custom Tab can report 'dismiss' before the eatzy://?code=
       // deep link is delivered, so catch the link ourselves and use whichever
       // arrives. iOS's auth session always returns 'success' with the URL.
+      // Android normalizes eatzy://?code=… to eatzy:?code=…, so match the scheme,
+      // not the full redirectTo — otherwise the code arrives and is ignored.
+      const isCallback = (url: string | null | undefined): url is string =>
+        !!url?.startsWith('eatzy:');
       let linkedUrl: string | null = null;
       const sub = ExpoLinking.addEventListener('url', ({ url }) => {
-        if (url.startsWith(redirectTo)) linkedUrl = url;
+        if (isCallback(url)) linkedUrl = url;
       });
       // If Android hands the link to a recreated activity instead of firing a
       // 'url' event, it only shows up in the native module's latest/initial URL.
@@ -69,7 +73,7 @@ export function useGoogleSignIn() {
       const staleUrls = new Set([ExpoLinking.getLinkingURL(), await ExpoLinking.getInitialURL()]);
       const freshUrl = async () => {
         for (const url of [linkedUrl, ExpoLinking.getLinkingURL(), await ExpoLinking.getInitialURL()]) {
-          if (url?.startsWith(redirectTo) && !staleUrls.has(url)) return url;
+          if (isCallback(url) && !staleUrls.has(url)) return url;
         }
         return null;
       };
@@ -89,12 +93,7 @@ export function useGoogleSignIn() {
       } finally {
         sub.remove();
       }
-      // ponytail: diagnostic detail in the alert until Android login is confirmed working.
-      if (!callbackUrl) {
-        throw new Error(
-          `Browser flow cancelled (${resultType}; last link: ${ExpoLinking.getLinkingURL() ?? 'none'})`,
-        );
-      }
+      if (!callbackUrl) throw new Error(`Browser flow cancelled (${resultType})`);
 
       const params = extractAuthParams(callbackUrl);
       if (params.error) throw new Error(params.error_description || params.error);
