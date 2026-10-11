@@ -9,5 +9,23 @@ const withoutPush = (config) =>
     return cfg;
   });
 
-module.exports = ({ config }) =>
-  process.env.EXPO_NO_PUSH ? withoutPush(config) : config;
+// Android react-native-maps renders Google Maps and needs a key. Kept out of git:
+// set GOOGLE_MAPS_API_KEY in .env.local / EAS env (secret visibility).
+const withMapsKey = (config) =>
+  process.env.GOOGLE_MAPS_API_KEY
+    ? {
+        ...config,
+        android: {
+          ...config.android,
+          config: {
+            ...config.android?.config,
+            googleMaps: { apiKey: process.env.GOOGLE_MAPS_API_KEY },
+          },
+        },
+      }
+    : config;
+
+module.exports = ({ config }) => {
+  const withKey = withMapsKey(config);
+  return process.env.EXPO_NO_PUSH ? withoutPush(withKey) : withKey;
+};
