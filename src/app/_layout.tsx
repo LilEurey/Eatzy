@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { loadUserRole } from '@/lib/user-role';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { I18nProvider } from '@/lib/i18n';
+import { registerForPush } from '@/lib/push';
 import type { Session } from '@supabase/supabase-js';
 
 // PaymentSheet needs this native module, which Expo Go doesn't ship — same
@@ -137,6 +138,7 @@ export default function RootLayout() {
     } else {
       if (session.user.id === routedUserId.current) return; // token refresh, not a new sign-in
       routedUserId.current = session.user.id;
+      void registerForPush();
       routeAfterAuth(session.user.id, currentPath);
     }
     // pathname deliberately excluded: this only needs pathname's value at
