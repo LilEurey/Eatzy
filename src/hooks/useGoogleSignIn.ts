@@ -63,21 +63,38 @@ export function useGoogleSignIn() {
       const sub = ExpoLinking.addEventListener('url', ({ url }) => {
         if (url.startsWith(redirectTo)) linkedUrl = url;
       });
+      // If Android hands the link to a recreated activity instead of firing a
+      // 'url' event, it only shows up in the native module's latest/initial URL.
+      // Snapshot both first so a stale launch URL isn't mistaken for this one.
+      const staleUrls = new Set([ExpoLinking.getLinkingURL(), await ExpoLinking.getInitialURL()]);
+      const freshUrl = async () => {
+        for (const url of [linkedUrl, ExpoLinking.getLinkingURL(), await ExpoLinking.getInitialURL()]) {
+          if (url?.startsWith(redirectTo) && !staleUrls.has(url)) return url;
+        }
+        return null;
+      };
       let callbackUrl: string | null = null;
+      let resultType = '';
       try {
         const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+        resultType = result.type;
         if (result.type === 'success') callbackUrl = result.url;
         else if (Platform.OS === 'android') {
           // Slow phones can deliver the link well after 'dismiss'; poll up to 5s.
-          for (let i = 0; i < 25 && !linkedUrl; i++) {
+          for (let i = 0; i < 25 && !callbackUrl; i++) {
             await new Promise((r) => setTimeout(r, 200));
+            callbackUrl = await freshUrl();
           }
-          callbackUrl = linkedUrl;
         }
       } finally {
         sub.remove();
       }
-      if (!callbackUrl) throw new Error('Browser flow cancelled');
+      // ponytail: diagnostic detail in the alert until Android login is confirmed working.
+      if (!callbackUrl) {
+        throw new Error(
+          `Browser flow cancelled (${resultType}; last link: ${ExpoLinking.getLinkingURL() ?? 'none'})`,
+        );
+      }
 
       const params = extractAuthParams(callbackUrl);
       if (params.error) throw new Error(params.error_description || params.error);
