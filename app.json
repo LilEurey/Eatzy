@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.anonymous.eatzy"
+      "bundleIdentifier": "com.pochvasin.eatzy"
     },
     "android": {
       "adaptiveIcon": {
@@ -54,7 +54,6 @@
       [
         "@stripe/stripe-react-native",
         {
-          "merchantIdentifier": "merchant.com.anonymous.eatzy",
           "enableGooglePay": false
         }
       ],
