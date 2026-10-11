@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.anonymous.eatzy"
+      "bundleIdentifier": "com.pochvasin.eatzy"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.eatzy"
+      "package": "com.pochvasin.eatzy",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "single",
@@ -54,7 +58,6 @@
       [
         "@stripe/stripe-react-native",
         {
-          "merchantIdentifier": "merchant.com.anonymous.eatzy",
           "enableGooglePay": false
         }
       ],
@@ -66,6 +69,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "30cb35a6-5090-44c2-ac95-9c8aac329a56"
+      }
+    },
+    "owner": "lil_eurey"
   }
 }
