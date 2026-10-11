@@ -56,10 +56,27 @@ export function useGoogleSignIn() {
       if (error) throw error;
       if (!data.url) throw new Error('No auth URL returned');
 
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-      if (result.type !== 'success') throw new Error('Browser flow cancelled');
+      // Android: the Custom Tab can report 'dismiss' before the eatzy://?code=
+      // deep link is delivered, so catch the link ourselves and use whichever
+      // arrives. iOS's auth session always returns 'success' with the URL.
+      let linkedUrl: string | null = null;
+      const sub = ExpoLinking.addEventListener('url', ({ url }) => {
+        if (url.startsWith(redirectTo)) linkedUrl = url;
+      });
+      let callbackUrl: string | null = null;
+      try {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+        if (result.type === 'success') callbackUrl = result.url;
+        else if (Platform.OS === 'android') {
+          await new Promise((r) => setTimeout(r, 500));
+          callbackUrl = linkedUrl;
+        }
+      } finally {
+        sub.remove();
+      }
+      if (!callbackUrl) throw new Error('Browser flow cancelled');
 
-      const params = extractAuthParams(result.url);
+      const params = extractAuthParams(callbackUrl);
       if (params.error) throw new Error(params.error_description || params.error);
       if (!params.code) throw new Error('No authorization code returned');
 
