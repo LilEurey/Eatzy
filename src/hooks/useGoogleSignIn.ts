@@ -56,10 +56,46 @@ export function useGoogleSignIn() {
       if (error) throw error;
       if (!data.url) throw new Error('No auth URL returned');
 
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-      if (result.type !== 'success') throw new Error('Browser flow cancelled');
+      // Android: the Custom Tab can report 'dismiss' before the eatzy://?code=
+      // deep link is delivered, so catch the link ourselves and use whichever
+      // arrives. iOS's auth session always returns 'success' with the URL.
+      // Android normalizes eatzy://?code=… to eatzy:?code=…, so match the scheme,
+      // not the full redirectTo — otherwise the code arrives and is ignored.
+      const isCallback = (url: string | null | undefined): url is string =>
+        !!url?.startsWith('eatzy:');
+      let linkedUrl: string | null = null;
+      const sub = ExpoLinking.addEventListener('url', ({ url }) => {
+        if (isCallback(url)) linkedUrl = url;
+      });
+      // If Android hands the link to a recreated activity instead of firing a
+      // 'url' event, it only shows up in the native module's latest/initial URL.
+      // Snapshot both first so a stale launch URL isn't mistaken for this one.
+      const staleUrls = new Set([ExpoLinking.getLinkingURL(), await ExpoLinking.getInitialURL()]);
+      const freshUrl = async () => {
+        for (const url of [linkedUrl, ExpoLinking.getLinkingURL(), await ExpoLinking.getInitialURL()]) {
+          if (isCallback(url) && !staleUrls.has(url)) return url;
+        }
+        return null;
+      };
+      let callbackUrl: string | null = null;
+      let resultType = '';
+      try {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+        resultType = result.type;
+        if (result.type === 'success') callbackUrl = result.url;
+        else if (Platform.OS === 'android') {
+          // Slow phones can deliver the link well after 'dismiss'; poll up to 5s.
+          for (let i = 0; i < 25 && !callbackUrl; i++) {
+            await new Promise((r) => setTimeout(r, 200));
+            callbackUrl = await freshUrl();
+          }
+        }
+      } finally {
+        sub.remove();
+      }
+      if (!callbackUrl) throw new Error(`Browser flow cancelled (${resultType})`);
 
-      const params = extractAuthParams(result.url);
+      const params = extractAuthParams(callbackUrl);
       if (params.error) throw new Error(params.error_description || params.error);
       if (!params.code) throw new Error('No authorization code returned');
 
