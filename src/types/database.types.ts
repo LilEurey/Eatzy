@@ -890,6 +890,7 @@ export type Database = {
       accept_order_and_charge: { Args: { p_order_id: string }; Returns: string }
       auto_finalize_stale_handoffs: { Args: never; Returns: undefined }
       bootstrap_admin: { Args: { p_user_id: string }; Returns: undefined }
+      set_push_token: { Args: { p_token: string }; Returns: undefined }
       debit_wallet_for_dispute: {
         Args: { p_amount: number; p_reference: string; p_user_id: string }
         Returns: number

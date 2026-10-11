@@ -64,7 +64,8 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
