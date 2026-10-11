@@ -68,7 +68,10 @@ export function useGoogleSignIn() {
         const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
         if (result.type === 'success') callbackUrl = result.url;
         else if (Platform.OS === 'android') {
-          await new Promise((r) => setTimeout(r, 500));
+          // Slow phones can deliver the link well after 'dismiss'; poll up to 5s.
+          for (let i = 0; i < 25 && !linkedUrl; i++) {
+            await new Promise((r) => setTimeout(r, 200));
+          }
           callbackUrl = linkedUrl;
         }
       } finally {
