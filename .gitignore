@@ -57,3 +57,4 @@ graphify-out/
 
 # Subagent-driven-development scratch workspace
 .superpowers/
+google-services.json

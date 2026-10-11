@@ -25,7 +25,17 @@ const withMapsKey = (config) =>
       }
     : config;
 
+// Android push needs Firebase's google-services.json. EAS: upload it as a file env
+// var GOOGLE_SERVICES_JSON (resolves to a path); locally: drop it in the repo root.
+const fs = require('fs');
+const withFirebase = (config) => {
+  const file =
+    process.env.GOOGLE_SERVICES_JSON ??
+    (fs.existsSync('./google-services.json') ? './google-services.json' : undefined);
+  return file ? { ...config, android: { ...config.android, googleServicesFile: file } } : config;
+};
+
 module.exports = ({ config }) => {
-  const withKey = withMapsKey(config);
+  const withKey = withFirebase(withMapsKey(config));
   return process.env.EXPO_NO_PUSH ? withoutPush(withKey) : withKey;
 };
