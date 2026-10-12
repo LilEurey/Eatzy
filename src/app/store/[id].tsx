@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
+import Animated, { LinearTransition } from 'react-native-reanimated';
+import { listEnter, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { ReviewCard } from '@/components/ReviewCard';
 import StoreMiniMap from '@/components/StoreMiniMap';
@@ -47,6 +49,7 @@ export default function StoreDetailScreen() {
   const { prefs, gate } = usePreferences();
   const prefsError = gate.status === 'error';
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { ref: heroRef, heroStyle } = useStretchyHero(220);
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
@@ -130,13 +133,15 @@ export default function StoreDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <Animated.ScrollView ref={heroRef} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header image area */}
         <View style={{ height: 220, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {vendor.cover_image_url
             ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
             : <Text style={{ fontSize: 72 }}>🏪</Text>
           }
+          </Animated.View>
           {/* Back button */}
           <Tap
             onPress={() => router.back()}
@@ -351,9 +356,9 @@ export default function StoreDetailScreen() {
 
           {/* Menu items */}
           <View style={{ gap: 12 }}>
-            {filteredItems.map(item => (
+            {filteredItems.map((item, index) => (
+              <Animated.View key={item.id} entering={listEnter(index)} layout={LinearTransition.springify().damping(18)}>
               <Tap
-                key={item.id}
                 onPress={() => router.push(`/item/${item.id}`)}
                 activeOpacity={0.85}
                 style={{
@@ -430,6 +435,7 @@ export default function StoreDetailScreen() {
                   </View>
                 </View>
               </Tap>
+              </Animated.View>
             ))}
 
             {filteredItems.length === 0 && gate.status === 'ready' && (
@@ -470,7 +476,7 @@ export default function StoreDetailScreen() {
           </View>
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }

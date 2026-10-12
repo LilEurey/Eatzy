@@ -2,6 +2,8 @@ import { isStoreOpen } from '@/lib/time';
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { Image } from 'expo-image';
+import Animated, { FadeInRight } from 'react-native-reanimated';
+import { useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { ReviewCard } from '@/components/ReviewCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -54,6 +56,7 @@ function SpiceIndicator({ level }: { level: number }) {
 export default function ItemDetailScreen() {
   const { t, locale } = useI18n();
   const { id, rec } = useLocalSearchParams<{ id: string; rec?: string }>();
+  const { ref: heroRef, heroStyle } = useStretchyHero(280);
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
   const [vendorName, setVendorName] = useState('');
@@ -244,13 +247,15 @@ export default function ItemDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 160 }}>
+      <Animated.ScrollView ref={heroRef} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 160 }}>
         {/* Image area */}
         <View style={{ height: 280, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {item.image_url
             ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
             : <Text style={{ fontSize: 90 }}>🍽️</Text>
           }
+          </Animated.View>
           {/* Back button */}
           <Tap
             onPress={() => router.back()}
@@ -476,9 +481,9 @@ export default function ItemDetailScreen() {
                 {t('item.similarFoods')}
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                {similar.map(s => (
+                {similar.map((s, si) => (
+                  <Animated.View key={s.id} entering={FadeInRight.delay(Math.min(si, 5) * 60).springify().damping(18)}>
                   <Tap
-                    key={s.id}
                     onPress={() => router.push(`/item/${s.id}?rec=1`)}
                     activeOpacity={0.85}
                     style={{
@@ -499,6 +504,7 @@ export default function ItemDetailScreen() {
                       <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{s.price}</Text>
                     </View>
                   </Tap>
+                  </Animated.View>
                 ))}
               </ScrollView>
             </View>
@@ -528,7 +534,7 @@ export default function ItemDetailScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Bottom — qty + add to cart */}
       <View style={{
