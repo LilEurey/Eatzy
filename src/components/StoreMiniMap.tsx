@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Linking, Platform } from 'react-native';
 import MapView, { PROVIDER_DEFAULT } from 'react-native-maps';
-import { regionForCoords } from '@/lib/geo';
+import { Tap } from '@/components/Tap';
+import { directionsUrl, regionForCoords } from '@/lib/geo';
+import { useI18n } from '@/lib/i18n';
+import { Brand } from '@/constants/theme';
 
 type Props = {
   latitude: number;
@@ -11,7 +14,8 @@ type Props = {
 };
 
 /**
- * Student-facing read-only mini map. Native only — the `.web.tsx` sibling
+ * Student-facing read-only mini map; tapping it opens driving directions in
+ * Apple Maps (iOS) / Google Maps (Android). Native only — the `.web.tsx` sibling
  * renders nothing so `react-native-maps` never enters the web module graph
  * (its `lib/index.js` eagerly pulls RN internals the web resolver blocks).
  */
@@ -23,8 +27,17 @@ export default function StoreMiniMap({ latitude, longitude, title, showUser }: P
     [latitude, longitude],
   );
 
+  const { t } = useI18n();
+
   return (
-    <View style={{ height: 160, borderRadius: 16, overflow: 'hidden' }}>
+    <Tap
+      accessibilityRole="link"
+      accessibilityLabel={`${title} — ${t('store.openInMaps')}`}
+      onPress={() => {
+        Linking.openURL(directionsUrl({ latitude, longitude }, Platform.OS)).catch(() => {});
+      }}
+      style={{ height: 160, borderRadius: 16, overflow: 'hidden' }}
+    >
       <MapView
         provider={PROVIDER_DEFAULT}
         style={{ flex: 1 }}
@@ -41,11 +54,16 @@ export default function StoreMiniMap({ latitude, longitude, title, showUser }: P
           center of the map is the stall. */}
       <View
         pointerEvents="none"
-        accessibilityLabel={title}
         style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}
       >
         <Text style={{ fontSize: 32, marginBottom: 32 }}>📍</Text>
       </View>
-    </View>
+      <View
+        pointerEvents="none"
+        style={{ position: 'absolute', right: 8, bottom: 8, backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}
+      >
+        <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.textPrimary }}>{t('store.openInMaps')} ↗</Text>
+      </View>
+    </Tap>
   );
 }

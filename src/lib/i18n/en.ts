@@ -249,6 +249,7 @@ export const en = {
   'store.allMenusTab': 'All Menus',
   'store.reviewsTab': 'Review',
   'store.whereToFind': 'Where to find it',
+  'store.openInMaps': 'Open in Maps',
   'store.stall': 'Stall {n}',
 
   // Community reviews (store Review tab + item detail)
