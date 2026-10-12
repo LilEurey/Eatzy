@@ -37,7 +37,8 @@ export async function registerForPush(): Promise<void> {
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
-    await supabase.rpc('set_push_token', { p_token: token });
+    const { error } = await supabase.rpc('set_push_token', { p_token: token });
+    if (error) throw error;
   } catch (e) {
     console.warn('push registration failed', e);
   }
