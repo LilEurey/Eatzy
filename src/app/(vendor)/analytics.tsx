@@ -25,33 +25,56 @@ const CHART_HEIGHT = 120;
 
 // Last-7-days revenue bars. Bars grow up staggered on mount (CSS keyframes)
 // and glide to new heights when a live order lands. Tap a bar for its total.
-function RevenueChart({ payments, title }: { payments: { created_at: string; amount: number }[]; title: string }) {
-  const bars = dailyRevenue(payments);
+const RANGES = [7, 30] as const;
+
+function RevenueChart({ payments }: { payments: { created_at: string; amount: number }[] }) {
+  const { t } = useI18n();
+  const [days, setDays] = useState<(typeof RANGES)[number]>(7);
+  const bars = dailyRevenue(payments, days);
   const max = Math.max(1, ...bars.map(b => b.value));
-  const [selected, setSelected] = useState(bars.length - 1);
-  const shown = bars[selected] ?? bars[bars.length - 1];
+  // null = "whole range": header shows the range total until a bar is tapped.
+  const [selected, setSelected] = useState<number | null>(null);
+  const shownValue = selected == null ? bars.reduce((s, b) => s + b.value, 0) : (bars[selected]?.value ?? 0);
+  const gap = days === 7 ? 10 : 3;
   return (
     <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{title}</Text>
-        <CountUp value={shown.value} format={n => `฿${formatBaht(n)}`} duration={400}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.finance.revenueChart')}</Text>
+          <View style={{ flexDirection: 'row', backgroundColor: '#F0F1F5', borderRadius: 8, padding: 2 }}>
+            {RANGES.map(r => (
+              <Tap key={r} haptic={false} onPress={() => { setDays(r); setSelected(null); }}>
+                <Animated.View style={{
+                  paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
+                  backgroundColor: days === r ? '#fff' : 'transparent',
+                  transitionProperty: 'backgroundColor', transitionDuration: 180,
+                }}>
+                  <Text style={{ fontSize: 11.5, fontWeight: '700', color: days === r ? Brand.textPrimary : '#8A8F9B' }}>
+                    {t('vendor.finance.days', { n: r })}
+                  </Text>
+                </Animated.View>
+              </Tap>
+            ))}
+          </View>
+        </View>
+        <CountUp value={shownValue} format={n => `฿${formatBaht(n)}`} duration={400}
           style={{ fontSize: 15, fontWeight: '800', color: Brand.vendorAccent, fontVariant: ['tabular-nums'] }} />
       </View>
-      <View style={{ height: CHART_HEIGHT, flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
+      <View style={{ height: CHART_HEIGHT, flexDirection: 'row', alignItems: 'flex-end', gap }}>
         {bars.map((b, i) => {
           const on = i === selected;
           return (
-            <Tap key={b.key} haptic={false} onPress={() => setSelected(i)}
+            <Tap key={b.key} haptic={false} onPress={() => setSelected(on ? null : i)}
               style={{ flex: 1, height: '100%', justifyContent: 'flex-end' }}>
               <Animated.View style={{
                 height: `${(b.value / max) * 100}%`,
                 minHeight: 4,
-                borderRadius: 8,
+                borderRadius: days === 7 ? 8 : 3,
                 backgroundColor: on ? Brand.vendorAccent : b.isToday ? Brand.orange : '#EEF0F5',
                 transformOrigin: 'bottom',
                 animationName: { from: { transform: [{ scaleY: 0 }] }, to: { transform: [{ scaleY: 1 }] } },
                 animationDuration: '650ms',
-                animationDelay: `${i * 50}ms`,
+                animationDelay: `${i * (days === 7 ? 50 : 15)}ms`,
                 animationFillMode: 'backwards',
                 animationTimingFunction: 'ease-out',
                 transitionProperty: 'height', transitionDuration: 400,
@@ -60,14 +83,23 @@ function RevenueChart({ payments, title }: { payments: { created_at: string; amo
           );
         })}
       </View>
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-        {bars.map((b, i) => (
-          <Text key={b.key} style={{ flex: 1, textAlign: 'center', fontSize: 10.5,
-            fontWeight: i === selected ? '700' : '500', color: i === selected ? Brand.textPrimary : '#8A8F9B' }}>
-            {b.label}
-          </Text>
-        ))}
-      </View>
+      {days === 7 ? (
+        <View style={{ flexDirection: 'row', gap, marginTop: 8 }}>
+          {bars.map((b, i) => (
+            <Text key={b.key} style={{ flex: 1, textAlign: 'center', fontSize: 10.5,
+              fontWeight: i === selected ? '700' : '500', color: i === selected ? Brand.textPrimary : '#8A8F9B' }}>
+              {b.label}
+            </Text>
+          ))}
+        </View>
+      ) : (
+        // 30 bars are too narrow for per-bar labels — mark start, middle, today.
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+          {[bars[0], bars[15], bars[bars.length - 1]].map(b => (
+            <Text key={b.key} style={{ fontSize: 10.5, fontWeight: '500', color: '#8A8F9B' }}>{b.key.slice(5).replace('-', '/')}</Text>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -159,7 +191,7 @@ export default function VendorFinanceScreen() {
         </View>
       </View>
 
-      <RevenueChart payments={payments} title={t('vendor.finance.last7Days')} />
+      <RevenueChart payments={payments} />
 
       <View style={{ backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#EEF0F5', overflow: 'hidden' }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
