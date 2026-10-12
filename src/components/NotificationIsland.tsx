@@ -25,8 +25,6 @@ const SYMBOLS: Record<string, { symbol: SymbolViewProps['name']; accent: string 
 // banner so the two don't double up.
 // EXPO_NO_PUSH builds (free Apple team, no APNs) have no system push, so a
 // backgrounded app posts a local notification instead.
-// Android has no island and no FCM setup yet (no google-services.json), so
-// it always posts a local system notification from the realtime event.
 // ponytail: only fires while iOS keeps the realtime socket alive (~30s after
 // backgrounding); a killed app gets nothing. Real fix is a paid team + APNs.
 const NO_PUSH = Constants.expoConfig?.extra?.noPush === true;
@@ -36,7 +34,7 @@ export function NotificationIsland({ userId }: { userId: string | undefined }) {
   const { t } = useI18n();
 
   useEffect(() => {
-    if (Platform.OS === 'web' || !userId) return;
+    if (Platform.OS !== 'ios' || !userId) return;
     const channel = supabase
       .channel(`island-${userId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (payload) => {
@@ -44,7 +42,7 @@ export function NotificationIsland({ userId }: { userId: string | undefined }) {
         const { title, body } = notificationText(n, t);
         const style = (n.event && SYMBOLS[n.event]) || { symbol: 'bell.fill', accent: Brand.orange };
         const isVendor = n.event === 'vendor_new_order';
-        if (Platform.OS === 'android' || (NO_PUSH && AppState.currentState !== 'active')) {
+        if (NO_PUSH && AppState.currentState !== 'active') {
           void Notifications.scheduleNotificationAsync({ content: { title, body, sound: true }, trigger: null });
           return;
         }
