@@ -1,4 +1,5 @@
 import { View, Text } from 'react-native';
+import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { Tap } from '@/components/Tap';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,6 +45,8 @@ export default function TabsLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
+          // Cross-fade + slight slide between tabs instead of a hard cut.
+          animation: 'shift',
           tabBarStyle: {
             backgroundColor: '#fff',
             borderTopColor: Brand.border,
@@ -97,12 +100,14 @@ export default function TabsLayout() {
 
       {/* Floating cart button — only when cart has items */}
       {count > 0 && (
+        <Animated.View
+          entering={ZoomIn.springify().damping(14)}
+          exiting={ZoomOut.duration(150)}
+          style={{ position: 'absolute', bottom: 90, right: 20 }}
+        >
         <Tap
           onPress={() => router.push('/cart')}
           style={{
-            position: 'absolute',
-            bottom: 90,
-            right: 20,
             width: 56,
             height: 56,
             borderRadius: 28,
@@ -117,15 +122,17 @@ export default function TabsLayout() {
           }}
         >
           <CartIcon size={22} />
-          <View style={{
+          {/* key={count} remounts the badge so it pops on every add */}
+          <Animated.View key={count} entering={ZoomIn.springify().damping(10)} style={{
             position: 'absolute', top: -4, right: -4,
             minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6,
             backgroundColor: '#fff', borderWidth: 2, borderColor: '#FE6B00',
             alignItems: 'center', justifyContent: 'center',
           }}>
             <Text style={{ fontSize: 11, fontWeight: '800', color: '#FE6B00' }}>{count}</Text>
-          </View>
+          </Animated.View>
         </Tap>
+        </Animated.View>
       )}
     </View>
   );

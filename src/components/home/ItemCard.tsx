@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
+import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Tap } from '@/components/Tap';
 import { Brand } from '@/constants/theme';
@@ -44,16 +45,21 @@ export function EmptyCard({ text, marginBottom }: { text: string; marginBottom?:
 export function CardRow({ title, count, emptyText, children }: { title: string; count: number; emptyText?: string; children: ReactNode }) {
   if (count === 0 && !emptyText) return null;
   return (
-    <View style={{ marginBottom: 28 }}>
+    <Animated.View entering={FadeInDown.springify().damping(18)} style={{ marginBottom: 28 }}>
       <SectionTitle>{title}</SectionTitle>
       {count > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-          {children}
+          {/* Cards cascade in left-to-right; capped so long rows don't lag. */}
+          {Children.toArray(children).map((child, i) => (
+            <Animated.View key={isValidElement(child) && child.key != null ? child.key : i} entering={FadeInRight.delay(Math.min(i, 5) * 60).springify().damping(18)}>
+              {child}
+            </Animated.View>
+          ))}
         </ScrollView>
       ) : (
         <EmptyCard text={emptyText!} />
       )}
-    </View>
+    </Animated.View>
   );
 }
 

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Tap } from '@/components/Tap';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
@@ -189,11 +190,12 @@ export default function HomeScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Greeting */}
-        <Text style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
+        <Animated.Text entering={FadeInDown.springify().damping(18)} style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
           {t(getGreetingKey())}{firstName ? `, ${firstName}.` : '.'}
-        </Text>
+        </Animated.Text>
 
         {/* Search bar */}
+        <Animated.View entering={FadeInDown.delay(80).springify().damping(18)}>
         <Tap
           activeOpacity={0.8}
           onPress={() => router.push('/search')}
@@ -207,6 +209,7 @@ export default function HomeScreen() {
           </View>
           <Text style={{ color: '#5a4136', fontSize: 16 }}>{t('home.searchPlaceholder')}</Text>
         </Tap>
+        </Animated.View>
 
 
         {topVendor && <QueueBanner vendor={topVendor} queue={queue} />}
