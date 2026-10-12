@@ -26,7 +26,6 @@ export async function registerForPush(): Promise<void> {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Order updates',
         importance: Notifications.AndroidImportance.MAX,
-        sound: 'default',
         vibrationPattern: [0, 250, 250, 250],
       });
     }

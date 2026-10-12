@@ -43,7 +43,7 @@ export function NotificationIsland({ userId }: { userId: string | undefined }) {
         const style = (n.event && SYMBOLS[n.event]) || { symbol: 'bell.fill', accent: Brand.orange };
         const isVendor = n.event === 'vendor_new_order';
         if (NO_PUSH && AppState.currentState !== 'active') {
-          void Notifications.scheduleNotificationAsync({ content: { title, body, sound: 'default' }, trigger: null });
+          void Notifications.scheduleNotificationAsync({ content: { title, body, sound: true }, trigger: null });
           return;
         }
         trigger({
