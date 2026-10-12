@@ -4,10 +4,11 @@ import Constants from 'expo-constants';
 import { supabase } from '@/lib/supabase';
 
 // Show banner + play sound even while the app is in the foreground, like
-// LINE does — default behavior swallows it silently.
+// LINE does — default behavior swallows it silently. iOS skips the system
+// banner in foreground: components/NotificationIsland shows its own card.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true,
+    shouldShowBanner: Platform.OS !== 'ios',
     shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
