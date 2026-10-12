@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Platform, View, Text, ScrollView, useWindowDimensions } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { CountUp } from '@/components/CountUp';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -79,7 +82,7 @@ export default function VendorFinanceScreen() {
               <Ionicons name="cash-outline" size={14} color={Brand.vendorAccent} />
             </View>
           </View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>฿{formatBaht(totalRevenueToday)}</Text>
+          <CountUp value={totalRevenueToday} format={n => `฿${formatBaht(n)}`} style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} />
         </View>
 
         <View style={{ flex: 1, minWidth: 200, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
@@ -89,14 +92,16 @@ export default function VendorFinanceScreen() {
               <Ionicons name="card-outline" size={14} color={Brand.orange} />
             </View>
           </View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{todayPayments.length}</Text>
+          <CountUp value={todayPayments.length} format={n => String(Math.round(n))} style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} />
         </View>
 
         <View style={{ flex: 1, minWidth: 220, backgroundColor: Brand.vendorAccent, borderRadius: 16, padding: 18 }}>
           <Text style={{ fontSize: 10.5, fontWeight: '700', color: 'rgba(255,255,255,0.75)', letterSpacing: 0.5, marginBottom: 14 }}>
             {t('vendor.finance.availableToWithdraw')}
           </Text>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14 }}>{availableToWithdraw == null ? '—' : `฿${formatBaht(availableToWithdraw)}`}</Text>
+          {availableToWithdraw == null
+            ? <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14 }}>—</Text>
+            : <CountUp value={availableToWithdraw} format={n => `฿${formatBaht(n)}`} style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14, fontVariant: ['tabular-nums'] }} />}
           <Tap onPress={() => router.push('/(vendor)/profile')} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.withdraw')}</Text>
           </Tap>
@@ -135,8 +140,8 @@ export default function VendorFinanceScreen() {
                   <Text style={{ flex: 1.6, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colMethod')}</Text>
                   <Text style={{ flex: 1.2, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colStatus')}</Text>
                 </View>
-                {visiblePayments.map(p => (
-                  <View key={p.order_id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
+                {visiblePayments.map((p, i) => (
+                  <Animated.View key={p.order_id} entering={listEnter(i)} exiting={listExit} layout={listLayout} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
                     <Text style={{ flex: 2, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{formatFriendlyDateTime(p.created_at, t('common.today'))}</Text>
                     <Text style={{ flex: 1.4, fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{p.display_id}</Text>
                     <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>฿{formatBaht(p.amount)}</Text>
@@ -146,7 +151,7 @@ export default function VendorFinanceScreen() {
                         <Text style={{ fontSize: 10, fontWeight: '700', color: '#16a34a' }}>{t('vendor.finance.completed')}</Text>
                       </View>
                     </View>
-                  </View>
+                  </Animated.View>
                 ))}
               </View>
             </ScrollView>
