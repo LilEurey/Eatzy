@@ -1,5 +1,4 @@
-import { Fragment, useCallback, useState } from 'react';
-import { useFocusKey } from '@/hooks/useFocusKey';
+import { useCallback, useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -70,7 +69,6 @@ export default function WalletScreen() {
   const [held, setHeld] = useState<HeldOrder[]>([]);
   const [showHeld, setShowHeld] = useState(false);
   const [loading, setLoading] = useState(true);
-  const focusKey = useFocusKey();
   const [loadFailed, setLoadFailed] = useState(false);
   const focusGuard = useFocusGuard();
   const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
@@ -110,7 +108,6 @@ export default function WalletScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-      <Fragment key={focusKey}>
         {/* Header */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5 }}>
@@ -283,7 +280,6 @@ export default function WalletScreen() {
             })}
           </View>
         </View>
-      </Fragment>
       </ScrollView>
     </SafeAreaView>
   );
