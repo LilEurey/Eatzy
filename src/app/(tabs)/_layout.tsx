@@ -1,24 +1,12 @@
 import { View, Text } from 'react-native';
 import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { Tap } from '@/components/Tap';
-import { Tabs, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import Svg, { Path } from 'react-native-svg';
 import { Brand } from '@/constants/theme';
 import { useCart, cartCount } from '@/lib/cart-store';
 import { useI18n } from '@/lib/i18n';
-
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-
-function TabIcon({ name, focused }: { name: IoniconsName; focused: boolean }) {
-  return (
-    <Ionicons
-      name={name}
-      size={24}
-      color={focused ? Brand.orange : '#C4B8AE'}
-    />
-  );
-}
 
 // Exact path from the Figma export — a dark stroked outline reads clearly
 // against the orange circle; the 🛒 emoji it replaced renders with its own
@@ -42,68 +30,32 @@ export default function TabsLayout() {
   const count = cartCount(useCart());
   return (
     <View style={{ flex: 1 }}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          // Cross-fade + slight slide between tabs instead of a hard cut.
-          animation: 'shift',
-          tabBarStyle: {
-            backgroundColor: '#fff',
-            borderTopColor: Brand.border,
-            borderTopWidth: 1,
-            height: 80,
-            paddingBottom: 16,
-            paddingTop: 8,
-          },
-          tabBarActiveTintColor: Brand.orange,
-          tabBarInactiveTintColor: '#C4B8AE',
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        }}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: t('tabs.home'),
-            tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="orders"
-          options={{
-            title: t('tabs.orders'),
-            tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'receipt' : 'receipt-outline'} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="wallet"
-          options={{
-            title: t('tabs.wallet'),
-            tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'wallet' : 'wallet-outline'} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: t('tabs.profile'),
-            tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
-            ),
-          }}
-        />
-      </Tabs>
+      {/* Native UITabBar — iOS 26 renders it as system Liquid Glass; Android gets Material bottom nav. */}
+      <NativeTabs tintColor={Brand.orange} minimizeBehavior="onScrollDown">
+        <NativeTabs.Trigger name="index">
+          <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
+          <NativeTabs.Trigger.Label>{t('tabs.home')}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="orders">
+          <NativeTabs.Trigger.Icon sf={{ default: 'list.bullet.rectangle', selected: 'list.bullet.rectangle.fill' }} md="receipt" />
+          <NativeTabs.Trigger.Label>{t('tabs.orders')}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="wallet">
+          <NativeTabs.Trigger.Icon sf={{ default: 'wallet.bifold', selected: 'wallet.bifold.fill' }} md="account_balance_wallet" />
+          <NativeTabs.Trigger.Label>{t('tabs.wallet')}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="profile">
+          <NativeTabs.Trigger.Icon sf={{ default: 'person', selected: 'person.fill' }} md="person" />
+          <NativeTabs.Trigger.Label>{t('tabs.profile')}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+      </NativeTabs>
 
       {/* Floating cart button — only when cart has items */}
       {count > 0 && (
         <Animated.View
           entering={ZoomIn.springify().damping(14)}
           exiting={ZoomOut.duration(150)}
-          style={{ position: 'absolute', bottom: 90, right: 20 }}
+          style={{ position: 'absolute', bottom: 110, right: 20 }}
         >
         <Tap
           onPress={() => router.push('/cart')}
