@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { supabase } from '@/lib/supabase';
@@ -30,7 +30,12 @@ export async function registerForPush(): Promise<void> {
       });
     }
     let { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') ({ status } = await Notifications.requestPermissionsAsync());
+    if (status !== 'granted') {
+      // Sign-in finishes while the Google auth browser is still on top; Android
+      // silently denies a permission request from a backgrounded app, no popup.
+      await untilActive();
+      ({ status } = await Notifications.requestPermissionsAsync());
+    }
     // EXPO_NO_PUSH builds have no APNs entitlement, so no token to fetch —
     // permission above is still needed for NotificationIsland's local fallback.
     if (status !== 'granted' || Constants.expoConfig?.extra?.noPush === true) return;
@@ -42,4 +47,13 @@ export async function registerForPush(): Promise<void> {
   } catch (e) {
     console.warn('push registration failed', e);
   }
+}
+
+function untilActive(): Promise<void> {
+  if (AppState.currentState === 'active') return Promise.resolve();
+  return new Promise((resolve) => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') { sub.remove(); resolve(); }
+    });
+  });
 }
