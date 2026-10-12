@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -182,7 +184,7 @@ export default function CartScreen() {
           shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
         }}>
           {items.map((item, i) => (
-            <View key={item.line_id}>
+            <Animated.View key={item.line_id} entering={listEnter(i)} exiting={listExit} layout={listLayout}>
               {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, gap: 14 }}>
                 <View style={{ flex: 1 }}>
@@ -248,7 +250,7 @@ export default function CartScreen() {
                   fontSize: 13, color: Brand.textPrimary, minHeight: 40, textAlignVertical: 'top',
                 }}
               />
-            </View>
+            </Animated.View>
           ))}
         </View>
 

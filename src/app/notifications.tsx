@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -108,11 +110,11 @@ export default function NotificationsScreen() {
           </View>
         ) : (
           <View style={{ gap: 10 }}>
-            {notifications.map(n => {
+            {notifications.map((n, i) => {
               const { title, body } = notificationText(n, t);
               return (
+                <Animated.View key={n.id} entering={listEnter(i)} exiting={listExit} layout={listLayout}>
                 <Tap
-                  key={n.id}
                   onPress={() => router.push(`/track/${n.order_id}`)}
                   style={{
                     flexDirection: 'row', gap: 12,
@@ -142,6 +144,7 @@ export default function NotificationsScreen() {
                     <Text style={{ fontSize: 11, color: Brand.textSecondary, marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>
                   </View>
                 </Tap>
+                </Animated.View>
               );
             })}
           </View>

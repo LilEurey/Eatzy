@@ -2,6 +2,8 @@ import { isStoreOpen } from '@/lib/time';
 import { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -129,9 +131,9 @@ export default function StoresScreen() {
           </Text>
 
           <View style={{ gap: 12 }}>
-            {results.map(vendor => (
+            {results.map((vendor, i) => (
+              <Animated.View key={vendor.id} entering={listEnter(i)} layout={listLayout}>
               <Tap
-                key={vendor.id}
                 onPress={() => router.push(`/store/${vendor.id}`)}
                 activeOpacity={0.85}
                 style={{
@@ -173,6 +175,7 @@ export default function StoresScreen() {
                   </View>
                 </View>
               </Tap>
+              </Animated.View>
             ))}
 
             {results.length === 0 && (

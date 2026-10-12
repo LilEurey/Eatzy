@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { listEnter } from '@/lib/motion';
+import { CountUp } from '@/components/CountUp';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -142,9 +143,8 @@ export default function WalletScreen() {
             <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '600', marginBottom: 8 }}>
               {t('wallet.balanceLabel')}
             </Text>
-            <Text style={{ fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1, marginBottom: 20 }}>
-              ฿{formatBaht(balance)}
-            </Text>
+            <CountUp value={balance} format={n => `฿${formatBaht(n)}`}
+              style={{ fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1, marginBottom: 20, fontVariant: ['tabular-nums'] }} />
 
             <Tap
               onPress={() => router.push('/wallet-topup')}

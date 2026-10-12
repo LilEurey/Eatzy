@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SPRING_DAMPING } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -171,13 +173,20 @@ export default function RateScreen() {
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {[1, 2, 3, 4, 5].map(n => (
               <Tap key={n} onPress={() => setScore(n)} activeOpacity={0.7}>
-                <Text style={{ fontSize: 40, opacity: n <= score ? 1 : 0.25 }}>⭐</Text>
+                {/* Lit stars grow and cascade left-to-right (CSS transition, delay per star) */}
+                <Animated.Text style={{
+                  fontSize: 40, opacity: n <= score ? 1 : 0.25,
+                  transform: [{ scale: n <= score ? 1.12 : 1 }],
+                  transitionProperty: ['opacity', 'transform'], transitionDuration: 220,
+                  transitionDelay: (n - 1) * 40, transitionTimingFunction: 'ease-out',
+                }}>⭐</Animated.Text>
               </Tap>
             ))}
           </View>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.orange, height: 22, marginTop: 10 }}>
+          <Animated.Text key={score} entering={FadeInDown.springify().damping(SPRING_DAMPING)}
+            style={{ fontSize: 15, fontWeight: '700', color: Brand.orange, height: 22, marginTop: 10 }}>
             {LABEL_KEYS[score] ? t(LABEL_KEYS[score]!) : ''}
-          </Text>
+          </Animated.Text>
         </View>
 
         {/* Comment */}

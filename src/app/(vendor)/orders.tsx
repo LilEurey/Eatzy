@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -306,7 +308,11 @@ export default function VendorOrdersScreen() {
               {col.data.length === 0 ? (
                 <Text style={{ fontSize: 12, color: '#B0B4BF', paddingVertical: 8 }}>{t('vendor.orders.emptyColumn')}</Text>
               ) : (
-                col.data.map(col.render)
+                col.data.map((o, i) => (
+                  <Animated.View key={o.id} entering={listEnter(i)} exiting={listExit} layout={listLayout}>
+                    {col.render(o)}
+                  </Animated.View>
+                ))
               )}
             </View>
           </View>
