@@ -13,7 +13,7 @@ import type { IDynamicNotifications } from "@/dynamic-island/interfaces/dynamic-
 import { clamp } from "@/dynamic-island/logic/clamp.default";
 import { mix } from "@/dynamic-island/logic/mix.default";
 import { memo, useMemo } from "react";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Overlay } from "./overlay";
 
@@ -123,7 +123,8 @@ const Root: React.FC<IDynamicNotifications> &
       <DynamicNotificationsContext.Provider value={value}>
         <View style={[styles.root, style]}>
           {children}
-          <Overlay />
+          {/* Android has no Dynamic Island; the pill would float over content. */}
+          {Platform.OS === "ios" && <Overlay />}
         </View>
       </DynamicNotificationsContext.Provider>
     );
