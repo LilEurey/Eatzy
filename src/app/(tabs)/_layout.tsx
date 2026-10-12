@@ -4,12 +4,13 @@ import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-
-const LIQUID_GLASS = isLiquidGlassAvailable();
 import Svg, { Path } from 'react-native-svg';
 import { Brand } from '@/constants/theme';
 import { useCart, cartCount } from '@/lib/cart-store';
 import { useI18n } from '@/lib/i18n';
+
+
+const LIQUID_GLASS = isLiquidGlassAvailable();
 
 // Exact path from the Figma export — a dark stroked outline reads clearly
 // against the orange circle; the 🛒 emoji it replaced renders with its own
