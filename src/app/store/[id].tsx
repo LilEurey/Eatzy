@@ -251,8 +251,10 @@ export default function StoreDetailScreen() {
             {localizedText(vendor.bio ?? '', vendor.bio_th, locale)}
           </Text>
 
-          {/* Where to find it — read-only mini map (native only, only when pinned) */}
-          {Platform.OS !== 'web' && hasCoords(vendor) && (
+          {/* Where to find it — read-only mini map (iOS only, only when pinned).
+              ponytail: Android hidden — react-native-maps' Google MapView crashes
+              Fabric on mount ("addViewAt: failed"); re-enable on a fixed release. */}
+          {Platform.OS === 'ios' && hasCoords(vendor) && (
             <View style={{ marginBottom: 24 }}>
               <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, marginBottom: 10 }}>
                 {t('store.whereToFind')}
