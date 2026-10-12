@@ -14,7 +14,7 @@ type Props = {
 };
 
 /**
- * Student-facing read-only mini map; tapping it opens walking directions in
+ * Student-facing read-only mini map; tapping it opens driving directions in
  * Apple Maps (iOS) / Google Maps (Android). Native only — the `.web.tsx` sibling
  * renders nothing so `react-native-maps` never enters the web module graph
  * (its `lib/index.js` eagerly pulls RN internals the web resolver blocks).

@@ -41,9 +41,9 @@ describe('KMUTT_REGION', () => {
 describe('directionsUrl', () => {
   const c = { latitude: 13.65, longitude: 100.49 };
   it('opens Apple Maps on iOS, Google Maps elsewhere', () => {
-    expect(directionsUrl(c, 'ios')).toBe('https://maps.apple.com/?daddr=13.65,100.49&dirflg=w');
+    expect(directionsUrl(c, 'ios')).toBe('https://maps.apple.com/?daddr=13.65,100.49&dirflg=d');
     expect(directionsUrl(c, 'android')).toBe(
-      'https://www.google.com/maps/dir/?api=1&destination=13.65,100.49&travelmode=walking',
+      'https://www.google.com/maps/dir/?api=1&destination=13.65,100.49&travelmode=driving',
     );
   });
 });
