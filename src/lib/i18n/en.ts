@@ -250,6 +250,7 @@ export const en = {
   'store.reviewsTab': 'Review',
   'store.whereToFind': 'Where to find it',
   'store.stall': 'Stall {n}',
+  'store.openInGoogleMaps': 'Open in Google Maps',
 
   // Community reviews (store Review tab + item detail)
   'reviews.communityReviews': 'Community Reviews',

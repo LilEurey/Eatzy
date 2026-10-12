@@ -252,6 +252,7 @@ export const th: Record<TranslationKey, string> = {
   'store.reviewsTab': 'รีวิว',
   'store.whereToFind': 'ตำแหน่งร้าน',
   'store.stall': 'ร้าน {n}',
+  'store.openInGoogleMaps': 'เปิดใน Google Maps',
 
   // Community reviews (store Review tab + item detail)
   'reviews.communityReviews': 'รีวิวจากผู้ใช้',

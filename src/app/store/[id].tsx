@@ -1,6 +1,6 @@
 import { isStoreOpen } from '@/lib/time';
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Platform, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { Tap } from '@/components/Tap';
@@ -266,6 +266,22 @@ export default function StoreDetailScreen() {
                 showUser={canShowUser}
               />
             </View>
+          )}
+          {/* Android: no in-app map (see above) — hand off to the Google Maps app. */}
+          {Platform.OS === 'android' && hasCoords(vendor) && (
+            <Tap
+              onPress={() => void Linking.openURL(
+                `https://www.google.com/maps/search/?api=1&query=${vendor.latitude},${vendor.longitude}`,
+              )}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                borderWidth: 1, borderColor: Brand.border, borderRadius: 12,
+                paddingVertical: 12, marginBottom: 24,
+              }}
+            >
+              <Text style={{ fontSize: 16 }}>📍</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.orange }}>{t('store.openInGoogleMaps')}</Text>
+            </Tap>
           )}
           {vendor.stall_number ? (
             <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: -16, marginBottom: 24 }}>
