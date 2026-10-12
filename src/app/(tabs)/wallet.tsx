@@ -13,6 +13,7 @@ import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ, bangkokDayKey } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import type { OrderStatus } from '@/lib/order-lifecycle';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
@@ -70,6 +71,7 @@ export default function WalletScreen() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const focusGuard = useFocusGuard();
+  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   const refresh = useCallback((cancelledRef: { current: boolean }) => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -85,10 +87,13 @@ export default function WalletScreen() {
         setHeld(result.held);
       }
       setLoading(false);
+      refreshDone();
     });
-  }, []);
+  }, [refreshDone]);
 
-  useFocusEffect(useCallback(() => { refresh(focusGuard.snapshot()); }, [focusGuard, refresh]));
+  // refreshKey: a pull re-runs the load.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useFocusEffect(useCallback(() => { refresh(focusGuard.snapshot()); }, [focusGuard, refresh, refreshKey]));
 
   const heldTotal = held.reduce((sum, o) => sum + o.total_amount, 0);
 
@@ -102,7 +107,7 @@ export default function WalletScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5 }}>

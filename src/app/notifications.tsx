@@ -12,6 +12,7 @@ import { useI18n } from '@/lib/i18n';
 import { notificationText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 type NotificationRow = {
   id: string;
@@ -32,6 +33,7 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<NotificationRow[] | undefined>(undefined);
 
   const [loadFailed, setLoadFailed] = useState(false);
+  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -58,6 +60,7 @@ export default function NotificationsScreen() {
       // parsed on every open. 100 is far past what anyone scrolls to.
       .limit(100);
     if (isCancelled()) return cleanup;
+    refreshDone();
     if (error) {
       // Keep whatever was already shown (or an empty list) instead of an
       // endless spinner; live inserts still arrive via the channel above.
@@ -78,7 +81,7 @@ export default function NotificationsScreen() {
       await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
     }
     return cleanup;
-  });
+  }, refreshKey);
 
   if (notifications === undefined) {
     return (
@@ -98,7 +101,7 @@ export default function NotificationsScreen() {
         <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('notifications.title')}</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 }}>
+      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 }}>
         {loadFailed && (
           <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', marginBottom: 12 }}>
             {t('common.errorTitle')}

@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 type Vendor = {
   id: string;
@@ -37,6 +38,7 @@ export default function StoresScreen() {
   const [query, setQuery] = useState('');
   const [halalOnly, setHalalOnly] = useState(false);
   const focusGuard = useFocusGuard();
+  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   useFocusEffect(
     useCallback(() => {
@@ -50,8 +52,11 @@ export default function StoresScreen() {
           if (cancelledRef.current) return;
           setVendors(error || !data ? [] : (data as Vendor[]));
           setLoading(false);
+          refreshDone();
         });
-    }, [focusGuard])
+    // refreshKey: a pull re-runs the load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [focusGuard, refreshKey, refreshDone])
   );
 
   const results = useMemo(() => {
@@ -121,6 +126,7 @@ export default function StoresScreen() {
         <SkeletonList />
       ) : (
         <ScrollView
+          refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"

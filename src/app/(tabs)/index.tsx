@@ -8,6 +8,7 @@ import { enterUp } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -74,6 +75,7 @@ export default function HomeScreen() {
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   const focusGuard = useFocusGuard();
+  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   // The whole fetch-filter-rank fanout (9 concurrent queries, dietary +
   // drink-category filtering, rank restore, Similar Foods) lives in
@@ -111,8 +113,11 @@ export default function HomeScreen() {
         setTimeBasedItems(result.timeBasedItems);
         setSimilarToFeatured(result.similarToFeatured);
         setLoading(false);
+        refreshDone();
       })();
-    }, [focusGuard, prefs, prefsLoading])
+    // refreshKey: a pull re-runs the fanout.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [focusGuard, prefs, prefsLoading, refreshKey, refreshDone])
   );
 
   useLiveWhileFocused(async isCancelled => {
@@ -190,7 +195,7 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       <TopBar avatarUrl={avatarUrl} firstName={firstName} hasUnreadNotifications={hasUnreadNotifications} />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Greeting */}
         <Animated.Text entering={enterUp()} lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
           {t(getGreetingKey())}{firstName ? `, ${firstName}.` : '.'}

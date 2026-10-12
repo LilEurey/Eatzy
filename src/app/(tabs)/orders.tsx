@@ -14,6 +14,7 @@ import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
@@ -55,6 +56,7 @@ export default function OrdersScreen() {
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -69,6 +71,7 @@ export default function OrdersScreen() {
         .order('created_at', { ascending: false });
 
       if (isCancelled()) return;
+      refreshDone();
       // Keep the list on a failed live refetch — [] would flash "no orders".
       if (error) { console.warn('load orders failed:', error.message); setLoading(false); return; }
       setOrders((data ?? []).map(o => ({
@@ -97,7 +100,7 @@ export default function OrdersScreen() {
       .subscribe();
     void load();
     return () => { void supabase.removeChannel(channel); };
-  });
+  }, refreshKey);
 
   const filtered = orders.filter(o => {
     if (tab === 'All') return true;
@@ -155,7 +158,7 @@ export default function OrdersScreen() {
       {loading ? (
         <SkeletonList />
       ) : (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
         {tab === 'All' && filtered.some(o => isActiveForStudent(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
