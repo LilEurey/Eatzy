@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
+import Animated, { LinearTransition } from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -212,9 +214,9 @@ export default function SearchScreen() {
           </Text>
 
           <View style={{ gap: 12 }}>
-            {results.map(item => (
+            {results.map((item, index) => (
+              <Animated.View key={item.id} entering={listEnter(index)} layout={LinearTransition.springify().damping(18)}>
               <Tap
-                key={item.id}
                 onPress={() => router.push(`/item/${item.id}`)}
                 activeOpacity={0.85}
                 style={{
@@ -261,6 +263,7 @@ export default function SearchScreen() {
                   ฿{item.price}
                 </Text>
               </Tap>
+              </Animated.View>
             ))}
 
             {results.length === 0 && (

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -163,7 +165,7 @@ export default function OrdersScreen() {
         )}
 
         <View style={{ gap: 12 }}>
-          {filtered.map(order => {
+          {filtered.map((order, index) => {
             const cfg = STATUS_CONFIG[order.status];
             const vendor = order.vendor_name;
             const isActive = isActiveForStudent(order.status);
@@ -173,8 +175,10 @@ export default function OrdersScreen() {
             }).join(', ');
 
             return (
-              <View
+              <Animated.View
                 key={order.id}
+                entering={listEnter(index)}
+                layout={LinearTransition.springify().damping(18)}
                 style={{
                   backgroundColor: Brand.card, borderRadius: 20, padding: 16,
                   shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
@@ -207,9 +211,11 @@ export default function OrdersScreen() {
                 {isActive && (
                   <View style={{ marginBottom: 12 }}>
                     <View style={{ height: 4, backgroundColor: Brand.border, borderRadius: 2 }}>
-                      <View style={{
+                      {/* CSS transition: bar glides when realtime bumps the status */}
+                      <Animated.View style={{
                         height: 4, borderRadius: 2, backgroundColor: Brand.orange,
                         width: order.status === 'pending' ? '15%' : order.status === 'accepted' ? '60%' : '100%',
+                        transitionProperty: 'width', transitionDuration: 500,
                       }} />
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
@@ -273,7 +279,7 @@ export default function OrdersScreen() {
                     </Text>
                   </Tap>
                 )}
-              </View>
+              </Animated.View>
             );
           })}
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -11,6 +12,15 @@ import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
 import { confirmHandoff, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
+
+// Gentle breathing scale on the current step (Reanimated 4 CSS animation).
+const PULSE = {
+  animationName: { from: { transform: [{ scale: 1 }] }, to: { transform: [{ scale: 1.1 }] } },
+  animationDuration: '900ms',
+  animationIterationCount: 'infinite',
+  animationDirection: 'alternate',
+  animationTimingFunction: 'ease-in-out',
+} as const;
 
 // 'rejected' / 'cancelled' are reachable while this screen is mounted — the
 // realtime UPDATE below pushes whatever the vendor (or accept_order_and_charge's
@@ -257,15 +267,18 @@ export default function TrackScreen() {
               <View key={step.key} style={{ flexDirection: 'row', gap: 14 }}>
                 {/* Rail */}
                 <View style={{ alignItems: 'center' }}>
-                  <View style={{
+                  <Animated.View style={[{
                     width: 40, height: 40, borderRadius: 20,
                     backgroundColor: reached ? Brand.orange : Brand.orangeLight,
                     alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Text style={{ fontSize: 18, opacity: reached ? 1 : 0.4 }}>{done ? '✓' : step.icon}</Text>
-                  </View>
+                    transitionProperty: 'backgroundColor', transitionDuration: 400,
+                  }, active && PULSE]}>
+                    {/* key swap remounts the glyph so ✓ pops in when a step completes */}
+                    <Animated.Text key={done ? 'done' : 'icon'} entering={ZoomIn.springify().damping(12)}
+                      style={{ fontSize: 18, opacity: reached ? 1 : 0.4 }}>{done ? '✓' : step.icon}</Animated.Text>
+                  </Animated.View>
                   {i < STEPS.length - 1 && (
-                    <View style={{ width: 2, flex: 1, minHeight: 28, backgroundColor: i < currentIdx ? Brand.orange : Brand.border }} />
+                    <Animated.View style={{ width: 2, flex: 1, minHeight: 28, backgroundColor: i < currentIdx ? Brand.orange : Brand.border, transitionProperty: 'backgroundColor', transitionDuration: 400 }} />
                   )}
                 </View>
                 {/* Text */}
@@ -274,7 +287,7 @@ export default function TrackScreen() {
                     {t(step.labelKey)}
                   </Text>
                   {active && (
-                    <Text style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{t(step.hintKey)}</Text>
+                    <Animated.Text entering={FadeInDown.springify().damping(18)} style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{t(step.hintKey)}</Animated.Text>
                   )}
                 </View>
               </View>

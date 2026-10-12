@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -195,7 +197,7 @@ export default function WalletScreen() {
               </Text>
             )}
             {held.map((o, i) => (
-              <View key={o.id}>
+              <Animated.View key={o.id} entering={listEnter(i)}>
                 {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
                 <Tap onPress={() => router.push(`/track/${o.id}`)} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
                   <View style={{ flex: 1 }}>
@@ -208,7 +210,7 @@ export default function WalletScreen() {
                   </View>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>฿{formatBaht(o.total_amount)}</Text>
                 </Tap>
-              </View>
+              </Animated.View>
             ))}
           </View>
         )}
@@ -240,7 +242,7 @@ export default function WalletScreen() {
               const cfg = TX_CONFIG[tx.type];
               const isPositive = tx.amount > 0;
               return (
-                <View key={tx.id}>
+                <Animated.View key={tx.id} entering={listEnter(i)}>
                   {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
                   <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 }}>
                     {/* Icon */}
@@ -267,7 +269,7 @@ export default function WalletScreen() {
                       {isPositive ? '+' : ''}฿{formatBaht(Math.abs(tx.amount))}
                     </Text>
                   </View>
-                </View>
+                </Animated.View>
               );
             })}
           </View>
