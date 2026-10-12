@@ -1,4 +1,4 @@
-import { KMUTT_REGION, hasCoords, regionForCoords } from '@/lib/geo';
+import { KMUTT_REGION, directionsUrl, hasCoords, regionForCoords } from '@/lib/geo';
 
 describe('hasCoords', () => {
   it('is true when both coordinates are finite numbers', () => {
@@ -35,5 +35,15 @@ describe('KMUTT_REGION', () => {
     expect(KMUTT_REGION.latitude).toBeCloseTo(13.6512, 3);
     expect(KMUTT_REGION.longitude).toBeCloseTo(100.4967, 3);
     expect(KMUTT_REGION.latitudeDelta).toBeGreaterThan(0);
+  });
+});
+
+describe('directionsUrl', () => {
+  const c = { latitude: 13.65, longitude: 100.49 };
+  it('opens Apple Maps on iOS, Google Maps elsewhere', () => {
+    expect(directionsUrl(c, 'ios')).toBe('https://maps.apple.com/?daddr=13.65,100.49&dirflg=w');
+    expect(directionsUrl(c, 'android')).toBe(
+      'https://www.google.com/maps/dir/?api=1&destination=13.65,100.49&travelmode=walking',
+    );
   });
 });

@@ -27,3 +27,16 @@ export function hasCoords(v: {
 export function regionForCoords(c: LatLng, delta = 0.003): Region {
   return { latitude: c.latitude, longitude: c.longitude, latitudeDelta: delta, longitudeDelta: delta };
 }
+
+/**
+ * Walking directions to a point in the platform's own maps app: Apple Maps on
+ * iOS, Google Maps everywhere else. Both are https universal links, so they
+ * open the app when installed and the browser otherwise — no `canOpenURL` /
+ * manifest `<queries>` needed.
+ */
+export function directionsUrl(c: LatLng, os: string): string {
+  const dest = `${c.latitude},${c.longitude}`;
+  return os === 'ios'
+    ? `https://maps.apple.com/?daddr=${dest}&dirflg=w`
+    : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking`;
+}

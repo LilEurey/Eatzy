@@ -251,6 +251,7 @@ export const th: Record<TranslationKey, string> = {
   'store.allMenusTab': 'เมนูทั้งหมด',
   'store.reviewsTab': 'รีวิว',
   'store.whereToFind': 'ตำแหน่งร้าน',
+  'store.openInMaps': 'เปิดในแผนที่',
   'store.stall': 'ร้าน {n}',
 
   // Community reviews (store Review tab + item detail)
