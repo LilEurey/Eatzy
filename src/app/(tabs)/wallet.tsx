@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { listEnter } from '@/lib/motion';
 import { CountUp } from '@/components/CountUp';
@@ -93,8 +94,8 @@ export default function WalletScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonList title />
       </SafeAreaView>
     );
   }

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { SkeletonHome } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import Animated from 'react-native-reanimated';
@@ -145,8 +146,8 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonHome />
       </SafeAreaView>
     );
   }

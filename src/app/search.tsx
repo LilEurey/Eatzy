@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import { listEnter, listLayout } from '@/lib/motion';
@@ -183,9 +184,7 @@ export default function SearchScreen() {
       </View>
 
       {loading || gate.status === 'loading' ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={Brand.orange} size="large" />
-        </View>
+        <SkeletonList />
       ) : gate.status === 'error' ? (
         // Saved halal/vegetarian/jay prefs failed to load — passesDietary would
         // silently fall back to all-false (no filter) on the stale/default

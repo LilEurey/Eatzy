@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
@@ -81,8 +82,8 @@ export default function NotificationsScreen() {
 
   if (notifications === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonList title />
       </SafeAreaView>
     );
   }

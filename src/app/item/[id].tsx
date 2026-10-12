@@ -1,6 +1,7 @@
 import { isStoreOpen } from '@/lib/time';
+import { SkeletonDetail } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import { rowEnter, popIn, popOut, useStretchyHero } from '@/lib/motion';
@@ -142,9 +143,9 @@ export default function ItemDetailScreen() {
 
   if (item === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonDetail />
+      </View>
     );
   }
 

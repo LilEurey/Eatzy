@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { View, Text, Modal, ActivityIndicator, ScrollView } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, Modal, ScrollView } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Tap } from '@/components/Tap';
 import { Brand } from '@/constants/theme';
@@ -96,7 +97,7 @@ export default function AdminVendorsScreen() {
       </Text>
 
       {loading ? (
-        <ActivityIndicator color={Brand.adminAccent} style={{ marginTop: 40 }} />
+        <SkeletonList rows={5} padded={false} />
       ) : vendors.length === 0 ? (
         <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('admin.vendors.empty')}</Text>
       ) : (

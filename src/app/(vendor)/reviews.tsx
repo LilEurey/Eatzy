@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, Image, ScrollView, ActivityIndicator, Modal } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, Image, ScrollView, Modal } from 'react-native';
 import { Tap } from '@/components/Tap';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -105,9 +106,7 @@ export default function VendorReviewsScreen() {
       </View>
 
       {loading ? (
-        <View style={{ paddingVertical: 60, alignItems: 'center' }}>
-          <ActivityIndicator color={Brand.vendorAccent} />
-        </View>
+        <SkeletonList rows={4} padded={false} />
       ) : count === 0 ? (
         <View style={{ alignItems: 'center', paddingVertical: 60 }}>
           <Ionicons name="star-outline" size={36} color="#C9CCD6" />

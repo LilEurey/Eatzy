@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Share } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Tap } from '@/components/Tap';
@@ -90,7 +91,7 @@ export default function WalletStatementScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={Brand.orange} size="large" style={{ marginTop: 40 }} />
+        <SkeletonList />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 60 }}>
           {loadFailed && (

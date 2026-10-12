@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView, TextInput, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Animated from 'react-native-reanimated';
 import { enterUp, EASE_OUT } from '@/lib/motion';
@@ -74,8 +75,8 @@ export default function RateScreen() {
 
   if (order === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonList title />
       </SafeAreaView>
     );
   }

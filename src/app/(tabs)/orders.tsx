@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
@@ -152,9 +153,7 @@ export default function OrdersScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={Brand.orange} size="large" />
-        </View>
+        <SkeletonList />
       ) : (
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}

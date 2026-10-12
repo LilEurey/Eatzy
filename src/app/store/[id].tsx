@@ -1,6 +1,7 @@
 import { isStoreOpen } from '@/lib/time';
+import { SkeletonDetail } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import Animated from 'react-native-reanimated';
@@ -107,9 +108,9 @@ export default function StoreDetailScreen() {
 
   if (vendor === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonDetail heroHeight={220} />
+      </View>
     );
   }
 

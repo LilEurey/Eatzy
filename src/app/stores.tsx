@@ -1,6 +1,7 @@
 import { isStoreOpen } from '@/lib/time';
+import { SkeletonList } from '@/components/Skeleton';
 import { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import { listEnter, listLayout } from '@/lib/motion';
@@ -117,9 +118,7 @@ export default function StoresScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={Brand.orange} size="large" />
-        </View>
+        <SkeletonList />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
