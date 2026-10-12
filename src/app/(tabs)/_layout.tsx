@@ -3,6 +3,9 @@ import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+
+const LIQUID_GLASS = isLiquidGlassAvailable();
 import Svg, { Path } from 'react-native-svg';
 import { Brand } from '@/constants/theme';
 import { useCart, cartCount } from '@/lib/cart-store';
@@ -63,7 +66,8 @@ export default function TabsLayout() {
             width: 56,
             height: 56,
             borderRadius: 28,
-            backgroundColor: '#FE6B00',
+            // iOS 26: orange-tinted Liquid Glass; elsewhere the solid orange it always was.
+            backgroundColor: LIQUID_GLASS ? 'transparent' : '#FE6B00',
             alignItems: 'center',
             justifyContent: 'center',
             shadowColor: '#FE6B00',
@@ -73,6 +77,9 @@ export default function TabsLayout() {
             elevation: 6,
           }}
         >
+          {LIQUID_GLASS && (
+            <GlassView isInteractive tintColor="rgba(254,107,0,0.85)" style={{ position: 'absolute', inset: 0, borderRadius: 28 }} />
+          )}
           <CartIcon size={22} />
           {/* key={count} remounts the badge so it pops on every add */}
           <Animated.View key={count} entering={ZoomIn.springify().damping(10)} style={{
