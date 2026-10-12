@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, Image, Modal, ScrollView, Switch } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn } from '@/lib/motion';
 import Slider from '@react-native-community/slider';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -358,7 +360,7 @@ export default function AddMenuItemScreen() {
 
       <Modal visible={categoryPickerOpen} transparent animationType="fade" onRequestClose={() => setCategoryPickerOpen(false)}>
         <Tap activeOpacity={1} onPress={() => setCategoryPickerOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8, maxHeight: 420 }}>
+          <Animated.View entering={dialogIn} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8, maxHeight: 420 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 }}>
               {t('vendor.menuNew.categoryLabel')}
             </Text>
@@ -374,7 +376,7 @@ export default function AddMenuItemScreen() {
                 </Tap>
               ))}
             </ScrollView>
-          </View>
+          </Animated.View>
         </Tap>
       </Modal>
     </View>

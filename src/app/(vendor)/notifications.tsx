@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout } from '@/lib/motion';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -38,40 +40,41 @@ export default function VendorNotificationsScreen() {
         </View>
       ) : (
         <View style={{ gap: 10, maxWidth: 480 }}>
-          {notifications.map(n => {
+          {notifications.map((n, i) => {
             const { title, body } = notificationText(n, t);
             const isNew = unreadAtOpen.has(n.id);
             return (
-              <Tap
-                key={n.id}
-                onPress={() => router.push('/(vendor)/orders')}
-                style={{
-                  flexDirection: 'row', gap: 12,
-                  backgroundColor: isNew ? Brand.vendorAccentLight + '33' : '#fff',
-                  borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14,
-                  borderLeftWidth: isNew ? 3 : 1,
-                  borderLeftColor: isNew ? Brand.orange : '#EEF0F5',
-                }}
-              >
-                <View style={{
-                  width: 36, height: 36, borderRadius: 18,
-                  backgroundColor: Brand.vendorAccentLight, alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Text style={{ fontSize: 16 }}>{n.icon}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{title}</Text>
-                    {isNew && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Brand.orange, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{t('vendor.notifications.new')}</Text>
-                      </View>
-                    )}
+              <Animated.View key={n.id} entering={listEnter(i)} layout={listLayout}>
+                <Tap
+                  onPress={() => router.push('/(vendor)/orders')}
+                  style={{
+                    flexDirection: 'row', gap: 12,
+                    backgroundColor: isNew ? Brand.vendorAccentLight + '33' : '#fff',
+                    borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14,
+                    borderLeftWidth: isNew ? 3 : 1,
+                    borderLeftColor: isNew ? Brand.orange : '#EEF0F5',
+                  }}
+                >
+                  <View style={{
+                    width: 36, height: 36, borderRadius: 18,
+                    backgroundColor: Brand.vendorAccentLight, alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Text style={{ fontSize: 16 }}>{n.icon}</Text>
                   </View>
-                  <Text style={{ fontSize: 13, color: '#4B4F58', marginTop: 2 }}>{body}</Text>
-                  <Text style={{ fontSize: 11, color: '#8A8F9B', marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>
-                </View>
-              </Tap>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{title}</Text>
+                      {isNew && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Brand.orange, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{t('vendor.notifications.new')}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={{ fontSize: 13, color: '#4B4F58', marginTop: 2 }}>{body}</Text>
+                    <Text style={{ fontSize: 11, color: '#8A8F9B', marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>
+                  </View>
+                </Tap>
+              </Animated.View>
             );
           })}
         </View>

@@ -4,6 +4,8 @@ import { View, Text, ScrollView, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
 import { supabase } from '@/lib/supabase';
 import { formatBaht } from '@/lib/money';
 import { Brand } from '@/constants/theme';
@@ -127,7 +129,7 @@ export default function WalletStatementScreen() {
               </Text>
             )}
             {txns.map((tx, i) => (
-              <View key={tx.id}>
+              <Animated.View key={tx.id} entering={listEnter(i)}>
                 {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
                 <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
                   <View style={{ flex: 1 }}>
@@ -142,7 +144,7 @@ export default function WalletStatementScreen() {
                     {signed(tx.amount)}
                   </Text>
                 </View>
-              </View>
+              </Animated.View>
             ))}
           </View>
         </ScrollView>

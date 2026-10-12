@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Modal, Image, ActivityIndicator, Switch } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn } from '@/lib/motion';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -425,7 +427,7 @@ export default function ProfileScreen() {
           onPress={() => setLanguagePickerOpen(false)}
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
         >
-          <View style={{ backgroundColor: Brand.card, borderRadius: 20, padding: 8 }}>
+          <Animated.View entering={dialogIn} style={{ backgroundColor: Brand.card, borderRadius: 20, padding: 8 }}>
             <Text style={{
               fontSize: 15, fontWeight: '700', color: Brand.textPrimary,
               paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
@@ -450,7 +452,7 @@ export default function ProfileScreen() {
                 {locale === code && <Text style={{ color: Brand.orange, fontSize: 16, fontWeight: '700' }}>✓</Text>}
               </Tap>
             ))}
-          </View>
+          </Animated.View>
         </Tap>
       </Modal>
     </SafeAreaView>

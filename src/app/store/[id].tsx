@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import Animated from 'react-native-reanimated';
 import { listEnter, listLayout, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
 import StoreMiniMap from '@/components/StoreMiniMap';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -50,7 +51,7 @@ export default function StoreDetailScreen() {
   const { prefs, gate } = usePreferences();
   const prefsError = gate.status === 'error';
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { ref: heroRef, heroStyle } = useStretchyHero(220);
+  const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(220);
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
@@ -143,20 +144,6 @@ export default function StoreDetailScreen() {
             : <Text style={{ fontSize: 72 }}>🏪</Text>
           }
           </Animated.View>
-          {/* Back button */}
-          <Tap
-            onPress={() => router.back()}
-            style={{
-              position: 'absolute', top: 16, left: 16,
-              width: 40, height: 40, borderRadius: 20,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              alignItems: 'center', justifyContent: 'center',
-              shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-            }}
-          >
-            <Text style={{ fontSize: 18, color: Brand.textPrimary }}>←</Text>
-          </Tap>
 
           {/* Open badge */}
           <View style={{
@@ -295,6 +282,7 @@ export default function StoreDetailScreen() {
                     paddingBottom: 10,
                     borderBottomWidth: 2,
                     borderBottomColor: active ? Brand.orange : 'transparent',
+                    transitionProperty: 'borderBottomColor', transitionDuration: 180,
                   }}
                 >
                   <Text style={{ fontSize: 16, fontWeight: '700', color: active ? Brand.orange : Brand.textSecondary }}>
@@ -341,6 +329,7 @@ export default function StoreDetailScreen() {
                       backgroundColor: active ? Brand.orange : Brand.card,
                       shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
                       shadowOpacity: active ? 0 : 0.04, shadowRadius: 4, elevation: active ? 0 : 1,
+                      transitionProperty: 'backgroundColor', transitionDuration: 180,
                     }}
                   >
                     <Text style={{
@@ -478,6 +467,7 @@ export default function StoreDetailScreen() {
           )}
         </View>
       </Animated.ScrollView>
+      <HeroHeader title={vendor.name} barStyle={barStyle} />
     </SafeAreaView>
   );
 }

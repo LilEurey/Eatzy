@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, Image, ScrollView, Modal } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -175,10 +177,10 @@ export default function VendorReviewsScreen() {
           {/* Review feed */}
           <View style={{ gap: 10 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.reviews.feed')}</Text>
-            {rows.map(r => {
+            {rows.map((r, i) => {
               const nm = itemName.get(r.menu_item_id);
               return (
-                <View key={r.id} style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14, gap: 8 }}>
+                <Animated.View key={r.id} entering={listEnter(i)} style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14, gap: 8 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Stars score={r.score} />
@@ -201,7 +203,7 @@ export default function VendorReviewsScreen() {
                       ))}
                     </ScrollView>
                   )}
-                </View>
+                </Animated.View>
               );
             })}
           </View>

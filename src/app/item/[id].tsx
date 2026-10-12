@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import { rowEnter, popIn, popOut, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -57,7 +58,7 @@ function SpiceIndicator({ level }: { level: number }) {
 export default function ItemDetailScreen() {
   const { t, locale } = useI18n();
   const { id, rec } = useLocalSearchParams<{ id: string; rec?: string }>();
-  const { ref: heroRef, heroStyle } = useStretchyHero(280);
+  const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(280);
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
   const [vendorName, setVendorName] = useState('');
@@ -257,20 +258,6 @@ export default function ItemDetailScreen() {
             : <Text style={{ fontSize: 90 }}>🍽️</Text>
           }
           </Animated.View>
-          {/* Back button */}
-          <Tap
-            onPress={() => router.back()}
-            style={{
-              position: 'absolute', top: 16, left: 16,
-              width: 40, height: 40, borderRadius: 20,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              alignItems: 'center', justifyContent: 'center',
-              shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-            }}
-          >
-            <Text style={{ fontSize: 18, color: Brand.textPrimary }}>←</Text>
-          </Tap>
 
           {/* Featured badge */}
           {item.is_featured && (
@@ -540,6 +527,7 @@ export default function ItemDetailScreen() {
           </View>
         </View>
       </Animated.ScrollView>
+      <HeroHeader title={localizedText(item.name, item.name_th, locale)} barStyle={barStyle} />
 
       {/* Bottom — qty + add to cart */}
       <View style={{
@@ -582,9 +570,9 @@ export default function ItemDetailScreen() {
             >
               <Text style={{ fontSize: 20, color: Brand.orange, fontWeight: '700', lineHeight: 22 }}>−</Text>
             </Tap>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, minWidth: 28, textAlign: 'center' }}>
+            <Animated.Text key={qty} entering={popIn} style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, minWidth: 28, textAlign: 'center', fontVariant: ['tabular-nums'] }}>
               {qty}
-            </Text>
+            </Animated.Text>
             <Tap
               onPress={() => setQty(q => q + 1)}
               style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}

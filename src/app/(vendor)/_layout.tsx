@@ -3,6 +3,8 @@ import { View, Text, ScrollView, ActivityIndicator, useWindowDimensions, Modal, 
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn, drawerIn } from '@/lib/motion';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot, router, usePathname, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,7 +53,7 @@ function PickerModal({ visible, onClose, children }: { visible: boolean; onClose
         onPress={onClose}
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
       >
-        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>{children}</View>
+        <Animated.View entering={dialogIn} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>{children}</Animated.View>
       </Tap>
     </Modal>
   );
@@ -360,7 +362,7 @@ export default function VendorLayout() {
         </View>
         <Modal visible={drawerOpen} transparent animationType="fade" onRequestClose={() => setDrawerOpen(false)}>
           <View style={{ flex: 1, flexDirection: 'row' }}>
-            <View style={{ width: 260, backgroundColor: '#fff', paddingVertical: 20 }}>
+            <Animated.View entering={drawerIn} style={{ width: 260, backgroundColor: '#fff', paddingVertical: 20 }}>
               <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
                 <SidebarBody
                   pathname={pathname}
@@ -368,7 +370,7 @@ export default function VendorLayout() {
                   onNavigate={(href) => { setDrawerOpen(false); router.push(href); }}
                 />
               </SafeAreaView>
-            </View>
+            </Animated.View>
             <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setDrawerOpen(false)} />
           </View>
         </Modal>

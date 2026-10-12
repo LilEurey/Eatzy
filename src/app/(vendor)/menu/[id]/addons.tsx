@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import { View, Text, TextInput, Switch, Modal, Platform, Alert } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn } from '@/lib/motion';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -324,9 +326,11 @@ function EditorModal({ visible, onClose, children }: { visible: boolean; onClose
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Tap activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 28 }}>
-        <Tap activeOpacity={1} onPress={() => {}} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, gap: 14 }}>
-          {children}
-        </Tap>
+        <Animated.View entering={dialogIn}>
+          <Tap activeOpacity={1} haptic={false} onPress={() => {}} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, gap: 14 }}>
+            {children}
+          </Tap>
+        </Animated.View>
       </Tap>
     </Modal>
   );

@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { View, Text, Image, Switch } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -52,12 +54,12 @@ export default function VendorMenuScreen() {
         <Text style={{ fontSize: 13, color: '#B0B4BF', paddingVertical: 12 }}>{t('vendor.menu.empty')}</Text>
       ) : (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
-          {items.map(item => {
+          {items.map((item, i) => {
             const stat = salesByItem.get(item.id);
             const units = stat?.units ?? 0;
             const rank = stat?.rank ?? -1;
             return (
-            <View key={item.id} style={{ width: 220, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#EEF0F5', overflow: 'hidden' }}>
+            <Animated.View key={item.id} entering={listEnter(i)} exiting={listExit} layout={listLayout} style={{ width: 220, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#EEF0F5', overflow: 'hidden' }}>
               <View style={{ height: 160, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                 {item.image_url
                   ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -121,7 +123,7 @@ export default function VendorMenuScreen() {
                   />
                 </View>
               </View>
-            </View>
+            </Animated.View>
             );
           })}
         </View>
