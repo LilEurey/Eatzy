@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
+import Constants from 'expo-constants';
+import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import type { SymbolViewProps } from 'expo-symbols';
 import { supabase } from '@/lib/supabase';
@@ -21,6 +23,12 @@ const SYMBOLS: Record<string, { symbol: SymbolViewProps['name']; accent: string 
 // card while the app is foregrounded on iOS. Background delivery stays with
 // the system push (lib/push.ts), which suppresses its own iOS foreground
 // banner so the two don't double up.
+// EXPO_NO_PUSH builds (free Apple team, no APNs) have no system push, so a
+// backgrounded app posts a local notification instead.
+// ponytail: only fires while iOS keeps the realtime socket alive (~30s after
+// backgrounding); a killed app gets nothing. Real fix is a paid team + APNs.
+const NO_PUSH = Constants.expoConfig?.extra?.noPush === true;
+
 export function NotificationIsland({ userId }: { userId: string | undefined }) {
   const { trigger } = useDynamicNotifications();
   const { t } = useI18n();
@@ -34,6 +42,10 @@ export function NotificationIsland({ userId }: { userId: string | undefined }) {
         const { title, body } = notificationText(n, t);
         const style = (n.event && SYMBOLS[n.event]) || { symbol: 'bell.fill', accent: Brand.orange };
         const isVendor = n.event === 'vendor_new_order';
+        if (NO_PUSH && AppState.currentState !== 'active') {
+          void Notifications.scheduleNotificationAsync({ content: { title, body, sound: 'default' }, trigger: null });
+          return;
+        }
         trigger({
           title,
           message: body,
