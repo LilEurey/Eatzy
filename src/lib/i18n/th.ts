@@ -582,6 +582,7 @@ export const th: Record<TranslationKey, string> = {
 
   // Vendor — finance / analytics
   'vendor.finance.title': 'การเงิน',
+  'vendor.finance.last7Days': 'รายได้ · 7 วันล่าสุด',
   'vendor.finance.totalRevenueToday': 'รายได้รวม (วันนี้)',
   'vendor.finance.amountPayment': 'การชำระเงินวันนี้',
   'vendor.finance.availableToWithdraw': 'ยอดเงินพร้อมถอน',

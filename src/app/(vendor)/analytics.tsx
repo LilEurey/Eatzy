@@ -3,6 +3,7 @@ import { Platform, View, Text, ScrollView, useWindowDimensions } from 'react-nat
 import Animated from 'react-native-reanimated';
 import { CountUp } from '@/components/CountUp';
 import { listEnter, listExit, listLayout } from '@/lib/motion';
+import { dailyRevenue } from '@/lib/vendor-analytics';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -20,6 +21,56 @@ import { formatBaht } from '@/lib/money';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 
 const TABLE_MIN_WIDTH = 560;
+const CHART_HEIGHT = 120;
+
+// Last-7-days revenue bars. Bars grow up staggered on mount (CSS keyframes)
+// and glide to new heights when a live order lands. Tap a bar for its total.
+function RevenueChart({ payments, title }: { payments: { created_at: string; amount: number }[]; title: string }) {
+  const bars = dailyRevenue(payments);
+  const max = Math.max(1, ...bars.map(b => b.value));
+  const [selected, setSelected] = useState(bars.length - 1);
+  const shown = bars[selected] ?? bars[bars.length - 1];
+  return (
+    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{title}</Text>
+        <CountUp value={shown.value} format={n => `฿${formatBaht(n)}`} duration={400}
+          style={{ fontSize: 15, fontWeight: '800', color: Brand.vendorAccent, fontVariant: ['tabular-nums'] }} />
+      </View>
+      <View style={{ height: CHART_HEIGHT, flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
+        {bars.map((b, i) => {
+          const on = i === selected;
+          return (
+            <Tap key={b.key} haptic={false} onPress={() => setSelected(i)}
+              style={{ flex: 1, height: '100%', justifyContent: 'flex-end' }}>
+              <Animated.View style={{
+                height: `${(b.value / max) * 100}%`,
+                minHeight: 4,
+                borderRadius: 8,
+                backgroundColor: on ? Brand.vendorAccent : b.isToday ? Brand.orange : '#EEF0F5',
+                transformOrigin: 'bottom',
+                animationName: { from: { transform: [{ scaleY: 0 }] }, to: { transform: [{ scaleY: 1 }] } },
+                animationDuration: '650ms',
+                animationDelay: `${i * 50}ms`,
+                animationFillMode: 'backwards',
+                animationTimingFunction: 'ease-out',
+                transitionProperty: 'height', transitionDuration: 400,
+              }} />
+            </Tap>
+          );
+        })}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+        {bars.map((b, i) => (
+          <Text key={b.key} style={{ flex: 1, textAlign: 'center', fontSize: 10.5,
+            fontWeight: i === selected ? '700' : '500', color: i === selected ? Brand.textPrimary : '#8A8F9B' }}>
+            {b.label}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 export default function VendorFinanceScreen() {
   const { t } = useI18n();
@@ -107,6 +158,8 @@ export default function VendorFinanceScreen() {
           </Tap>
         </View>
       </View>
+
+      <RevenueChart payments={payments} title={t('vendor.finance.last7Days')} />
 
       <View style={{ backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#EEF0F5', overflow: 'hidden' }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
