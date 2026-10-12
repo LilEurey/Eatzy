@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Platform, View, Text } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -14,6 +15,24 @@ import { localizedText } from '@/lib/localize';
 import { isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
 import { isEarned, isInVendorQueue, isVoided } from '@/lib/order-lifecycle';
 import { PillDropdown } from '@/components/PillDropdown';
+
+// Bars grow from zero on mount (CSS keyframes), then glide on live updates.
+const GROW_X = {
+  transformOrigin: 'left',
+  animationName: { from: { transform: [{ scaleX: 0 }] }, to: { transform: [{ scaleX: 1 }] } },
+  animationDuration: '700ms',
+  animationTimingFunction: 'ease-out',
+  transitionProperty: 'width', transitionDuration: 400,
+} as const;
+const growY = (i: number) => ({
+  transformOrigin: 'bottom',
+  animationName: { from: { transform: [{ scaleY: 0 }] }, to: { transform: [{ scaleY: 1 }] } },
+  animationDuration: '600ms',
+  animationDelay: `${i * 30}ms`,
+  animationFillMode: 'backwards',
+  animationTimingFunction: 'ease-out',
+  transitionProperty: 'height', transitionDuration: 300,
+} as const);
 
 // 0 = Monday … 6 = Sunday, matching lib/time bangkokWeekday / vendor-analytics.
 const DOW = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
@@ -184,7 +203,7 @@ export default function VendorOverviewScreen() {
             {activeQueue} <Text style={{ fontSize: 12, fontWeight: '600', color: '#8A8F9B' }}>{t('vendor.overview.ordersPrep')}</Text>
           </Text>
           <View style={{ height: 6, borderRadius: 3, backgroundColor: '#F0F1F5', overflow: 'hidden' }}>
-            <View style={{ width: `${Math.min(100, (activeQueue / queueCapacity) * 100)}%`, height: '100%', backgroundColor: Brand.orange, borderRadius: 3 }} />
+            <Animated.View style={[{ width: `${Math.min(100, (activeQueue / queueCapacity) * 100)}%`, height: '100%', backgroundColor: Brand.orange, borderRadius: 3 }, GROW_X]} />
           </View>
         </View>
         <StatCard label={avgPrepLabel} value={`${avgPrepValue}m`} icon="time-outline" />
@@ -221,7 +240,8 @@ export default function VendorOverviewScreen() {
                     onPress={() => setSelectedBarIndex(prev => (prev === i ? null : i))}
                     style={{ flex: 1, alignItems: 'center', gap: 6 }}
                   >
-                    <View style={{
+                    <Animated.View style={{
+                      ...growY(i),
                       width: '100%',
                       height: `${(bar.value / maxBar) * 100}%`,
                       minHeight: bar.value > 0 ? 4 : 0,
@@ -310,7 +330,7 @@ export default function VendorOverviewScreen() {
                     </Text>
                   </View>
                   <View style={{ height: 6, borderRadius: 3, backgroundColor: '#F0F1F5', overflow: 'hidden' }}>
-                    <View style={{ width: `${(s.units / maxUnits) * 100}%`, height: '100%', backgroundColor: Brand.vendorAccent, borderRadius: 3 }} />
+                    <Animated.View style={[{ width: `${(s.units / maxUnits) * 100}%`, height: '100%', backgroundColor: Brand.vendorAccent, borderRadius: 3 }, GROW_X]} />
                   </View>
                 </View>
               </View>

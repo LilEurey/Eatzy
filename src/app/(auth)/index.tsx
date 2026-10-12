@@ -1,4 +1,6 @@
 import { View, Text, Image, ScrollView } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -38,6 +40,15 @@ function GlowBlob({ color, maxOpacity, id }: { color: string; maxOpacity: number
   );
 }
 
+// Slow ambient drift on the background glows (Reanimated 4 CSS animation).
+const DRIFT = {
+  animationName: { from: { transform: [{ translateX: -12 }, { translateY: -8 }] }, to: { transform: [{ translateX: 12 }, { translateY: 10 }] } },
+  animationDuration: '6s',
+  animationIterationCount: 'infinite',
+  animationDirection: 'alternate',
+  animationTimingFunction: 'ease-in-out',
+} as const;
+
 export default function LoginScreen() {
   const { t } = useI18n();
   const { signIn, loading } = useGoogleSignIn();
@@ -45,19 +56,19 @@ export default function LoginScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#FFF8F6' }}>
       {/* Background Decoration — orange, top-left */}
-      <View
+      <Animated.View 
         pointerEvents="none"
-        style={{ position: 'absolute', top: '2.59%', left: '3.33%', right: '27.69%', bottom: '71.04%' }}
+        style={[{ position: 'absolute', top: '2.59%', left: '3.33%', right: '27.69%', bottom: '71.04%' }, DRIFT]}
       >
         <GlowBlob id="orangeGlow" color="#FF6B00" maxOpacity={0.2} />
-      </View>
+      </Animated.View>
       {/* Overlay+Blur — blue, bottom-right */}
-      <View
+      <Animated.View 
         pointerEvents="none"
-        style={{ position: 'absolute', top: '62.22%', right: 0, bottom: 0, left: '15.64%' }}
+        style={[{ position: 'absolute', top: '62.22%', right: 0, bottom: 0, left: '15.64%' }, DRIFT, { animationDelay: '-3s' }]}
       >
         <GlowBlob id="blueGlow" color="#9CCAFF" maxOpacity={0.3} />
-      </View>
+      </Animated.View>
 
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView
@@ -66,7 +77,7 @@ export default function LoginScreen() {
         >
         <View style={{ maxWidth: 448, width: '100%', alignSelf: 'center', gap: 24 }}>
           {/* Header / Logo Area */}
-          <View style={{ gap: 8 }}>
+          <Animated.View entering={listEnter(0)} style={{ gap: 8 }}>
             <Text style={{ fontSize: 40, fontWeight: '800', letterSpacing: -1.2, textAlign: 'center' }}>
               <Text style={{ color: '#020202' }}>Eat</Text>
               <Text style={{ color: '#e76106' }}>zy</Text>
@@ -74,10 +85,10 @@ export default function LoginScreen() {
             <Text style={{ color: '#5a4136', fontSize: 16, lineHeight: 24, textAlign: 'center' }}>
               {t('auth.tagline')}
             </Text>
-          </View>
+          </Animated.View>
 
           {/* Illustration Area */}
-          <View
+          <Animated.View entering={listEnter(2)}
             style={{
               aspectRatio: 2,
               width: '100%',
@@ -103,10 +114,10 @@ export default function LoginScreen() {
               colors={['rgba(255,255,255,0)', '#fff']}
               style={{ position: 'absolute', top: 16, left: 0, right: 0, bottom: 0 }}
             />
-          </View>
+          </Animated.View>
 
           {/* Login Card */}
-          <View
+          <Animated.View entering={listEnter(4)}
             style={{
               backgroundColor: 'rgba(255,255,255,0.7)',
               borderWidth: 1,
@@ -157,7 +168,7 @@ export default function LoginScreen() {
             <Tap onPress={() => router.push('/vendor-login')} style={{ alignItems: 'center' }}>
               <Text style={{ color: '#5a4136', fontSize: 13, fontWeight: '600' }}>{t('auth.vendorLoginCta')}</Text>
             </Tap>
-          </View>
+          </Animated.View>
         </View>
         </ScrollView>
       </SafeAreaView>

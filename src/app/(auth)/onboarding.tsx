@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -180,7 +182,7 @@ export default function OnboardingScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
-        <View style={{ marginTop: 20, marginBottom: 36 }}>
+        <Animated.View entering={listEnter(0)} style={{ marginTop: 20, marginBottom: 36 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary }}>
             {t('onboarding.title')}
           </Text>
@@ -188,7 +190,7 @@ export default function OnboardingScreen() {
           <Text style={{ color: Brand.textSecondary, fontSize: 15, marginTop: 8, lineHeight: 22 }}>
             {t('onboarding.subtitle')}
           </Text>
-        </View>
+        </Animated.View>
 
         {loadError && (
           <View style={{
@@ -207,7 +209,7 @@ export default function OnboardingScreen() {
         )}
 
         {/* Dietary Preferences */}
-        <View style={{ marginBottom: 32 }}>
+        <Animated.View entering={listEnter(1)} style={{ marginBottom: 32 }}>
           <Text
             style={{
               fontSize: 11,
@@ -254,10 +256,10 @@ export default function OnboardingScreen() {
               );
             })}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Allergies */}
-        <View style={{ marginBottom: 32 }}>
+        <Animated.View entering={listEnter(2)} style={{ marginBottom: 32 }}>
           <Text
             style={{
               fontSize: 11,
@@ -302,13 +304,13 @@ export default function OnboardingScreen() {
               );
             })}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Favorite Categories — feeds the personalized "Recommended For
             You" ranking (cold-started from this until real order history
             exists); only shown once the catalog has loaded some options */}
         {categoryOptions.length > 0 && (
-          <View style={{ marginBottom: 32 }}>
+          <Animated.View entering={listEnter(3)} style={{ marginBottom: 32 }}>
             <Text
               style={{
                 fontSize: 11,
@@ -347,11 +349,11 @@ export default function OnboardingScreen() {
                 );
               })}
             </View>
-          </View>
+          </Animated.View>
         )}
 
         {/* Budget */}
-        <View>
+        <Animated.View entering={listEnter(4)}>
           <View
             style={{
               flexDirection: 'row',
@@ -409,7 +411,7 @@ export default function OnboardingScreen() {
               </Text>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Sticky Continue button */}
