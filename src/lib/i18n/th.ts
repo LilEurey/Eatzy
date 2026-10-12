@@ -615,6 +615,8 @@ export const th: Record<TranslationKey, string> = {
   'vendor.profile.cuisineTagsPlaceholder': 'เช่น ไทย, ข้าวราดแกง, แกง',
   'vendor.profile.cuisineTagsHint': 'คั่นแต่ละแท็กด้วยจุลภาค',
   'vendor.profile.halalCertifiedLabel': 'รับรองฮาลาล',
+  'vendor.profile.notificationsLabel': 'แจ้งเตือนออเดอร์ใหม่',
+  'vendor.profile.notificationsHint': 'แจ้งเตือนแบบพุชและในแอปเมื่อนักศึกษาสั่งอาหาร',
   'vendor.profile.openTimeLabel': 'เวลาเปิด',
   'vendor.profile.closeTimeLabel': 'เวลาปิด',
   'vendor.profile.timeNotSet': 'ไม่ระบุ',

@@ -613,6 +613,8 @@ export const en = {
   'vendor.profile.cuisineTagsPlaceholder': 'e.g. Thai, Rice Dishes, Curry',
   'vendor.profile.cuisineTagsHint': 'Separate tags with commas',
   'vendor.profile.halalCertifiedLabel': 'Halal Certified',
+  'vendor.profile.notificationsLabel': 'New order notifications',
+  'vendor.profile.notificationsHint': 'Push and in-app alerts when a student places an order.',
   'vendor.profile.openTimeLabel': 'Open Time',
   'vendor.profile.closeTimeLabel': 'Close Time',
   'vendor.profile.timeNotSet': 'Not set',
