@@ -638,7 +638,6 @@ export const en = {
   'vendor.location.permDenied': 'Location permission is off — tap the map to place your pin instead.',
   'vendor.location.save': 'Save',
   'vendor.location.webOnly': 'Open this screen on the Eatzy app to set your store location.',
-  'vendor.location.androidUnavailable': 'Setting your store location is not available on Android yet. Use the Eatzy app on an iPhone.',
 
   // Admin — login
   'admin.login.brand': 'Eatzy',

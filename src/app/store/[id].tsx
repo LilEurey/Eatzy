@@ -265,13 +265,13 @@ export default function StoreDetailScreen() {
                 title={vendor.name}
                 showUser={canShowUser}
               />
+              {vendor.stall_number ? (
+                <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 8 }}>
+                  {t('store.stall', { n: vendor.stall_number })}
+                </Text>
+              ) : null}
             </View>
           )}
-          {vendor.stall_number ? (
-            <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: -16, marginBottom: 24 }}>
-              {t('store.stall', { n: vendor.stall_number })}
-            </Text>
-          ) : null}
 
           {/* Tabs: All Menus / Review */}
           <View style={{
