@@ -73,3 +73,29 @@ export async function openNotification(
   else if (n.order_id) router.push(`/track/${n.order_id}`);
   else router.push('/notifications');
 }
+
+// System push / local-fallback taps. A tap that launches a killed app is
+// replayed by openLaunchNotification() once auth routing has landed on the
+// role's home screen — routeAfterAuth's replace() would wipe an earlier push.
+// Until then live taps are ignored (that same launch tap can arrive here too),
+// and identifiers dedupe the two paths.
+const handledTaps = new Set<string>();
+let launchHandled = false;
+
+function openTap(r: Notifications.NotificationResponse, userId: string) {
+  const id = r.notification.request.identifier;
+  if (handledTaps.has(id)) return;
+  handledTaps.add(id);
+  void openNotification(r.notification.request.content.data as Parameters<typeof openNotification>[0], userId);
+}
+
+export function onNotificationTap(r: Notifications.NotificationResponse, userId: string): void {
+  if (launchHandled) openTap(r, userId);
+}
+
+export async function openLaunchNotification(userId: string): Promise<void> {
+  if (Platform.OS === 'web') return;
+  launchHandled = true;
+  const r = await Notifications.getLastNotificationResponseAsync();
+  if (r) openTap(r, userId);
+}

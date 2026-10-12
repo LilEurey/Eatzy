@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { loadUserRole } from '@/lib/user-role';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { I18nProvider } from '@/lib/i18n';
-import { registerForPush } from '@/lib/push';
+import { openLaunchNotification, registerForPush } from '@/lib/push';
 import type { Session } from '@supabase/supabase-js';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DynamicNotifications } from '@/dynamic-island/components';
@@ -103,6 +103,7 @@ export default function RootLayout() {
 
     if (role === 'vendor') {
       router.replace('/(vendor)/overview');
+      void openLaunchNotification(userId);
       return;
     }
 
@@ -122,6 +123,7 @@ export default function RootLayout() {
       router.replace('/(auth)/onboarding');
     } else {
       router.replace('/(tabs)');
+      void openLaunchNotification(userId);
     }
   }
 

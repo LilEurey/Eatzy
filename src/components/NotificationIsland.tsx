@@ -6,7 +6,7 @@ import type { SymbolViewProps } from 'expo-symbols';
 import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
 import { notificationText } from '@/lib/localize';
-import { openNotification } from '@/lib/push';
+import { onNotificationTap, openNotification } from '@/lib/push';
 import { Brand } from '@/constants/theme';
 import { useDynamicNotifications } from '@/dynamic-island/hooks';
 
@@ -57,14 +57,11 @@ export function NotificationIsland({ userId }: { userId: string | undefined }) {
     return () => { void supabase.removeChannel(channel); };
   }, [userId, t, trigger]);
 
-  // System push / local-fallback taps, any platform.
-  // ponytail: warm taps only — a cold-start tap lands on the role home screen,
-  // since routeAfterAuth replaces the stack; add getLastNotificationResponseAsync
-  // after auth routing settles if that matters.
+  // System push / local-fallback taps, any platform (cold start: lib/push.ts).
   useEffect(() => {
     if (Platform.OS === 'web' || !userId) return;
     const sub = Notifications.addNotificationResponseReceivedListener((r) => {
-      void openNotification(r.notification.request.content.data as Parameters<typeof openNotification>[0], userId);
+      onNotificationTap(r, userId);
     });
     return () => sub.remove();
   }, [userId]);
