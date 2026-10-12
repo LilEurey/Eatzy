@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { View } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import { View, Text } from 'react-native';
+import MapView, { PROVIDER_DEFAULT } from 'react-native-maps';
 import { regionForCoords } from '@/lib/geo';
 
 type Props = {
@@ -35,9 +35,17 @@ export default function StoreMiniMap({ latitude, longitude, title, showUser }: P
         pitchEnabled={false}
         showsUserLocation={showUser}
         region={region}
+      />
+      {/* Pin is an overlay, not a <Marker> child: Marker children crash Android
+          Fabric ("addViewAt: failed"). Region is centered on the stall, so the
+          center of the map is the stall. */}
+      <View
+        pointerEvents="none"
+        accessibilityLabel={title}
+        style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}
       >
-        <Marker coordinate={{ latitude, longitude }} title={title} />
-      </MapView>
+        <Text style={{ fontSize: 32, marginBottom: 32 }}>📍</Text>
+      </View>
     </View>
   );
 }
