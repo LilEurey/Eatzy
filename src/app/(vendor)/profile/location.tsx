@@ -28,10 +28,14 @@ export default function VendorStoreLocationScreen() {
   useEffect(() => () => setScrollLocked(false), []);
 
   // react-native-maps has no web implementation — never mount MapView on web.
-  if (Platform.OS === 'web') {
+  // ponytail: Android too — its Google MapView crashes Fabric on mount
+  // ("addViewAt: failed"); re-enable on a fixed react-native-maps release.
+  if (Platform.OS !== 'ios') {
     return (
       <View style={{ padding: 24, maxWidth: 480 }}>
-        <Text style={{ fontSize: 14, color: Brand.textPrimary }}>{t('vendor.location.webOnly')}</Text>
+        <Text style={{ fontSize: 14, color: Brand.textPrimary }}>
+          {t(Platform.OS === 'web' ? 'vendor.location.webOnly' : 'vendor.location.androidUnavailable')}
+        </Text>
       </View>
     );
   }

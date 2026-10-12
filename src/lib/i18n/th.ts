@@ -640,6 +640,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.location.permDenied': 'ปิดสิทธิ์การเข้าถึงตำแหน่งอยู่ — แตะแผนที่เพื่อวางหมุดแทน',
   'vendor.location.save': 'บันทึก',
   'vendor.location.webOnly': 'เปิดหน้านี้ในแอป Eatzy เพื่อตั้งค่าตำแหน่งร้านของคุณ',
+  'vendor.location.androidUnavailable': 'ยังตั้งค่าตำแหน่งร้านบน Android ไม่ได้ กรุณาใช้แอป Eatzy บน iPhone',
 
   // Admin — login
   'admin.login.brand': 'Eatzy',
