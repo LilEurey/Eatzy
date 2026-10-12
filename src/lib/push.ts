@@ -32,7 +32,9 @@ export async function registerForPush(): Promise<void> {
     }
     let { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') ({ status } = await Notifications.requestPermissionsAsync());
-    if (status !== 'granted') return;
+    // EXPO_NO_PUSH builds have no APNs entitlement, so no token to fetch —
+    // permission above is still needed for NotificationIsland's local fallback.
+    if (status !== 'granted' || Constants.expoConfig?.extra?.noPush === true) return;
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
