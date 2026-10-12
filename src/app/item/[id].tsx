@@ -2,7 +2,7 @@ import { isStoreOpen } from '@/lib/time';
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeInRight, ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { ReviewCard } from '@/components/ReviewCard';
@@ -423,15 +423,19 @@ export default function ItemDetailScreen() {
                           onPress={() => toggleOption(group, opt.id)}
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}
                         >
-                          <View style={{
+                          <Animated.View style={{
                             width: 22, height: 22,
                             borderRadius: group.max_select === 1 ? 11 : 6,
                             borderWidth: 2, borderColor: isOn ? Brand.orange : Brand.border,
                             backgroundColor: isOn ? Brand.orange : 'transparent',
                             alignItems: 'center', justifyContent: 'center',
+                            transitionProperty: ['backgroundColor', 'borderColor'], transitionDuration: 180,
                           }}>
-                            {isOn && <Text style={{ color: '#fff', fontSize: 13, fontWeight: '900', lineHeight: 15 }}>✓</Text>}
-                          </View>
+                            {isOn && (
+                              <Animated.Text entering={ZoomIn.springify().damping(10)} exiting={ZoomOut.duration(120)}
+                                style={{ color: '#fff', fontSize: 13, fontWeight: '900', lineHeight: 15 }}>✓</Animated.Text>
+                            )}
+                          </Animated.View>
                           <Text style={{ flex: 1, fontSize: 15, color: Brand.textPrimary }}>
                             {localizedText(opt.name, opt.name_th, locale)}
                           </Text>
