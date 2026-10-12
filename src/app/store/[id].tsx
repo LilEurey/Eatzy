@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
-import Animated, { LinearTransition } from 'react-native-reanimated';
-import { listEnter, useStretchyHero } from '@/lib/motion';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { ReviewCard } from '@/components/ReviewCard';
 import StoreMiniMap from '@/components/StoreMiniMap';
@@ -138,7 +138,7 @@ export default function StoreDetailScreen() {
         <View style={{ height: 220, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
           <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {vendor.cover_image_url
-            ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
             : <Text style={{ fontSize: 72 }}>🏪</Text>
           }
           </Animated.View>
@@ -357,7 +357,7 @@ export default function StoreDetailScreen() {
           {/* Menu items */}
           <View style={{ gap: 12 }}>
             {filteredItems.map((item, index) => (
-              <Animated.View key={item.id} entering={listEnter(index)} layout={LinearTransition.springify().damping(18)}>
+              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}>
               <Tap
                 onPress={() => router.push(`/item/${item.id}`)}
                 activeOpacity={0.85}
@@ -378,7 +378,7 @@ export default function StoreDetailScreen() {
                   alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
                   {item.image_url
-                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                     : <Text style={{ fontSize: 34 }}>🍽️</Text>
                   }
                 </View>

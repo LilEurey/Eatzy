@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Platform, View, Text, ScrollView, useWindowDimensions } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { CountUp } from '@/components/CountUp';
-import { listEnter, listExit, listLayout } from '@/lib/motion';
+import { listEnter, listExit, listLayout, EASE_OUT } from '@/lib/motion';
 import { dailyRevenue } from '@/lib/vendor-analytics';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
@@ -76,7 +76,7 @@ function RevenueChart({ payments }: { payments: { created_at: string; amount: nu
                 animationDuration: '650ms',
                 animationDelay: `${i * (days === 7 ? 50 : 15)}ms`,
                 animationFillMode: 'backwards',
-                animationTimingFunction: 'ease-out',
+                animationTimingFunction: EASE_OUT,
                 transitionProperty: 'height', transitionDuration: 400,
               }} />
             </Tap>

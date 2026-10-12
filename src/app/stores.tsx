@@ -150,7 +150,7 @@ export default function StoresScreen() {
                   alignItems: 'center', justifyContent: 'center',
                 }}>
                   {vendor.cover_image_url
-                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                     : <Text style={{ fontSize: 28 }}>🏪</Text>}
                 </View>
                 <View style={{ flex: 1 }}>

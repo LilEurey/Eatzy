@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Platform, View, Text } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { EASE_OUT } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -21,7 +22,7 @@ const GROW_X = {
   transformOrigin: 'left',
   animationName: { from: { transform: [{ scaleX: 0 }] }, to: { transform: [{ scaleX: 1 }] } },
   animationDuration: '700ms',
-  animationTimingFunction: 'ease-out',
+  animationTimingFunction: EASE_OUT,
   transitionProperty: 'width', transitionDuration: 400,
 } as const;
 const growY = (i: number) => ({
@@ -30,7 +31,7 @@ const growY = (i: number) => ({
   animationDuration: '600ms',
   animationDelay: `${i * 30}ms`,
   animationFillMode: 'backwards',
-  animationTimingFunction: 'ease-out',
+  animationTimingFunction: EASE_OUT,
   transitionProperty: 'height', transitionDuration: 300,
 } as const);
 

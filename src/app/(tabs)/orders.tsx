@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
-import Animated, { LinearTransition } from 'react-native-reanimated';
-import { listEnter } from '@/lib/motion';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -178,7 +178,7 @@ export default function OrdersScreen() {
               <Animated.View
                 key={order.id}
                 entering={listEnter(index)}
-                layout={LinearTransition.springify().damping(18)}
+                layout={listLayout}
                 style={{
                   backgroundColor: Brand.card, borderRadius: 20, padding: 16,
                   shadowColor: '#000', shadowOffset: { width: 0, height: 2 },

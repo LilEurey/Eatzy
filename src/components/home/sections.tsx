@@ -191,7 +191,7 @@ export function PromotedSection({ featured }: { featured: MenuItem | null }) {
                   alignItems: 'center', justifyContent: 'center',
                 }}>
                   {featured.image_url
-                    ? <Image source={{ uri: featured.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    ? <Image source={{ uri: featured.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                     : <Text style={{ fontSize: 44 }}>🍽️</Text>
                   }
                 </View>
@@ -228,7 +228,7 @@ export function TrendingSection({ trending }: { trending: MenuItem[] }) {
               {/* Image area */}
               <View style={{ height: 150, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                 {item.image_url
-                  ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                  ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                   : <Text style={{ fontSize: 40 }}>🍽️</Text>
                 }
                 {/* Trending badge */}
@@ -293,7 +293,7 @@ export function NoQueueSection({ vendors }: { vendors: Vendor[] }) {
             >
               <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                 {vendor.cover_image_url
-                  ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                  ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                   : <Text style={{ fontSize: 36 }}>🏪</Text>
                 }
                 <View style={{
@@ -365,7 +365,7 @@ export function StoreOptions({ vendors }: { vendors: Vendor[] }) {
               alignItems: 'center', justifyContent: 'center',
             }}>
               {vendor.cover_image_url
-                ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                 : <Text style={{ fontSize: 28 }}>🏪</Text>
               }
             </View>

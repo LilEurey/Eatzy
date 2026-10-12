@@ -2,8 +2,8 @@ import { isStoreOpen } from '@/lib/time';
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { FadeInRight, ZoomIn, ZoomOut } from 'react-native-reanimated';
-import { useStretchyHero } from '@/lib/motion';
+import Animated from 'react-native-reanimated';
+import { rowEnter, popIn, popOut, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { ReviewCard } from '@/components/ReviewCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -252,7 +252,7 @@ export default function ItemDetailScreen() {
         <View style={{ height: 280, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
           <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {item.image_url
-            ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
             : <Text style={{ fontSize: 90 }}>🍽️</Text>
           }
           </Animated.View>
@@ -432,7 +432,7 @@ export default function ItemDetailScreen() {
                             transitionProperty: ['backgroundColor', 'borderColor'], transitionDuration: 180,
                           }}>
                             {isOn && (
-                              <Animated.Text entering={ZoomIn.springify().damping(10)} exiting={ZoomOut.duration(120)}
+                              <Animated.Text entering={popIn} exiting={popOut}
                                 style={{ color: '#fff', fontSize: 13, fontWeight: '900', lineHeight: 15 }}>✓</Animated.Text>
                             )}
                           </Animated.View>
@@ -486,7 +486,7 @@ export default function ItemDetailScreen() {
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
                 {similar.map((s, si) => (
-                  <Animated.View key={s.id} entering={FadeInRight.delay(Math.min(si, 5) * 60).springify().damping(18)}>
+                  <Animated.View key={s.id} entering={rowEnter(si)}>
                   <Tap
                     onPress={() => router.push(`/item/${s.id}?rec=1`)}
                     activeOpacity={0.85}
@@ -498,7 +498,7 @@ export default function ItemDetailScreen() {
                   >
                     <View style={{ height: 120, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                       {s.image_url
-                        ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                        ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                         : <Text style={{ fontSize: 32 }}>🍽️</Text>
                       }
                     </View>

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SPRING_DAMPING } from '@/lib/motion';
+import Animated from 'react-native-reanimated';
+import { enterUp, EASE_OUT } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -178,12 +178,12 @@ export default function RateScreen() {
                   fontSize: 40, opacity: n <= score ? 1 : 0.25,
                   transform: [{ scale: n <= score ? 1.12 : 1 }],
                   transitionProperty: ['opacity', 'transform'], transitionDuration: 220,
-                  transitionDelay: (n - 1) * 40, transitionTimingFunction: 'ease-out',
+                  transitionDelay: (n - 1) * 40, transitionTimingFunction: EASE_OUT,
                 }}>⭐</Animated.Text>
               </Tap>
             ))}
           </View>
-          <Animated.Text key={score} entering={FadeInDown.springify().damping(SPRING_DAMPING)}
+          <Animated.Text key={score} entering={enterUp()}
             style={{ fontSize: 15, fontWeight: '700', color: Brand.orange, height: 22, marginTop: 10 }}>
             {LABEL_KEYS[score] ? t(LABEL_KEYS[score]!) : ''}
           </Animated.Text>

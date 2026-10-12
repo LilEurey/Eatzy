@@ -1,7 +1,8 @@
 import { Children, isValidElement, type ReactNode } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { enterUp, rowEnter } from '@/lib/motion';
 import { router } from 'expo-router';
 import { Tap } from '@/components/Tap';
 import { Brand } from '@/constants/theme';
@@ -45,13 +46,13 @@ export function EmptyCard({ text, marginBottom }: { text: string; marginBottom?:
 export function CardRow({ title, count, emptyText, children }: { title: string; count: number; emptyText?: string; children: ReactNode }) {
   if (count === 0 && !emptyText) return null;
   return (
-    <Animated.View entering={FadeInDown.springify().damping(18)} style={{ marginBottom: 28 }}>
+    <Animated.View entering={enterUp()} style={{ marginBottom: 28 }}>
       <SectionTitle>{title}</SectionTitle>
       {count > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
           {/* Cards cascade in left-to-right; capped so long rows don't lag. */}
           {Children.toArray(children).map((child, i) => (
-            <Animated.View key={isValidElement(child) && child.key != null ? child.key : i} entering={FadeInRight.delay(Math.min(i, 5) * 60).springify().damping(18)}>
+            <Animated.View key={isValidElement(child) && child.key != null ? child.key : i} entering={rowEnter(i)}>
               {child}
             </Animated.View>
           ))}
@@ -91,7 +92,7 @@ export function ItemCard({ itemId, recommended, imageUrl, emoji = '🍽️', bad
     >
       <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
         {imageUrl
-          ? <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+          ? <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
           : <Text style={{ fontSize: 36 }}>{emoji}</Text>
         }
         {badge}

@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { enterUp } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
@@ -190,12 +191,12 @@ export default function HomeScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Greeting */}
-        <Animated.Text entering={FadeInDown.springify().damping(18)} style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
+        <Animated.Text entering={enterUp()} style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
           {t(getGreetingKey())}{firstName ? `, ${firstName}.` : '.'}
         </Animated.Text>
 
         {/* Search bar */}
-        <Animated.View entering={FadeInDown.delay(80).springify().damping(18)}>
+        <Animated.View entering={enterUp(80)}>
         <Tap
           activeOpacity={0.8}
           onPress={() => router.push('/search')}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
-import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { enterUp, popIn } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -274,7 +275,7 @@ export default function TrackScreen() {
                     transitionProperty: 'backgroundColor', transitionDuration: 400,
                   }, active && PULSE]}>
                     {/* key swap remounts the glyph so ✓ pops in when a step completes */}
-                    <Animated.Text key={done ? 'done' : 'icon'} entering={ZoomIn.springify().damping(12)}
+                    <Animated.Text key={done ? 'done' : 'icon'} entering={popIn}
                       style={{ fontSize: 18, opacity: reached ? 1 : 0.4 }}>{done ? '✓' : step.icon}</Animated.Text>
                   </Animated.View>
                   {i < STEPS.length - 1 && (
@@ -287,7 +288,7 @@ export default function TrackScreen() {
                     {t(step.labelKey)}
                   </Text>
                   {active && (
-                    <Animated.Text entering={FadeInDown.springify().damping(18)} style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{t(step.hintKey)}</Animated.Text>
+                    <Animated.Text entering={enterUp()} style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{t(step.hintKey)}</Animated.Text>
                   )}
                 </View>
               </View>

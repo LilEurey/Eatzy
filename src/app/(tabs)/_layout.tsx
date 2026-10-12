@@ -1,5 +1,6 @@
 import { View, Text } from 'react-native';
-import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { popIn, popOut } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { router } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
@@ -57,8 +58,8 @@ export default function TabsLayout() {
       {/* Floating cart button — only when cart has items */}
       {count > 0 && (
         <Animated.View
-          entering={ZoomIn.springify().damping(14)}
-          exiting={ZoomOut.duration(150)}
+          entering={popIn}
+          exiting={popOut}
           style={{ position: 'absolute', bottom: 110, right: 20 }}
         >
         <Tap
@@ -83,7 +84,7 @@ export default function TabsLayout() {
           )}
           <CartIcon size={22} />
           {/* key={count} remounts the badge so it pops on every add */}
-          <Animated.View key={count} entering={ZoomIn.springify().damping(10)} style={{
+          <Animated.View key={count} entering={popIn} style={{
             position: 'absolute', top: -4, right: -4,
             minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6,
             backgroundColor: '#fff', borderWidth: 2, borderColor: '#FE6B00',

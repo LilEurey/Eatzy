@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { LinearTransition } from 'react-native-reanimated';
-import { listEnter } from '@/lib/motion';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -215,7 +215,7 @@ export default function SearchScreen() {
 
           <View style={{ gap: 12 }}>
             {results.map((item, index) => (
-              <Animated.View key={item.id} entering={listEnter(index)} layout={LinearTransition.springify().damping(18)}>
+              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}>
               <Tap
                 onPress={() => router.push(`/item/${item.id}`)}
                 activeOpacity={0.85}
@@ -231,7 +231,7 @@ export default function SearchScreen() {
                   backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
                 }}>
                   {item.image_url
-                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                     : <Text style={{ fontSize: 26 }}>🍽️</Text>}
                 </View>
                 <View style={{ flex: 1 }}>
