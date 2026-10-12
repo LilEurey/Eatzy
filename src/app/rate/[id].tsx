@@ -10,6 +10,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
+import * as Haptics from 'expo-haptics';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { mapOrderItems } from '@/lib/order-view';
@@ -141,6 +142,7 @@ export default function RateScreen() {
       showAlert(t('common.errorTitle'), error.message);
       return;
     }
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     showAlert(t('rate.thanksTitle'), t('rate.thanksMsg', { vendor, score }), () =>
       router.replace('/(tabs)/orders'),
     );

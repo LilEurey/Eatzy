@@ -10,6 +10,7 @@ import { Brand } from '@/constants/theme';
 import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, NOTE_MAX } from '@/lib/cart-store';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
+import * as Haptics from 'expo-haptics';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { nextPickupSlots, isStoreOpen } from '@/lib/time';
@@ -91,6 +92,7 @@ export default function CartScreen() {
         slot: selectedSlot,
       });
       if (result.ok) {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         clearCart();
         router.replace(`/track/${result.orderId}`);
         return;
