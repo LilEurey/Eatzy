@@ -78,7 +78,7 @@ export default function LoginScreen() {
         <View style={{ maxWidth: 448, width: '100%', alignSelf: 'center', gap: 24 }}>
           {/* Header / Logo Area */}
           <Animated.View entering={listEnter(0)} style={{ gap: 8 }}>
-            <Text style={{ fontSize: 40, fontWeight: '800', letterSpacing: -1.2, textAlign: 'center' }}>
+            <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 40, fontWeight: '800', letterSpacing: -1.2, textAlign: 'center' }}>
               <Text style={{ color: '#020202' }}>Eat</Text>
               <Text style={{ color: '#e76106' }}>zy</Text>
             </Text>
@@ -134,7 +134,7 @@ export default function LoginScreen() {
               elevation: 4,
             }}
           >
-            <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', textAlign: 'center' }}>
+            <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: '#261812', textAlign: 'center' }}>
               {t('auth.welcomeBack')}
             </Text>
 

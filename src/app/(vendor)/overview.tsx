@@ -63,7 +63,7 @@ function StatCard({ label, value, delta, sub, icon }: { label: string; value: st
         </View>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-        <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{value}</Text>
+        <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{value}</Text>
         {delta && d && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
             <Ionicons name={d.icon} size={10} color={d.color} />
@@ -172,7 +172,7 @@ export default function VendorOverviewScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.overview.title')}</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary }}>{t('vendor.overview.title')}</Text>
           <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>{t('vendor.overview.subtitle')}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -200,7 +200,7 @@ export default function VendorOverviewScreen() {
               <Ionicons name="list-outline" size={14} color={Brand.orange} />
             </View>
           </View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary, marginBottom: 8 }}>
+          <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary, marginBottom: 8 }}>
             {activeQueue} <Text style={{ fontSize: 12, fontWeight: '600', color: '#8A8F9B' }}>{t('vendor.overview.ordersPrep')}</Text>
           </Text>
           <View style={{ height: 6, borderRadius: 3, backgroundColor: '#F0F1F5', overflow: 'hidden' }}>
@@ -217,7 +217,7 @@ export default function VendorOverviewScreen() {
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.overview.salesVelocity')}</Text>
             {selectedBar ? (
               <View style={{ backgroundColor: Brand.vendorAccentLight, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.vendorAccent }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.vendorAccent, fontVariant: ['tabular-nums'] }}>
                   {selectedBar.label} · ฿{selectedBar.value.toLocaleString()}
                 </Text>
               </View>
@@ -326,7 +326,7 @@ export default function VendorOverviewScreen() {
                         {localizedText(s.name, s.nameTh, locale)}
                       </Text>
                     </Tap>
-                    <Text style={{ fontSize: 12, color: '#8A8F9B' }}>
+                    <Text style={{ fontSize: 12, color: '#8A8F9B', fontVariant: ['tabular-nums'] }}>
                       {t('vendor.overview.unitsSold', { n: s.units })} · ฿{s.revenue.toLocaleString()}
                     </Text>
                   </View>

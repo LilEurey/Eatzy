@@ -50,7 +50,7 @@ export default function VendorLoginScreen() {
             </Text>
           </View>
 
-          <Text style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, marginBottom: 6 }}>
+          <Text style={{ fontSize: 26, fontWeight: '800', letterSpacing: -0.5, color: Brand.textPrimary, marginBottom: 6 }}>
             {t('vendor.login.heading')}
           </Text>
           <Text style={{ fontSize: 14, color: Brand.textSecondary, marginBottom: 28 }}>

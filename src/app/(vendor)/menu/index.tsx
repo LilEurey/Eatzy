@@ -31,7 +31,7 @@ export default function VendorMenuScreen() {
     <View style={{ gap: 20 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.menu.title')}</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary }}>{t('vendor.menu.title')}</Text>
           <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>{t('vendor.menu.subtitle')}</Text>
         </View>
         <Tap
@@ -89,7 +89,7 @@ export default function VendorMenuScreen() {
               <View style={{ padding: 14, gap: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                   <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={2}>{localizedText(item.name, item.name_th, locale)}</Text>
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: Brand.vendorAccent }}>{item.price}฿</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: Brand.vendorAccent, fontVariant: ['tabular-nums'] }}>{item.price}฿</Text>
                 </View>
                 {rank === 0 && units > 0 && (
                   <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: GOLD_BG, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>

@@ -166,7 +166,7 @@ export default function AddMenuItemScreen() {
   return (
     <View style={{ gap: 20 }}>
       <View>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.menuNew.title')}</Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary }}>{t('vendor.menuNew.title')}</Text>
         <Tap onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
           <Ionicons name="arrow-back" size={14} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#8A8F9B' }}>{t('vendor.menuNew.backCaption')}</Text>
@@ -208,7 +208,7 @@ export default function AddMenuItemScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: '#4B4F58', marginBottom: 6 }}>{t('vendor.menuNew.priceLabel')}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12 }}>
-                  <Text style={{ fontSize: 14, color: '#8A8F9B' }}>฿</Text>
+                  <Text style={{ fontSize: 14, color: '#8A8F9B', fontVariant: ['tabular-nums'] }}>฿</Text>
                   <TextInput
                     value={price}
                     onChangeText={setPrice}

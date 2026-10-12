@@ -323,7 +323,7 @@ export default function ProfileScreen() {
         {/* Recent Orders */}
         <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.04, shadowRadius: 15, elevation: 1 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#261812' }}>{t('profile.recentOrders')}</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: '#261812' }}>{t('profile.recentOrders')}</Text>
             <Tap onPress={() => router.push('/(tabs)/orders')}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#A04100' }}>{t('profile.viewAll')}</Text>
             </Tap>
@@ -347,7 +347,7 @@ export default function ProfileScreen() {
                 </View>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>฿{recentOrder.total_amount}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', fontVariant: ['tabular-nums'] }}>฿{recentOrder.total_amount}</Text>
                 <View style={{ backgroundColor: 'rgba(255,107,0,0.1)', borderRadius: 9999, paddingHorizontal: 4, paddingVertical: 3, marginTop: 4 }}>
                   <Text style={{ fontSize: 12, fontWeight: '500', color: '#A04100' }}>
                     {t(ORDER_STATUS_LABEL[recentOrder.status] ?? 'orders.status.completed')}

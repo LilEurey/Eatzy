@@ -75,7 +75,7 @@ export default function StoresScreen() {
           <Tap onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={22} color={Brand.textPrimary} />
           </Tap>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>
             {t('stores.title')}
           </Text>
         </View>

@@ -101,7 +101,7 @@ export default function VendorReviewsScreen() {
   return (
     <View style={{ gap: 20 }}>
       <View>
-        <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.reviews.title')}</Text>
+        <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary }}>{t('vendor.reviews.title')}</Text>
         <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>{t('vendor.reviews.subtitle')}</Text>
       </View>
 
@@ -119,7 +119,7 @@ export default function VendorReviewsScreen() {
           <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap' }}>
             <View style={{ minWidth: 160, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#EEF0F5', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#8A8F9B', letterSpacing: 0.5 }}>{t('vendor.reviews.overallRating')}</Text>
-              <Text style={{ fontSize: 36, fontWeight: '800', color: Brand.textPrimary }}>{overall.toFixed(1)}</Text>
+              <Text style={{ fontSize: 36, fontWeight: '800', letterSpacing: -0.6, color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{overall.toFixed(1)}</Text>
               <Stars score={overall} size={15} />
               <Text style={{ fontSize: 11.5, color: '#8A8F9B' }}>
                 {count === 1 ? t('vendor.reviews.reviewCountOne') : t('vendor.reviews.reviewCount', { n: count })}
@@ -165,7 +165,7 @@ export default function VendorReviewsScreen() {
                     {nm ? localizedText(nm.name, nm.name_th, locale) : row.id}
                   </Text>
                   <Stars score={row.avg} />
-                  <Text style={{ width: 34, fontSize: 12, fontWeight: '700', color: Brand.textPrimary, textAlign: 'right' }}>{row.avg.toFixed(1)}</Text>
+                  <Text style={{ width: 34, fontSize: 12, fontWeight: '700', color: Brand.textPrimary, textAlign: 'right', fontVariant: ['tabular-nums'] }}>{row.avg.toFixed(1)}</Text>
                   <Text style={{ width: 64, fontSize: 10.5, color: '#8A8F9B', textAlign: 'right' }}>{ratingsLabel(row.n)}</Text>
                 </View>
               );
@@ -189,7 +189,7 @@ export default function VendorReviewsScreen() {
                   <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.vendorAccent }} numberOfLines={1}>
                     {nm ? localizedText(nm.name, nm.name_th, locale) : r.menu_item_id}
                   </Text>
-                  <Text style={{ fontSize: 13, color: r.comment ? '#4B4F58' : '#B0B4BF' }}>
+                  <Text style={{ fontSize: 13, lineHeight: 19, color: r.comment ? '#4B4F58' : '#B0B4BF' }}>
                     {r.comment || t('vendor.reviews.noComment')}
                   </Text>
                   {r.photo_urls?.length > 0 && (

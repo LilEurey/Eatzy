@@ -89,7 +89,7 @@ export default function AdminVendorsScreen() {
 
   return (
     <View>
-      <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary, marginBottom: 4 }}>
+      <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary, marginBottom: 4 }}>
         {t('admin.vendors.title')}
       </Text>
       <Text style={{ fontSize: 14, color: Brand.textSecondary, marginBottom: 20 }}>

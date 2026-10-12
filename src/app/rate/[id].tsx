@@ -153,14 +153,14 @@ export default function RateScreen() {
         <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('rate.title')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('rate.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
         {/* Vendor + items */}
         <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 28 }}>
           <Text style={{ fontSize: 44, marginBottom: 8 }}>🍽️</Text>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary }}>{vendor}</Text>
+          <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: Brand.textPrimary }}>{vendor}</Text>
           <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' }}>
             {order.items.map(i => {
               const addons = i.addons.length ? ` (${i.addons.map(a => localizedText(a.name, a.name_th, locale)).join(', ')})` : '';

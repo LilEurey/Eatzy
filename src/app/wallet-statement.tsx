@@ -73,7 +73,7 @@ export default function WalletStatementScreen() {
         <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </Tap>
-        <Text style={{ flex: 1, fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('wallet.statement')}</Text>
+        <Text style={{ flex: 1, fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('wallet.statement')}</Text>
         <Tap onPress={share} disabled={loading || loadFailed}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.orange }}>{t('wallet.statementShare')}</Text>
         </Tap>
@@ -114,7 +114,7 @@ export default function WalletStatementScreen() {
             ].map(({ label, value, color }) => (
               <View key={label} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{label}</Text>
-                <Text style={{ fontSize: 15, fontWeight: '700', color }}>{value}</Text>
+                <Text style={{ fontSize: 15, fontWeight: '700', color, fontVariant: ['tabular-nums'] }}>{value}</Text>
               </View>
             ))}
           </View>
@@ -138,7 +138,7 @@ export default function WalletStatementScreen() {
                       {formatFriendlyDateTime(tx.created_at, t('common.today'))}
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: tx.amount > 0 ? '#16a34a' : Brand.textPrimary }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: tx.amount > 0 ? '#16a34a' : Brand.textPrimary, fontVariant: ['tabular-nums'] }}>
                     {signed(tx.amount)}
                   </Text>
                 </View>

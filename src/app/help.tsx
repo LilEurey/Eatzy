@@ -33,7 +33,7 @@ export default function HelpScreen() {
         <Tap onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={Brand.textPrimary} />
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary, flex: 1 }}>{t('profile.help')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: Brand.textPrimary, flex: 1 }}>{t('profile.help')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 12 }}>

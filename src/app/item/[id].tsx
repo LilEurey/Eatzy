@@ -288,7 +288,7 @@ export default function ItemDetailScreen() {
 
         <View style={{ padding: 20 }}>
           {/* Name + vendor */}
-          <Text style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5, marginBottom: 4 }}>
+          <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5, marginBottom: 4 }}>
             {localizedText(item.name, item.name_th, locale)}
           </Text>
           <Tap onPress={() => router.push(`/store/${item.vendor_id}`)}>
@@ -343,7 +343,7 @@ export default function ItemDetailScreen() {
                 borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: Brand.border,
               }}>
                 <Text style={{ fontSize: 20, marginBottom: 4 }}>{icon}</Text>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{value}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{value}</Text>
                 <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{label}</Text>
               </View>
             ))}
@@ -506,7 +506,7 @@ export default function ItemDetailScreen() {
                     <View style={{ padding: 10 }}>
                       <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>{localizedText(s.name, s.name_th, locale)}</Text>
                       <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>{s.vendor_name}</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{s.price}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100', fontVariant: ['tabular-nums'] }}>฿{s.price}</Text>
                     </View>
                   </Tap>
                   </Animated.View>

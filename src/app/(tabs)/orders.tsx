@@ -242,7 +242,7 @@ export default function OrdersScreen() {
                       {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>
                     ฿{order.total_amount}
                   </Text>
                 </View>

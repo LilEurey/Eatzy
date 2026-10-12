@@ -209,7 +209,7 @@ export default function WalletScreen() {
                       {o.queue_number != null ? t('wallet.escrowQueue', { n: o.queue_number }) + ' · ' : ''}{t(STATUS_KEY[o.status as keyof typeof STATUS_KEY])}
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>฿{formatBaht(o.total_amount)}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>฿{formatBaht(o.total_amount)}</Text>
                 </Tap>
               </Animated.View>
             ))}
@@ -266,7 +266,7 @@ export default function WalletScreen() {
                     </View>
 
                     {/* Amount */}
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: isPositive ? '#16a34a' : Brand.textPrimary }}>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: isPositive ? '#16a34a' : Brand.textPrimary, fontVariant: ['tabular-nums'] }}>
                       {isPositive ? '+' : ''}฿{formatBaht(Math.abs(tx.amount))}
                     </Text>
                   </View>

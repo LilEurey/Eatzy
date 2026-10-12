@@ -205,7 +205,7 @@ export default function TrackScreen() {
         <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('track.title')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('track.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
@@ -219,7 +219,7 @@ export default function TrackScreen() {
           <Text style={{ fontSize: 13, fontWeight: '600', letterSpacing: 1, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary }}>
             {t('track.queueNumber')}
           </Text>
-          <Text style={{ fontSize: 56, fontWeight: '800', color: isReady ? '#fff' : Brand.orange, marginVertical: 4 }}>
+          <Text style={{ fontSize: 56, fontWeight: '800', color: isReady ? '#fff' : Brand.orange, marginVertical: 4, fontVariant: ['tabular-nums'] }}>
             #{order.queue_number}
           </Text>
           <Text style={{ fontSize: 14, fontWeight: '600', color: isReady ? '#fff' : Brand.textPrimary }}>
@@ -315,7 +315,7 @@ export default function TrackScreen() {
                   <Text style={{ fontSize: 14, color: Brand.textPrimary }}>
                     {it.quantity > 1 ? `${it.quantity}× ` : ''}{localizedText(it.name, it.name_th, locale)}
                   </Text>
-                  <Text style={{ fontSize: 14, color: Brand.textSecondary }}>฿{(it.unit_price + addonSum) * it.quantity}</Text>
+                  <Text style={{ fontSize: 14, color: Brand.textSecondary, fontVariant: ['tabular-nums'] }}>฿{(it.unit_price + addonSum) * it.quantity}</Text>
                 </View>
                 {it.addons.map((a, ai) => (
                   <Text key={ai} style={{ fontSize: 12, color: Brand.textSecondary, marginLeft: 12 }}>
@@ -328,7 +328,7 @@ export default function TrackScreen() {
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('common.total')}</Text>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.orange }}>฿{order.total_amount}</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.orange, fontVariant: ['tabular-nums'] }}>฿{order.total_amount}</Text>
           </View>
         </View>
       </ScrollView>

@@ -184,7 +184,7 @@ export default function StoreDetailScreen() {
         <View style={{ padding: 20 }}>
           {/* Vendor name + tags row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={{ fontSize: 24, fontWeight: '700', color: Brand.textPrimary, flex: 1 }}>
+            <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: Brand.textPrimary, flex: 1 }}>
               {vendor.name}
             </Text>
             {vendor.is_halal_certified && (
@@ -213,7 +213,7 @@ export default function StoreDetailScreen() {
           {reviews.length > 0 && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 }}>
               <Text style={{ fontSize: 14, color: Brand.orange }}>★</Text>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{avgScore.toFixed(1)}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{avgScore.toFixed(1)}</Text>
               <Text style={{ fontSize: 13, color: Brand.textSecondary }}>({reviews.length})</Text>
             </View>
           )}
@@ -418,7 +418,7 @@ export default function StoreDetailScreen() {
                   </View>
 
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#a04100' }}>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#a04100', fontVariant: ['tabular-nums'] }}>
                       ฿{item.price}
                     </Text>
                     {item.is_available ? (
@@ -450,7 +450,7 @@ export default function StoreDetailScreen() {
           ) : (
           /* Review tab */
           <View>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
+            <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary, marginBottom: 14 }}>
               {t('reviews.communityReviews')}
             </Text>
             {reviews.length === 0 ? (

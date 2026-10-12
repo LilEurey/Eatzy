@@ -150,7 +150,7 @@ export default function MenuItemAddonsScreen() {
   return (
     <View style={{ gap: 20 }}>
       <View>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.addons.title')}</Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary }}>{t('vendor.addons.title')}</Text>
         <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>
           {t('vendor.addons.subtitle', { name: dishLabel })}
         </Text>

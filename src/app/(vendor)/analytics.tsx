@@ -155,7 +155,7 @@ export default function VendorFinanceScreen() {
 
   return (
     <View style={{ gap: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.finance.title')}</Text>
+      <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary }}>{t('vendor.finance.title')}</Text>
 
       <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap' }}>
         <View style={{ flex: 1, minWidth: 200, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
@@ -165,7 +165,7 @@ export default function VendorFinanceScreen() {
               <Ionicons name="cash-outline" size={14} color={Brand.vendorAccent} />
             </View>
           </View>
-          <CountUp value={totalRevenueToday} format={n => `฿${formatBaht(n)}`} style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} />
+          <CountUp value={totalRevenueToday} format={n => `฿${formatBaht(n)}`} style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} />
         </View>
 
         <View style={{ flex: 1, minWidth: 200, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
@@ -175,7 +175,7 @@ export default function VendorFinanceScreen() {
               <Ionicons name="card-outline" size={14} color={Brand.orange} />
             </View>
           </View>
-          <CountUp value={todayPayments.length} format={n => String(Math.round(n))} style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} />
+          <CountUp value={todayPayments.length} format={n => String(Math.round(n))} style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} />
         </View>
 
         <View style={{ flex: 1, minWidth: 220, backgroundColor: Brand.vendorAccent, borderRadius: 16, padding: 18 }}>
@@ -183,8 +183,8 @@ export default function VendorFinanceScreen() {
             {t('vendor.finance.availableToWithdraw')}
           </Text>
           {availableToWithdraw == null
-            ? <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14 }}>—</Text>
-            : <CountUp value={availableToWithdraw} format={n => `฿${formatBaht(n)}`} style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14, fontVariant: ['tabular-nums'] }} />}
+            ? <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: '#fff', marginBottom: 14 }}>—</Text>
+            : <CountUp value={availableToWithdraw} format={n => `฿${formatBaht(n)}`} style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: '#fff', marginBottom: 14, fontVariant: ['tabular-nums'] }} />}
           <Tap onPress={() => router.push('/(vendor)/profile')} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.withdraw')}</Text>
           </Tap>
@@ -229,7 +229,7 @@ export default function VendorFinanceScreen() {
                   <Animated.View key={p.order_id} entering={listEnter(i)} exiting={listExit} layout={listLayout} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
                     <Text style={{ flex: 2, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{formatFriendlyDateTime(p.created_at, t('common.today'))}</Text>
                     <Text style={{ flex: 1.4, fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{p.display_id}</Text>
-                    <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>฿{formatBaht(p.amount)}</Text>
+                    <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} numberOfLines={1}>฿{formatBaht(p.amount)}</Text>
                     <Text style={{ flex: 1.6, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{t('vendor.finance.campusWallet')}</Text>
                     <View style={{ flex: 1.2 }}>
                       <View style={{ alignSelf: 'flex-start', backgroundColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>

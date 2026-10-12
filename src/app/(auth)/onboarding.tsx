@@ -183,7 +183,7 @@ export default function OnboardingScreen() {
       >
         {/* Title */}
         <Animated.View entering={listEnter(0)} style={{ marginTop: 20, marginBottom: 36 }}>
-          <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary }}>
+          <Text style={{ fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: Brand.textPrimary }}>
             {t('onboarding.title')}
           </Text>
           <Text style={{ fontSize: 22 }}>🥗</Text>
@@ -372,7 +372,7 @@ export default function OnboardingScreen() {
             >
               {t('onboarding.budget')}
             </Text>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.orange }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.orange, fontVariant: ['tabular-nums'] }}>
               ฿{budget >= 150 ? '150+' : budget}
             </Text>
           </View>

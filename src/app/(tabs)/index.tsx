@@ -192,7 +192,7 @@ export default function HomeScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Greeting */}
-        <Animated.Text entering={enterUp()} style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
+        <Animated.Text entering={enterUp()} lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
           {t(getGreetingKey())}{firstName ? `, ${firstName}.` : '.'}
         </Animated.Text>
 

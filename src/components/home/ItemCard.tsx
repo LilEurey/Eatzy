@@ -25,7 +25,7 @@ export function AllergenPill({ allergens }: { allergens: string[] | null }) {
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>{children}</Text>;
+  return <Text style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: '#261812', marginBottom: 16 }}>{children}</Text>;
 }
 
 export function EmptyCard({ text, marginBottom }: { text: string; marginBottom?: number }) {
@@ -105,7 +105,7 @@ export function ItemCard({ itemId, recommended, imageUrl, emoji = '🍽️', bad
           {vendorName}
         </Text>
         {allergens !== undefined && <AllergenPill allergens={allergens} />}
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{price}</Text>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100', fontVariant: ['tabular-nums'] }}>฿{price}</Text>
       </View>
     </Tap>
   );

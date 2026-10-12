@@ -160,7 +160,7 @@ export function PromotedSection({ featured }: { featured: MenuItem | null }) {
 
               <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1, marginRight: 12 }}>
-                  <Text style={{ fontSize: 22, fontWeight: '700', color: '#261812', lineHeight: 29, marginBottom: 4 }}>
+                  <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: '#261812', lineHeight: 29, marginBottom: 4 }}>
                     {localizedText(featured.name, featured.name_th, locale)}
                   </Text>
                   <Text style={{ fontSize: 15, color: '#5a4136', marginBottom: 14 }}>
@@ -168,7 +168,7 @@ export function PromotedSection({ featured }: { featured: MenuItem | null }) {
                   </Text>
                   <AllergenPill allergens={featured.allergens} />
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Text style={{ fontSize: 20, fontWeight: '700', color: '#a04100' }}>
+                    <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: '#a04100', fontVariant: ['tabular-nums'] }}>
                       ฿{featured.price}
                     </Text>
                     <Tap
@@ -252,7 +252,7 @@ export function TrendingSection({ trending }: { trending: MenuItem[] }) {
                 </Text>
                 <AllergenPill allergens={item.allergens} />
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100', fontVariant: ['tabular-nums'] }}>
                     ฿{item.price}
                   </Text>
                   <View style={{
@@ -332,7 +332,7 @@ export function StoreOptions({ vendors }: { vendors: Vendor[] }) {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 16,
       }}>
-        <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812' }}>
+        <Text style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: '#261812' }}>
           {t('home.storeOptions')}
         </Text>
         {vendors.length > 0 && (

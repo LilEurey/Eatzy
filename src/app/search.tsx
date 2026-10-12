@@ -258,7 +258,7 @@ export default function SearchScreen() {
                     )}
                   </View>
                 </View>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#a04100' }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#a04100', fontVariant: ['tabular-nums'] }}>
                   ฿{item.price}
                 </Text>
               </Tap>

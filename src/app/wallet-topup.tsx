@@ -115,7 +115,7 @@ export default function WalletTopUpScreen() {
         <Tap onPress={() => router.back()} disabled={paying}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('wallet.topUpAmountTitle')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('wallet.topUpAmountTitle')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }}>
@@ -139,7 +139,7 @@ export default function WalletTopUpScreen() {
                   shadowOpacity: active ? 0 : 0.03, shadowRadius: 3, elevation: active ? 0 : 1,
                 }}
               >
-                <Text style={{ fontSize: 14, fontWeight: '700', color: active ? '#fff' : Brand.textPrimary }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: active ? '#fff' : Brand.textPrimary, fontVariant: ['tabular-nums'] }}>
                   ฿{preset}
                 </Text>
               </Tap>
@@ -158,7 +158,7 @@ export default function WalletTopUpScreen() {
           shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
         }}>
-          <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary }}>฿</Text>
+          <Text style={{ fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>฿</Text>
           <TextInput
             value={amountText}
             onChangeText={v => setAmountText(v.replace(/[^0-9]/g, ''))}
@@ -166,7 +166,7 @@ export default function WalletTopUpScreen() {
             placeholder="0"
             placeholderTextColor={Brand.textSecondary}
             editable={!paying}
-            style={{ flex: 1, fontSize: 28, fontWeight: '800', color: Brand.textPrimary }}
+            style={{ flex: 1, fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: Brand.textPrimary }}
           />
         </View>
         <Text style={{
