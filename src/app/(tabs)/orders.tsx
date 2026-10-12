@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+import { useFocusKey } from '@/hooks/useFocusKey';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -56,6 +57,7 @@ export default function OrdersScreen() {
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const focusKey = useFocusKey();
   const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   useLiveWhileFocused(async isCancelled => {
@@ -159,6 +161,7 @@ export default function OrdersScreen() {
         <SkeletonList />
       ) : (
       <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <Fragment key={focusKey}>
         {/* Active orders section */}
         {tab === 'All' && filtered.some(o => isActiveForStudent(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
@@ -301,6 +304,7 @@ export default function OrdersScreen() {
             </View>
           )}
         </View>
+      </Fragment>
       </ScrollView>
       )}
     </SafeAreaView>

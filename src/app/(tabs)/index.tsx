@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { Fragment, useState, useCallback } from 'react';
+import { useFocusKey } from '@/hooks/useFocusKey';
 import { SkeletonHome } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -58,6 +59,7 @@ function getTimeBasedHeaderKey(segment: MealSegment): TranslationKey {
 
 export default function HomeScreen() {
   const { t, locale } = useI18n();
+  const focusKey = useFocusKey();
   const { prefs, loading: prefsLoading, error: prefsError } = usePreferences();
   const [firstName, setFirstName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -196,6 +198,7 @@ export default function HomeScreen() {
       <TopBar avatarUrl={avatarUrl} firstName={firstName} hasUnreadNotifications={hasUnreadNotifications} />
 
       <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <Fragment key={focusKey}>
         {/* Greeting */}
         <Animated.Text entering={enterUp()} lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
           {t(getGreetingKey())}{firstName ? `, ${firstName}.` : '.'}
@@ -291,6 +294,7 @@ export default function HomeScreen() {
         </CardRow>
 
         <StoreOptions vendors={allVendors} />
+      </Fragment>
       </ScrollView>
     </SafeAreaView>
   );
