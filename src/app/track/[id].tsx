@@ -121,7 +121,7 @@ export default function TrackScreen() {
     void fetchOrdersAhead();
 
     const channel = supabase
-      .channel(`track-queue-${vendorId}`)
+      .channel(`track-queue-${vendorId}-${id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
         void fetchOrdersAhead();
       })
