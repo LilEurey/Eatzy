@@ -9,6 +9,9 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { I18nProvider } from '@/lib/i18n';
 import { registerForPush } from '@/lib/push';
 import type { Session } from '@supabase/supabase-js';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { DynamicNotifications } from '@/dynamic-island/components';
+import { NotificationIsland } from '@/components/NotificationIsland';
 
 // PaymentSheet needs this native module, which Expo Go doesn't ship — same
 // dev-build requirement as react-native-maps. Falls back to an empty key so
@@ -156,8 +159,13 @@ export default function RootLayout() {
   return (
     <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="eatzy" merchantIdentifier="merchant.com.anonymous.eatzy">
       <I18nProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }} />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <DynamicNotifications duration={4000}>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false }} />
+            <NotificationIsland userId={session?.user.id} />
+          </DynamicNotifications>
+        </GestureHandlerRootView>
       </I18nProvider>
     </StripeProvider>
   );

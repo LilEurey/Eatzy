@@ -1,13 +1,14 @@
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { supabase } from '@/lib/supabase';
 
 // Show banner + play sound even while the app is in the foreground, like
-// LINE does — default behavior swallows it silently.
+// LINE does — default behavior swallows it silently. iOS skips the system
+// banner in foreground: components/NotificationIsland shows its own card.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true,
+    shouldShowBanner: Platform.OS !== 'ios',
     shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
@@ -25,18 +26,34 @@ export async function registerForPush(): Promise<void> {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Order updates',
         importance: Notifications.AndroidImportance.MAX,
-        sound: 'default',
         vibrationPattern: [0, 250, 250, 250],
       });
     }
     let { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') ({ status } = await Notifications.requestPermissionsAsync());
-    if (status !== 'granted') return;
+    if (status !== 'granted') {
+      // Sign-in finishes while the Google auth browser is still on top; Android
+      // silently denies a permission request from a backgrounded app, no popup.
+      await untilActive();
+      ({ status } = await Notifications.requestPermissionsAsync());
+    }
+    // EXPO_NO_PUSH builds have no APNs entitlement, so no token to fetch —
+    // permission above is still needed for NotificationIsland's local fallback.
+    if (status !== 'granted' || Constants.expoConfig?.extra?.noPush === true) return;
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
-    await supabase.rpc('set_push_token', { p_token: token });
+    const { error } = await supabase.rpc('set_push_token', { p_token: token });
+    if (error) throw error;
   } catch (e) {
     console.warn('push registration failed', e);
   }
+}
+
+function untilActive(): Promise<void> {
+  if (AppState.currentState === 'active') return Promise.resolve();
+  return new Promise((resolve) => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') { sub.remove(); resolve(); }
+    });
+  });
 }

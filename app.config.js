@@ -37,5 +37,7 @@ const withFirebase = (config) => {
 
 module.exports = ({ config }) => {
   const withKey = withFirebase(withMapsKey(config));
-  return process.env.EXPO_NO_PUSH ? withoutPush(withKey) : withKey;
+  if (!process.env.EXPO_NO_PUSH) return withKey;
+  // NotificationIsland reads extra.noPush and falls back to local notifications.
+  return withoutPush({ ...withKey, extra: { ...withKey.extra, noPush: true } });
 };
