@@ -1,9 +1,7 @@
-import { useEffect } from 'react';
-import { useIsFocused } from 'expo-router';
 import Animated, {
-  Easing, Extrapolation, FadeInDown, FadeInRight, FadeOut, LinearTransition,
+  Extrapolation, FadeInDown, FadeInRight, FadeOut, LinearTransition,
   SlideInLeft, ZoomIn, ZoomOut, cubicBezier, interpolate, useAnimatedRef, useAnimatedStyle, useScrollOffset,
-  useSharedValue, withSpring, withTiming,
+  withSpring, withTiming,
 } from 'react-native-reanimated';
 
 // Shared motion tokens — one spring feel across the app.
@@ -71,22 +69,4 @@ export function useStretchyHero(height: number) {
     opacity: interpolate(offset.value, [height - 120, height - 72], [0, 1], Extrapolation.CLAMP),
   }));
   return { ref, heroStyle, barStyle };
-}
-
-// Quick fade-up each time a tab regains focus. Tab screens stay mounted, so
-// `entering` only plays on the first visit; this replays a single UI-thread
-// animation on the whole screen instead of remounting it. useIsFocused, so
-// returning from a pushed screen (item, cart) doesn't replay it.
-export function useFocusFade() {
-  const focused = useIsFocused();
-  const progress = useSharedValue(1);
-  useEffect(() => {
-    if (!focused) return;
-    progress.value = 0;
-    progress.value = withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) });
-  }, [focused, progress]);
-  return useAnimatedStyle(() => ({
-    opacity: progress.value,
-    transform: [{ translateY: (1 - progress.value) * 10 }],
-  }));
 }
