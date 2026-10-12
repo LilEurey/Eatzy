@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
-import { router } from 'expo-router';
 import type { SymbolViewProps } from 'expo-symbols';
 import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
 import { notificationText } from '@/lib/localize';
+import { openNotification } from '@/lib/push';
 import { Brand } from '@/constants/theme';
 import { useDynamicNotifications } from '@/dynamic-island/hooks';
 
@@ -38,24 +38,36 @@ export function NotificationIsland({ userId }: { userId: string | undefined }) {
     const channel = supabase
       .channel(`island-${userId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (payload) => {
-        const n = payload.new as Parameters<typeof notificationText>[0];
+        const n = payload.new as Parameters<typeof notificationText>[0] & { id: string; order_id: string | null };
         const { title, body } = notificationText(n, t);
         const style = (n.event && SYMBOLS[n.event]) || { symbol: 'bell.fill', accent: Brand.orange };
-        const isVendor = n.event === 'vendor_new_order';
+        const target = { id: n.id, order_id: n.order_id, event: n.event };
         if (NO_PUSH && AppState.currentState !== 'active') {
-          void Notifications.scheduleNotificationAsync({ content: { title, body, sound: true }, trigger: null });
+          void Notifications.scheduleNotificationAsync({ content: { title, body, sound: true, data: target }, trigger: null });
           return;
         }
         trigger({
           title,
           message: body,
           ...style,
-          onPress: () => router.push(isVendor ? '/(vendor)/orders' : '/notifications'),
+          onPress: () => void openNotification(target, userId),
         });
       })
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [userId, t, trigger]);
+
+  // System push / local-fallback taps, any platform.
+  // ponytail: warm taps only — a cold-start tap lands on the role home screen,
+  // since routeAfterAuth replaces the stack; add getLastNotificationResponseAsync
+  // after auth routing settles if that matters.
+  useEffect(() => {
+    if (Platform.OS === 'web' || !userId) return;
+    const sub = Notifications.addNotificationResponseReceivedListener((r) => {
+      void openNotification(r.notification.request.content.data as Parameters<typeof openNotification>[0], userId);
+    });
+    return () => sub.remove();
+  }, [userId]);
 
   return null;
 }

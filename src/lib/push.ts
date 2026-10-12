@@ -1,7 +1,9 @@
 import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { getUserRole } from '@/lib/user-role';
 
 // Show banner + play sound even while the app is in the foreground, like
 // LINE does — default behavior swallows it silently. iOS skips the system
@@ -56,4 +58,18 @@ function untilActive(): Promise<void> {
       if (s === 'active') { sub.remove(); resolve(); }
     });
   });
+}
+
+// Tapping a notification (island card, system push, local fallback) opens
+// the order it's about. Vendors land on their orders board (no per-order
+// screen); a notification with no order falls back to the inbox.
+export async function openNotification(
+  n: { id?: string; order_id?: string | null; event?: string | null },
+  userId: string,
+): Promise<void> {
+  if (n.id) void supabase.from('notifications').update({ read: true }).eq('id', n.id);
+  const isVendor = n.event ? n.event === 'vendor_new_order' : (await getUserRole(userId)) === 'vendor';
+  if (isVendor) router.push('/(vendor)/orders');
+  else if (n.order_id) router.push(`/track/${n.order_id}`);
+  else router.push('/notifications');
 }
