@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { listEnter } from '@/lib/motion';
+import { listEnter, useFocusFade } from '@/lib/motion';
 import { CountUp } from '@/components/CountUp';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -72,6 +72,7 @@ export default function WalletScreen() {
   const [loadFailed, setLoadFailed] = useState(false);
   const focusGuard = useFocusGuard();
   const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
+  const focusFade = useFocusFade();
 
   const refresh = useCallback((cancelledRef: { current: boolean }) => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -107,7 +108,7 @@ export default function WalletScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <Animated.ScrollView style={focusFade} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5 }}>
@@ -280,7 +281,7 @@ export default function WalletScreen() {
             })}
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { listEnter, listLayout } from '@/lib/motion';
+import { listEnter, listLayout, useFocusFade } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -57,6 +57,7 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
+  const focusFade = useFocusFade();
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -158,7 +159,7 @@ export default function OrdersScreen() {
       {loading ? (
         <SkeletonList />
       ) : (
-      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <Animated.ScrollView style={focusFade} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
         {tab === 'All' && filtered.some(o => isActiveForStudent(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
@@ -301,7 +302,7 @@ export default function OrdersScreen() {
             </View>
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
       )}
     </SafeAreaView>
   );
