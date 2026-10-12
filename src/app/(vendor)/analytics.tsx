@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { Platform, View, Text, ScrollView, useWindowDimensions } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { CountUp } from '@/components/CountUp';
+import { listEnter, listExit, listLayout, EASE_OUT } from '@/lib/motion';
+import { dailyRevenue } from '@/lib/vendor-analytics';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -17,6 +21,88 @@ import { formatBaht } from '@/lib/money';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 
 const TABLE_MIN_WIDTH = 560;
+const CHART_HEIGHT = 120;
+
+// Last-7-days revenue bars. Bars grow up staggered on mount (CSS keyframes)
+// and glide to new heights when a live order lands. Tap a bar for its total.
+const RANGES = [7, 30] as const;
+
+function RevenueChart({ payments }: { payments: { created_at: string; amount: number }[] }) {
+  const { t } = useI18n();
+  const [days, setDays] = useState<(typeof RANGES)[number]>(7);
+  const bars = dailyRevenue(payments, days);
+  const max = Math.max(1, ...bars.map(b => b.value));
+  // null = "whole range": header shows the range total until a bar is tapped.
+  const [selected, setSelected] = useState<number | null>(null);
+  const shownValue = selected == null ? bars.reduce((s, b) => s + b.value, 0) : (bars[selected]?.value ?? 0);
+  const gap = days === 7 ? 10 : 3;
+  return (
+    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.finance.revenueChart')}</Text>
+          <View style={{ flexDirection: 'row', backgroundColor: '#F0F1F5', borderRadius: 8, padding: 2 }}>
+            {RANGES.map(r => (
+              <Tap key={r} haptic={false} onPress={() => { setDays(r); setSelected(null); }}>
+                <Animated.View style={{
+                  paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
+                  backgroundColor: days === r ? '#fff' : 'transparent',
+                  transitionProperty: 'backgroundColor', transitionDuration: 180,
+                }}>
+                  <Text style={{ fontSize: 11.5, fontWeight: '700', color: days === r ? Brand.textPrimary : '#8A8F9B' }}>
+                    {t('vendor.finance.days', { n: r })}
+                  </Text>
+                </Animated.View>
+              </Tap>
+            ))}
+          </View>
+        </View>
+        <CountUp value={shownValue} format={n => `฿${formatBaht(n)}`} duration={400}
+          style={{ fontSize: 15, fontWeight: '800', color: Brand.vendorAccent, fontVariant: ['tabular-nums'] }} />
+      </View>
+      <View style={{ height: CHART_HEIGHT, flexDirection: 'row', alignItems: 'flex-end', gap }}>
+        {bars.map((b, i) => {
+          const on = i === selected;
+          return (
+            <Tap key={b.key} haptic={false} onPress={() => setSelected(on ? null : i)}
+              style={{ flex: 1, height: '100%', justifyContent: 'flex-end' }}>
+              <Animated.View style={{
+                height: `${(b.value / max) * 100}%`,
+                minHeight: 4,
+                borderRadius: days === 7 ? 8 : 3,
+                backgroundColor: on ? Brand.vendorAccent : b.isToday ? Brand.orange : '#EEF0F5',
+                transformOrigin: 'bottom',
+                animationName: { from: { transform: [{ scaleY: 0 }] }, to: { transform: [{ scaleY: 1 }] } },
+                animationDuration: '650ms',
+                animationDelay: `${i * (days === 7 ? 50 : 15)}ms`,
+                animationFillMode: 'backwards',
+                animationTimingFunction: EASE_OUT,
+                transitionProperty: 'height', transitionDuration: 400,
+              }} />
+            </Tap>
+          );
+        })}
+      </View>
+      {days === 7 ? (
+        <View style={{ flexDirection: 'row', gap, marginTop: 8 }}>
+          {bars.map((b, i) => (
+            <Text key={b.key} style={{ flex: 1, textAlign: 'center', fontSize: 10.5,
+              fontWeight: i === selected ? '700' : '500', color: i === selected ? Brand.textPrimary : '#8A8F9B' }}>
+              {b.label}
+            </Text>
+          ))}
+        </View>
+      ) : (
+        // 30 bars are too narrow for per-bar labels — mark start, middle, today.
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+          {[bars[0], bars[15], bars[bars.length - 1]].map(b => (
+            <Text key={b.key} style={{ fontSize: 10.5, fontWeight: '500', color: '#8A8F9B' }}>{b.key.slice(5).replace('-', '/')}</Text>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function VendorFinanceScreen() {
   const { t } = useI18n();
@@ -69,7 +155,7 @@ export default function VendorFinanceScreen() {
 
   return (
     <View style={{ gap: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.finance.title')}</Text>
+      <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary }}>{t('vendor.finance.title')}</Text>
 
       <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap' }}>
         <View style={{ flex: 1, minWidth: 200, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
@@ -79,7 +165,7 @@ export default function VendorFinanceScreen() {
               <Ionicons name="cash-outline" size={14} color={Brand.vendorAccent} />
             </View>
           </View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>฿{formatBaht(totalRevenueToday)}</Text>
+          <CountUp value={totalRevenueToday} format={n => `฿${formatBaht(n)}`} style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} />
         </View>
 
         <View style={{ flex: 1, minWidth: 200, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5' }}>
@@ -89,19 +175,23 @@ export default function VendorFinanceScreen() {
               <Ionicons name="card-outline" size={14} color={Brand.orange} />
             </View>
           </View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{todayPayments.length}</Text>
+          <CountUp value={todayPayments.length} format={n => String(Math.round(n))} style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} />
         </View>
 
         <View style={{ flex: 1, minWidth: 220, backgroundColor: Brand.vendorAccent, borderRadius: 16, padding: 18 }}>
           <Text style={{ fontSize: 10.5, fontWeight: '700', color: 'rgba(255,255,255,0.75)', letterSpacing: 0.5, marginBottom: 14 }}>
             {t('vendor.finance.availableToWithdraw')}
           </Text>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 14 }}>{availableToWithdraw == null ? '—' : `฿${formatBaht(availableToWithdraw)}`}</Text>
+          {availableToWithdraw == null
+            ? <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: '#fff', marginBottom: 14 }}>—</Text>
+            : <CountUp value={availableToWithdraw} format={n => `฿${formatBaht(n)}`} style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: '#fff', marginBottom: 14, fontVariant: ['tabular-nums'] }} />}
           <Tap onPress={() => router.push('/(vendor)/profile')} style={{ backgroundColor: '#fff', borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.finance.withdraw')}</Text>
           </Tap>
         </View>
       </View>
+
+      <RevenueChart payments={payments} />
 
       <View style={{ backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#EEF0F5', overflow: 'hidden' }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
@@ -135,18 +225,18 @@ export default function VendorFinanceScreen() {
                   <Text style={{ flex: 1.6, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colMethod')}</Text>
                   <Text style={{ flex: 1.2, fontSize: 10.5, fontWeight: '700', color: '#8A8F9B' }}>{t('vendor.finance.colStatus')}</Text>
                 </View>
-                {visiblePayments.map(p => (
-                  <View key={p.order_id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
+                {visiblePayments.map((p, i) => (
+                  <Animated.View key={p.order_id} entering={listEnter(i)} exiting={listExit} layout={listLayout} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F5F6F9' }}>
                     <Text style={{ flex: 2, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{formatFriendlyDateTime(p.created_at, t('common.today'))}</Text>
                     <Text style={{ flex: 1.4, fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={1}>{p.display_id}</Text>
-                    <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary }} numberOfLines={1}>฿{formatBaht(p.amount)}</Text>
+                    <Text style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }} numberOfLines={1}>฿{formatBaht(p.amount)}</Text>
                     <Text style={{ flex: 1.6, fontSize: 12.5, color: '#4B4F58' }} numberOfLines={1}>{t('vendor.finance.campusWallet')}</Text>
                     <View style={{ flex: 1.2 }}>
                       <View style={{ alignSelf: 'flex-start', backgroundColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
                         <Text style={{ fontSize: 10, fontWeight: '700', color: '#16a34a' }}>{t('vendor.finance.completed')}</Text>
                       </View>
                     </View>
-                  </View>
+                  </Animated.View>
                 ))}
               </View>
             </ScrollView>

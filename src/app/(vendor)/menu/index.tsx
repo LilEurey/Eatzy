@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { View, Text, Image, Switch } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -31,7 +33,7 @@ export default function VendorMenuScreen() {
     <View style={{ gap: 20 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.menu.title')}</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary }}>{t('vendor.menu.title')}</Text>
           <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>{t('vendor.menu.subtitle')}</Text>
         </View>
         <Tap
@@ -52,12 +54,12 @@ export default function VendorMenuScreen() {
         <Text style={{ fontSize: 13, color: '#B0B4BF', paddingVertical: 12 }}>{t('vendor.menu.empty')}</Text>
       ) : (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
-          {items.map(item => {
+          {items.map((item, i) => {
             const stat = salesByItem.get(item.id);
             const units = stat?.units ?? 0;
             const rank = stat?.rank ?? -1;
             return (
-            <View key={item.id} style={{ width: 220, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#EEF0F5', overflow: 'hidden' }}>
+            <Animated.View key={item.id} entering={listEnter(i)} exiting={listExit} layout={listLayout} style={{ width: 220, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#EEF0F5', overflow: 'hidden' }}>
               <View style={{ height: 160, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                 {item.image_url
                   ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -89,7 +91,7 @@ export default function VendorMenuScreen() {
               <View style={{ padding: 14, gap: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                   <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={2}>{localizedText(item.name, item.name_th, locale)}</Text>
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: Brand.vendorAccent }}>{item.price}฿</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: Brand.vendorAccent, fontVariant: ['tabular-nums'] }}>{item.price}฿</Text>
                 </View>
                 {rank === 0 && units > 0 && (
                   <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: GOLD_BG, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
@@ -121,7 +123,7 @@ export default function VendorMenuScreen() {
                   />
                 </View>
               </View>
-            </View>
+            </Animated.View>
             );
           })}
         </View>

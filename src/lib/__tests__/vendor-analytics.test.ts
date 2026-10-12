@@ -4,6 +4,7 @@ import {
   itemSales,
   periodDelta,
   avgFulfilmentMinutes,
+  dailyRevenue,
   type AnalyticsOrder,
   type SalesOrder,
 } from '@/lib/vendor-analytics';
@@ -237,5 +238,22 @@ describe('avgFulfilmentMinutes', () => {
 
   it('returns null when nothing is measurable', () => {
     expect(avgFulfilmentMinutes([mk('2026-06-15T04:00:00Z', null)], 'today', NOW)).toBeNull();
+  });
+});
+
+describe('dailyRevenue', () => {
+  // 2026-10-12 10:00 Bangkok
+  const now = new Date('2026-10-12T03:00:00Z');
+  it('buckets by Bangkok day, oldest first, today last', () => {
+    const bars = dailyRevenue([
+      { created_at: '2026-10-12T01:00:00Z', amount: 50 },
+      { created_at: '2026-10-11T18:00:00Z', amount: 20 }, // 01:00 Oct 12 Bangkok
+      { created_at: '2026-10-11T16:00:00Z', amount: 30 }, // 23:00 Oct 11 Bangkok
+      { created_at: '2026-10-01T05:00:00Z', amount: 999 }, // outside window
+    ], 7, now);
+    expect(bars.map(b => b.label)).toEqual(['6', '7', '8', '9', '10', '11', '12']);
+    expect(bars[6]).toMatchObject({ value: 70, isToday: true });
+    expect(bars[5].value).toBe(30);
+    expect(bars.reduce((s, b) => s + b.value, 0)).toBe(100);
   });
 });

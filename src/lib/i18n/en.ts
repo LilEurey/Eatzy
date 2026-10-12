@@ -580,6 +580,8 @@ export const en = {
 
   // Vendor — finance / analytics
   'vendor.finance.title': 'Finance',
+  'vendor.finance.revenueChart': 'Revenue',
+  'vendor.finance.days': '{n}D',
   'vendor.finance.totalRevenueToday': 'TOTAL REVENUE (TODAY)',
   'vendor.finance.amountPayment': 'PAYMENTS TODAY',
   'vendor.finance.availableToWithdraw': 'AVAILABLE TO WITHDRAW',

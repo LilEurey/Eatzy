@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, useWindowDimensions, Modal, Pressable } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, useWindowDimensions, Modal, Pressable, type ViewStyle } from 'react-native';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn, drawerIn } from '@/lib/motion';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot, router, usePathname, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,7 +53,7 @@ function PickerModal({ visible, onClose, children }: { visible: boolean; onClose
         onPress={onClose}
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
       >
-        <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>{children}</View>
+        <Animated.View entering={dialogIn} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 8 }}>{children}</Animated.View>
       </Tap>
     </Modal>
   );
@@ -121,11 +125,19 @@ function SidebarBody({ pathname, activeCount, onNavigate }: { pathname: string; 
   );
 }
 
+const LIQUID_GLASS = isLiquidGlassAvailable();
+function Glass({ style, children }: { style: ViewStyle; children: React.ReactNode }) {
+  return LIQUID_GLASS
+    ? <GlassView isInteractive style={style}>{children}</GlassView>
+    : <BlurView intensity={60} tint="light" style={[style, { backgroundColor: 'rgba(255,255,255,0.75)' }]}>{children}</BlurView>;
+}
+
 function BottomTabBar({ pathname, badge }: { pathname: string; badge: number }) {
   const { t } = useI18n();
   return (
-    <SafeAreaView edges={['bottom']} style={{ backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#EEF0F5' }}>
-      <View style={{ flexDirection: 'row', paddingTop: 8 }}>
+    // Floating pill over the content: system Liquid Glass on iOS 26, blur elsewhere.
+    <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={{ position: 'absolute', left: 16, right: 16, bottom: 4 }}>
+      <Glass style={{ flexDirection: 'row', paddingVertical: 4, borderRadius: 32, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)' }}>
         {NAV.map(item => {
           const active = isActive(pathname, item);
           return (
@@ -151,7 +163,7 @@ function BottomTabBar({ pathname, badge }: { pathname: string; badge: number }) 
             </Tap>
           );
         })}
-      </View>
+      </Glass>
     </SafeAreaView>
   );
 }
@@ -273,7 +285,7 @@ export default function VendorLayout() {
   );
 
   const content = (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: isTablet ? 24 : 16 }} showsVerticalScrollIndicator={false} scrollEnabled={!scrollLocked}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: isTablet ? 24 : 16, paddingBottom: isTablet ? 24 : 110 }} showsVerticalScrollIndicator={false} scrollEnabled={!scrollLocked}>
       <Slot />
     </ScrollView>
   );
@@ -350,7 +362,7 @@ export default function VendorLayout() {
         </View>
         <Modal visible={drawerOpen} transparent animationType="fade" onRequestClose={() => setDrawerOpen(false)}>
           <View style={{ flex: 1, flexDirection: 'row' }}>
-            <View style={{ width: 260, backgroundColor: '#fff', paddingVertical: 20 }}>
+            <Animated.View entering={drawerIn} style={{ width: 260, backgroundColor: '#fff', paddingVertical: 20 }}>
               <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
                 <SidebarBody
                   pathname={pathname}
@@ -358,7 +370,7 @@ export default function VendorLayout() {
                   onNavigate={(href) => { setDrawerOpen(false); router.push(href); }}
                 />
               </SafeAreaView>
-            </View>
+            </Animated.View>
             <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setDrawerOpen(false)} />
           </View>
         </Modal>

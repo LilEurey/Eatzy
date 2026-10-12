@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, Image, ScrollView, ActivityIndicator, Modal } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, Image, ScrollView, Modal } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -100,14 +103,12 @@ export default function VendorReviewsScreen() {
   return (
     <View style={{ gap: 20 }}>
       <View>
-        <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.reviews.title')}</Text>
+        <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary }}>{t('vendor.reviews.title')}</Text>
         <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>{t('vendor.reviews.subtitle')}</Text>
       </View>
 
       {loading ? (
-        <View style={{ paddingVertical: 60, alignItems: 'center' }}>
-          <ActivityIndicator color={Brand.vendorAccent} />
-        </View>
+        <SkeletonList rows={4} padded={false} />
       ) : count === 0 ? (
         <View style={{ alignItems: 'center', paddingVertical: 60 }}>
           <Ionicons name="star-outline" size={36} color="#C9CCD6" />
@@ -120,7 +121,7 @@ export default function VendorReviewsScreen() {
           <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap' }}>
             <View style={{ minWidth: 160, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#EEF0F5', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#8A8F9B', letterSpacing: 0.5 }}>{t('vendor.reviews.overallRating')}</Text>
-              <Text style={{ fontSize: 36, fontWeight: '800', color: Brand.textPrimary }}>{overall.toFixed(1)}</Text>
+              <Text style={{ fontSize: 36, fontWeight: '800', letterSpacing: -0.6, color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{overall.toFixed(1)}</Text>
               <Stars score={overall} size={15} />
               <Text style={{ fontSize: 11.5, color: '#8A8F9B' }}>
                 {count === 1 ? t('vendor.reviews.reviewCountOne') : t('vendor.reviews.reviewCount', { n: count })}
@@ -166,7 +167,7 @@ export default function VendorReviewsScreen() {
                     {nm ? localizedText(nm.name, nm.name_th, locale) : row.id}
                   </Text>
                   <Stars score={row.avg} />
-                  <Text style={{ width: 34, fontSize: 12, fontWeight: '700', color: Brand.textPrimary, textAlign: 'right' }}>{row.avg.toFixed(1)}</Text>
+                  <Text style={{ width: 34, fontSize: 12, fontWeight: '700', color: Brand.textPrimary, textAlign: 'right', fontVariant: ['tabular-nums'] }}>{row.avg.toFixed(1)}</Text>
                   <Text style={{ width: 64, fontSize: 10.5, color: '#8A8F9B', textAlign: 'right' }}>{ratingsLabel(row.n)}</Text>
                 </View>
               );
@@ -176,10 +177,10 @@ export default function VendorReviewsScreen() {
           {/* Review feed */}
           <View style={{ gap: 10 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.reviews.feed')}</Text>
-            {rows.map(r => {
+            {rows.map((r, i) => {
               const nm = itemName.get(r.menu_item_id);
               return (
-                <View key={r.id} style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14, gap: 8 }}>
+                <Animated.View key={r.id} entering={listEnter(i)} style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#EEF0F5', padding: 14, gap: 8 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Stars score={r.score} />
@@ -190,7 +191,7 @@ export default function VendorReviewsScreen() {
                   <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.vendorAccent }} numberOfLines={1}>
                     {nm ? localizedText(nm.name, nm.name_th, locale) : r.menu_item_id}
                   </Text>
-                  <Text style={{ fontSize: 13, color: r.comment ? '#4B4F58' : '#B0B4BF' }}>
+                  <Text style={{ fontSize: 13, lineHeight: 19, color: r.comment ? '#4B4F58' : '#B0B4BF' }}>
                     {r.comment || t('vendor.reviews.noComment')}
                   </Text>
                   {r.photo_urls?.length > 0 && (
@@ -202,7 +203,7 @@ export default function VendorReviewsScreen() {
                       ))}
                     </ScrollView>
                   )}
-                </View>
+                </Animated.View>
               );
             })}
           </View>

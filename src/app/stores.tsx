@@ -1,7 +1,10 @@
 import { isStoreOpen } from '@/lib/time';
+import { SkeletonList } from '@/components/Skeleton';
 import { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Image } from 'expo-image';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -10,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 type Vendor = {
   id: string;
@@ -34,6 +38,7 @@ export default function StoresScreen() {
   const [query, setQuery] = useState('');
   const [halalOnly, setHalalOnly] = useState(false);
   const focusGuard = useFocusGuard();
+  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   useFocusEffect(
     useCallback(() => {
@@ -47,8 +52,11 @@ export default function StoresScreen() {
           if (cancelledRef.current) return;
           setVendors(error || !data ? [] : (data as Vendor[]));
           setLoading(false);
+          refreshDone();
         });
-    }, [focusGuard])
+    // refreshKey: a pull re-runs the load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [focusGuard, refreshKey, refreshDone])
   );
 
   const results = useMemo(() => {
@@ -72,7 +80,7 @@ export default function StoresScreen() {
           <Tap onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={22} color={Brand.textPrimary} />
           </Tap>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>
             {t('stores.title')}
           </Text>
         </View>
@@ -115,11 +123,10 @@ export default function StoresScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={Brand.orange} size="large" />
-        </View>
+        <SkeletonList />
       ) : (
         <ScrollView
+          refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
@@ -129,9 +136,9 @@ export default function StoresScreen() {
           </Text>
 
           <View style={{ gap: 12 }}>
-            {results.map(vendor => (
+            {results.map((vendor, i) => (
+              <Animated.View key={vendor.id} entering={listEnter(i)} layout={listLayout}>
               <Tap
-                key={vendor.id}
                 onPress={() => router.push(`/store/${vendor.id}`)}
                 activeOpacity={0.85}
                 style={{
@@ -148,7 +155,7 @@ export default function StoresScreen() {
                   alignItems: 'center', justifyContent: 'center',
                 }}>
                   {vendor.cover_image_url
-                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                     : <Text style={{ fontSize: 28 }}>🏪</Text>}
                 </View>
                 <View style={{ flex: 1 }}>
@@ -173,6 +180,7 @@ export default function StoresScreen() {
                   </View>
                 </View>
               </Tap>
+              </Animated.View>
             ))}
 
             {results.length === 0 && (

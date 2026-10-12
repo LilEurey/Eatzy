@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import { View, Text, TextInput, Switch, Modal, Platform, Alert } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn } from '@/lib/motion';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -150,7 +152,7 @@ export default function MenuItemAddonsScreen() {
   return (
     <View style={{ gap: 20 }}>
       <View>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.addons.title')}</Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary }}>{t('vendor.addons.title')}</Text>
         <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>
           {t('vendor.addons.subtitle', { name: dishLabel })}
         </Text>
@@ -324,9 +326,11 @@ function EditorModal({ visible, onClose, children }: { visible: boolean; onClose
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Tap activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 28 }}>
-        <Tap activeOpacity={1} onPress={() => {}} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, gap: 14 }}>
-          {children}
-        </Tap>
+        <Animated.View entering={dialogIn}>
+          <Tap activeOpacity={1} haptic={false} onPress={() => {}} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, gap: 14 }}>
+            {children}
+          </Tap>
+        </Animated.View>
       </Tap>
     </Modal>
   );

@@ -1,8 +1,12 @@
 import { isStoreOpen } from '@/lib/time';
+import { SkeletonDetail } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Image } from 'expo-image';
+import Animated from 'react-native-reanimated';
+import { rowEnter, popIn, popOut, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -54,6 +58,7 @@ function SpiceIndicator({ level }: { level: number }) {
 export default function ItemDetailScreen() {
   const { t, locale } = useI18n();
   const { id, rec } = useLocalSearchParams<{ id: string; rec?: string }>();
+  const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(280);
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
   const [vendorName, setVendorName] = useState('');
@@ -139,9 +144,9 @@ export default function ItemDetailScreen() {
 
   if (item === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonDetail />
+      </View>
     );
   }
 
@@ -244,27 +249,15 @@ export default function ItemDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 160 }}>
+      <Animated.ScrollView ref={heroRef} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 160 }}>
         {/* Image area */}
         <View style={{ height: 280, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {item.image_url
-            ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
             : <Text style={{ fontSize: 90 }}>🍽️</Text>
           }
-          {/* Back button */}
-          <Tap
-            onPress={() => router.back()}
-            style={{
-              position: 'absolute', top: 16, left: 16,
-              width: 40, height: 40, borderRadius: 20,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              alignItems: 'center', justifyContent: 'center',
-              shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-            }}
-          >
-            <Text style={{ fontSize: 18, color: Brand.textPrimary }}>←</Text>
-          </Tap>
+          </Animated.View>
 
           {/* Featured badge */}
           {item.is_featured && (
@@ -282,7 +275,7 @@ export default function ItemDetailScreen() {
 
         <View style={{ padding: 20 }}>
           {/* Name + vendor */}
-          <Text style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5, marginBottom: 4 }}>
+          <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5, marginBottom: 4 }}>
             {localizedText(item.name, item.name_th, locale)}
           </Text>
           <Tap onPress={() => router.push(`/store/${item.vendor_id}`)}>
@@ -337,7 +330,7 @@ export default function ItemDetailScreen() {
                 borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: Brand.border,
               }}>
                 <Text style={{ fontSize: 20, marginBottom: 4 }}>{icon}</Text>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{value}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{value}</Text>
                 <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{label}</Text>
               </View>
             ))}
@@ -418,15 +411,19 @@ export default function ItemDetailScreen() {
                           onPress={() => toggleOption(group, opt.id)}
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}
                         >
-                          <View style={{
+                          <Animated.View style={{
                             width: 22, height: 22,
                             borderRadius: group.max_select === 1 ? 11 : 6,
                             borderWidth: 2, borderColor: isOn ? Brand.orange : Brand.border,
                             backgroundColor: isOn ? Brand.orange : 'transparent',
                             alignItems: 'center', justifyContent: 'center',
+                            transitionProperty: ['backgroundColor', 'borderColor'], transitionDuration: 180,
                           }}>
-                            {isOn && <Text style={{ color: '#fff', fontSize: 13, fontWeight: '900', lineHeight: 15 }}>✓</Text>}
-                          </View>
+                            {isOn && (
+                              <Animated.Text entering={popIn} exiting={popOut}
+                                style={{ color: '#fff', fontSize: 13, fontWeight: '900', lineHeight: 15 }}>✓</Animated.Text>
+                            )}
+                          </Animated.View>
                           <Text style={{ flex: 1, fontSize: 15, color: Brand.textPrimary }}>
                             {localizedText(opt.name, opt.name_th, locale)}
                           </Text>
@@ -476,9 +473,9 @@ export default function ItemDetailScreen() {
                 {t('item.similarFoods')}
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                {similar.map(s => (
+                {similar.map((s, si) => (
+                  <Animated.View key={s.id} entering={rowEnter(si)}>
                   <Tap
-                    key={s.id}
                     onPress={() => router.push(`/item/${s.id}?rec=1`)}
                     activeOpacity={0.85}
                     style={{
@@ -489,16 +486,17 @@ export default function ItemDetailScreen() {
                   >
                     <View style={{ height: 120, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                       {s.image_url
-                        ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                        ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                         : <Text style={{ fontSize: 32 }}>🍽️</Text>
                       }
                     </View>
                     <View style={{ padding: 10 }}>
                       <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>{localizedText(s.name, s.name_th, locale)}</Text>
                       <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>{s.vendor_name}</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{s.price}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100', fontVariant: ['tabular-nums'] }}>฿{s.price}</Text>
                     </View>
                   </Tap>
+                  </Animated.View>
                 ))}
               </ScrollView>
             </View>
@@ -528,7 +526,8 @@ export default function ItemDetailScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+      <HeroHeader title={localizedText(item.name, item.name_th, locale)} barStyle={barStyle} />
 
       {/* Bottom — qty + add to cart */}
       <View style={{
@@ -571,9 +570,9 @@ export default function ItemDetailScreen() {
             >
               <Text style={{ fontSize: 20, color: Brand.orange, fontWeight: '700', lineHeight: 22 }}>−</Text>
             </Tap>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, minWidth: 28, textAlign: 'center' }}>
+            <Animated.Text key={qty} entering={popIn} style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, minWidth: 28, textAlign: 'center', fontVariant: ['tabular-nums'] }}>
               {qty}
-            </Text>
+            </Animated.Text>
             <Tap
               onPress={() => setQty(q => q + 1)}
               style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}

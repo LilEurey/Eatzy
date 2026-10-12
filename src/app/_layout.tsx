@@ -164,7 +164,17 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <DynamicNotifications duration={4000}>
             <StatusBar style="dark" />
-            <Stack screenOptions={{ headerShown: false }} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                // Same iOS-style slide + parallax on both platforms, swipe-back from anywhere.
+                animation: 'ios_from_right',
+                fullScreenGestureEnabled: true,
+              }}
+            >
+              <Stack.Screen name="cart" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="search" options={{ animation: 'fade_from_bottom' }} />
+            </Stack>
             <NotificationIsland userId={session?.user.id} />
           </DynamicNotifications>
         </GestureHandlerRootView>

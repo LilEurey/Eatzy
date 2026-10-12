@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -11,6 +14,7 @@ import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
@@ -52,6 +56,7 @@ export default function OrdersScreen() {
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -66,6 +71,7 @@ export default function OrdersScreen() {
         .order('created_at', { ascending: false });
 
       if (isCancelled()) return;
+      refreshDone();
       // Keep the list on a failed live refetch — [] would flash "no orders".
       if (error) { console.warn('load orders failed:', error.message); setLoading(false); return; }
       setOrders((data ?? []).map(o => ({
@@ -94,7 +100,7 @@ export default function OrdersScreen() {
       .subscribe();
     void load();
     return () => { void supabase.removeChannel(channel); };
-  });
+  }, refreshKey);
 
   const filtered = orders.filter(o => {
     if (tab === 'All') return true;
@@ -150,11 +156,9 @@ export default function OrdersScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={Brand.orange} size="large" />
-        </View>
+        <SkeletonList />
       ) : (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
         {tab === 'All' && filtered.some(o => isActiveForStudent(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
@@ -163,7 +167,7 @@ export default function OrdersScreen() {
         )}
 
         <View style={{ gap: 12 }}>
-          {filtered.map(order => {
+          {filtered.map((order, index) => {
             const cfg = STATUS_CONFIG[order.status];
             const vendor = order.vendor_name;
             const isActive = isActiveForStudent(order.status);
@@ -173,8 +177,10 @@ export default function OrdersScreen() {
             }).join(', ');
 
             return (
-              <View
+              <Animated.View
                 key={order.id}
+                entering={listEnter(index)}
+                layout={listLayout}
                 style={{
                   backgroundColor: Brand.card, borderRadius: 20, padding: 16,
                   shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
@@ -207,9 +213,11 @@ export default function OrdersScreen() {
                 {isActive && (
                   <View style={{ marginBottom: 12 }}>
                     <View style={{ height: 4, backgroundColor: Brand.border, borderRadius: 2 }}>
-                      <View style={{
+                      {/* CSS transition: bar glides when realtime bumps the status */}
+                      <Animated.View style={{
                         height: 4, borderRadius: 2, backgroundColor: Brand.orange,
                         width: order.status === 'pending' ? '15%' : order.status === 'accepted' ? '60%' : '100%',
+                        transitionProperty: 'width', transitionDuration: 500,
                       }} />
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
@@ -237,7 +245,7 @@ export default function OrdersScreen() {
                       {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>
                     ฿{order.total_amount}
                   </Text>
                 </View>
@@ -273,7 +281,7 @@ export default function OrdersScreen() {
                     </Text>
                   </Tap>
                 )}
-              </View>
+              </Animated.View>
             );
           })}
 

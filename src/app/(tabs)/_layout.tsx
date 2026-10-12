@@ -1,23 +1,17 @@
 import { View, Text } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { popIn, popOut } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
-import { Tabs, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import Svg, { Path } from 'react-native-svg';
 import { Brand } from '@/constants/theme';
 import { useCart, cartCount } from '@/lib/cart-store';
 import { useI18n } from '@/lib/i18n';
 
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
-function TabIcon({ name, focused }: { name: IoniconsName; focused: boolean }) {
-  return (
-    <Ionicons
-      name={name}
-      size={24}
-      color={focused ? Brand.orange : '#C4B8AE'}
-    />
-  );
-}
+const LIQUID_GLASS = isLiquidGlassAvailable();
 
 // Exact path from the Figma export — a dark stroked outline reads clearly
 // against the orange circle; the 🛒 emoji it replaced renders with its own
@@ -41,72 +35,41 @@ export default function TabsLayout() {
   const count = cartCount(useCart());
   return (
     <View style={{ flex: 1 }}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: {
-            backgroundColor: '#fff',
-            borderTopColor: Brand.border,
-            borderTopWidth: 1,
-            height: 80,
-            paddingBottom: 16,
-            paddingTop: 8,
-          },
-          tabBarActiveTintColor: Brand.orange,
-          tabBarInactiveTintColor: '#C4B8AE',
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        }}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: t('tabs.home'),
-            tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="orders"
-          options={{
-            title: t('tabs.orders'),
-            tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'receipt' : 'receipt-outline'} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="wallet"
-          options={{
-            title: t('tabs.wallet'),
-            tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'wallet' : 'wallet-outline'} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: t('tabs.profile'),
-            tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
-            ),
-          }}
-        />
-      </Tabs>
+      {/* Native UITabBar — iOS 26 renders it as system Liquid Glass; Android gets Material bottom nav. */}
+      <NativeTabs tintColor={Brand.orange} minimizeBehavior="onScrollDown">
+        <NativeTabs.Trigger name="index">
+          <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
+          <NativeTabs.Trigger.Label>{t('tabs.home')}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="orders">
+          <NativeTabs.Trigger.Icon sf={{ default: 'list.bullet.rectangle', selected: 'list.bullet.rectangle.fill' }} md="receipt" />
+          <NativeTabs.Trigger.Label>{t('tabs.orders')}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="wallet">
+          <NativeTabs.Trigger.Icon sf={{ default: 'wallet.bifold', selected: 'wallet.bifold.fill' }} md="account_balance_wallet" />
+          <NativeTabs.Trigger.Label>{t('tabs.wallet')}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="profile">
+          <NativeTabs.Trigger.Icon sf={{ default: 'person', selected: 'person.fill' }} md="person" />
+          <NativeTabs.Trigger.Label>{t('tabs.profile')}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+      </NativeTabs>
 
       {/* Floating cart button — only when cart has items */}
       {count > 0 && (
+        <Animated.View
+          entering={popIn}
+          exiting={popOut}
+          style={{ position: 'absolute', bottom: 110, right: 20 }}
+        >
         <Tap
           onPress={() => router.push('/cart')}
           style={{
-            position: 'absolute',
-            bottom: 90,
-            right: 20,
             width: 56,
             height: 56,
             borderRadius: 28,
-            backgroundColor: '#FE6B00',
+            // iOS 26: orange-tinted Liquid Glass; elsewhere the solid orange it always was.
+            backgroundColor: LIQUID_GLASS ? 'transparent' : '#FE6B00',
             alignItems: 'center',
             justifyContent: 'center',
             shadowColor: '#FE6B00',
@@ -116,16 +79,21 @@ export default function TabsLayout() {
             elevation: 6,
           }}
         >
+          {LIQUID_GLASS && (
+            <GlassView isInteractive tintColor="rgba(254,107,0,0.85)" style={{ position: 'absolute', inset: 0, borderRadius: 28 }} />
+          )}
           <CartIcon size={22} />
-          <View style={{
+          {/* key={count} remounts the badge so it pops on every add */}
+          <Animated.View key={count} entering={popIn} style={{
             position: 'absolute', top: -4, right: -4,
             minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6,
             backgroundColor: '#fff', borderWidth: 2, borderColor: '#FE6B00',
             alignItems: 'center', justifyContent: 'center',
           }}>
             <Text style={{ fontSize: 11, fontWeight: '800', color: '#FE6B00' }}>{count}</Text>
-          </View>
+          </Animated.View>
         </Tap>
+        </Animated.View>
       )}
     </View>
   );

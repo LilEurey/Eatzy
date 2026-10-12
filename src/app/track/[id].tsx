@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { enterUp, popIn } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -11,6 +14,15 @@ import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
 import { confirmHandoff, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
+
+// Gentle breathing scale on the current step (Reanimated 4 CSS animation).
+const PULSE = {
+  animationName: { from: { transform: [{ scale: 1 }] }, to: { transform: [{ scale: 1.1 }] } },
+  animationDuration: '900ms',
+  animationIterationCount: 'infinite',
+  animationDirection: 'alternate',
+  animationTimingFunction: 'ease-in-out',
+} as const;
 
 // 'rejected' / 'cancelled' are reachable while this screen is mounted — the
 // realtime UPDATE below pushes whatever the vendor (or accept_order_and_charge's
@@ -159,8 +171,8 @@ export default function TrackScreen() {
 
   if (order === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonList title />
       </SafeAreaView>
     );
   }
@@ -193,7 +205,7 @@ export default function TrackScreen() {
         <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('track.title')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('track.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
@@ -207,7 +219,7 @@ export default function TrackScreen() {
           <Text style={{ fontSize: 13, fontWeight: '600', letterSpacing: 1, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary }}>
             {t('track.queueNumber')}
           </Text>
-          <Text style={{ fontSize: 56, fontWeight: '800', color: isReady ? '#fff' : Brand.orange, marginVertical: 4 }}>
+          <Text style={{ fontSize: 56, fontWeight: '800', color: isReady ? '#fff' : Brand.orange, marginVertical: 4, fontVariant: ['tabular-nums'] }}>
             #{order.queue_number}
           </Text>
           <Text style={{ fontSize: 14, fontWeight: '600', color: isReady ? '#fff' : Brand.textPrimary }}>
@@ -257,15 +269,18 @@ export default function TrackScreen() {
               <View key={step.key} style={{ flexDirection: 'row', gap: 14 }}>
                 {/* Rail */}
                 <View style={{ alignItems: 'center' }}>
-                  <View style={{
+                  <Animated.View style={[{
                     width: 40, height: 40, borderRadius: 20,
                     backgroundColor: reached ? Brand.orange : Brand.orangeLight,
                     alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Text style={{ fontSize: 18, opacity: reached ? 1 : 0.4 }}>{done ? '✓' : step.icon}</Text>
-                  </View>
+                    transitionProperty: 'backgroundColor', transitionDuration: 400,
+                  }, active && PULSE]}>
+                    {/* key swap remounts the glyph so ✓ pops in when a step completes */}
+                    <Animated.Text key={done ? 'done' : 'icon'} entering={popIn}
+                      style={{ fontSize: 18, opacity: reached ? 1 : 0.4 }}>{done ? '✓' : step.icon}</Animated.Text>
+                  </Animated.View>
                   {i < STEPS.length - 1 && (
-                    <View style={{ width: 2, flex: 1, minHeight: 28, backgroundColor: i < currentIdx ? Brand.orange : Brand.border }} />
+                    <Animated.View style={{ width: 2, flex: 1, minHeight: 28, backgroundColor: i < currentIdx ? Brand.orange : Brand.border, transitionProperty: 'backgroundColor', transitionDuration: 400 }} />
                   )}
                 </View>
                 {/* Text */}
@@ -274,7 +289,7 @@ export default function TrackScreen() {
                     {t(step.labelKey)}
                   </Text>
                   {active && (
-                    <Text style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{t(step.hintKey)}</Text>
+                    <Animated.Text entering={enterUp()} style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{t(step.hintKey)}</Animated.Text>
                   )}
                 </View>
               </View>
@@ -300,7 +315,7 @@ export default function TrackScreen() {
                   <Text style={{ fontSize: 14, color: Brand.textPrimary }}>
                     {it.quantity > 1 ? `${it.quantity}× ` : ''}{localizedText(it.name, it.name_th, locale)}
                   </Text>
-                  <Text style={{ fontSize: 14, color: Brand.textSecondary }}>฿{(it.unit_price + addonSum) * it.quantity}</Text>
+                  <Text style={{ fontSize: 14, color: Brand.textSecondary, fontVariant: ['tabular-nums'] }}>฿{(it.unit_price + addonSum) * it.quantity}</Text>
                 </View>
                 {it.addons.map((a, ai) => (
                   <Text key={ai} style={{ fontSize: 12, color: Brand.textSecondary, marginLeft: 12 }}>
@@ -313,7 +328,7 @@ export default function TrackScreen() {
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('common.total')}</Text>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.orange }}>฿{order.total_amount}</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.orange, fontVariant: ['tabular-nums'] }}>฿{order.total_amount}</Text>
           </View>
         </View>
       </ScrollView>

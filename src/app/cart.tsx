@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -8,6 +10,7 @@ import { Brand } from '@/constants/theme';
 import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, NOTE_MAX } from '@/lib/cart-store';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
+import * as Haptics from 'expo-haptics';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { nextPickupSlots, isStoreOpen } from '@/lib/time';
@@ -89,6 +92,7 @@ export default function CartScreen() {
         slot: selectedSlot,
       });
       if (result.ok) {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         clearCart();
         router.replace(`/track/${result.orderId}`);
         return;
@@ -112,7 +116,7 @@ export default function CartScreen() {
           <Tap onPress={() => router.back()}>
             <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
           </Tap>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('cart.title')}</Text>
+          <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('cart.title')}</Text>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 48, marginBottom: 16 }}>🛒</Text>
@@ -143,7 +147,7 @@ export default function CartScreen() {
         <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('cart.title')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('cart.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }}>
@@ -182,7 +186,7 @@ export default function CartScreen() {
           shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
         }}>
           {items.map((item, i) => (
-            <View key={item.line_id}>
+            <Animated.View key={item.line_id} entering={listEnter(i)} exiting={listExit} layout={listLayout}>
               {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, gap: 14 }}>
                 <View style={{ flex: 1 }}>
@@ -229,7 +233,7 @@ export default function CartScreen() {
                   </Tap>
                 </View>
 
-                <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, minWidth: 52, textAlign: 'right' }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, minWidth: 52, textAlign: 'right', fontVariant: ['tabular-nums'] }}>
                   ฿{formatBaht(lineUnitTotal(item) * item.quantity)}
                 </Text>
               </View>
@@ -248,7 +252,7 @@ export default function CartScreen() {
                   fontSize: 13, color: Brand.textPrimary, minHeight: 40, textAlignVertical: 'top',
                 }}
               />
-            </View>
+            </Animated.View>
           ))}
         </View>
 
@@ -290,12 +294,12 @@ export default function CartScreen() {
         }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.subtotal')}</Text>
-            <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{formatBaht(subtotal)}</Text>
+            <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600', fontVariant: ['tabular-nums'] }}>฿{formatBaht(subtotal)}</Text>
           </View>
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary }}>{t('common.total')}</Text>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.orange }}>฿{formatBaht(total)}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.orange, fontVariant: ['tabular-nums'] }}>฿{formatBaht(total)}</Text>
           </View>
         </View>
       </ScrollView>

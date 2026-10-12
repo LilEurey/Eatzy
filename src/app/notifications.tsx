@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -9,6 +12,7 @@ import { useI18n } from '@/lib/i18n';
 import { notificationText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 type NotificationRow = {
   id: string;
@@ -29,6 +33,7 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<NotificationRow[] | undefined>(undefined);
 
   const [loadFailed, setLoadFailed] = useState(false);
+  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -55,6 +60,7 @@ export default function NotificationsScreen() {
       // parsed on every open. 100 is far past what anyone scrolls to.
       .limit(100);
     if (isCancelled()) return cleanup;
+    refreshDone();
     if (error) {
       // Keep whatever was already shown (or an empty list) instead of an
       // endless spinner; live inserts still arrive via the channel above.
@@ -75,12 +81,12 @@ export default function NotificationsScreen() {
       await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
     }
     return cleanup;
-  });
+  }, refreshKey);
 
   if (notifications === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonList title />
       </SafeAreaView>
     );
   }
@@ -92,10 +98,10 @@ export default function NotificationsScreen() {
         <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('notifications.title')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('notifications.title')}</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 }}>
+      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 }}>
         {loadFailed && (
           <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700', marginBottom: 12 }}>
             {t('common.errorTitle')}
@@ -108,11 +114,11 @@ export default function NotificationsScreen() {
           </View>
         ) : (
           <View style={{ gap: 10 }}>
-            {notifications.map(n => {
+            {notifications.map((n, i) => {
               const { title, body } = notificationText(n, t);
               return (
+                <Animated.View key={n.id} entering={listEnter(i)} exiting={listExit} layout={listLayout}>
                 <Tap
-                  key={n.id}
                   onPress={() => router.push(`/track/${n.order_id}`)}
                   style={{
                     flexDirection: 'row', gap: 12,
@@ -142,6 +148,7 @@ export default function NotificationsScreen() {
                     <Text style={{ fontSize: 11, color: Brand.textSecondary, marginTop: 6 }}>{timeAgo(n.created_at, t)}</Text>
                   </View>
                 </Tap>
+                </Animated.View>
               );
             })}
           </View>

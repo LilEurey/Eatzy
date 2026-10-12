@@ -1,9 +1,13 @@
 import { isStoreOpen } from '@/lib/time';
+import { SkeletonDetail } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
 import StoreMiniMap from '@/components/StoreMiniMap';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,6 +51,7 @@ export default function StoreDetailScreen() {
   const { prefs, gate } = usePreferences();
   const prefsError = gate.status === 'error';
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(220);
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
@@ -104,9 +109,9 @@ export default function StoreDetailScreen() {
 
   if (vendor === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonDetail heroHeight={220} />
+      </View>
     );
   }
 
@@ -130,27 +135,15 @@ export default function StoreDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <Animated.ScrollView ref={heroRef} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header image area */}
         <View style={{ height: 220, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {vendor.cover_image_url
-            ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
             : <Text style={{ fontSize: 72 }}>🏪</Text>
           }
-          {/* Back button */}
-          <Tap
-            onPress={() => router.back()}
-            style={{
-              position: 'absolute', top: 16, left: 16,
-              width: 40, height: 40, borderRadius: 20,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              alignItems: 'center', justifyContent: 'center',
-              shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-            }}
-          >
-            <Text style={{ fontSize: 18, color: Brand.textPrimary }}>←</Text>
-          </Tap>
+          </Animated.View>
 
           {/* Open badge */}
           <View style={{
@@ -178,7 +171,7 @@ export default function StoreDetailScreen() {
         <View style={{ padding: 20 }}>
           {/* Vendor name + tags row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={{ fontSize: 24, fontWeight: '700', color: Brand.textPrimary, flex: 1 }}>
+            <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: Brand.textPrimary, flex: 1 }}>
               {vendor.name}
             </Text>
             {vendor.is_halal_certified && (
@@ -207,7 +200,7 @@ export default function StoreDetailScreen() {
           {reviews.length > 0 && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 }}>
               <Text style={{ fontSize: 14, color: Brand.orange }}>★</Text>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{avgScore.toFixed(1)}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{avgScore.toFixed(1)}</Text>
               <Text style={{ fontSize: 13, color: Brand.textSecondary }}>({reviews.length})</Text>
             </View>
           )}
@@ -289,6 +282,7 @@ export default function StoreDetailScreen() {
                     paddingBottom: 10,
                     borderBottomWidth: 2,
                     borderBottomColor: active ? Brand.orange : 'transparent',
+                    transitionProperty: 'borderBottomColor', transitionDuration: 180,
                   }}
                 >
                   <Text style={{ fontSize: 16, fontWeight: '700', color: active ? Brand.orange : Brand.textSecondary }}>
@@ -335,6 +329,7 @@ export default function StoreDetailScreen() {
                       backgroundColor: active ? Brand.orange : Brand.card,
                       shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
                       shadowOpacity: active ? 0 : 0.04, shadowRadius: 4, elevation: active ? 0 : 1,
+                      transitionProperty: 'backgroundColor', transitionDuration: 180,
                     }}
                   >
                     <Text style={{
@@ -351,9 +346,9 @@ export default function StoreDetailScreen() {
 
           {/* Menu items */}
           <View style={{ gap: 12 }}>
-            {filteredItems.map(item => (
+            {filteredItems.map((item, index) => (
+              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}>
               <Tap
-                key={item.id}
                 onPress={() => router.push(`/item/${item.id}`)}
                 activeOpacity={0.85}
                 style={{
@@ -373,7 +368,7 @@ export default function StoreDetailScreen() {
                   alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
                   {item.image_url
-                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                     : <Text style={{ fontSize: 34 }}>🍽️</Text>
                   }
                 </View>
@@ -412,7 +407,7 @@ export default function StoreDetailScreen() {
                   </View>
 
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#a04100' }}>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#a04100', fontVariant: ['tabular-nums'] }}>
                       ฿{item.price}
                     </Text>
                     {item.is_available ? (
@@ -430,6 +425,7 @@ export default function StoreDetailScreen() {
                   </View>
                 </View>
               </Tap>
+              </Animated.View>
             ))}
 
             {filteredItems.length === 0 && gate.status === 'ready' && (
@@ -443,7 +439,7 @@ export default function StoreDetailScreen() {
           ) : (
           /* Review tab */
           <View>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
+            <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary, marginBottom: 14 }}>
               {t('reviews.communityReviews')}
             </Text>
             {reviews.length === 0 ? (
@@ -470,7 +466,8 @@ export default function StoreDetailScreen() {
           </View>
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+      <HeroHeader title={vendor.name} barStyle={barStyle} />
     </SafeAreaView>
   );
 }

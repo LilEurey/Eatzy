@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Platform, View, Text } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { EASE_OUT } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -14,6 +16,24 @@ import { localizedText } from '@/lib/localize';
 import { isBangkokDateInRange, type DateRangeFilter } from '@/lib/time';
 import { isEarned, isInVendorQueue, isVoided } from '@/lib/order-lifecycle';
 import { PillDropdown } from '@/components/PillDropdown';
+
+// Bars grow from zero on mount (CSS keyframes), then glide on live updates.
+const GROW_X = {
+  transformOrigin: 'left',
+  animationName: { from: { transform: [{ scaleX: 0 }] }, to: { transform: [{ scaleX: 1 }] } },
+  animationDuration: '700ms',
+  animationTimingFunction: EASE_OUT,
+  transitionProperty: 'width', transitionDuration: 400,
+} as const;
+const growY = (i: number) => ({
+  transformOrigin: 'bottom',
+  animationName: { from: { transform: [{ scaleY: 0 }] }, to: { transform: [{ scaleY: 1 }] } },
+  animationDuration: '600ms',
+  animationDelay: `${i * 30}ms`,
+  animationFillMode: 'backwards',
+  animationTimingFunction: EASE_OUT,
+  transitionProperty: 'height', transitionDuration: 300,
+} as const);
 
 // 0 = Monday … 6 = Sunday, matching lib/time bangkokWeekday / vendor-analytics.
 const DOW = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
@@ -43,7 +63,7 @@ function StatCard({ label, value, delta, sub, icon }: { label: string; value: st
         </View>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-        <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{value}</Text>
+        <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{value}</Text>
         {delta && d && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
             <Ionicons name={d.icon} size={10} color={d.color} />
@@ -152,7 +172,7 @@ export default function VendorOverviewScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.overview.title')}</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary }}>{t('vendor.overview.title')}</Text>
           <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>{t('vendor.overview.subtitle')}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -180,11 +200,11 @@ export default function VendorOverviewScreen() {
               <Ionicons name="list-outline" size={14} color={Brand.orange} />
             </View>
           </View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: Brand.textPrimary, marginBottom: 8 }}>
+          <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: Brand.textPrimary, marginBottom: 8 }}>
             {activeQueue} <Text style={{ fontSize: 12, fontWeight: '600', color: '#8A8F9B' }}>{t('vendor.overview.ordersPrep')}</Text>
           </Text>
           <View style={{ height: 6, borderRadius: 3, backgroundColor: '#F0F1F5', overflow: 'hidden' }}>
-            <View style={{ width: `${Math.min(100, (activeQueue / queueCapacity) * 100)}%`, height: '100%', backgroundColor: Brand.orange, borderRadius: 3 }} />
+            <Animated.View style={[{ width: `${Math.min(100, (activeQueue / queueCapacity) * 100)}%`, height: '100%', backgroundColor: Brand.orange, borderRadius: 3 }, GROW_X]} />
           </View>
         </View>
         <StatCard label={avgPrepLabel} value={`${avgPrepValue}m`} icon="time-outline" />
@@ -197,7 +217,7 @@ export default function VendorOverviewScreen() {
             <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.overview.salesVelocity')}</Text>
             {selectedBar ? (
               <View style={{ backgroundColor: Brand.vendorAccentLight, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.vendorAccent }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.vendorAccent, fontVariant: ['tabular-nums'] }}>
                   {selectedBar.label} · ฿{selectedBar.value.toLocaleString()}
                 </Text>
               </View>
@@ -221,7 +241,8 @@ export default function VendorOverviewScreen() {
                     onPress={() => setSelectedBarIndex(prev => (prev === i ? null : i))}
                     style={{ flex: 1, alignItems: 'center', gap: 6 }}
                   >
-                    <View style={{
+                    <Animated.View style={{
+                      ...growY(i),
                       width: '100%',
                       height: `${(bar.value / maxBar) * 100}%`,
                       minHeight: bar.value > 0 ? 4 : 0,
@@ -305,12 +326,12 @@ export default function VendorOverviewScreen() {
                         {localizedText(s.name, s.nameTh, locale)}
                       </Text>
                     </Tap>
-                    <Text style={{ fontSize: 12, color: '#8A8F9B' }}>
+                    <Text style={{ fontSize: 12, color: '#8A8F9B', fontVariant: ['tabular-nums'] }}>
                       {t('vendor.overview.unitsSold', { n: s.units })} · ฿{s.revenue.toLocaleString()}
                     </Text>
                   </View>
                   <View style={{ height: 6, borderRadius: 3, backgroundColor: '#F0F1F5', overflow: 'hidden' }}>
-                    <View style={{ width: `${(s.units / maxUnits) * 100}%`, height: '100%', backgroundColor: Brand.vendorAccent, borderRadius: 3 }} />
+                    <Animated.View style={[{ width: `${(s.units / maxUnits) * 100}%`, height: '100%', backgroundColor: Brand.vendorAccent, borderRadius: 3 }, GROW_X]} />
                   </View>
                 </View>
               </View>

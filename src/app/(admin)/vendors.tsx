@@ -1,7 +1,10 @@
 import { useCallback, useState } from 'react';
-import { View, Text, Modal, ActivityIndicator, ScrollView } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, Modal, ScrollView } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn, listEnter } from '@/lib/motion';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import { useI18n } from '@/lib/i18n';
@@ -88,7 +91,7 @@ export default function AdminVendorsScreen() {
 
   return (
     <View>
-      <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary, marginBottom: 4 }}>
+      <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary, marginBottom: 4 }}>
         {t('admin.vendors.title')}
       </Text>
       <Text style={{ fontSize: 14, color: Brand.textSecondary, marginBottom: 20 }}>
@@ -96,42 +99,43 @@ export default function AdminVendorsScreen() {
       </Text>
 
       {loading ? (
-        <ActivityIndicator color={Brand.adminAccent} style={{ marginTop: 40 }} />
+        <SkeletonList rows={5} padded={false} />
       ) : vendors.length === 0 ? (
         <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('admin.vendors.empty')}</Text>
       ) : (
         <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#E2E4EC', overflow: 'hidden' }}>
           {vendors.map((vendor, i) => (
-            <Tap
-              key={vendor.id}
-              onPress={() => setSelected(vendor)}
-              style={{
-                paddingHorizontal: 16, paddingVertical: 14,
-                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: '#EEF0F5',
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, flex: 1 }}>{vendor.name}</Text>
-                <StatusPill isOpen={vendor.is_open} t={t} />
-              </View>
-              <Text style={{ fontSize: 12, color: Brand.textSecondary, marginTop: 2 }}>
-                {[vendor.stall_number, vendor.is_on_campus ? t('admin.vendors.onCampus') : t('admin.vendors.offCampus')]
-                  .filter(Boolean)
-                  .join(' · ')}
-                {vendor.cuisine_tags.length > 0 ? ` · ${vendor.cuisine_tags.join(', ')}` : ''}
-                {vendor.is_halal_certified ? ` · ${t('admin.vendors.halalBadge')}` : ''}
-              </Text>
-              <Text style={{ fontSize: 12, color: '#9AA0AE', marginTop: 2 }}>
-                {vendor.owner ? `${vendor.owner.name} · ${vendor.owner.email}` : t('admin.vendors.unclaimed')}
-              </Text>
-            </Tap>
+            <Animated.View key={vendor.id} entering={listEnter(i)}>
+              <Tap
+                onPress={() => setSelected(vendor)}
+                style={{
+                  paddingHorizontal: 16, paddingVertical: 14,
+                  borderTopWidth: i === 0 ? 0 : 1, borderTopColor: '#EEF0F5',
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, flex: 1 }}>{vendor.name}</Text>
+                  <StatusPill isOpen={vendor.is_open} t={t} />
+                </View>
+                <Text style={{ fontSize: 12, color: Brand.textSecondary, marginTop: 2 }}>
+                  {[vendor.stall_number, vendor.is_on_campus ? t('admin.vendors.onCampus') : t('admin.vendors.offCampus')]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  {vendor.cuisine_tags.length > 0 ? ` · ${vendor.cuisine_tags.join(', ')}` : ''}
+                  {vendor.is_halal_certified ? ` · ${t('admin.vendors.halalBadge')}` : ''}
+                </Text>
+                <Text style={{ fontSize: 12, color: '#9AA0AE', marginTop: 2 }}>
+                  {vendor.owner ? `${vendor.owner.name} · ${vendor.owner.email}` : t('admin.vendors.unclaimed')}
+                </Text>
+              </Tap>
+            </Animated.View>
           ))}
         </View>
       )}
 
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={closeModal}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, maxWidth: 420, width: '100%', maxHeight: '85%', alignSelf: 'center' }}>
+          <Animated.View entering={dialogIn} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, maxWidth: 420, width: '100%', maxHeight: '85%', alignSelf: 'center' }}>
             {selected && (
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -180,7 +184,7 @@ export default function AdminVendorsScreen() {
                 </Tap>
               </ScrollView>
             )}
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>

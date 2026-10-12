@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Image } from 'expo-image';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -181,9 +184,7 @@ export default function SearchScreen() {
       </View>
 
       {loading || gate.status === 'loading' ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={Brand.orange} size="large" />
-        </View>
+        <SkeletonList />
       ) : gate.status === 'error' ? (
         // Saved halal/vegetarian/jay prefs failed to load — passesDietary would
         // silently fall back to all-false (no filter) on the stale/default
@@ -212,9 +213,9 @@ export default function SearchScreen() {
           </Text>
 
           <View style={{ gap: 12 }}>
-            {results.map(item => (
+            {results.map((item, index) => (
+              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}>
               <Tap
-                key={item.id}
                 onPress={() => router.push(`/item/${item.id}`)}
                 activeOpacity={0.85}
                 style={{
@@ -229,7 +230,7 @@ export default function SearchScreen() {
                   backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
                 }}>
                   {item.image_url
-                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                     : <Text style={{ fontSize: 26 }}>🍽️</Text>}
                 </View>
                 <View style={{ flex: 1 }}>
@@ -257,10 +258,11 @@ export default function SearchScreen() {
                     )}
                   </View>
                 </View>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#a04100' }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#a04100', fontVariant: ['tabular-nums'] }}>
                   ฿{item.price}
                 </Text>
               </Tap>
+              </Animated.View>
             ))}
 
             {results.length === 0 && (

@@ -5,6 +5,8 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { listEnter, rowEnter } from '@/lib/motion';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
@@ -160,7 +162,7 @@ export function PromotedSection({ featured }: { featured: MenuItem | null }) {
 
               <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1, marginRight: 12 }}>
-                  <Text style={{ fontSize: 22, fontWeight: '700', color: '#261812', lineHeight: 29, marginBottom: 4 }}>
+                  <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: '#261812', lineHeight: 29, marginBottom: 4 }}>
                     {localizedText(featured.name, featured.name_th, locale)}
                   </Text>
                   <Text style={{ fontSize: 15, color: '#5a4136', marginBottom: 14 }}>
@@ -168,7 +170,7 @@ export function PromotedSection({ featured }: { featured: MenuItem | null }) {
                   </Text>
                   <AllergenPill allergens={featured.allergens} />
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Text style={{ fontSize: 20, fontWeight: '700', color: '#a04100' }}>
+                    <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: '#a04100', fontVariant: ['tabular-nums'] }}>
                       ฿{featured.price}
                     </Text>
                     <Tap
@@ -191,7 +193,7 @@ export function PromotedSection({ featured }: { featured: MenuItem | null }) {
                   alignItems: 'center', justifyContent: 'center',
                 }}>
                   {featured.image_url
-                    ? <Image source={{ uri: featured.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    ? <Image source={{ uri: featured.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                     : <Text style={{ fontSize: 44 }}>🍽️</Text>
                   }
                 </View>
@@ -214,56 +216,57 @@ export function TrendingSection({ trending }: { trending: MenuItem[] }) {
 
       {trending.length > 0 ? (
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          {trending.map(item => (
-            <Tap
-              key={item.id}
-              onPress={() => router.push(`/item/${item.id}`)}
-              activeOpacity={0.85}
-              style={{
-                flex: 1, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
-                shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
-              }}
-            >
-              {/* Image area */}
-              <View style={{ height: 150, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-                {item.image_url
-                  ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                  : <Text style={{ fontSize: 40 }}>🍽️</Text>
-                }
-                {/* Trending badge */}
-                <View style={{
-                  position: 'absolute', top: 8, right: 8,
-                  backgroundColor: 'rgba(255,255,255,0.9)',
-                  borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4,
-                  flexDirection: 'row', alignItems: 'center', gap: 3,
-                }}>
-                  <Text style={{ fontSize: 9 }}>🔥</Text>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('home.trending')}</Text>
-                </View>
-              </View>
-              {/* Info */}
-              <View style={{ padding: 12 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }} numberOfLines={2}>
-                  {localizedText(item.name, item.name_th, locale)}
-                </Text>
-                <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 8 }} numberOfLines={1}>
-                  {item.vendors?.name ?? '—'}
-                </Text>
-                <AllergenPill allergens={item.allergens} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100' }}>
-                    ฿{item.price}
-                  </Text>
+          {trending.map((item, i) => (
+            <Animated.View key={item.id} entering={rowEnter(i)} style={{ flex: 1 }}>
+              <Tap
+                onPress={() => router.push(`/item/${item.id}`)}
+                activeOpacity={0.85}
+                style={{
+                  flex: 1, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                  shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                }}
+              >
+                {/* Image area */}
+                <View style={{ height: 150, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                  {item.image_url
+                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
+                    : <Text style={{ fontSize: 40 }}>🍽️</Text>
+                  }
+                  {/* Trending badge */}
                   <View style={{
-                    width: 32, height: 32, borderRadius: 16,
-                    backgroundColor: '#ffeae1', alignItems: 'center', justifyContent: 'center',
+                    position: 'absolute', top: 8, right: 8,
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4,
+                    flexDirection: 'row', alignItems: 'center', gap: 3,
                   }}>
-                    <Text style={{ fontSize: 18, color: Brand.orange, lineHeight: 20 }}>+</Text>
+                    <Text style={{ fontSize: 9 }}>🔥</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('home.trending')}</Text>
                   </View>
                 </View>
-              </View>
-            </Tap>
+                {/* Info */}
+                <View style={{ padding: 12 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }} numberOfLines={2}>
+                    {localizedText(item.name, item.name_th, locale)}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 8 }} numberOfLines={1}>
+                    {item.vendors?.name ?? '—'}
+                  </Text>
+                  <AllergenPill allergens={item.allergens} />
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#a04100', fontVariant: ['tabular-nums'] }}>
+                      ฿{item.price}
+                    </Text>
+                    <View style={{
+                      width: 32, height: 32, borderRadius: 16,
+                      backgroundColor: '#ffeae1', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Text style={{ fontSize: 18, color: Brand.orange, lineHeight: 20 }}>+</Text>
+                    </View>
+                  </View>
+                </View>
+              </Tap>
+            </Animated.View>
           ))}
         </View>
       ) : (
@@ -280,41 +283,42 @@ export function NoQueueSection({ vendors }: { vendors: Vendor[] }) {
       <SectionTitle>{t('home.noQueueRightNow')}</SectionTitle>
       {vendors.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-          {vendors.map(vendor => (
-            <Tap
-              key={vendor.id}
-              onPress={() => router.push(`/store/${vendor.id}`)}
-              activeOpacity={0.85}
-              style={{
-                width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
-                shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
-              }}
-            >
-              <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-                {vendor.cover_image_url
-                  ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                  : <Text style={{ fontSize: 36 }}>🏪</Text>
-                }
-                <View style={{
-                  position: 'absolute', top: 8, right: 8,
-                  backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 99,
-                  paddingHorizontal: 8, paddingVertical: 4,
-                  flexDirection: 'row', alignItems: 'center', gap: 3,
-                }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('common.noQueue')}</Text>
+          {vendors.map((vendor, i) => (
+            <Animated.View key={vendor.id} entering={rowEnter(i)}>
+              <Tap
+                onPress={() => router.push(`/store/${vendor.id}`)}
+                activeOpacity={0.85}
+                style={{
+                  width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                  shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+                }}
+              >
+                <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+                  {vendor.cover_image_url
+                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
+                    : <Text style={{ fontSize: 36 }}>🏪</Text>
+                  }
+                  <View style={{
+                    position: 'absolute', top: 8, right: 8,
+                    backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 99,
+                    paddingHorizontal: 8, paddingVertical: 4,
+                    flexDirection: 'row', alignItems: 'center', gap: 3,
+                  }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#261812' }}>{t('common.noQueue')}</Text>
+                  </View>
                 </View>
-              </View>
-              <View style={{ padding: 10 }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={1}>
-                  {vendor.name}
-                </Text>
-                <Text style={{ fontSize: 11, color: '#5a4136' }} numberOfLines={1}>
-                  {vendor.estimated_wait_min ?? 5}–{(vendor.estimated_wait_min ?? 5) + 3} min
-                </Text>
-              </View>
-            </Tap>
+                <View style={{ padding: 10 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={1}>
+                    {vendor.name}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#5a4136' }} numberOfLines={1}>
+                    {vendor.estimated_wait_min ?? 5}–{(vendor.estimated_wait_min ?? 5) + 3} min
+                  </Text>
+                </View>
+              </Tap>
+            </Animated.View>
           ))}
         </ScrollView>
       ) : (
@@ -332,7 +336,7 @@ export function StoreOptions({ vendors }: { vendors: Vendor[] }) {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 16,
       }}>
-        <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812' }}>
+        <Text style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: '#261812' }}>
           {t('home.storeOptions')}
         </Text>
         {vendors.length > 0 && (
@@ -344,60 +348,61 @@ export function StoreOptions({ vendors }: { vendors: Vendor[] }) {
         )}
       </View>
       <View style={{ gap: 12 }}>
-        {vendors.slice(0, 6).map(vendor => {
+        {vendors.slice(0, 6).map((vendor, i) => {
           const closed = !isStoreOpen(vendor);
           return (
-          <Tap
-            key={vendor.id}
-            onPress={() => router.push(`/store/${vendor.id}`)}
-            activeOpacity={0.85}
-            style={{
-              flexDirection: 'row', alignItems: 'center', gap: 16,
-              backgroundColor: Brand.card, borderRadius: 24, padding: 12,
-              opacity: closed ? 0.5 : 1,
-              shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-              shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
-            }}
-          >
-            <View style={{
-              width: 62, height: 62, borderRadius: 12,
-              backgroundColor: Brand.orangeLight, overflow: 'hidden',
-              alignItems: 'center', justifyContent: 'center',
-            }}>
-              {vendor.cover_image_url
-                ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                : <Text style={{ fontSize: 28 }}>🏪</Text>
-              }
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>
-                  {vendor.name}
+          <Animated.View key={vendor.id} entering={listEnter(i)}>
+            <Tap
+              onPress={() => router.push(`/store/${vendor.id}`)}
+              activeOpacity={0.85}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 16,
+                backgroundColor: Brand.card, borderRadius: 24, padding: 12,
+                opacity: closed ? 0.5 : 1,
+                shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.04, shadowRadius: 30, elevation: 2,
+              }}
+            >
+              <View style={{
+                width: 62, height: 62, borderRadius: 12,
+                backgroundColor: Brand.orangeLight, overflow: 'hidden',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                {vendor.cover_image_url
+                  ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
+                  : <Text style={{ fontSize: 28 }}>🏪</Text>
+                }
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>
+                    {vendor.name}
+                  </Text>
+                  {closed && (
+                    <View style={{
+                      backgroundColor: Brand.border, borderRadius: 4,
+                      paddingHorizontal: 6, paddingVertical: 2,
+                    }}>
+                      <Text style={{ fontSize: 10, color: Brand.textSecondary, fontWeight: '600' }}>
+                        {t('common.closed')}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 6 }}>
+                  {vendor.cuisine_tags?.[0] ?? t('home.thaiFood')}
                 </Text>
-                {closed && (
+                {vendor.is_halal_certified && (
                   <View style={{
-                    backgroundColor: Brand.border, borderRadius: 4,
-                    paddingHorizontal: 6, paddingVertical: 2,
+                    backgroundColor: '#ffeae1', borderRadius: 4,
+                    paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start',
                   }}>
-                    <Text style={{ fontSize: 10, color: Brand.textSecondary, fontWeight: '600' }}>
-                      {t('common.closed')}
-                    </Text>
+                    <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
                   </View>
                 )}
               </View>
-              <Text style={{ fontSize: 12, color: '#5a4136', marginBottom: 6 }}>
-                {vendor.cuisine_tags?.[0] ?? t('home.thaiFood')}
-              </Text>
-              {vendor.is_halal_certified && (
-                <View style={{
-                  backgroundColor: '#ffeae1', borderRadius: 4,
-                  paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start',
-                }}>
-                  <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
-                </View>
-              )}
-            </View>
-          </Tap>
+            </Tap>
+          </Animated.View>
           );
         })}
         {vendors.length === 0 && (

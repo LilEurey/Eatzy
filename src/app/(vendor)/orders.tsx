@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
@@ -46,7 +48,7 @@ function CountdownChip({ deadline }: { deadline: number }) {
       backgroundColor: low ? '#FEE2E2' : '#FFF1E6', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
     }}>
       <Ionicons name="time-outline" size={11} color={low ? '#dc2626' : Brand.orange} />
-      <Text style={{ fontSize: 11, fontWeight: '700', color: low ? '#dc2626' : Brand.orange }}>
+      <Text style={{ fontSize: 11, fontWeight: '700', color: low ? '#dc2626' : Brand.orange, fontVariant: ['tabular-nums'] }}>
         {formatCountdown(seconds)}
       </Text>
     </View>
@@ -104,7 +106,7 @@ function IncomingCard({ order, t, locale }: { order: VendorOrder; t: TFn; locale
       header={
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View>
-            <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary }}>#{order.queue_number}</Text>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
             <Text style={{ fontSize: 10.5, color: '#8A8F9B', fontWeight: '600' }}>
               {t('vendor.orders.pickup')} {formatBangkokClock12(order.pickup_start)}
             </Text>
@@ -148,7 +150,7 @@ function PreparingCard({ order, t, locale }: { order: VendorOrder; t: TFn; local
       accent="#f59e0b"
       header={
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary }}>#{order.queue_number}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
           <TimeChip text={formatBangkokClock12(order.pickup_start)} />
         </View>
       }
@@ -194,7 +196,7 @@ function ReadyCard({ order, t }: { order: VendorOrder; t: TFn }) {
     <CardShell
       header={
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary }}>#{order.queue_number}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
           <View style={{ backgroundColor: '#DCFCE7', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
             <Text style={{ fontSize: 10, fontWeight: '700', color: '#16a34a' }}>{t('vendor.orders.waiting')}</Text>
           </View>
@@ -227,7 +229,7 @@ function CompletedTicket({ order, t }: { order: VendorOrder; t: TFn }) {
     }}>
       <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary }}>#{order.queue_number}</Text>
+        <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
         <Text style={{ fontSize: 11, color: '#4B4F58', marginTop: 1 }}>
           {t('vendor.orders.itemsCount', { n: itemCount })}
         </Text>
@@ -280,7 +282,7 @@ export default function VendorOrdersScreen() {
     <View style={{ gap: 20 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.orders.title')}</Text>
+          <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary }}>{t('vendor.orders.title')}</Text>
           <View style={{ backgroundColor: Brand.vendorAccentLight, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
             <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.vendorAccent }}>{t('vendor.orders.activeCount', { n: activeCount })}</Text>
           </View>
@@ -306,7 +308,11 @@ export default function VendorOrdersScreen() {
               {col.data.length === 0 ? (
                 <Text style={{ fontSize: 12, color: '#B0B4BF', paddingVertical: 8 }}>{t('vendor.orders.emptyColumn')}</Text>
               ) : (
-                col.data.map(col.render)
+                col.data.map((o, i) => (
+                  <Animated.View key={o.id} entering={listEnter(i)} exiting={listExit} layout={listLayout}>
+                    {col.render(o)}
+                  </Animated.View>
+                ))
               )}
             </View>
           </View>

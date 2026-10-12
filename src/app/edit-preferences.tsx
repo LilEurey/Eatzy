@@ -165,7 +165,7 @@ export default function EditPreferencesScreen() {
         <Tap onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={Brand.textPrimary} />
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary, flex: 1 }}>
+        <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: Brand.textPrimary, flex: 1 }}>
           {t('profile.accountDetails')}
         </Text>
       </View>
@@ -323,7 +323,7 @@ export default function EditPreferencesScreen() {
             <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1.2, color: Brand.textSecondary }}>
               {t('onboarding.budget')}
             </Text>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.orange }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.orange, fontVariant: ['tabular-nums'] }}>
               ฿{budget >= 150 ? '150+' : budget}
             </Text>
           </View>
