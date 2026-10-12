@@ -6,6 +6,9 @@ import { SymbolView } from "expo-symbols";
 import { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+// No per-notification avatar: show the Eatzy app icon in the circle.
+const APP_ICON = require("../../../../assets/images/icon.png");
+
 const NotificationBody: React.FC<INotificationBody> &
   React.FunctionComponent<INotificationBody> = memo<INotificationBody>(
   ({
@@ -18,17 +21,13 @@ const NotificationBody: React.FC<INotificationBody> &
 
     return (
       <View style={styles.body}>
-        {notification.avatar ? (
-          <Image
-            source={{ uri: notification.avatar }}
-            style={styles.avatar}
-            contentFit="cover"
-            transition={180}
-            cachePolicy="memory-disk"
-          />
-        ) : (
-          <View style={styles.avatar} />
-        )}
+        <Image
+          source={notification.avatar ? { uri: notification.avatar } : APP_ICON}
+          style={styles.avatar}
+          contentFit="cover"
+          transition={180}
+          cachePolicy="memory-disk"
+        />
 
         <View style={styles.copy}>
           <Text numberOfLines={1} style={[styles.title, { color: accent }]}>
