@@ -63,11 +63,27 @@ export type HomeFeedResult = {
   trending: MenuItem[];
   latestRelease: MenuItem[];
   drinks: MenuItem[];
-  recommendedForYou: PersonalizedItem[];
   becauseYouOrdered: MenuItem[];
   timeBasedItems: MenuItem[];
-  similarToFeatured: SimilarToItem[];
+  // The two edge-function rows come back as promises, not rows: each call
+  // takes 0.7–1.8s against ~150ms for every query above, and awaiting them
+  // here held the whole home screen on its skeleton for 3–4s. The caller
+  // paints the feed first and fills these two rows when they settle. Neither
+  // ever rejects (see recommendations()).
+  recommendedForYou: Promise<PersonalizedItem[]>;
+  similarToFeatured: Promise<SimilarToItem[]>;
 };
+
+// Never rejects: a failed recommendation call yields an empty row — it can't
+// take the rest of the feed down with it or leave an unhandled rejection on a
+// promise the screen stopped listening to.
+async function recommendations<T>(name: string, body?: Record<string, unknown>): Promise<T[]> {
+  try {
+    return (await invokeEdgeFunction<{ results: T[] }>(name, body && { body })).data?.results ?? [];
+  } catch {
+    return [];
+  }
+}
 
 // Every food section: what this student can eat, minus drinks (drinks have
 // their own row). Used to be a closure re-derived inside (tabs)/index.tsx's
@@ -77,30 +93,32 @@ function foodForMe(rows: MenuItem[], prefs: Preferences): MenuItem[] {
   return rows.filter(i => passesDietary(i, prefs) && !isDrinkCategory(i.category));
 }
 
-/** The student home screen's whole data fanout in one call: 9 concurrent
- * Supabase/RPC/edge-function queries, the dietary + drink-category filter
- * every food section shares, and the rank restore for the two RPC-ranked
- * sections (Trending, Because You Ordered). Folds in Similar Foods too —
- * anchored on today's Promoted item, same as it always was, but that used to
- * be a second `useEffect` keyed on `featured` with its own independent
- * fetch-and-catch. Bundling it into this same load means a network failure
- * here can't leave it showing stale rows the way it used to: loadData's own
- * catch cleared eight pieces of state and never this one.
+/** The student home screen's whole data fanout in one call: 8 concurrent
+ * Supabase/RPC queries, the dietary + drink-category filter every food
+ * section shares, and the rank restore for the two RPC-ranked sections
+ * (Trending, Because You Ordered). The two edge-function rows (Recommended
+ * For You, Similar Foods — anchored on today's Promoted item) are started
+ * here too but handed back still pending, so the feed doesn't wait on them.
  *
  * Never throws — a failed load resolves to this same shape with every list
- * emptied (see the `empty` fallback below), so the caller always does one
- * plain spread into state instead of running its own try/catch. `now`
+ * emptied (see the `empty` fallback below), both pending rows included, so
+ * the caller never runs its own try/catch and a failed load can't leave a
+ * previous load's Similar Foods on screen. `now`
  * defaults to the real clock; tests pin it for a deterministic meal segment
  * and Promoted pick. */
 export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): Promise<HomeFeedResult> {
   const segment = getMealSegment(now);
   const empty: HomeFeedResult = {
     profile: null, mealSegment: segment, allVendors: [], featured: null, trending: [],
-    latestRelease: [], drinks: [], recommendedForYou: [], becauseYouOrdered: [],
-    timeBasedItems: [], similarToFeatured: [],
+    latestRelease: [], drinks: [], becauseYouOrdered: [], timeBasedItems: [],
+    recommendedForYou: Promise.resolve([]), similarToFeatured: Promise.resolve([]),
   };
 
   try {
+    // Recommended For You — personalized TF-IDF ranking, cold-started from
+    // user_preferences until real order history exists (see recommend-for-you).
+    // Started first and not awaited: it needs nothing from the queries below.
+    const recommendedForYou = recommendations<PersonalizedItem>('recommend-for-you');
     const timeFilter = `available_time_segment.eq.${segment},available_time_segment.eq.all`;
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const menuFields = 'id,name,name_th,price,category,image_url,vendor_id,vendors(name),is_halal,is_vegetarian,is_jay,allergens';
@@ -116,7 +134,7 @@ export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): 
     };
 
     const { data: { user } } = await supabase.auth.getUser();
-    const [profileRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, recommendedRes, timeBasedRes, drinksRes] = await Promise.all([
+    const [profileRes, allVendorsRes, featuredRes, trendingRankRes, latestReleaseRes, becauseYouOrderedRankRes, timeBasedRes, drinksRes] = await Promise.all([
       user
         ? supabase.from('users').select('name,avatar_url').eq('id', user.id).maybeSingle()
         : Promise.resolve({ data: null, error: null }),
@@ -142,9 +160,6 @@ export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): 
       // history (see get_because_you_ordered); anonymous or order-less users
       // just get zero rows back, not an error.
       user ? supabase.rpc('get_because_you_ordered', { limit_n: 10 }) : Promise.resolve({ data: null, error: null }),
-      // Recommended For You — personalized TF-IDF ranking, cold-started from
-      // user_preferences until real order history exists (see recommend-for-you).
-      invokeEdgeFunction<{ results: PersonalizedItem[] }>('recommend-for-you'),
       // Time-Based — items fitting the current meal segment by category
       // (see getTimeBasedCategories: available_time_segment itself is 'all'
       // on every seeded row, so category is the real signal here).
@@ -170,26 +185,25 @@ export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): 
     // Trending and Because You Ordered both come back from their RPCs as
     // ranked id lists; each needs a follow-up fetch for the full rows
     // (filtered to what's still available now), then the RPC order restored.
-    // Similar Foods needs its own follow-up too, once `featured` is known —
-    // all three are independent, so they run together, not in series.
+    // The two are independent, so they run together, not in series.
     const trendingRanked = trendingRankRes.data as { menu_item_id: string; order_count: number }[] | null;
     const byoRanked = becauseYouOrderedRankRes.data as { menu_item_id: string; co_orders: number }[] | null;
     const trendingIds = trendingRanked?.map(r => r.menu_item_id) ?? [];
     const byoIds = byoRanked?.map(r => r.menu_item_id) ?? [];
 
-    const [trendingRowsRes, byoRowsRes, similarRes] = await Promise.all([
+    // Similar Foods can start as soon as `featured` is known — alongside the
+    // follow-ups below, and like Recommended For You, not awaited.
+    const similarToFeatured = featured
+      ? recommendations<SimilarToItem>('recommend-similar', { item_id: featured.id })
+      : Promise.resolve([]);
+
+    const [trendingRowsRes, byoRowsRes] = await Promise.all([
       trendingIds.length
         ? supabase.from('menu_items').select(menuFields).in('id', trendingIds).eq('is_available', true).or(timeFilter)
         : Promise.resolve({ data: null }),
       byoIds.length
         ? supabase.from('menu_items').select(menuFields).in('id', byoIds).eq('is_available', true)
         : Promise.resolve({ data: null }),
-      // Best-effort: invokeEdgeFunction resolves (never rejects) on a normal
-      // failure response, so one bad Similar Foods call doesn't drag the rest
-      // of this load down with it — it just yields an empty section below.
-      featured
-        ? invokeEdgeFunction<{ results: SimilarToItem[] }>('recommend-similar', { body: { item_id: featured.id } })
-        : Promise.resolve({ data: null, error: null }),
     ]);
 
     return {
@@ -200,10 +214,10 @@ export async function loadHomeFeed(prefs: Preferences, now: Date = new Date()): 
       trending: restoreRank(trendingIds, foodForMe(asRows(trendingRowsRes.data), prefs)).slice(0, 2),
       latestRelease: foodForMe(asRows(latestReleaseRes.data), prefs),
       drinks: asRows(drinksRes.data).filter(i => passesDietary(i, prefs)),
-      recommendedForYou: recommendedRes.data?.results ?? [],
       becauseYouOrdered: restoreRank(byoIds, foodForMe(asRows(byoRowsRes.data), prefs)),
       timeBasedItems: foodForMe(asRows(timeBasedRes.data), prefs),
-      similarToFeatured: similarRes.data?.results ?? [],
+      recommendedForYou,
+      similarToFeatured,
     };
   } catch {
     // Supabase unreachable — show empty states, not fake data. Every list has
