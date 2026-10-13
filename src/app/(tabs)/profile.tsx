@@ -66,7 +66,9 @@ const ORDER_STATUS_LABEL: Record<string, TranslationKey> = {
 
 export default function ProfileScreen() {
   const { t, locale, setLocale } = useI18n();
-  const [name, setName] = useState('Student');
+  // Empty until the users row loads — a 'Student' default here flashed on
+  // first open of the tab before the real name replaced it.
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -107,7 +109,7 @@ export default function ProfileScreen() {
       // the in-app users.name row below replaces it — users.name is the
       // only source.
       supabase.auth.getUser().then(async ({ data: { user } }) => {
-        if (!user) { setRecentOrder(null); setHasUnreadNotifications(false); return; } // dev skip-login: keep defaults
+        if (!user) { setName('Student'); setRecentOrder(null); setHasUnreadNotifications(false); return; } // dev skip-login: placeholder profile
         setEmail(user.email ?? '');
 
         const [profileRes, orderRes, notifRes] = await Promise.all([
@@ -282,7 +284,7 @@ export default function ProfileScreen() {
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 24, fontWeight: '800', color: '#261812', letterSpacing: -0.32 }} numberOfLines={1}>{name}</Text>
               <Text style={{ fontSize: 14, color: '#5A4136', marginTop: 4 }} numberOfLines={1}>
-                {email || t('profile.kmuttStudent')}
+                {email || (name ? t('profile.kmuttStudent') : '')}
               </Text>
             </View>
           </View>
