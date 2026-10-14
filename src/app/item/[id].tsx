@@ -293,7 +293,8 @@ export default function ItemDetailScreen() {
               </View>
             )}
             {item.is_vegetarian && (
-              <View style={{ backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Image source={require('../../../assets/images/vegetarian.png')} style={{ width: 16, height: 16 }} />
                 <Text style={{ fontSize: 13, color: '#166534', fontWeight: '700' }}>{t('common.vegetarian')}</Text>
               </View>
             )}

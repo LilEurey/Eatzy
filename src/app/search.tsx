@@ -244,7 +244,8 @@ export default function SearchScreen() {
                       </View>
                     )}
                     {item.is_vegetarian && (
-                      <View style={{ backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                        <Image source={require('../../assets/images/vegetarian.png')} style={{ width: 12, height: 12 }} />
                         <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.vegetarian')}</Text>
                       </View>
                     )}
