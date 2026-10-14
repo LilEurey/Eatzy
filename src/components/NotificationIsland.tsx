@@ -15,7 +15,7 @@ const SYMBOLS: Record<string, { symbol: SymbolViewProps['name']; accent: string 
   order_ready:      { symbol: 'bag.fill', accent: Brand.orange },
   order_rejected:   { symbol: 'xmark.circle.fill', accent: '#FF3B30' },
   order_refunded:   { symbol: 'arrow.uturn.backward.circle.fill', accent: '#FF9500' },
-  order_completed:  { symbol: 'star.fill', accent: '#FFCC00' },
+  order_completed:  { symbol: 'checkmark.circle.fill', accent: '#34C759' },
   vendor_new_order: { symbol: 'bell.badge.fill', accent: Brand.orange },
 };
 
