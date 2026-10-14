@@ -209,37 +209,11 @@ export default function TrackScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
-        {/* Queue hero */}
-        <View style={{
-          backgroundColor: isReady ? Brand.orange : Brand.card, borderRadius: 24, padding: 24,
-          alignItems: 'center', marginBottom: 24, marginTop: 8,
-          shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
-        }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', letterSpacing: 1, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary }}>
-            {t('track.queueNumber')}
-          </Text>
-          <Text style={{ fontSize: 56, fontWeight: '800', color: isReady ? '#fff' : Brand.orange, marginVertical: 4, fontVariant: ['tabular-nums'] }}>
-            #{order.queue_number}
-          </Text>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: isReady ? '#fff' : Brand.textPrimary }}>
-            {vendor}
-          </Text>
-          <Text style={{ fontSize: 13, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary, marginTop: 2 }}>
-            {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
-          </Text>
-          {ordersAhead !== null && (
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isReady ? '#fff' : Brand.orange, marginTop: 8 }}>
-              {t('track.ordersAhead', { n: ordersAhead })}
-            </Text>
-          )}
-        </View>
-
         {/* Terminal state — the order is dead, so there is no progress to step
-            through. Shown in place of the stepper for rejected/cancelled. */}
+            through. Shown in place of the tracker for rejected/cancelled. */}
         {terminal ? (
           <View style={{
-            backgroundColor: Brand.card, borderRadius: 20, padding: 24, marginBottom: 24,
+            backgroundColor: Brand.card, borderRadius: 20, padding: 24, marginBottom: 24, marginTop: 8,
             alignItems: 'center',
             shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
@@ -255,46 +229,69 @@ export default function TrackScreen() {
             </Text>
           </View>
         ) : (
-        /* Stepper */
         <View style={{
-          backgroundColor: Brand.card, borderRadius: 20, padding: 20, marginBottom: 24,
-          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
+          backgroundColor: Brand.card, borderRadius: 24, padding: 20, marginBottom: 24, marginTop: 8,
+          shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
         }}>
-          {STEPS.map((step, i) => {
-            const done = i < currentIdx;
-            const active = i === currentIdx;
-            const reached = i <= currentIdx;
-            return (
-              <View key={step.key} style={{ flexDirection: 'row', gap: 14 }}>
-                {/* Rail */}
-                <View style={{ alignItems: 'center' }}>
+          {/* 1. Stage animation — ponytail: emoji placeholder, swap for per-stage animation (keyed on status) */}
+          <View style={{ height: 140, alignItems: 'center', justifyContent: 'center' }}>
+            <Animated.Text key={status} entering={popIn} style={[{ fontSize: 72 }, PULSE]}>
+              {STEPS[currentIdx].icon}
+            </Animated.Text>
+          </View>
+
+          {/* 2. Status + horizontal stepper */}
+          <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>
+            {t(STEPS[currentIdx].labelKey)}
+          </Text>
+          <Animated.Text key={`hint-${status}`} entering={enterUp()} style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 2 }}>
+            {t(STEPS[currentIdx].hintKey)}
+          </Animated.Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16 }}>
+            {STEPS.map((step, i) => {
+              const reached = i <= currentIdx;
+              return (
+                <View key={step.key} style={{ flexDirection: 'row', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 0 }}>
                   <Animated.View style={[{
-                    width: 40, height: 40, borderRadius: 20,
+                    width: 26, height: 26, borderRadius: 13,
                     backgroundColor: reached ? Brand.orange : Brand.orangeLight,
                     alignItems: 'center', justifyContent: 'center',
                     transitionProperty: 'backgroundColor', transitionDuration: 400,
-                  }, active && PULSE]}>
-                    {/* key swap remounts the glyph so ✓ pops in when a step completes */}
-                    <Animated.Text key={done ? 'done' : 'icon'} entering={popIn}
-                      style={{ fontSize: 18, opacity: reached ? 1 : 0.4 }}>{done ? '✓' : step.icon}</Animated.Text>
+                  }, i === currentIdx && PULSE]}>
+                    <Text style={{ fontSize: 12, opacity: reached ? 1 : 0.4 }}>{step.icon}</Text>
                   </Animated.View>
                   {i < STEPS.length - 1 && (
-                    <Animated.View style={{ width: 2, flex: 1, minHeight: 28, backgroundColor: i < currentIdx ? Brand.orange : Brand.border, transitionProperty: 'backgroundColor', transitionDuration: 400 }} />
+                    <Animated.View style={{
+                      flex: 1, height: 4, borderRadius: 2, marginHorizontal: 4,
+                      backgroundColor: i < currentIdx ? Brand.orange : Brand.border,
+                      transitionProperty: 'backgroundColor', transitionDuration: 400,
+                    }} />
                   )}
                 </View>
-                {/* Text */}
-                <View style={{ flex: 1, paddingBottom: i < STEPS.length - 1 ? 20 : 0 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: reached ? Brand.textPrimary : Brand.textSecondary }}>
-                    {t(step.labelKey)}
-                  </Text>
-                  {active && (
-                    <Animated.Text entering={enterUp()} style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{t(step.hintKey)}</Animated.Text>
-                  )}
-                </View>
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
+
+          {/* 3. Queue number */}
+          <View style={{ height: 1, backgroundColor: Brand.border, marginVertical: 16 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.textPrimary }}>{vendor}</Text>
+              <Text style={{ fontSize: 12, color: Brand.textSecondary, marginTop: 2 }}>
+                {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
+              </Text>
+              {ordersAhead !== null && (
+                <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.orange, marginTop: 4 }}>
+                  {t('track.ordersAhead', { n: ordersAhead })}
+                </Text>
+              )}
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', letterSpacing: 1, color: Brand.textSecondary }}>{t('track.queueNumber')}</Text>
+              <Text style={{ fontSize: 32, fontWeight: '800', color: Brand.orange, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
+            </View>
+          </View>
         </View>
         )}
 
