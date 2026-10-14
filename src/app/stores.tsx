@@ -156,7 +156,7 @@ export default function StoresScreen() {
                 }}>
                   {vendor.cover_image_url
                     ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
-                    : <Text style={{ fontSize: 28 }}>🏪</Text>}
+                    : <Image source={require('../../assets/images/store.png')} style={{ width: 32, height: 32 }} />}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }}>
@@ -185,7 +185,7 @@ export default function StoresScreen() {
 
             {results.length === 0 && (
               <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-                <Text style={{ fontSize: 32, marginBottom: 8 }}>🏪</Text>
+                <Image source={require('../../assets/images/store.png')} style={{ width: 36, height: 36, marginBottom: 8 }} />
                 <Text style={{ color: Brand.textSecondary, textAlign: 'center' }}>{t('stores.noneFound')}</Text>
               </View>
             )}

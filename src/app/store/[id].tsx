@@ -124,7 +124,7 @@ export default function StoreDetailScreen() {
           </Tap>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 40 }}>🏪</Text>
+          <Image source={require('../../../assets/images/store.png')} style={{ width: 44, height: 44 }} />
           <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t('store.notFound')}</Text>
         </View>
       </SafeAreaView>
@@ -141,7 +141,7 @@ export default function StoreDetailScreen() {
           <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {vendor.cover_image_url
             ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
-            : <Text style={{ fontSize: 72 }}>🏪</Text>
+            : <Image source={require('../../../assets/images/store.png')} style={{ width: 76, height: 76 }} />
           }
           </Animated.View>
 

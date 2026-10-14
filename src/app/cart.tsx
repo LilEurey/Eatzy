@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -157,7 +158,7 @@ export default function CartScreen() {
             flexDirection: 'row', alignItems: 'center', gap: 10,
             backgroundColor: Brand.orangeLight, borderRadius: 14, padding: 12, marginBottom: 20,
           }}>
-            <Text style={{ fontSize: 20 }}>🏪</Text>
+            <Image source={require('../../assets/images/store.png')} style={{ width: 24, height: 24 }} />
             <View>
               <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textPrimary }}>{vendor.name}</Text>
               <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('cart.stall', { n: vendor.stall_number ?? '' })}</Text>
