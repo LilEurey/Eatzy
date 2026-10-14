@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigation } from 'expo-router';
 import { RefreshControl } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '@/constants/theme';
@@ -25,4 +26,17 @@ export function usePullToRefresh() {
     />
   );
   return { key, done, control, refresh };
+}
+
+// Re-tapping the tab you're already on calls `refresh` (Instagram-style).
+// tabPress fires before the tab switch, so isFocused() is only true on a re-tap;
+// switching in from another tab is left to the screen's focus load.
+export function useRefreshOnTabRetap(refresh: () => void) {
+  const navigation = useNavigation();
+  useEffect(
+    () => navigation.addListener('tabPress' as never, () => {
+      if (navigation.isFocused()) refresh();
+    }),
+    [navigation, refresh],
+  );
 }

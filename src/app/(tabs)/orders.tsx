@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useNavigation } from 'expo-router';
+import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -14,7 +14,7 @@ import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
 import { ORDER_STATUS_LABEL, isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
@@ -57,15 +57,7 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { key: refreshKey, done: refreshDone, control: refreshControl, refresh } = usePullToRefresh();
-  const navigation = useNavigation();
-
-  // Re-tapping the Orders tab while on it reloads (same as Home).
-  useEffect(
-    () => navigation.addListener('tabPress' as never, () => {
-      if (navigation.isFocused()) refresh();
-    }),
-    [navigation, refresh],
-  );
+  useRefreshOnTabRetap(refresh);
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();

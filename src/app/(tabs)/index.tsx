@@ -1,14 +1,14 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Bone, SkeletonHome } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect, useNavigation } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Animated from 'react-native-reanimated';
 import { enterUp } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -92,16 +92,7 @@ export default function HomeScreen() {
 
   const focusGuard = useFocusGuard();
   const { key: refreshKey, done: refreshDone, control: refreshControl, refresh } = usePullToRefresh();
-  const navigation = useNavigation();
-
-  // Re-tapping Home while already on it reloads the feed (Instagram-style);
-  // iOS scrolls the ScrollView to top natively on the same tap.
-  useEffect(
-    () => navigation.addListener('tabPress' as never, () => {
-      if (navigation.isFocused()) refresh();
-    }),
-    [navigation, refresh],
-  );
+  useRefreshOnTabRetap(refresh);
 
   // The whole fetch-filter-rank fanout (8 concurrent queries, dietary +
   // drink-category filtering, rank restore, the two recommendation rows) lives in
