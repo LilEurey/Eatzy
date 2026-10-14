@@ -15,6 +15,7 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
+import { addToCart, clearCart } from '@/lib/cart-store';
 import { confirmHandoff, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 
 // Gentle breathing scale on the current step (Reanimated 4 CSS animation).
@@ -161,6 +162,34 @@ export default function TrackScreen() {
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [vendorId, id]);
+
+  // Refill the cart with the same dishes, add-ons and notes at today's prices.
+  // Anything no longer available is left out; place_order() re-validates the rest.
+  async function orderAgain() {
+    const { data, error } = await supabase
+      .from('order_items')
+      .select('quantity,special_instructions,menu_items(id,vendor_id,name,name_th,price,allergens,is_available),order_item_addons(addon_id,menu_item_addons(id,name,name_th,price,allergens,is_available))')
+      .eq('order_id', id);
+    if (error) { showAlert(t('common.errorTitle'), error.message); return; }
+    let skipped = false;
+    const lines = (data ?? []).filter(oi => {
+      const ok = !!oi.menu_items?.is_available;
+      if (!ok) skipped = true;
+      return ok;
+    });
+    if (lines.length === 0) { showAlert(t('track.orderAgain'), t('track.orderAgainNone')); return; }
+    clearCart();
+    for (const oi of lines) {
+      const addons = oi.order_item_addons.flatMap(a => {
+        const opt = a.menu_item_addons;
+        if (!opt?.is_available) { skipped = true; return []; }
+        return [{ id: opt.id, name: opt.name, name_th: opt.name_th, price: opt.price, allergens: opt.allergens ?? [] }];
+      });
+      addToCart(oi.menu_items!, oi.quantity, addons, oi.special_instructions ?? '');
+    }
+    router.push('/cart');
+    if (skipped) showAlert(t('track.orderAgain'), t('track.orderAgainSkipped'));
+  }
 
   async function markPickedUp() {
     if (!order) return;
@@ -404,19 +433,28 @@ export default function TrackScreen() {
         </View>
       )}
 
-      {status === 'completed' && !order.rated && (
+      {status === 'completed' && (
         <View style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           backgroundColor: Brand.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 36,
-          borderTopWidth: 1, borderTopColor: Brand.border,
+          borderTopWidth: 1, borderTopColor: Brand.border, gap: 10,
         }}>
           <Tap
+            activeOpacity={0.85}
+            onPress={orderAgain}
+            style={order.rated
+              ? { backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }
+              : { backgroundColor: Brand.orangeLight, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
+          >
+            <Text style={{ color: order.rated ? '#fff' : Brand.orange, fontSize: 16, fontWeight: '700' }}>{t('track.orderAgain')}</Text>
+          </Tap>
+          {!order.rated && <Tap
             activeOpacity={0.85}
             onPress={() => router.replace(`/rate/${order.id}`)}
             style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
           >
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.rateYourOrder')}</Text>
-          </Tap>
+          </Tap>}
         </View>
       )}
     </SafeAreaView>

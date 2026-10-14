@@ -256,7 +256,7 @@ export default function OrdersScreen() {
                 </View>
 
                 {/* Action button */}
-                {(isActive || order.status === 'rejected' || order.status === 'cancelled') && (
+                {(isActive || order.status === 'rejected' || order.status === 'cancelled' || order.status === 'completed') && (
                   <Tap
                     onPress={() => router.push(`/track/${order.id}`)}
                     style={{
