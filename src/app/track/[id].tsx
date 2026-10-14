@@ -53,11 +53,11 @@ type TrackOrder = {
   items: { name: string; name_th: string | null; quantity: number; unit_price: number; addons: { name: string; name_th: string | null; price: number }[] }[];
 };
 
-const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: TranslationKey }[] = [
-  { key: 'pending',   labelKey: 'track.stepPlacedLabel',   icon: '📝', hintKey: 'track.stepPlacedHint' },
-  { key: 'accepted',  labelKey: 'orders.status.preparing', icon: '👨‍🍳', hintKey: 'track.stepPreparingHint' },
-  { key: 'ready',     labelKey: 'orders.status.ready',     icon: '🎉', hintKey: 'track.stepReadyHint' },
-  { key: 'completed', labelKey: 'track.stepPickedUpLabel', icon: '✅', hintKey: 'track.stepPickedUpHint' },
+const STEPS: { key: Status; labelKey: TranslationKey; icon: number; hintKey: TranslationKey }[] = [
+  { key: 'pending',   labelKey: 'track.stepPlacedLabel',   icon: require('../../../assets/images/track/step-placed.jpg'), hintKey: 'track.stepPlacedHint' },
+  { key: 'accepted',  labelKey: 'orders.status.preparing', icon: require('../../../assets/images/track/step-preparing.jpg'), hintKey: 'track.stepPreparingHint' },
+  { key: 'ready',     labelKey: 'orders.status.ready',     icon: require('../../../assets/images/track/step-ready.jpg'), hintKey: 'track.stepReadyHint' },
+  { key: 'completed', labelKey: 'track.stepPickedUpLabel', icon: require('../../../assets/images/track/step-picked-up.jpg'), hintKey: 'track.stepPickedUpHint' },
 ];
 
 // Per-stage animation; stages without one fall back to the pulsing emoji.
@@ -264,9 +264,9 @@ export default function TrackScreen() {
                 <Image source={STAGE_ANIM[status]} style={status === 'ready' ? { position: 'absolute', bottom: 6, left: 0, right: 0, aspectRatio: 672 / 384 } : { position: 'absolute', bottom: status === 'pending' ? 0 : 8, alignSelf: 'center', width: 260, height: 195 }} contentFit="contain" />
               </View>
             ) : (
-              <Animated.Text key={status} entering={popIn} style={[{ fontSize: 72 }, PULSE]}>
-                {STEPS[currentIdx].icon}
-              </Animated.Text>
+              <Animated.View key={status} entering={popIn} style={PULSE}>
+                <Image source={STEPS[currentIdx].icon} style={{ width: 96, height: 96, borderRadius: 48 }} />
+              </Animated.View>
             )}
           </View>
 
@@ -288,7 +288,7 @@ export default function TrackScreen() {
                     alignItems: 'center', justifyContent: 'center',
                     transitionProperty: 'backgroundColor', transitionDuration: 400,
                   }, i === currentIdx && PULSE]}>
-                    <Text style={{ fontSize: 12, opacity: reached ? 1 : 0.4 }}>{step.icon}</Text>
+                    <Image source={step.icon} style={{ width: 22, height: 22, borderRadius: 11, opacity: reached ? 1 : 0.4 }} />
                   </Animated.View>
                   {i < STEPS.length - 1 && (
                     <Animated.View style={{
