@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { listEnter } from '@/lib/motion';
 import { CountUp } from '@/components/CountUp';
@@ -168,10 +169,24 @@ export default function WalletScreen() {
         <View style={{ flexDirection: 'row', gap: 12, marginHorizontal: 20, marginBottom: 28 }}>
           {[
             { icon: '⏳', label: t('wallet.escrow', { amount: formatBaht(heldTotal) }), onPress: () => setShowHeld(v => !v), dim: held.length === 0 },
-            { icon: '📄', label: t('wallet.statement'), onPress: () => router.push('/wallet-statement'), dim: false },
+            {
+              icon: (
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M13.5 6H7v12.5" />
+                  <Path d="M5 18.5h9v1a2 2 0 0 0 4 0V12" />
+                  <Path d="M5 18.5v1a2 2 0 0 0 2 2h9" />
+                  <Circle cx={8.8} cy={9} r={0.8} />
+                  <Circle cx={8.8} cy={12} r={0.8} />
+                  <Circle cx={8.8} cy={15} r={0.8} />
+                  <Path d="M10.5 9h3M10.5 12h4M10.5 15h4" />
+                  <Circle cx={17} cy={7} r={4} />
+                  <Path d="M18.2 5.6c-.3-.4-.7-.6-1.2-.6-.7 0-1.2.4-1.2 1s.5.8 1.2 1c.7.2 1.2.4 1.2 1s-.5 1-1.2 1c-.5 0-.9-.2-1.2-.6M17 4.3v.7M17 9v.7" />
+                </Svg>
+              ),
+              label: t('wallet.statement'), onPress: () => router.push('/wallet-statement'), dim: false },
           ].map(({ icon, label, onPress, dim }) => (
             <Tap
-              key={icon}
+              key={label}
               onPress={onPress}
               style={{
                 opacity: dim ? 0.5 : 1,
@@ -185,7 +200,7 @@ export default function WalletScreen() {
                 width: 40, height: 40, borderRadius: 20,
                 backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
               }}>
-                <Text style={{ fontSize: 18, color: Brand.orange }}>{icon}</Text>
+                {typeof icon === 'string' ? <Text style={{ fontSize: 18, color: Brand.orange }}>{icon}</Text> : icon}
               </View>
               <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textSecondary }}>{label}</Text>
             </Tap>
