@@ -62,6 +62,7 @@ const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: Tra
 
 // Per-stage animation; stages without one fall back to the pulsing emoji.
 const STAGE_ANIM: Partial<Record<Status, number>> = {
+  pending: require('../../../assets/images/track/placed.gif'),
   accepted: require('../../../assets/images/track/preparing.gif'),
 };
 
@@ -244,8 +245,8 @@ export default function TrackScreen() {
           {/* 1. Stage animation — add more stages in STAGE_ANIM */}
           <View style={{ minHeight: 140, alignItems: 'center', justifyContent: 'center' }}>
             {STAGE_ANIM[status] ? (
-              <View style={{ alignSelf: 'stretch', height: 200, margin: -20, marginBottom: 16, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', backgroundColor: Brand.orangeLight }}>
-                <View style={{ position: 'absolute', inset: 0 }}><KitchenBackdrop /></View>
+              <View style={{ alignSelf: 'stretch', height: 200, margin: -20, marginBottom: 16, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', backgroundColor: status === 'accepted' ? Brand.orangeLight : '#fff' }}>
+                {status === 'accepted' && <View style={{ position: 'absolute', inset: 0 }}><KitchenBackdrop /></View>}
                 <Image source={STAGE_ANIM[status]} style={{ position: 'absolute', bottom: 8, alignSelf: 'center', width: 260, height: 195 }} contentFit="contain" />
               </View>
             ) : (
