@@ -347,7 +347,7 @@ export const th: Record<TranslationKey, string> = {
   'editPreferences.saving': 'กำลังบันทึก…',
   'editPreferences.savedTitle': 'อัปเดตค่ากำหนดแล้ว',
   'editPreferences.savedMsg': 'บันทึกความต้องการด้านอาหารของคุณแล้ว',
-  'profile.logout': '→ ออกจากระบบ',
+  'profile.logout': 'ออกจากระบบ',
   'profile.languagePickerTitle': 'เลือกภาษา',
   'profile.avatarPermissionMsg': 'อนุญาตให้เข้าถึงคลังภาพเพื่อตั้งค่ารูปโปรไฟล์',
   'profile.avatarUploadErrorTitle': 'อัปเดตรูปโปรไฟล์ไม่สำเร็จ',
