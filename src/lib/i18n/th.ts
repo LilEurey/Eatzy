@@ -214,7 +214,7 @@ export const th: Record<TranslationKey, string> = {
   'item.prepTime': 'เวลาเตรียม',
   'item.price': 'ราคา',
   'item.ingredients': 'ส่วนประกอบ',
-  'item.allergens': '⚠️ สารก่อภูมิแพ้',
+  'item.allergens': 'สารก่อภูมิแพ้',
   'item.allergyBanner': '⚠️ มีสารก่อภูมิแพ้ที่คุณระบุไว้: {allergens}',
   'item.allergyWarningTitle': '⚠️ คำเตือนภูมิแพ้',
   'item.allergyWarningMsg': 'เมนูนี้มี {allergens} ซึ่งคุณระบุว่าแพ้ ต้องการใส่ตะกร้าต่อไปหรือไม่?',

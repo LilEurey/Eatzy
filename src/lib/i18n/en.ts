@@ -212,7 +212,7 @@ export const en = {
   'item.prepTime': 'Prep time',
   'item.price': 'Price',
   'item.ingredients': 'Ingredients',
-  'item.allergens': '⚠️ Allergens',
+  'item.allergens': 'Allergens',
   'item.allergyBanner': '⚠️ Contains an allergen you listed: {allergens}',
   'item.allergyWarningTitle': '⚠️ Allergy Warning',
   'item.allergyWarningMsg': 'This dish contains {allergens}, which you\'ve marked as an allergy. Add it to your cart anyway?',

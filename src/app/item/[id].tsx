@@ -378,9 +378,16 @@ export default function ItemDetailScreen() {
               backgroundColor: '#fff7ed', borderRadius: 12, padding: 14,
               borderWidth: 1, borderColor: '#fed7aa',
             }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#c2410c', marginBottom: 4 }}>
-                {t('item.allergens')}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <Svg width={16} height={16} viewBox="0 0 512 512">
+                  <Path d="M226 108Q256 72 286 108L426 350Q446 410 386 410H126Q66 410 86 350Z" fill="#FFB300" />
+                  <Path d="M256 205V285" stroke="#FFF5DC" strokeWidth={38} strokeLinecap="round" />
+                  <Circle cx={256} cy={348} r={20} fill="#FFF5DC" />
+                </Svg>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#c2410c' }}>
+                  {t('item.allergens')}
+                </Text>
+              </View>
               <Text style={{ fontSize: 13, color: '#9a3412' }}>
                 {item.allergens.map((a, i) => (
                   <Text key={a} style={matchedAllergens.includes(a) ? { fontWeight: '800', textDecorationLine: 'underline' } : undefined}>
