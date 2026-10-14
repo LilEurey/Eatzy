@@ -3,6 +3,7 @@ import { SkeletonDetail } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Image } from 'expo-image';
+import Svg, { Circle, Path } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { rowEnter, popIn, popOut, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
@@ -322,14 +323,23 @@ export default function ItemDetailScreen() {
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
           }}>
             {[
-              { icon: '⏱', value: item.preparation_time_min != null ? `${item.preparation_time_min} min` : '—', label: t('item.prepTime') },
+              {
+                icon: (
+                  <Svg width={22} height={22} viewBox="0 0 512 512">
+                    <Circle cx={256} cy={256} r={233} stroke="#000" strokeWidth={46} fill="none" />
+                    <Path d="M256 138V256L330 312" stroke="#000" strokeWidth={46} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </Svg>
+                ),
+                value: item.preparation_time_min != null ? `${item.preparation_time_min} min` : '—', label: t('item.prepTime') },
               { icon: '🏷️', value: `฿${item.price}`, label: t('item.price') },
             ].map(({ icon, value, label }, i) => (
               <View key={label} style={{
                 flex: 1, alignItems: 'center', paddingVertical: 14,
                 borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: Brand.border,
               }}>
-                <Text style={{ fontSize: 20, marginBottom: 4 }}>{icon}</Text>
+                {typeof icon === 'string'
+                  ? <Text style={{ fontSize: 20, marginBottom: 4 }}>{icon}</Text>
+                  : <View style={{ height: 24, justifyContent: 'center', marginBottom: 4 }}>{icon}</View>}
                 <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{value}</Text>
                 <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{label}</Text>
               </View>
