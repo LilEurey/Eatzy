@@ -67,7 +67,7 @@ export default function OrdersScreen() {
     async function load() {
       const { data, error } = await supabase
         .from('orders')
-        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,student_picked_up_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -79,7 +79,9 @@ export default function OrdersScreen() {
         id: o.id,
         vendor_id: o.vendor_id,
         queue_number: o.queue_number,
-        status: o.status as OrderStatus,
+        // Student confirmed pickup — done from their side even while the
+        // vendor's handoff confirm is pending (DB status stays 'ready').
+        status: (o.status === 'ready' && o.student_picked_up_at ? 'completed' : o.status) as OrderStatus,
         total_amount: o.total_amount,
         pickup_start: o.pickup_start,
         pickup_end: o.pickup_end,
