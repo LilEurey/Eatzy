@@ -164,7 +164,7 @@ export default function TrackScreen() {
     if (!order) return;
     const error = await confirmHandoff('student', order.id);
     if (error) { showAlert(t('common.errorTitle'), error); return; }
-    setOrder({ ...order, student_picked_up_at: new Date().toISOString() });
+    router.replace(`/rate/${order.id}`);
   }
 
   async function cancelOrder() {
