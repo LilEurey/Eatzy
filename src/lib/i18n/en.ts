@@ -285,6 +285,7 @@ export const en = {
   'rate.addPhotos': 'ADD FOOD PHOTOS',
   'rate.addPhotosHint': 'Add',
   'rate.submit': 'Submit Rating',
+  'rate.alreadyRated': 'You already rated this order.',
   'rate.thanksTitle': 'Thanks for the feedback!',
   'rate.thanksMsg': 'You rated {vendor} {score}★.',
   'rate.labelBad': 'Bad',

@@ -287,6 +287,7 @@ export const th: Record<TranslationKey, string> = {
   'rate.addPhotos': 'เพิ่มรูปอาหาร',
   'rate.addPhotosHint': 'เพิ่ม',
   'rate.submit': 'ส่งคะแนน',
+  'rate.alreadyRated': 'คุณให้คะแนนคำสั่งซื้อนี้แล้ว',
   'rate.thanksTitle': 'ขอบคุณสำหรับความคิดเห็น!',
   'rate.thanksMsg': 'คุณให้คะแนน {vendor} {score} ดาว',
   'rate.labelBad': 'แย่',

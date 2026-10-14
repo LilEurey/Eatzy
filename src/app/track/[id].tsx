@@ -43,6 +43,7 @@ type TrackOrder = {
   total_amount: number;
   vendor_name: string;
   student_picked_up_at: string | null;
+  rated: boolean;
   // A payments row exists only once accept_order_and_charge has run, so its
   // absence is the authoritative "the wallet was never touched" signal. The
   // terminal panel states that to the student either way, and asserting it
@@ -96,7 +97,7 @@ export default function TrackScreen() {
     async function load() {
       const { data, error } = await supabase
         .from('orders')
-        .select('id,vendor_id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),payments(status),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,vendor_id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),payments(status),ratings(id),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
       if (cancelled) return;
@@ -117,6 +118,7 @@ export default function TrackScreen() {
         total_amount: data.total_amount,
         vendor_name: data.vendors?.name ?? '',
         student_picked_up_at: data.student_picked_up_at,
+        rated: data.ratings.length > 0,
         // payments.order_id is unique, so PostgREST embeds it to-ONE: an object
         // when the order was charged, null when it wasn't — not an array.
         was_charged: !!data.payments,
@@ -376,7 +378,7 @@ export default function TrackScreen() {
       )}
 
       {/* Sticky action when ready */}
-      {isReady && (
+      {isReady && !(order.student_picked_up_at && order.rated) && (
         <View style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           backgroundColor: Brand.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 36,
@@ -402,7 +404,7 @@ export default function TrackScreen() {
         </View>
       )}
 
-      {status === 'completed' && (
+      {status === 'completed' && !order.rated && (
         <View style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           backgroundColor: Brand.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 36,
