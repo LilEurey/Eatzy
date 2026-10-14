@@ -126,7 +126,7 @@ export default function RateScreen() {
       return;
     }
 
-    // Plain insert: one rating per order (no UPDATE policy, 20261014010000).
+    // Plain insert: one rating per order (no UPDATE policy, 20261014020000).
     // A duplicate means another tab/device already rated it.
     const { error } = await supabase.from('ratings').insert(order.menu_item_ids.map(menuItemId => ({
       user_id: user.id,
