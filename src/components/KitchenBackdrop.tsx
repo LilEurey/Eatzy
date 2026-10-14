@@ -85,3 +85,58 @@ export function KitchenBackdrop() {
     </Svg>
   );
 }
+
+// Classroom variant for the "order placed" stage — a student pre-ordering
+// from lecture. Same palette/viewBox; the phone in placed.gif covers the
+// board's middle, so the board's chalk marks sit at its edges.
+export function ClassroomBackdrop() {
+  return (
+    <Svg width="100%" height="100%" viewBox="0 0 340 200" preserveAspectRatio="xMidYMax slice">
+      <Rect width="340" height="200" fill={WALL} />
+
+      {/* Clock */}
+      <Circle cx="34" cy="34" r="15" fill={INK} />
+      <G stroke={DEEP} strokeWidth="2.5" strokeLinecap="round">
+        <Line x1="34" y1="34" x2="34" y2="25" />
+        <Line x1="34" y1="34" x2="41" y2="37" />
+      </G>
+
+      {/* Chalkboard + tray, scribbles at the edges */}
+      <Rect x="68" y="18" width="204" height="94" rx="4" fill={INK} stroke={DEEP} strokeWidth="3" />
+      <Rect x="62" y="112" width="216" height="5" rx="2" fill={DEEP} />
+      <G stroke={WALL} strokeWidth="2" strokeLinecap="round" fill="none">
+        <Line x1="80" y1="34" x2="112" y2="34" />
+        <Line x1="80" y1="46" x2="104" y2="46" />
+        <Line x1="80" y1="58" x2="116" y2="58" />
+        <Path d="M80 92 q12 -24 24 -6 t22 -10" />
+        <Circle cx="248" cy="44" r="11" />
+        <Line x1="236" y1="72" x2="262" y2="72" />
+        <Line x1="236" y1="84" x2="254" y2="84" />
+      </G>
+
+      {/* Window */}
+      <Rect x="290" y="20" width="40" height="72" rx="3" fill={INK} />
+      <G stroke={WALL} strokeWidth="2.5">
+        <Line x1="310" y1="20" x2="310" y2="92" />
+        <Line x1="290" y1="56" x2="330" y2="56" />
+      </G>
+
+      {/* Books + laptop on the desk */}
+      <G fill={INK}>
+        <Rect x="16" y="140" width="10" height="20" rx="1.5" />
+        <Rect x="28" y="134" width="9" height="26" rx="1.5" />
+        <Rect x="39" y="144" width="12" height="16" rx="1.5" />
+        <Rect x="286" y="130" width="36" height="26" rx="3" />
+        <Rect x="280" y="156" width="48" height="4" rx="2" />
+      </G>
+      <Circle cx="304" cy="143" r="3" fill={WALL} />
+
+      {/* Desk row */}
+      <Rect x="0" y="160" width="340" height="7" fill={DEEP} />
+      <Rect x="0" y="167" width="340" height="33" fill={INK} />
+      <G stroke={WALL} strokeWidth="2">
+        {[85, 170, 255].map(x => <Line key={x} x1={x} y1="167" x2={x} y2="200" />)}
+      </G>
+    </Svg>
+  );
+}
