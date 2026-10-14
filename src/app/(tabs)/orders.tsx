@@ -252,7 +252,7 @@ export default function OrdersScreen() {
                 </View>
 
                 {/* Action button */}
-                {isActive && (
+                {(isActive || order.status === 'rejected' || order.status === 'cancelled') && (
                   <Tap
                     onPress={() => router.push(`/track/${order.id}`)}
                     style={{
@@ -264,7 +264,7 @@ export default function OrdersScreen() {
                       fontSize: 13, fontWeight: '700',
                       color: order.status === 'ready' ? '#fff' : Brand.orange,
                     }}>
-                      {order.status === 'ready' ? t('orders.readyForPickup') : t('orders.trackOrder')}
+                      {order.status === 'ready' ? t('orders.readyForPickup') : isActive ? t('orders.trackOrder') : t('orders.viewDetails')}
                     </Text>
                   </Tap>
                 )}

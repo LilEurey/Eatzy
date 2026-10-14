@@ -123,6 +123,7 @@ export const en = {
   'orders.status.cancelled': 'Cancelled',
   'orders.queueLine': 'Queue #{n} · {time}',
   'orders.readyForPickup': '🎉 Ready for Pickup!',
+  'orders.viewDetails': 'View Details',
   'orders.trackOrder': 'Track Order',
   'orders.rateOrder': 'Rate order',
   'orders.noOrdersTitle': 'No orders yet',

@@ -61,7 +61,7 @@ const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: Tra
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];
 
 const TERMINAL: Partial<Record<Status, { icon: string; titleKey: TranslationKey; bodyKey: TranslationKey }>> = {
-  rejected:  { icon: '🚫', titleKey: 'orders.status.rejected',  bodyKey: 'track.rejectedMsg' },
+  rejected:  { icon: '❌', titleKey: 'orders.status.rejected',  bodyKey: 'track.rejectedMsg' },
   cancelled: { icon: '✖️', titleKey: 'orders.status.cancelled', bodyKey: 'track.cancelledMsg' },
 };
 

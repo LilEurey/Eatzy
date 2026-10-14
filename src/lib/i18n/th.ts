@@ -125,6 +125,7 @@ export const th: Record<TranslationKey, string> = {
   'orders.status.cancelled': 'ยกเลิกแล้ว',
   'orders.queueLine': 'คิว #{n} · {time}',
   'orders.readyForPickup': '🎉 พร้อมให้รับแล้ว!',
+  'orders.viewDetails': 'ดูรายละเอียด',
   'orders.trackOrder': 'ติดตามคำสั่งซื้อ',
   'orders.rateOrder': 'ให้คะแนนคำสั่งซื้อ',
   'orders.noOrdersTitle': 'ยังไม่มีคำสั่งซื้อ',
