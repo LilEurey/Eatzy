@@ -49,7 +49,8 @@ export default function OnboardingScreen() {
   async function loadSavedPreferences() {
     void getTopMenuCategories().then(setCategoryOptions).catch(() => {});
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
 
     const { data, error } = await supabase
@@ -101,7 +102,8 @@ export default function OnboardingScreen() {
   async function handleSkip() {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error('Not authenticated');
       const { error } = await supabase.from('user_preferences').upsert({ user_id: user.id });
       if (error) throw error;
@@ -117,7 +119,8 @@ export default function OnboardingScreen() {
   async function handleContinue() {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase.from('user_preferences').upsert({
