@@ -283,12 +283,12 @@ export default function TrackScreen() {
               return (
                 <View key={step.key} style={{ flexDirection: 'row', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 0 }}>
                   <Animated.View style={[{
-                    width: 26, height: 26, borderRadius: 13,
+                    width: 40, height: 40, borderRadius: 20,
                     backgroundColor: reached ? Brand.orange : Brand.orangeLight,
                     alignItems: 'center', justifyContent: 'center',
                     transitionProperty: 'backgroundColor', transitionDuration: 400,
                   }, i === currentIdx && PULSE]}>
-                    <Image source={step.icon} style={{ width: 22, height: 22, borderRadius: 11, opacity: reached ? 1 : 0.4 }} />
+                    <Image source={step.icon} style={{ width: 36, height: 36, borderRadius: 18, opacity: reached ? 1 : 0.4 }} />
                   </Animated.View>
                   {i < STEPS.length - 1 && (
                     <Animated.View style={{
