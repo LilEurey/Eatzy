@@ -64,6 +64,15 @@ const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: Tra
 const STAGE_ANIM: Partial<Record<Status, number>> = {
   pending: require('../../../assets/images/track/placed.gif'),
   accepted: require('../../../assets/images/track/preparing.gif'),
+  // Plays once (no loop) and holds on the check — opaque white, since keying
+  // white out would punch through the checkmark.
+  completed: require('../../../assets/images/track/picked-up.gif'),
+};
+
+// Scene behind each stage's GIF; stages without one sit on the plain card.
+const STAGE_BACKDROP: Partial<Record<Status, () => React.JSX.Element>> = {
+  pending: ClassroomBackdrop,
+  accepted: KitchenBackdrop,
 };
 
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];
@@ -205,6 +214,7 @@ export default function TrackScreen() {
   const currentIdx = ORDER.indexOf(status);
   const isReady = status === 'ready';
   const terminal = TERMINAL[status];
+  const Backdrop = STAGE_BACKDROP[status];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -245,8 +255,8 @@ export default function TrackScreen() {
           {/* 1. Stage animation — add more stages in STAGE_ANIM */}
           <View style={{ minHeight: 140, alignItems: 'center', justifyContent: 'center' }}>
             {STAGE_ANIM[status] ? (
-              <View style={{ alignSelf: 'stretch', height: 200, margin: -20, marginBottom: 16, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', backgroundColor: Brand.orangeLight }}>
-                <View style={{ position: 'absolute', inset: 0 }}>{status === 'pending' ? <ClassroomBackdrop /> : <KitchenBackdrop />}</View>
+              <View style={{ alignSelf: 'stretch', height: 200, margin: -20, marginBottom: 16, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', backgroundColor: Backdrop ? Brand.orangeLight : Brand.card }}>
+                {Backdrop && <View style={{ position: 'absolute', inset: 0 }}><Backdrop /></View>}
                 {/* placed.gif's arm is cut at the frame edge — sit it flush on the bottom */}
                 <Image source={STAGE_ANIM[status]} style={{ position: 'absolute', bottom: status === 'pending' ? 0 : 8, alignSelf: 'center', width: 260, height: 195 }} contentFit="contain" />
               </View>
