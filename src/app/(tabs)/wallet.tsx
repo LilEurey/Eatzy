@@ -71,7 +71,7 @@ export default function WalletScreen() {
   const [loadFailed, setLoadFailed] = useState(false);
   const focusGuard = useFocusGuard();
   const { key: refreshKey, done: refreshDone, control: refreshControl, refresh: pullRefresh } = usePullToRefresh();
-  useRefreshOnTabRetap(pullRefresh);
+  const scrollRef = useRefreshOnTabRetap(pullRefresh);
 
   const refresh = useCallback((cancelledRef: { current: boolean }) => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -107,7 +107,7 @@ export default function WalletScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5 }}>

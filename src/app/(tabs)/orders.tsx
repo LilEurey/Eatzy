@@ -57,7 +57,7 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { key: refreshKey, done: refreshDone, control: refreshControl, refresh } = usePullToRefresh();
-  useRefreshOnTabRetap(refresh);
+  const scrollRef = useRefreshOnTabRetap(refresh);
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -159,7 +159,7 @@ export default function OrdersScreen() {
       {loading ? (
         <SkeletonList />
       ) : (
-      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
         {tab === 'All' && filtered.some(o => isActiveForStudent(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
