@@ -322,8 +322,8 @@ export default function TrackScreen() {
             const addonSum = it.addons.reduce((s, a) => s + a.price, 0);
             return (
               <View key={i} style={{ gap: 2 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, color: Brand.textPrimary }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                  <Text style={{ flex: 1, fontSize: 14, color: Brand.textPrimary }}>
                     {it.quantity > 1 ? `${it.quantity}× ` : ''}{localizedText(it.name, it.name_th, locale)}
                   </Text>
                   <Text style={{ fontSize: 14, color: Brand.textSecondary, fontVariant: ['tabular-nums'] }}>฿{(it.unit_price + addonSum) * it.quantity}</Text>
