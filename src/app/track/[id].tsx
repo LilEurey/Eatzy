@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { Image } from 'expo-image';
 import { enterUp, popIn } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,6 +58,11 @@ const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: Tra
   { key: 'ready',     labelKey: 'orders.status.ready',     icon: '🎉', hintKey: 'track.stepReadyHint' },
   { key: 'completed', labelKey: 'track.stepPickedUpLabel', icon: '✅', hintKey: 'track.stepPickedUpHint' },
 ];
+
+// Per-stage animation; stages without one fall back to the pulsing emoji.
+const STAGE_ANIM: Partial<Record<Status, number>> = {
+  accepted: require('../../../assets/images/track/preparing.gif'),
+};
 
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];
 
@@ -234,11 +240,15 @@ export default function TrackScreen() {
           shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
         }}>
-          {/* 1. Stage animation — ponytail: emoji placeholder, swap for per-stage animation (keyed on status) */}
+          {/* 1. Stage animation — add more stages in STAGE_ANIM */}
           <View style={{ height: 140, alignItems: 'center', justifyContent: 'center' }}>
-            <Animated.Text key={status} entering={popIn} style={[{ fontSize: 72 }, PULSE]}>
-              {STEPS[currentIdx].icon}
-            </Animated.Text>
+            {STAGE_ANIM[status] ? (
+              <Image source={STAGE_ANIM[status]} style={{ width: 180, height: 140 }} contentFit="contain" />
+            ) : (
+              <Animated.Text key={status} entering={popIn} style={[{ fontSize: 72 }, PULSE]}>
+                {STEPS[currentIdx].icon}
+              </Animated.Text>
+            )}
           </View>
 
           {/* 2. Status + horizontal stepper */}
