@@ -68,8 +68,10 @@ function matchScore(item: SearchItem, needle: string): number {
   return 0;
 }
 
-function spiceDots(level: number) {
-  return level === 0 ? '' : ' · ' + '🌶'.repeat(level);
+function SpiceIcons({ level }: { level: number }) {
+  return Array.from({ length: level }).map((_, i) => (
+    <Image key={i} source={require('../../assets/images/chili.png')} style={{ width: 12, height: 12 }} />
+  ));
 }
 
 export default function SearchScreen() {
@@ -234,9 +236,12 @@ export default function SearchScreen() {
                   <Text style={{ fontSize: 15, fontWeight: '600', color: '#261812' }} numberOfLines={1}>
                     {localizedText(item.name, item.name_th, locale)}
                   </Text>
-                  <Text style={{ fontSize: 12, color: '#5a4136', marginTop: 2 }} numberOfLines={1}>
-                    {item.vendorName}{item.category ? ` · ${item.category}` : ''}{spiceDots(item.spice_level)}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                    <Text style={{ fontSize: 12, color: '#5a4136', flexShrink: 1 }} numberOfLines={1}>
+                      {item.vendorName}{item.category ? ` · ${item.category}` : ''}{item.spice_level > 0 ? ' · ' : ''}
+                    </Text>
+                    <SpiceIcons level={item.spice_level} />
+                  </View>
                   <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
                     {item.is_halal && (
                       <View style={{ backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>

@@ -41,9 +41,10 @@ function queueStatus(count: number): { labelKey: TranslationKey; color: string }
   return { labelKey: 'common.busy', color: '#ef4444' };
 }
 
-function spiceLabel(level: number, t: ReturnType<typeof useI18n>['t']) {
-  if (level === 0) return t('common.noSpice');
-  return '🌶'.repeat(level);
+function SpiceIcons({ level }: { level: number }) {
+  return Array.from({ length: level }).map((_, i) => (
+    <Image key={i} source={require('../../../assets/images/chili.png')} style={{ width: 12, height: 12 }} />
+  ));
 }
 
 export default function StoreDetailScreen() {
@@ -395,8 +396,8 @@ export default function StoreDetailScreen() {
                       </View>
                     )}
                     {item.spice_level > 0 && (
-                      <View style={{ backgroundColor: '#fef3c7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#92400e' }}>{spiceLabel(item.spice_level, t)}</Text>
+                      <View style={{ flexDirection: 'row', backgroundColor: '#fef3c7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                        <SpiceIcons level={item.spice_level} />
                       </View>
                     )}
                     {matchAllergens(item.allergens, prefs).length > 0 && (
