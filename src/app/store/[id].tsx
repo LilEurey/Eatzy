@@ -391,7 +391,8 @@ export default function StoreDetailScreen() {
                       </View>
                     )}
                     {item.is_vegetarian && (
-                      <View style={{ backgroundColor: '#dcfce7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#dcfce7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                        <Image source={require('../../../assets/images/vegetarian.png')} style={{ width: 12, height: 12 }} />
                         <Text style={{ fontSize: 10, color: '#166534', fontWeight: '600' }}>{t('store.veg')}</Text>
                       </View>
                     )}

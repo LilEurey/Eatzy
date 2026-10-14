@@ -244,7 +244,7 @@ export const en = {
   'store.hours': 'Hours',
   'store.menu': 'Menu',
   'store.all': 'All',
-  'store.veg': 'Veg 🌿',
+  'store.veg': 'Veg',
   'store.soldOut': 'Sold out',
   'store.noItemsInCategory': 'No items in this category',
   'store.allMenusTab': 'All Menus',
