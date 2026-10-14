@@ -242,22 +242,28 @@ export default function SearchScreen() {
                     </Text>
                     <SpiceIcons level={item.spice_level} />
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+                  <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                     {item.is_halal && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                        <Image source={require('../../assets/images/halal.png')} style={{ width: 12, height: 12 }} />
-                        <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffeae1', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../assets/images/halal.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#565656' }}>{t('common.halal')}</Text>
                       </View>
                     )}
                     {item.is_vegetarian && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                        <Image source={require('../../assets/images/vegetarian.png')} style={{ width: 12, height: 12 }} />
-                        <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.vegetarian')}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffeae1', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../assets/images/vegetarian.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#565656' }}>{t('common.vegetarian')}</Text>
+                      </View>
+                    )}
+                    {item.is_jay && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffeae1', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../assets/images/jay.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#565656' }}>{t('common.jay')}</Text>
                       </View>
                     )}
                     {matchAllergens(item.allergens, prefs).length > 0 && (
-                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
+                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
                       </View>
                     )}
                   </View>
