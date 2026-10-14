@@ -5,7 +5,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 // Shared motion tokens — one spring feel across the app.
-export const STAGGER_MS = 45;
+const STAGGER_MS = 45;
 
 // Reanimated 4 merges a partial spring config into its own default (mass 4,
 // stiffness 900), so a bare `.springify().damping(18)` is a ~0.15 damping
