@@ -383,9 +383,13 @@ export default function TrackScreen() {
           borderTopWidth: 1, borderTopColor: Brand.border,
         }}>
           {order.student_picked_up_at ? (
-            <View style={{ borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}>
-              <Text style={{ color: Brand.textSecondary, fontSize: 14, fontWeight: '600' }}>{t('track.waitingOnVendorConfirm')}</Text>
-            </View>
+            <Tap
+              activeOpacity={0.85}
+              onPress={() => router.replace(`/rate/${order.id}`)}
+              style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.rateYourOrder')}</Text>
+            </Tap>
           ) : (
             <Tap
               activeOpacity={0.85}

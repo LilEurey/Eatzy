@@ -264,7 +264,6 @@ export const en = {
   'track.ordersAhead': '{n} ahead of you in the queue',
   'track.order': 'ORDER',
   'track.pickedItUp': 'I’ve picked it up',
-  'track.waitingOnVendorConfirm': 'Confirmed! Waiting for the vendor to confirm hand-off.',
   'track.rateYourOrder': 'Rate your order',
   'track.stepPlacedLabel': 'Order placed',
   'track.stepPlacedHint': 'Waiting for the vendor to accept',

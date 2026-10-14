@@ -266,7 +266,6 @@ export const th: Record<TranslationKey, string> = {
   'track.ordersAhead': 'มีคิวก่อนคุณอีก {n} คิว',
   'track.order': 'คำสั่งซื้อ',
   'track.pickedItUp': 'รับอาหารแล้ว',
-  'track.waitingOnVendorConfirm': 'ยืนยันแล้ว! รอร้านค้ายืนยันการส่งมอบ',
   'track.rateYourOrder': 'ให้คะแนนคำสั่งซื้อของคุณ',
   'track.stepPlacedLabel': 'สั่งซื้อแล้ว',
   'track.stepPlacedHint': 'กำลังรอร้านค้ายืนยัน',
