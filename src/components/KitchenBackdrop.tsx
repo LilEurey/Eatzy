@@ -36,10 +36,10 @@ export function KitchenBackdrop() {
         <Rect x="285" y="38" width="3" height="10" rx="1.5" />
       </G>
 
-      {/* Range hood over the stove */}
-      <Rect x="152" y="0" width="36" height="22" fill={INK} />
-      <Path d="M152 22 h36 l26 24 h-88 z" fill={INK} />
-      <Rect x="124" y="46" width="92" height="5" rx="2" fill={DEEP} />
+      {/* Range hood — kept above y=36 so the GIF's tossed veggies (peak ~y=41) clear it */}
+      <Rect x="154" y="0" width="32" height="14" fill={INK} />
+      <Path d="M154 14 h32 l22 18 h-76 z" fill={INK} />
+      <Rect x="130" y="32" width="80" height="4" rx="2" fill={DEEP} />
 
       {/* Mugs on hooks under the right cabinet */}
       <Line x1="244" y1="64" x2="316" y2="64" stroke={DEEP} strokeWidth="2.5" strokeLinecap="round" />
@@ -73,8 +73,14 @@ export function KitchenBackdrop() {
       <G stroke={WALL} strokeWidth="2">
         {[68, 136, 204, 272].map(x => <Line key={x} x1={x} y1="167" x2={x} y2="200" />)}
       </G>
+      {/* Stove: cooktop the pan sits on, oven door + knobs below */}
+      <Rect x="118" y="155" width="104" height="6" rx="2" fill={DEEP} />
+      <Rect x="142" y="184" width="56" height="12" rx="3" fill={WALL} opacity={0.6} />
       <G fill={DEEP}>
-        {[58, 78, 126, 146, 194, 214, 262, 282].map(x => <Circle key={x} cx={x} cy="176" r="2.5" />)}
+        {[156, 170, 184].map(x => <Circle key={x} cx={x} cy="175" r="3" />)}
+      </G>
+      <G fill={DEEP}>
+        {[58, 78, 262, 282].map(x => <Circle key={x} cx={x} cy="176" r="2.5" />)}
       </G>
     </Svg>
   );
