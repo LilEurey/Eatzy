@@ -25,10 +25,10 @@ type WalletTxn = { id: string; type: TxType; amount: number; description: string
 type HeldOrder = { id: string; queue_number: number | null; status: OrderStatus; total_amount: number; vendors: { name: string } | null };
 const HELD_STATUSES: OrderStatus[] = ['pending', 'accepted', 'ready'];
 
-const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
+const TX_CONFIG: Record<TxType, { icon: string; color: string; image?: number }> = {
   topup:    { icon: '↓', color: '#16a34a' },
   payment:  { icon: '↑', color: '#dc2626' },
-  refund:   { icon: '↩', color: '#2563eb' },
+  refund:   { icon: '↩', color: '#2563eb', image: require('../../../assets/images/refund.png') },
   transfer: { icon: '⇄', color: '#7c3aed' },
 };
 
@@ -259,7 +259,9 @@ export default function WalletScreen() {
                       width: 44, height: 44, borderRadius: 22,
                       backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <Text style={{ fontSize: 18, color: cfg.color, fontWeight: '700' }}>{cfg.icon}</Text>
+                      {cfg.image
+                        ? <Image source={cfg.image} style={{ width: 24, height: 24 }} />
+                        : <Text style={{ fontSize: 18, color: cfg.color, fontWeight: '700' }}>{cfg.icon}</Text>}
                     </View>
 
                     {/* Info */}
