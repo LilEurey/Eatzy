@@ -10,10 +10,11 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
+import { ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-lifecycle';
 import { clearCart } from '@/lib/cart-store';
 import { usePreferences } from '@/hooks/usePreferences';
 import { showAlert, comingSoonAlert } from '@/lib/alert';
-import { useI18n, LOCALE_LABELS, type Locale, type TranslationKey } from '@/lib/i18n';
+import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock, isBangkokToday, formatBangkokDate } from '@/lib/time';
 
@@ -53,15 +54,6 @@ type RecentOrder = {
   total_amount: number;
   created_at: string;
   itemSummary: string;
-};
-
-const ORDER_STATUS_LABEL: Record<string, TranslationKey> = {
-  pending: 'orders.status.pending',
-  accepted: 'orders.status.preparing',
-  ready: 'orders.status.ready',
-  completed: 'orders.status.completed',
-  rejected: 'orders.status.rejected',
-  cancelled: 'orders.status.cancelled',
 };
 
 export default function ProfileScreen() {
@@ -354,7 +346,7 @@ export default function ProfileScreen() {
                 <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', fontVariant: ['tabular-nums'] }}>฿{recentOrder.total_amount}</Text>
                 <View style={{ backgroundColor: 'rgba(255,107,0,0.1)', borderRadius: 9999, paddingHorizontal: 4, paddingVertical: 3, marginTop: 4 }}>
                   <Text style={{ fontSize: 12, fontWeight: '500', color: '#A04100' }}>
-                    {t(ORDER_STATUS_LABEL[recentOrder.status] ?? 'orders.status.completed')}
+                    {t(ORDER_STATUS_LABEL[recentOrder.status as OrderStatus] ?? 'orders.status.completed')}
                   </Text>
                 </View>
               </View>

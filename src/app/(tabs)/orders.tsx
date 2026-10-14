@@ -15,7 +15,7 @@ import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import { isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
+import { ORDER_STATUS_LABEL, isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
 
@@ -32,13 +32,13 @@ type StudentOrder = {
   items: { name: string; name_th: string | null; quantity: number; addons: { name: string; name_th: string | null }[] }[];
 };
 
-const STATUS_CONFIG: Record<OrderStatus, { labelKey: TranslationKey; color: string; bg: string }> = {
-  pending:   { labelKey: 'orders.status.pending',   color: '#d97706', bg: '#fef3c7' },
-  accepted:  { labelKey: 'orders.status.preparing', color: '#2563eb', bg: '#dbeafe' },
-  rejected:  { labelKey: 'orders.status.rejected',  color: '#dc2626', bg: '#fee2e2' },
-  ready:     { labelKey: 'orders.status.ready',     color: '#16a34a', bg: '#dcfce7' },
-  completed: { labelKey: 'orders.status.completed', color: '#6b7280', bg: '#f3f4f6' },
-  cancelled: { labelKey: 'orders.status.cancelled', color: '#9ca3af', bg: '#f3f4f6' },
+const STATUS_CONFIG: Record<OrderStatus, { color: string; bg: string }> = {
+  pending:   { color: '#d97706', bg: '#fef3c7' },
+  accepted:  { color: '#2563eb', bg: '#dbeafe' },
+  rejected:  { color: '#dc2626', bg: '#fee2e2' },
+  ready:     { color: '#16a34a', bg: '#dcfce7' },
+  completed: { color: '#6b7280', bg: '#f3f4f6' },
+  cancelled: { color: '#9ca3af', bg: '#f3f4f6' },
 };
 
 const FILTER_LABELS: Record<FilterTab, TranslationKey> = {
@@ -200,7 +200,7 @@ export default function OrdersScreen() {
                     </Text>
                   </View>
                   <View style={{ backgroundColor: cfg.bg, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 }}>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: cfg.color }}>{t(cfg.labelKey)}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: cfg.color }}>{t(ORDER_STATUS_LABEL[order.status])}</Text>
                   </View>
                 </View>
 

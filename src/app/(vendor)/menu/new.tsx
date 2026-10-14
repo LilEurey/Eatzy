@@ -11,6 +11,7 @@ import { Brand } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { addMenuItem } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
+import { toggled } from '@/lib/toggle-set';
 import { useI18n } from '@/lib/i18n';
 import { ALLERGEN_VOCAB } from '@/lib/allergy-options';
 import { getTopMenuCategories, FALLBACK_CATEGORIES } from '@/lib/menu-categories';
@@ -70,11 +71,7 @@ export default function AddMenuItemScreen() {
   useEffect(() => { void getTopMenuCategories().then(setCategories); }, []);
 
   function toggleAllergen(key: string) {
-    setAllergens(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
+    setAllergens(prev => toggled(prev, key));
   }
 
   async function pickImage() {

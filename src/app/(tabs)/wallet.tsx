@@ -14,7 +14,7 @@ import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ, bangkokDayKey } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import type { OrderStatus } from '@/lib/order-lifecycle';
+import { ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-lifecycle';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
 type WalletTxn = { id: string; type: TxType; amount: number; description: string | null; created_at: string };
@@ -23,7 +23,6 @@ type WalletTxn = { id: string; type: TxType; amount: number; description: string
 // (completes to the vendor, or refunds on reject/cancel).
 type HeldOrder = { id: string; queue_number: number | null; status: OrderStatus; total_amount: number; vendors: { name: string } | null };
 const HELD_STATUSES: OrderStatus[] = ['pending', 'accepted', 'ready'];
-const STATUS_KEY = { pending: 'orders.status.pending', accepted: 'orders.status.preparing', ready: 'orders.status.ready' } as const;
 
 const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
   topup:    { icon: '↓', color: '#16a34a' },
@@ -211,7 +210,7 @@ export default function WalletScreen() {
                       {o.vendors?.name ?? ''}
                     </Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      {o.queue_number != null ? t('wallet.escrowQueue', { n: o.queue_number }) + ' · ' : ''}{t(STATUS_KEY[o.status as keyof typeof STATUS_KEY])}
+                      {o.queue_number != null ? t('wallet.escrowQueue', { n: o.queue_number }) + ' · ' : ''}{t(ORDER_STATUS_LABEL[o.status as OrderStatus])}
                     </Text>
                   </View>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>฿{formatBaht(o.total_amount)}</Text>
