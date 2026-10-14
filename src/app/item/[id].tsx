@@ -331,7 +331,14 @@ export default function ItemDetailScreen() {
                   </Svg>
                 ),
                 value: item.preparation_time_min != null ? `${item.preparation_time_min} min` : '—', label: t('item.prepTime') },
-              { icon: '🏷️', value: `฿${item.price}`, label: t('item.price') },
+              {
+                icon: (
+                  <Svg width={22} height={22} viewBox="0 0 512 512">
+                    <Path d="M300 36H446Q476 36 476 66V200Q476 230 455 251L262 444Q240 466 218 444L58 284Q36 262 58 240L240 58Q262 36 300 36Z" stroke="#000" strokeWidth={38} strokeLinejoin="round" fill="none" />
+                    <Circle cx={360} cy={150} r={37} stroke="#000" strokeWidth={37} fill="none" />
+                  </Svg>
+                ),
+                value: `฿${item.price}`, label: t('item.price') },
             ].map(({ icon, value, label }, i) => (
               <View key={label} style={{
                 flex: 1, alignItems: 'center', paddingVertical: 14,
