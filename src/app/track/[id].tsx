@@ -260,7 +260,8 @@ export default function TrackScreen() {
               <View style={{ alignSelf: 'stretch', height: 200, margin: -20, marginBottom: 16, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', backgroundColor: Backdrop ? Brand.orangeLight : Brand.card }}>
                 {Backdrop && <View style={{ position: 'absolute', inset: 0 }}><Backdrop /></View>}
                 {/* placed.gif's arm is cut at the frame edge — sit it flush on the bottom */}
-                <Image source={STAGE_ANIM[status]} style={{ position: 'absolute', bottom: status === 'pending' ? 0 : 8, alignSelf: 'center', width: 260, height: 195 }} contentFit="contain" />
+                {/* ready.gif is a full-width canvas (672x384) so the walker crosses edge to edge */}
+                <Image source={STAGE_ANIM[status]} style={status === 'ready' ? { position: 'absolute', bottom: 6, left: 0, right: 0, aspectRatio: 672 / 384 } : { position: 'absolute', bottom: status === 'pending' ? 0 : 8, alignSelf: 'center', width: 260, height: 195 }} contentFit="contain" />
               </View>
             ) : (
               <Animated.Text key={status} entering={popIn} style={[{ fontSize: 72 }, PULSE]}>
