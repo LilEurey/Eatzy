@@ -9,7 +9,7 @@ export const th: Record<TranslationKey, string> = {
   'common.halal': 'ฮาลาล',
   'common.halalCertified': 'ฮาลาล ✓',
   'common.vegetarian': 'มังสวิรัติ',
-  'common.jay': 'เจ 🌿',
+  'common.jay': 'เจ',
   'common.noQueue': 'ไม่มีคิว',
   'common.moderateQueue': 'คิวปานกลาง',
   'common.moderate': 'ปานกลาง',

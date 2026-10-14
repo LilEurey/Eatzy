@@ -299,7 +299,8 @@ export default function ItemDetailScreen() {
               </View>
             )}
             {item.is_jay && (
-              <View style={{ backgroundColor: '#fef9c3', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef9c3', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Image source={require('../../../assets/images/jay.png')} style={{ width: 16, height: 16 }} />
                 <Text style={{ fontSize: 13, color: '#854d0e', fontWeight: '700' }}>{t('common.jay')}</Text>
               </View>
             )}

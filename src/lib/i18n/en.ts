@@ -7,7 +7,7 @@ export const en = {
   'common.halal': 'Halal',
   'common.halalCertified': 'Halal ✓',
   'common.vegetarian': 'Vegetarian',
-  'common.jay': 'Jay 🌿',
+  'common.jay': 'Jay',
   'common.noQueue': 'No Queue',
   'common.moderateQueue': 'Moderate Queue',
   'common.moderate': 'Moderate',
