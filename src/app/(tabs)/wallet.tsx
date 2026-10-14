@@ -168,7 +168,7 @@ export default function WalletScreen() {
         {/* Quick actions */}
         <View style={{ flexDirection: 'row', gap: 12, marginHorizontal: 20, marginBottom: 28 }}>
           {[
-            { icon: '⏳', label: t('wallet.escrow', { amount: formatBaht(heldTotal) }), onPress: () => setShowHeld(v => !v), dim: held.length === 0 },
+            { icon: <Image source={require('../../../assets/images/held.png')} style={{ width: 22, height: 22 }} />, label: t('wallet.escrow', { amount: formatBaht(heldTotal) }), onPress: () => setShowHeld(v => !v), dim: held.length === 0 },
             {
               icon: <Image source={require('../../../assets/images/statement.png')} style={{ width: 22, height: 22 }} />,
               label: t('wallet.statement'), onPress: () => router.push('/wallet-statement'), dim: false },
@@ -188,7 +188,7 @@ export default function WalletScreen() {
                 width: 40, height: 40, borderRadius: 20,
                 backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
               }}>
-                {typeof icon === 'string' ? <Text style={{ fontSize: 18, color: Brand.orange }}>{icon}</Text> : icon}
+                {icon}
               </View>
               <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textSecondary }}>{label}</Text>
             </Tap>
