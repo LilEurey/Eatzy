@@ -94,7 +94,7 @@ export default function OrdersScreen() {
     // otherwise only showed on tab refocus. (orders is in the
     // supabase_realtime publication as of 20260904000000.)
     const channel = supabase
-      .channel(`student-orders-${userId}`)
+      .channel(`student-orders-${userId}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, () => {
         void load();
       })

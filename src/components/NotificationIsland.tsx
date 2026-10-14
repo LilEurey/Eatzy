@@ -36,7 +36,7 @@ export function NotificationIsland({ userId }: { userId: string | undefined }) {
   useEffect(() => {
     if (Platform.OS !== 'ios' || !userId) return;
     const channel = supabase
-      .channel(`island-${userId}`)
+      .channel(`island-${userId}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (payload) => {
         const n = payload.new as Parameters<typeof notificationText>[0] & { id: string; order_id: string | null };
         const { title, body } = notificationText(n, t);

@@ -127,7 +127,7 @@ export default function TrackScreen() {
     // was_charged (payments) and the handoff timestamps change too, and the
     // terminal "no charge" vs "refunded" copy depends on them.
     const channel = supabase
-      .channel(`track-order-${id}`)
+      .channel(`track-order-${id}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, () => {
         void load();
       })
@@ -150,7 +150,7 @@ export default function TrackScreen() {
     void fetchOrdersAhead();
 
     const channel = supabase
-      .channel(`track-queue-${vendorId}-${id}`)
+      .channel(`track-queue-${vendorId}-${id}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
         void fetchOrdersAhead();
       })

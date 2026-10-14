@@ -161,7 +161,7 @@ export default function HomeScreen() {
     // order, the notifications row inserts live — subscribe so the dot lights
     // up without needing a tab-away-and-back, same pattern as notifications.tsx.
     const channel = supabase
-      .channel(`home-notifications-${user.id}`)
+      .channel(`home-notifications-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
         if (!isCancelled()) setHasUnreadNotifications(true);
       })
