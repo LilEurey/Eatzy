@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -56,7 +56,16 @@ export default function OrdersScreen() {
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
+  const { key: refreshKey, done: refreshDone, control: refreshControl, refresh } = usePullToRefresh();
+  const navigation = useNavigation();
+
+  // Re-tapping the Orders tab while on it reloads (same as Home).
+  useEffect(
+    () => navigation.addListener('tabPress' as never, () => {
+      if (navigation.isFocused()) refresh();
+    }),
+    [navigation, refresh],
+  );
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
