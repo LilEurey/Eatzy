@@ -11,17 +11,18 @@ export function usePullToRefresh() {
   const [key, setKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const done = useCallback(() => setRefreshing(false), []);
+  const refresh = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setRefreshing(true);
+    setKey(k => k + 1);
+  }, []);
   const control = (
     <RefreshControl
       refreshing={refreshing}
-      onRefresh={() => {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setRefreshing(true);
-        setKey(k => k + 1);
-      }}
+      onRefresh={refresh}
       tintColor={Brand.orange}
       colors={[Brand.orange]}
     />
   );
-  return { key, done, control };
+  return { key, done, control, refresh };
 }
