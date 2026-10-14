@@ -161,7 +161,7 @@ export default function RateScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
         {/* Vendor + items */}
         <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 28 }}>
-          <Text style={{ fontSize: 44, marginBottom: 8 }}>🍽️</Text>
+          <Image source={require('../../../assets/images/rate.png')} style={{ width: 64, height: 64, marginBottom: 8 }} resizeMode="contain" />
           <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: Brand.textPrimary }}>{vendor}</Text>
           <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' }}>
             {order.items.map(i => {
