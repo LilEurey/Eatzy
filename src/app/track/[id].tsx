@@ -5,7 +5,7 @@ import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { enterUp, popIn } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
-import { KitchenBackdrop, ClassroomBackdrop } from '@/components/KitchenBackdrop';
+import { KitchenBackdrop, ClassroomBackdrop, CanteenBackdrop } from '@/components/KitchenBackdrop';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -64,6 +64,7 @@ const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: Tra
 const STAGE_ANIM: Partial<Record<Status, number>> = {
   pending: require('../../../assets/images/track/placed.gif'),
   accepted: require('../../../assets/images/track/preparing.gif'),
+  ready: require('../../../assets/images/track/ready.gif'),
   // Plays once (no loop) and holds on the check — opaque white, since keying
   // white out would punch through the checkmark.
   completed: require('../../../assets/images/track/picked-up.gif'),
@@ -73,6 +74,7 @@ const STAGE_ANIM: Partial<Record<Status, number>> = {
 const STAGE_BACKDROP: Partial<Record<Status, () => React.JSX.Element>> = {
   pending: ClassroomBackdrop,
   accepted: KitchenBackdrop,
+  ready: CanteenBackdrop,
 };
 
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];

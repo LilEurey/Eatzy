@@ -140,3 +140,67 @@ export function ClassroomBackdrop() {
     </Svg>
   );
 }
+
+// Canteen variant for the "ready" stage — the student walking over to the
+// stall to pick up. ready.gif's feet land at ~y=154, so the floor starts there.
+export function CanteenBackdrop() {
+  return (
+    <Svg width="100%" height="100%" viewBox="0 0 340 200" preserveAspectRatio="xMidYMax slice">
+      <Rect width="340" height="200" fill={WALL} />
+
+      {/* Hanging lamps */}
+      <G stroke={INK} strokeWidth="2">
+        {[60, 170, 280].map(x => <Line key={x} x1={x} y1="0" x2={x} y2="14" />)}
+      </G>
+      <G fill={INK}>
+        {[60, 170, 280].map(x => <Path key={x} d={`M${x - 12} 26 q12 -16 24 0 z`} />)}
+      </G>
+
+      {/* Two food stalls: striped awning, menu board, counter */}
+      {[16, 196].map(x => (
+        <G key={x}>
+          <Rect x={x} y="36" width="128" height="10" fill={DEEP} />
+          <G fill={INK}>
+            {[0, 32, 64, 96].map(dx => <Rect key={dx} x={x + dx} y="36" width="16" height="10" />)}
+          </G>
+          <Path d={Array.from({ length: 8 }, (_, i) => `M${x + i * 16} 46 q8 10 16 0`).join(' ')} fill={DEEP} />
+          <Rect x={x + 24} y="62" width="80" height="34" rx="3" fill={INK} />
+          <G stroke={WALL} strokeWidth="2" strokeLinecap="round">
+            <Line x1={x + 32} y1="72" x2={x + 70} y2="72" />
+            <Line x1={x + 32} y1="80" x2={x + 62} y2="80" />
+            <Line x1={x + 32} y1="88" x2={x + 74} y2="88" />
+            <Line x1={x + 86} y1="72" x2={x + 96} y2="72" />
+            <Line x1={x + 86} y1="80" x2={x + 96} y2="80" />
+            <Line x1={x + 86} y1="88" x2={x + 96} y2="88" />
+          </G>
+          <Rect x={x} y="112" width="128" height="6" fill={DEEP} />
+          <Rect x={x + 4} y="118" width="120" height="36" fill={INK} />
+          {/* Bowls + pickup bag on the counter */}
+          <G fill={DEEP}>
+            <Path d={`M${x + 14} 104 h20 a10 8 0 0 1 -20 0 z`} />
+            <Path d={`M${x + 40} 104 h20 a10 8 0 0 1 -20 0 z`} />
+            <Rect x={x + 96} y="96" width="18" height="16" rx="2" />
+          </G>
+        </G>
+      ))}
+
+      {/* Table + stools between the stalls */}
+      <G fill={INK}>
+        <Rect x="150" y="122" width="40" height="5" rx="2" />
+        <Rect x="167" y="127" width="6" height="27" />
+        <Rect x="152" y="138" width="10" height="4" rx="2" />
+        <Rect x="178" y="138" width="10" height="4" rx="2" />
+        <Rect x="155" y="142" width="4" height="12" />
+        <Rect x="181" y="142" width="4" height="12" />
+      </G>
+
+      {/* Tiled floor */}
+      <Rect x="0" y="154" width="340" height="46" fill={TILE} />
+      <Rect x="0" y="154" width="340" height="4" fill={DEEP} />
+      <G stroke={WALL} strokeWidth="1.5">
+        {[172, 188].map(y => <Line key={y} x1="0" y1={y} x2="340" y2={y} />)}
+        {Array.from({ length: 12 }, (_, i) => i * 30).map(x => <Line key={x} x1={x} y1="158" x2={x - 12} y2="200" />)}
+      </G>
+    </Svg>
+  );
+}
