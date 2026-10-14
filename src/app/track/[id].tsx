@@ -5,6 +5,7 @@ import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { enterUp, popIn } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { KitchenBackdrop } from '@/components/KitchenBackdrop';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -243,18 +244,8 @@ export default function TrackScreen() {
           {/* 1. Stage animation — add more stages in STAGE_ANIM */}
           <View style={{ minHeight: 140, alignItems: 'center', justifyContent: 'center' }}>
             {STAGE_ANIM[status] ? (
-              <View style={{ alignSelf: 'stretch', height: 170, borderRadius: 18, overflow: 'hidden', backgroundColor: '#FFF4E6' }}>
-                {/* Kitchen backdrop: tiled wall, hanging utensils, counter */}
-                <View style={{ position: 'absolute', inset: 0, flexDirection: 'row', flexWrap: 'wrap' }}>
-                  {Array.from({ length: 60 }, (_, i) => (
-                    <View key={i} style={{ width: 34, height: 34, borderWidth: 0.5, borderColor: '#F1DCC2' }} />
-                  ))}
-                </View>
-                <View style={{ position: 'absolute', top: 6, left: 14, right: 14, flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 22, opacity: 0.8 }}>🥄</Text>
-                  <Text style={{ fontSize: 22, opacity: 0.8 }}>🧂</Text>
-                </View>
-                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 26, backgroundColor: '#C98B5B', borderTopWidth: 5, borderTopColor: '#A86F45' }} />
+              <View style={{ alignSelf: 'stretch', height: 170, borderRadius: 18, overflow: 'hidden', backgroundColor: Brand.orangeLight }}>
+                <View style={{ position: 'absolute', inset: 0 }}><KitchenBackdrop /></View>
                 <Image source={STAGE_ANIM[status]} style={{ position: 'absolute', bottom: 8, alignSelf: 'center', width: 220, height: 165 }} contentFit="contain" />
               </View>
             ) : (
