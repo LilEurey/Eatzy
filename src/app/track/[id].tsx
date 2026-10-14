@@ -241,9 +241,22 @@ export default function TrackScreen() {
           shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
         }}>
           {/* 1. Stage animation — add more stages in STAGE_ANIM */}
-          <View style={{ height: 140, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ minHeight: 140, alignItems: 'center', justifyContent: 'center' }}>
             {STAGE_ANIM[status] ? (
-              <Image source={STAGE_ANIM[status]} style={{ width: 180, height: 140 }} contentFit="contain" />
+              <View style={{ alignSelf: 'stretch', height: 170, borderRadius: 18, overflow: 'hidden', backgroundColor: '#FFF4E6' }}>
+                {/* Kitchen backdrop: tiled wall, hanging utensils, counter */}
+                <View style={{ position: 'absolute', inset: 0, flexDirection: 'row', flexWrap: 'wrap' }}>
+                  {Array.from({ length: 60 }, (_, i) => (
+                    <View key={i} style={{ width: 34, height: 34, borderWidth: 0.5, borderColor: '#F1DCC2' }} />
+                  ))}
+                </View>
+                <View style={{ position: 'absolute', top: 6, left: 14, right: 14, flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 22, opacity: 0.8 }}>🥄</Text>
+                  <Text style={{ fontSize: 22, opacity: 0.8 }}>🧂</Text>
+                </View>
+                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 26, backgroundColor: '#C98B5B', borderTopWidth: 5, borderTopColor: '#A86F45' }} />
+                <Image source={STAGE_ANIM[status]} style={{ position: 'absolute', bottom: 8, alignSelf: 'center', width: 220, height: 165 }} contentFit="contain" />
+              </View>
             ) : (
               <Animated.Text key={status} entering={popIn} style={[{ fontSize: 72 }, PULSE]}>
                 {STEPS[currentIdx].icon}
