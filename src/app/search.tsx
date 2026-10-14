@@ -70,7 +70,7 @@ function matchScore(item: SearchItem, needle: string): number {
 
 function SpiceIcons({ level }: { level: number }) {
   return Array.from({ length: level }).map((_, i) => (
-    <Image key={i} source={require('../../assets/images/chili.png')} style={{ width: 12, height: 12 }} />
+    <Image key={i} source={require('../../assets/images/chili.png')} style={{ width: 16, height: 16 }} />
   ));
 }
 

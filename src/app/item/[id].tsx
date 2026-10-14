@@ -50,7 +50,7 @@ function SpiceIndicator({ level }: { level: number }) {
   return (
     <View style={{ flexDirection: 'row', gap: 2 }}>
       {Array.from({ length: 5 }).map((_, i) => (
-        <Image key={i} source={require('../../../assets/images/chili.png')} style={{ width: 16, height: 16, opacity: i < level ? 1 : 0.2 }} />
+        <Image key={i} source={require('../../../assets/images/chili.png')} style={{ width: 24, height: 24, opacity: i < level ? 1 : 0.2 }} />
       ))}
     </View>
   );
