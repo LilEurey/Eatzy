@@ -5,6 +5,7 @@ import { EASE_OUT } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
+import { toggled } from '@/lib/toggle-set';
 import { useVendorOrders, useVendorProfile, useVendorMenu } from '@/lib/vendor-store';
 import { salesVelocity, busyGrid, itemSales, periodDelta, avgFulfilmentMinutes, type PeriodDelta } from '@/lib/vendor-analytics';
 import * as Print from 'expo-print';
@@ -311,12 +312,7 @@ export default function VendorOverviewScreen() {
                     <Tap
                       style={{ flex: 1 }}
                       onPress={() =>
-                        setExpandedSellers(prev => {
-                          const next = new Set(prev);
-                          if (next.has(s.menuItemId)) next.delete(s.menuItemId);
-                          else next.add(s.menuItemId);
-                          return next;
-                        })
+                        setExpandedSellers(prev => toggled(prev, s.menuItemId))
                       }
                     >
                       <Text

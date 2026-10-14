@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert, errorMessage } from '@/lib/alert';
+import { toggled } from '@/lib/toggle-set';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { getTopMenuCategories } from '@/lib/menu-categories';
 import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
@@ -86,27 +87,15 @@ export default function OnboardingScreen() {
   useEffect(() => { void loadPreferences(); }, []);
 
   function toggleDietary(item: Dietary) {
-    setDietary(prev => {
-      const next = new Set(prev);
-      if (next.has(item)) next.delete(item); else next.add(item);
-      return next;
-    });
+    setDietary(prev => toggled(prev, item));
   }
 
   function toggleAllergy(item: Allergy) {
-    setAllergies(prev => {
-      const next = new Set(prev);
-      if (next.has(item)) next.delete(item); else next.add(item);
-      return next;
-    });
+    setAllergies(prev => toggled(prev, item));
   }
 
   function toggleCategory(item: string) {
-    setFavoriteCategories(prev => {
-      const next = new Set(prev);
-      if (next.has(item)) next.delete(item); else next.add(item);
-      return next;
-    });
+    setFavoriteCategories(prev => toggled(prev, item));
   }
 
   async function handleSkip() {

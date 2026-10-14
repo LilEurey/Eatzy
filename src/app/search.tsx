@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { toggled } from '@/lib/toggle-set';
 import { localizedText } from '@/lib/localize';
 import { usePreferences, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
@@ -104,11 +105,7 @@ export default function SearchScreen() {
   );
 
   function toggleDiet(f: DietFilter) {
-    setDiet(prev => {
-      const next = new Set(prev);
-      if (next.has(f)) next.delete(f); else next.add(f);
-      return next;
-    });
+    setDiet(prev => toggled(prev, f));
   }
 
   const results = useMemo(() => {
