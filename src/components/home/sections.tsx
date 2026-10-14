@@ -393,10 +393,11 @@ export function StoreOptions({ vendors }: { vendors: Vendor[] }) {
                   {vendor.cuisine_tags?.[0] ?? t('home.thaiFood')}
                 </Text>
                 {vendor.is_halal_certified && (
-                  <View style={{
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3,
                     backgroundColor: '#ffeae1', borderRadius: 4,
                     paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start',
                   }}>
+                    <Image source={require('../../../assets/images/halal.png')} style={{ width: 12, height: 12 }} />
                     <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
                   </View>
                 )}

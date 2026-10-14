@@ -386,7 +386,8 @@ export default function StoreDetailScreen() {
                   {/* Dietary badges */}
                   <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
                     {item.is_halal && (
-                      <View style={{ backgroundColor: '#d1fae5', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#d1fae5', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                        <Image source={require('../../../assets/images/halal.png')} style={{ width: 12, height: 12 }} />
                         <Text style={{ fontSize: 10, color: '#065f46', fontWeight: '600' }}>{t('common.halal')}</Text>
                       </View>
                     )}
