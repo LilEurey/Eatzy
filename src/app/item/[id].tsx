@@ -288,19 +288,19 @@ export default function ItemDetailScreen() {
           {/* Dietary badges */}
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
             {item.is_halal && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#d1fae5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Image source={require('../../../assets/images/halal.png')} style={{ width: 16, height: 16 }} />
-                <Text style={{ fontSize: 13, color: '#065f46', fontWeight: '700' }}>{t('common.halalCertified')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#d1fae5', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Image source={require('../../../assets/images/halal.png')} style={{ width: 22, height: 22 }} />
+                <Text style={{ fontSize: 15, color: '#065f46', fontWeight: '700' }}>{t('common.halalCertified')}</Text>
               </View>
             )}
             {item.is_vegetarian && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Image source={require('../../../assets/images/vegetarian.png')} style={{ width: 16, height: 16 }} />
-                <Text style={{ fontSize: 13, color: '#166534', fontWeight: '700' }}>{t('common.vegetarian')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Image source={require('../../../assets/images/vegetarian.png')} style={{ width: 22, height: 22 }} />
+                <Text style={{ fontSize: 15, color: '#166534', fontWeight: '700' }}>{t('common.vegetarian')}</Text>
               </View>
             )}
             {item.is_jay && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef9c3', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef9c3', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}>
                 <Image source={require('../../../assets/images/jay.png')} style={{ width: 16, height: 16 }} />
                 <Text style={{ fontSize: 13, color: '#854d0e', fontWeight: '700' }}>{t('common.jay')}</Text>
               </View>

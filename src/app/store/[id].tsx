@@ -43,7 +43,7 @@ function queueStatus(count: number): { labelKey: TranslationKey; color: string }
 
 function SpiceIcons({ level }: { level: number }) {
   return Array.from({ length: level }).map((_, i) => (
-    <Image key={i} source={require('../../../assets/images/chili.png')} style={{ width: 16, height: 16 }} />
+    <Image key={i} source={require('../../../assets/images/chili.png')} style={{ width: 18, height: 18 }} />
   ));
 }
 
@@ -384,27 +384,33 @@ export default function StoreDetailScreen() {
                   </Text>
 
                   {/* Dietary badges */}
-                  <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
+                  <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
                     {item.is_halal && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#d1fae5', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Image source={require('../../../assets/images/halal.png')} style={{ width: 12, height: 12 }} />
-                        <Text style={{ fontSize: 10, color: '#065f46', fontWeight: '600' }}>{t('common.halal')}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../../assets/images/halal.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#065f46', fontWeight: '600' }}>{t('common.halal')}</Text>
                       </View>
                     )}
                     {item.is_vegetarian && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#dcfce7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Image source={require('../../../assets/images/vegetarian.png')} style={{ width: 12, height: 12 }} />
-                        <Text style={{ fontSize: 10, color: '#166534', fontWeight: '600' }}>{t('store.veg')}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#dcfce7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../../assets/images/vegetarian.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#166534', fontWeight: '600' }}>{t('store.veg')}</Text>
+                      </View>
+                    )}
+                    {item.is_jay && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef9c3', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../../assets/images/jay.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#854d0e', fontWeight: '600' }}>{t('common.jay')}</Text>
                       </View>
                     )}
                     {item.spice_level > 0 && (
-                      <View style={{ flexDirection: 'row', backgroundColor: '#fef3c7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                      <View style={{ flexDirection: 'row', backgroundColor: '#fef3c7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
                         <SpiceIcons level={item.spice_level} />
                       </View>
                     )}
                     {matchAllergens(item.allergens, prefs).length > 0 && (
-                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
+                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
                       </View>
                     )}
                   </View>
