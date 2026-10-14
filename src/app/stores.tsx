@@ -156,7 +156,7 @@ export default function StoresScreen() {
                 }}>
                   {vendor.cover_image_url
                     ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
-                    : <Text style={{ fontSize: 28 }}>🏪</Text>}
+                    : <Image source={require('../../assets/images/store.png')} style={{ width: 32, height: 32 }} />}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }}>
@@ -173,7 +173,8 @@ export default function StoresScreen() {
                       <Text style={{ fontSize: 10, color: '#565656' }}>{statusLine(vendor)}</Text>
                     </View>
                     {vendor.is_halal_certified === true && (
-                      <View style={{ backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                        <Image source={require('../../assets/images/halal.png')} style={{ width: 12, height: 12 }} />
                         <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
                       </View>
                     )}
@@ -185,7 +186,7 @@ export default function StoresScreen() {
 
             {results.length === 0 && (
               <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-                <Text style={{ fontSize: 32, marginBottom: 8 }}>🏪</Text>
+                <Image source={require('../../assets/images/store.png')} style={{ width: 36, height: 36, marginBottom: 8 }} />
                 <Text style={{ color: Brand.textSecondary, textAlign: 'center' }}>{t('stores.noneFound')}</Text>
               </View>
             )}

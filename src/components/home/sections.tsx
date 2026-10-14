@@ -112,7 +112,7 @@ export function QueueBanner({ vendor, queue }: { vendor: Vendor; queue: { labelK
           shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.05, shadowRadius: 1, elevation: 1,
         }}>
-          <Text style={{ fontSize: 18 }}>🏪</Text>
+          <Image source={require('../../../assets/images/store.png')} style={{ width: 22, height: 22 }} />
         </View>
         <View>
           <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>
@@ -297,7 +297,7 @@ export function NoQueueSection({ vendors }: { vendors: Vendor[] }) {
                 <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
                   {vendor.cover_image_url
                     ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
-                    : <Text style={{ fontSize: 36 }}>🏪</Text>
+                    : <Image source={require('../../../assets/images/store.png')} style={{ width: 40, height: 40 }} />
                   }
                   <View style={{
                     position: 'absolute', top: 8, right: 8,
@@ -370,7 +370,7 @@ export function StoreOptions({ vendors }: { vendors: Vendor[] }) {
               }}>
                 {vendor.cover_image_url
                   ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
-                  : <Text style={{ fontSize: 28 }}>🏪</Text>
+                  : <Image source={require('../../../assets/images/store.png')} style={{ width: 32, height: 32 }} />
                 }
               </View>
               <View style={{ flex: 1 }}>
@@ -393,10 +393,11 @@ export function StoreOptions({ vendors }: { vendors: Vendor[] }) {
                   {vendor.cuisine_tags?.[0] ?? t('home.thaiFood')}
                 </Text>
                 {vendor.is_halal_certified && (
-                  <View style={{
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3,
                     backgroundColor: '#ffeae1', borderRadius: 4,
                     paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start',
                   }}>
+                    <Image source={require('../../../assets/images/halal.png')} style={{ width: 12, height: 12 }} />
                     <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
                   </View>
                 )}

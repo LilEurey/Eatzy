@@ -42,7 +42,7 @@ export default function NotificationsScreen() {
     // Subscribe before the initial fetch, so a row inserted while the fetch
     // is in flight isn't lost between the two; the merge below dedupes.
     const channel = supabase
-      .channel(`notifications-${user.id}`)
+      .channel(`notifications-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
         const row = payload.new as NotificationRow;
         if (!isCancelled()) setNotifications(prev => [row, ...(prev ?? []).filter(n => n.id !== row.id)]);

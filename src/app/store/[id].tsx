@@ -41,9 +41,10 @@ function queueStatus(count: number): { labelKey: TranslationKey; color: string }
   return { labelKey: 'common.busy', color: '#ef4444' };
 }
 
-function spiceLabel(level: number, t: ReturnType<typeof useI18n>['t']) {
-  if (level === 0) return t('common.noSpice');
-  return '🌶'.repeat(level);
+function SpiceIcons({ level }: { level: number }) {
+  return Array.from({ length: level }).map((_, i) => (
+    <Image key={i} source={require('../../../assets/images/chili.png')} style={{ width: 18, height: 18 }} />
+  ));
 }
 
 export default function StoreDetailScreen() {
@@ -124,7 +125,7 @@ export default function StoreDetailScreen() {
           </Tap>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 40 }}>🏪</Text>
+          <Image source={require('../../../assets/images/store.png')} style={{ width: 44, height: 44 }} />
           <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t('store.notFound')}</Text>
         </View>
       </SafeAreaView>
@@ -141,7 +142,7 @@ export default function StoreDetailScreen() {
           <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {vendor.cover_image_url
             ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
-            : <Text style={{ fontSize: 72 }}>🏪</Text>
+            : <Image source={require('../../../assets/images/store.png')} style={{ width: 76, height: 76 }} />
           }
           </Animated.View>
 
@@ -383,25 +384,33 @@ export default function StoreDetailScreen() {
                   </Text>
 
                   {/* Dietary badges */}
-                  <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
+                  <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
                     {item.is_halal && (
-                      <View style={{ backgroundColor: '#d1fae5', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#065f46', fontWeight: '600' }}>{t('common.halal')}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../../assets/images/halal.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#065f46', fontWeight: '600' }}>{t('common.halal')}</Text>
                       </View>
                     )}
                     {item.is_vegetarian && (
-                      <View style={{ backgroundColor: '#dcfce7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#166534', fontWeight: '600' }}>{t('store.veg')}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#dcfce7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../../assets/images/vegetarian.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#166534', fontWeight: '600' }}>{t('store.veg')}</Text>
+                      </View>
+                    )}
+                    {item.is_jay && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef9c3', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../../assets/images/jay.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#854d0e', fontWeight: '600' }}>{t('common.jay')}</Text>
                       </View>
                     )}
                     {item.spice_level > 0 && (
-                      <View style={{ backgroundColor: '#fef3c7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#92400e' }}>{spiceLabel(item.spice_level, t)}</Text>
+                      <View style={{ flexDirection: 'row', backgroundColor: '#fef3c7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <SpiceIcons level={item.spice_level} />
                       </View>
                     )}
                     {matchAllergens(item.allergens, prefs).length > 0 && (
-                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
+                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
                       </View>
                     )}
                   </View>

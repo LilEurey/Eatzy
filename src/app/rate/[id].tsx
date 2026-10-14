@@ -25,6 +25,7 @@ type RateOrder = {
   vendor_name: string;
   items: { name: string; name_th: string | null; addons: { name: string; name_th: string | null }[] }[];
   menu_item_ids: string[];
+  rated: boolean;
 };
 
 export default function RateScreen() {
@@ -56,7 +57,7 @@ export default function RateScreen() {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,vendors(name),order_items(menu_item_id,quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,vendors(name),ratings(id),order_items(menu_item_id,quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
@@ -69,6 +70,7 @@ export default function RateScreen() {
         // embed happened to return first (which also made a re-rate upsert
         // against a different dish and create a second review).
         menu_item_ids: [...new Set(data.order_items.map(oi => oi.menu_item_id))].sort(),
+        rated: data.ratings.length > 0,
       });
     }
     void load();
@@ -82,7 +84,7 @@ export default function RateScreen() {
     );
   }
 
-  if (!order) {
+  if (!order || order.rated) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
@@ -91,8 +93,8 @@ export default function RateScreen() {
           </Tap>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 40 }}>🧾</Text>
-          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t('common.orderNotFound')}</Text>
+          <Text style={{ fontSize: 40 }}>{order ? '⭐' : '🧾'}</Text>
+          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t(order ? 'rate.alreadyRated' : 'common.orderNotFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -124,22 +126,19 @@ export default function RateScreen() {
       return;
     }
 
-    // upsert, not insert: ratings carries unique (user_id, menu_item_id,
-    // order_id), and the orders list offers "Rate" on every completed order
-    // with no already-rated check — so re-rating one raised a raw 23505
-    // duplicate-key error under a "not found" alert. Re-rating now just
-    // revises the existing review, which is what the student meant anyway.
-    const { error } = await supabase.from('ratings').upsert(order.menu_item_ids.map(menuItemId => ({
+    // Plain insert: one rating per order (no UPDATE policy, 20261014020000).
+    // A duplicate means another tab/device already rated it.
+    const { error } = await supabase.from('ratings').insert(order.menu_item_ids.map(menuItemId => ({
       user_id: user.id,
       menu_item_id: menuItemId,
       order_id: order.id,
       score,
       comment: comment.trim() || null,
       photo_urls: photoUrls,
-    })), { onConflict: 'user_id,menu_item_id,order_id' });
+    })));
     setSubmitting(false);
     if (error) {
-      showAlert(t('common.errorTitle'), error.message);
+      showAlert(t('common.errorTitle'), error.code === '23505' ? t('rate.alreadyRated') : error.message);
       return;
     }
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -161,7 +160,7 @@ export default function RateScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
         {/* Vendor + items */}
         <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 28 }}>
-          <Text style={{ fontSize: 44, marginBottom: 8 }}>🍽️</Text>
+          <Image source={require('../../../assets/images/rate.png')} style={{ width: 64, height: 64, marginBottom: 8 }} resizeMode="contain" />
           <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: Brand.textPrimary }}>{vendor}</Text>
           <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' }}>
             {order.items.map(i => {

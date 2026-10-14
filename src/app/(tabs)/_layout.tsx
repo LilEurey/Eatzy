@@ -36,7 +36,7 @@ export default function TabsLayout() {
   return (
     <View style={{ flex: 1 }}>
       {/* Native UITabBar — iOS 26 renders it as system Liquid Glass; Android gets Material bottom nav. */}
-      <NativeTabs tintColor={Brand.orange} minimizeBehavior="onScrollDown">
+      <NativeTabs tintColor={Brand.orange}>
         <NativeTabs.Trigger name="index">
           <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
           <NativeTabs.Trigger.Label>{t('tabs.home')}</NativeTabs.Trigger.Label>

@@ -334,8 +334,8 @@ export default function ProfileScreen() {
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, flex: 1 }}>
-                <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#F8DDD2', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 22 }}>🍽️</Text>
+                <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#F8DDD2', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+                  <Image source={require('../../../assets/images/order.png')} style={{ width: 36, height: 36 }} resizeMode="contain" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }} numberOfLines={1}>{recentOrder.itemSummary}</Text>

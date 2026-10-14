@@ -104,9 +104,10 @@ export function useGoogleSignIn() {
       // the redirect URL, so an intercepted callback alone is useless.
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
       if (exchangeError) throw exchangeError;
+      // Success: stay in "Signing in…" until _layout routes away — resetting
+      // here re-showed the idle button during the role/prefs lookup.
     } catch (e) {
       showAlert(t('auth.signInFailedTitle'), errorMessage(e));
-    } finally {
       setLoading(false);
     }
   }

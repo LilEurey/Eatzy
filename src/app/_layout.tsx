@@ -81,7 +81,12 @@ export default function RootLayout() {
       );
     };
 
-    const { role, error: roleError } = await loadUserRole(userId);
+    // Fetched together: sequential reads doubled the post-login wait. The
+    // prefs read is wasted for vendors/admins but cheap.
+    const [{ role, error: roleError }, { data, error: prefsError }] = await Promise.all([
+      loadUserRole(userId),
+      supabase.from('user_preferences').select('user_id').eq('user_id', userId).maybeSingle(),
+    ]);
     if (roleError) { retryLater(); return; }
 
     // admin-login.tsx and vendor-login.tsx defer entirely to this function
@@ -112,11 +117,6 @@ export default function RootLayout() {
       return;
     }
 
-    const { data, error: prefsError } = await supabase
-      .from('user_preferences')
-      .select('user_id')
-      .eq('user_id', userId)
-      .maybeSingle();
     if (prefsError) { retryLater(); return; }
 
     if (!data) {

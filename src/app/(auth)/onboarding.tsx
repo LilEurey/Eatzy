@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert, errorMessage } from '@/lib/alert';
 import { toggled } from '@/lib/toggle-set';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { getTopMenuCategories } from '@/lib/menu-categories';
 import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
@@ -49,7 +50,8 @@ export default function OnboardingScreen() {
   async function loadSavedPreferences() {
     void getTopMenuCategories().then(setCategoryOptions).catch(() => {});
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
 
     const { data, error } = await supabase
@@ -101,7 +103,8 @@ export default function OnboardingScreen() {
   async function handleSkip() {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error('Not authenticated');
       const { error } = await supabase.from('user_preferences').upsert({ user_id: user.id });
       if (error) throw error;
@@ -117,7 +120,8 @@ export default function OnboardingScreen() {
   async function handleContinue() {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase.from('user_preferences').upsert({
@@ -279,7 +283,12 @@ export default function OnboardingScreen() {
                     gap: 5,
                   }}
                 >
-                  {selected && <Text style={{ fontSize: 12 }}>🚫</Text>}
+                  {selected && (
+                    <Svg width={12} height={12} viewBox="0 0 512 512">
+                      <Circle cx={256} cy={256} r={218} stroke="#ED1C24" strokeWidth={40} fill="none" />
+                      <Path d="M102 410L410 102" stroke="#ED1C24" strokeWidth={40} />
+                    </Svg>
+                  )}
                   <Text
                     style={{
                       color: selected ? '#E04040' : Brand.textPrimary,

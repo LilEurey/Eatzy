@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { Image } from 'expo-image';
 import { enterUp, popIn } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { KitchenBackdrop, ClassroomBackdrop, CanteenBackdrop } from '@/components/KitchenBackdrop';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -13,6 +15,7 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
+import { addToCart, clearCart } from '@/lib/cart-store';
 import { confirmHandoff, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 
 // Gentle breathing scale on the current step (Reanimated 4 CSS animation).
@@ -41,6 +44,7 @@ type TrackOrder = {
   total_amount: number;
   vendor_name: string;
   student_picked_up_at: string | null;
+  rated: boolean;
   // A payments row exists only once accept_order_and_charge has run, so its
   // absence is the authoritative "the wallet was never touched" signal. The
   // terminal panel states that to the student either way, and asserting it
@@ -51,17 +55,34 @@ type TrackOrder = {
   items: { name: string; name_th: string | null; quantity: number; unit_price: number; addons: { name: string; name_th: string | null; price: number }[] }[];
 };
 
-const STEPS: { key: Status; labelKey: TranslationKey; icon: string; hintKey: TranslationKey }[] = [
-  { key: 'pending',   labelKey: 'track.stepPlacedLabel',   icon: '📝', hintKey: 'track.stepPlacedHint' },
-  { key: 'accepted',  labelKey: 'orders.status.preparing', icon: '👨‍🍳', hintKey: 'track.stepPreparingHint' },
-  { key: 'ready',     labelKey: 'orders.status.ready',     icon: '🎉', hintKey: 'track.stepReadyHint' },
-  { key: 'completed', labelKey: 'track.stepPickedUpLabel', icon: '✅', hintKey: 'track.stepPickedUpHint' },
+const STEPS: { key: Status; labelKey: TranslationKey; icon: number; hintKey: TranslationKey }[] = [
+  { key: 'pending',   labelKey: 'track.stepPlacedLabel',   icon: require('../../../assets/images/track/step-placed.jpg'), hintKey: 'track.stepPlacedHint' },
+  { key: 'accepted',  labelKey: 'orders.status.preparing', icon: require('../../../assets/images/track/step-preparing.jpg'), hintKey: 'track.stepPreparingHint' },
+  { key: 'ready',     labelKey: 'orders.status.ready',     icon: require('../../../assets/images/track/step-ready.jpg'), hintKey: 'track.stepReadyHint' },
+  { key: 'completed', labelKey: 'track.stepPickedUpLabel', icon: require('../../../assets/images/track/step-picked-up.jpg'), hintKey: 'track.stepPickedUpHint' },
 ];
+
+// Per-stage animation; stages without one fall back to the pulsing emoji.
+const STAGE_ANIM: Partial<Record<Status, number>> = {
+  pending: require('../../../assets/images/track/placed.gif'),
+  accepted: require('../../../assets/images/track/preparing.gif'),
+  ready: require('../../../assets/images/track/ready.gif'),
+  // Plays once (no loop) and holds on the check — opaque white, since keying
+  // white out would punch through the checkmark.
+  completed: require('../../../assets/images/track/picked-up.gif'),
+};
+
+// Scene behind each stage's GIF; stages without one sit on the plain card.
+const STAGE_BACKDROP: Partial<Record<Status, () => React.JSX.Element>> = {
+  pending: ClassroomBackdrop,
+  accepted: KitchenBackdrop,
+  ready: CanteenBackdrop,
+};
 
 const ORDER: Status[] = ['pending', 'accepted', 'ready', 'completed'];
 
 const TERMINAL: Partial<Record<Status, { icon: string; titleKey: TranslationKey; bodyKey: TranslationKey }>> = {
-  rejected:  { icon: '🚫', titleKey: 'orders.status.rejected',  bodyKey: 'track.rejectedMsg' },
+  rejected:  { icon: '❌', titleKey: 'orders.status.rejected',  bodyKey: 'track.rejectedMsg' },
   cancelled: { icon: '✖️', titleKey: 'orders.status.cancelled', bodyKey: 'track.cancelledMsg' },
 };
 
@@ -77,7 +98,7 @@ export default function TrackScreen() {
     async function load() {
       const { data, error } = await supabase
         .from('orders')
-        .select('id,vendor_id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),payments(status),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,vendor_id,queue_number,status,pickup_start,pickup_end,total_amount,student_picked_up_at,vendors(name),payments(status),ratings(id),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
       if (cancelled) return;
@@ -98,6 +119,7 @@ export default function TrackScreen() {
         total_amount: data.total_amount,
         vendor_name: data.vendors?.name ?? '',
         student_picked_up_at: data.student_picked_up_at,
+        rated: data.ratings.length > 0,
         // payments.order_id is unique, so PostgREST embeds it to-ONE: an object
         // when the order was charged, null when it wasn't — not an array.
         was_charged: !!data.payments,
@@ -110,7 +132,7 @@ export default function TrackScreen() {
     // was_charged (payments) and the handoff timestamps change too, and the
     // terminal "no charge" vs "refunded" copy depends on them.
     const channel = supabase
-      .channel(`track-order-${id}`)
+      .channel(`track-order-${id}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, () => {
         void load();
       })
@@ -133,7 +155,7 @@ export default function TrackScreen() {
     void fetchOrdersAhead();
 
     const channel = supabase
-      .channel(`track-queue-${vendorId}-${id}`)
+      .channel(`track-queue-${vendorId}-${id}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
         void fetchOrdersAhead();
       })
@@ -141,11 +163,39 @@ export default function TrackScreen() {
     return () => { void supabase.removeChannel(channel); };
   }, [vendorId, id]);
 
+  // Refill the cart with the same dishes, add-ons and notes at today's prices.
+  // Anything no longer available is left out; place_order() re-validates the rest.
+  async function orderAgain() {
+    const { data, error } = await supabase
+      .from('order_items')
+      .select('quantity,special_instructions,menu_items(id,vendor_id,name,name_th,price,allergens,is_available),order_item_addons(addon_id,menu_item_addons(id,name,name_th,price,allergens,is_available))')
+      .eq('order_id', id);
+    if (error) { showAlert(t('common.errorTitle'), error.message); return; }
+    let skipped = false;
+    const lines = (data ?? []).filter(oi => {
+      const ok = !!oi.menu_items?.is_available;
+      if (!ok) skipped = true;
+      return ok;
+    });
+    if (lines.length === 0) { showAlert(t('track.orderAgain'), t('track.orderAgainNone')); return; }
+    clearCart();
+    for (const oi of lines) {
+      const addons = oi.order_item_addons.flatMap(a => {
+        const opt = a.menu_item_addons;
+        if (!opt?.is_available) { skipped = true; return []; }
+        return [{ id: opt.id, name: opt.name, name_th: opt.name_th, price: opt.price, allergens: opt.allergens ?? [] }];
+      });
+      addToCart(oi.menu_items!, oi.quantity, addons, oi.special_instructions ?? '');
+    }
+    router.push('/cart');
+    if (skipped) showAlert(t('track.orderAgain'), t('track.orderAgainSkipped'));
+  }
+
   async function markPickedUp() {
     if (!order) return;
     const error = await confirmHandoff('student', order.id);
     if (error) { showAlert(t('common.errorTitle'), error); return; }
-    setOrder({ ...order, student_picked_up_at: new Date().toISOString() });
+    router.replace(`/rate/${order.id}`);
   }
 
   async function cancelOrder() {
@@ -197,6 +247,7 @@ export default function TrackScreen() {
   const currentIdx = ORDER.indexOf(status);
   const isReady = status === 'ready';
   const terminal = TERMINAL[status];
+  const Backdrop = STAGE_BACKDROP[status];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -209,37 +260,11 @@ export default function TrackScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
-        {/* Queue hero */}
-        <View style={{
-          backgroundColor: isReady ? Brand.orange : Brand.card, borderRadius: 24, padding: 24,
-          alignItems: 'center', marginBottom: 24, marginTop: 8,
-          shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
-        }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', letterSpacing: 1, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary }}>
-            {t('track.queueNumber')}
-          </Text>
-          <Text style={{ fontSize: 56, fontWeight: '800', color: isReady ? '#fff' : Brand.orange, marginVertical: 4, fontVariant: ['tabular-nums'] }}>
-            #{order.queue_number}
-          </Text>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: isReady ? '#fff' : Brand.textPrimary }}>
-            {vendor}
-          </Text>
-          <Text style={{ fontSize: 13, color: isReady ? 'rgba(255,255,255,0.85)' : Brand.textSecondary, marginTop: 2 }}>
-            {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
-          </Text>
-          {ordersAhead !== null && (
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isReady ? '#fff' : Brand.orange, marginTop: 8 }}>
-              {t('track.ordersAhead', { n: ordersAhead })}
-            </Text>
-          )}
-        </View>
-
         {/* Terminal state — the order is dead, so there is no progress to step
-            through. Shown in place of the stepper for rejected/cancelled. */}
+            through. Shown in place of the tracker for rejected/cancelled. */}
         {terminal ? (
           <View style={{
-            backgroundColor: Brand.card, borderRadius: 20, padding: 24, marginBottom: 24,
+            backgroundColor: Brand.card, borderRadius: 20, padding: 24, marginBottom: 24, marginTop: 8,
             alignItems: 'center',
             shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
@@ -255,46 +280,78 @@ export default function TrackScreen() {
             </Text>
           </View>
         ) : (
-        /* Stepper */
         <View style={{
-          backgroundColor: Brand.card, borderRadius: 20, padding: 20, marginBottom: 24,
-          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
+          backgroundColor: Brand.card, borderRadius: 24, padding: 20, marginBottom: 24, marginTop: 8,
+          shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
         }}>
-          {STEPS.map((step, i) => {
-            const done = i < currentIdx;
-            const active = i === currentIdx;
-            const reached = i <= currentIdx;
-            return (
-              <View key={step.key} style={{ flexDirection: 'row', gap: 14 }}>
-                {/* Rail */}
-                <View style={{ alignItems: 'center' }}>
+          {/* 1. Stage animation — add more stages in STAGE_ANIM */}
+          <View style={{ minHeight: 140, alignItems: 'center', justifyContent: 'center' }}>
+            {STAGE_ANIM[status] ? (
+              <View style={{ alignSelf: 'stretch', height: 200, margin: -20, marginBottom: 16, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', backgroundColor: Backdrop ? Brand.orangeLight : Brand.card }}>
+                {Backdrop && <View style={{ position: 'absolute', inset: 0 }}><Backdrop /></View>}
+                {/* placed.gif's arm is cut at the frame edge — sit it flush on the bottom */}
+                {/* ready.gif is a full-width canvas (672x384) so the walker crosses edge to edge */}
+                <Image source={STAGE_ANIM[status]} style={status === 'ready' ? { position: 'absolute', bottom: 6, left: 0, right: 0, aspectRatio: 672 / 384 } : { position: 'absolute', bottom: status === 'pending' ? 0 : 8, alignSelf: 'center', width: 260, height: 195 }} contentFit="contain" />
+              </View>
+            ) : (
+              <Animated.View key={status} entering={popIn} style={PULSE}>
+                <Image source={STEPS[currentIdx].icon} style={{ width: 96, height: 96, borderRadius: 48 }} />
+              </Animated.View>
+            )}
+          </View>
+
+          {/* 2. Status + horizontal stepper */}
+          <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>
+            {t(STEPS[currentIdx].labelKey)}
+          </Text>
+          <Animated.Text key={`hint-${status}`} entering={enterUp()} style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 2 }}>
+            {t(STEPS[currentIdx].hintKey)}
+          </Animated.Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16 }}>
+            {STEPS.map((step, i) => {
+              const reached = i <= currentIdx;
+              return (
+                <View key={step.key} style={{ flexDirection: 'row', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 0 }}>
                   <Animated.View style={[{
-                    width: 40, height: 40, borderRadius: 20,
+                    width: 26, height: 26, borderRadius: 13,
                     backgroundColor: reached ? Brand.orange : Brand.orangeLight,
                     alignItems: 'center', justifyContent: 'center',
                     transitionProperty: 'backgroundColor', transitionDuration: 400,
-                  }, active && PULSE]}>
-                    {/* key swap remounts the glyph so ✓ pops in when a step completes */}
-                    <Animated.Text key={done ? 'done' : 'icon'} entering={popIn}
-                      style={{ fontSize: 18, opacity: reached ? 1 : 0.4 }}>{done ? '✓' : step.icon}</Animated.Text>
+                  }, i === currentIdx && PULSE]}>
+                    <Image source={step.icon} style={{ width: 22, height: 22, borderRadius: 11, opacity: reached ? 1 : 0.4 }} />
                   </Animated.View>
                   {i < STEPS.length - 1 && (
-                    <Animated.View style={{ width: 2, flex: 1, minHeight: 28, backgroundColor: i < currentIdx ? Brand.orange : Brand.border, transitionProperty: 'backgroundColor', transitionDuration: 400 }} />
+                    <Animated.View style={{
+                      flex: 1, height: 4, borderRadius: 2, marginHorizontal: 4,
+                      backgroundColor: i < currentIdx ? Brand.orange : Brand.border,
+                      transitionProperty: 'backgroundColor', transitionDuration: 400,
+                    }} />
                   )}
                 </View>
-                {/* Text */}
-                <View style={{ flex: 1, paddingBottom: i < STEPS.length - 1 ? 20 : 0 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: reached ? Brand.textPrimary : Brand.textSecondary }}>
-                    {t(step.labelKey)}
-                  </Text>
-                  {active && (
-                    <Animated.Text entering={enterUp()} style={{ fontSize: 13, color: Brand.orange, marginTop: 2 }}>{t(step.hintKey)}</Animated.Text>
-                  )}
-                </View>
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
+
+          {/* 3. Queue number */}
+          <View style={{ height: 1, backgroundColor: Brand.border, marginVertical: 16 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.textPrimary }}>{vendor}</Text>
+              <Text style={{ fontSize: 12, color: Brand.textSecondary, marginTop: 2 }}>
+                {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
+              </Text>
+              {ordersAhead !== null && (
+                <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.orange, marginTop: 4 }}>
+                  {t('track.ordersAhead', { n: ordersAhead })}
+                </Text>
+              )}
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', letterSpacing: 1, color: Brand.textSecondary }}>{t('track.queueNumber')}</Text>
+              <Text style={{ fontSize: 32, fontWeight: '800', color: Brand.orange, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
+            </View>
+          </View>
         </View>
         )}
 
@@ -311,8 +368,8 @@ export default function TrackScreen() {
             const addonSum = it.addons.reduce((s, a) => s + a.price, 0);
             return (
               <View key={i} style={{ gap: 2 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, color: Brand.textPrimary }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                  <Text style={{ flex: 1, fontSize: 14, color: Brand.textPrimary }}>
                     {it.quantity > 1 ? `${it.quantity}× ` : ''}{localizedText(it.name, it.name_th, locale)}
                   </Text>
                   <Text style={{ fontSize: 14, color: Brand.textSecondary, fontVariant: ['tabular-nums'] }}>฿{(it.unit_price + addonSum) * it.quantity}</Text>
@@ -350,16 +407,20 @@ export default function TrackScreen() {
       )}
 
       {/* Sticky action when ready */}
-      {isReady && (
+      {isReady && !(order.student_picked_up_at && order.rated) && (
         <View style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           backgroundColor: Brand.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 36,
           borderTopWidth: 1, borderTopColor: Brand.border,
         }}>
           {order.student_picked_up_at ? (
-            <View style={{ borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}>
-              <Text style={{ color: Brand.textSecondary, fontSize: 14, fontWeight: '600' }}>{t('track.waitingOnVendorConfirm')}</Text>
-            </View>
+            <Tap
+              activeOpacity={0.85}
+              onPress={() => router.replace(`/rate/${order.id}`)}
+              style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.rateYourOrder')}</Text>
+            </Tap>
           ) : (
             <Tap
               activeOpacity={0.85}
@@ -376,15 +437,24 @@ export default function TrackScreen() {
         <View style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           backgroundColor: Brand.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 36,
-          borderTopWidth: 1, borderTopColor: Brand.border,
+          borderTopWidth: 1, borderTopColor: Brand.border, gap: 10,
         }}>
           <Tap
+            activeOpacity={0.85}
+            onPress={orderAgain}
+            style={order.rated
+              ? { backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }
+              : { backgroundColor: Brand.orangeLight, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
+          >
+            <Text style={{ color: order.rated ? '#fff' : Brand.orange, fontSize: 16, fontWeight: '700' }}>{t('track.orderAgain')}</Text>
+          </Tap>
+          {!order.rated && <Tap
             activeOpacity={0.85}
             onPress={() => router.replace(`/rate/${order.id}`)}
             style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
           >
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.rateYourOrder')}</Text>
-          </Tap>
+          </Tap>}
         </View>
       )}
     </SafeAreaView>

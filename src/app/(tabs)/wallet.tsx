@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
 import { View, Text, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import { listEnter } from '@/lib/motion';
 import { CountUp } from '@/components/CountUp';
@@ -13,7 +14,7 @@ import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ, bangkokDayKey } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
 import { ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-lifecycle';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
@@ -24,10 +25,10 @@ type WalletTxn = { id: string; type: TxType; amount: number; description: string
 type HeldOrder = { id: string; queue_number: number | null; status: OrderStatus; total_amount: number; vendors: { name: string } | null };
 const HELD_STATUSES: OrderStatus[] = ['pending', 'accepted', 'ready'];
 
-const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
+const TX_CONFIG: Record<TxType, { icon: string; color: string; image?: number }> = {
   topup:    { icon: '↓', color: '#16a34a' },
   payment:  { icon: '↑', color: '#dc2626' },
-  refund:   { icon: '↩', color: '#2563eb' },
+  refund:   { icon: '↩', color: '#2563eb', image: require('../../../assets/images/refund.png') },
   transfer: { icon: '⇄', color: '#7c3aed' },
 };
 
@@ -70,7 +71,8 @@ export default function WalletScreen() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const focusGuard = useFocusGuard();
-  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
+  const { key: refreshKey, done: refreshDone, control: refreshControl, refresh: pullRefresh } = usePullToRefresh();
+  const scrollRef = useRefreshOnTabRetap(pullRefresh);
 
   const refresh = useCallback((cancelledRef: { current: boolean }) => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -106,7 +108,7 @@ export default function WalletScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5 }}>
@@ -166,11 +168,13 @@ export default function WalletScreen() {
         {/* Quick actions */}
         <View style={{ flexDirection: 'row', gap: 12, marginHorizontal: 20, marginBottom: 28 }}>
           {[
-            { icon: '⏳', label: t('wallet.escrow', { amount: formatBaht(heldTotal) }), onPress: () => setShowHeld(v => !v), dim: held.length === 0 },
-            { icon: '📄', label: t('wallet.statement'), onPress: () => router.push('/wallet-statement'), dim: false },
+            { icon: <Image source={require('../../../assets/images/held.png')} style={{ width: 22, height: 22 }} />, label: t('wallet.escrow', { amount: formatBaht(heldTotal) }), onPress: () => setShowHeld(v => !v), dim: held.length === 0 },
+            {
+              icon: <Image source={require('../../../assets/images/statement.png')} style={{ width: 22, height: 22 }} />,
+              label: t('wallet.statement'), onPress: () => router.push('/wallet-statement'), dim: false },
           ].map(({ icon, label, onPress, dim }) => (
             <Tap
-              key={icon}
+              key={label}
               onPress={onPress}
               style={{
                 opacity: dim ? 0.5 : 1,
@@ -184,7 +188,7 @@ export default function WalletScreen() {
                 width: 40, height: 40, borderRadius: 20,
                 backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
               }}>
-                <Text style={{ fontSize: 18, color: Brand.orange }}>{icon}</Text>
+                {icon}
               </View>
               <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textSecondary }}>{label}</Text>
             </Tap>
@@ -255,7 +259,9 @@ export default function WalletScreen() {
                       width: 44, height: 44, borderRadius: 22,
                       backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <Text style={{ fontSize: 18, color: cfg.color, fontWeight: '700' }}>{cfg.icon}</Text>
+                      {cfg.image
+                        ? <Image source={cfg.image} style={{ width: 24, height: 24 }} />
+                        : <Text style={{ fontSize: 18, color: cfg.color, fontWeight: '700' }}>{cfg.icon}</Text>}
                     </View>
 
                     {/* Info */}

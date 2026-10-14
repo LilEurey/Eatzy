@@ -196,7 +196,7 @@ export async function markNotificationsRead() {
 function subscribeRealtime(vendorId: string, userId: string) {
   if (realtimeChannel) void supabase.removeChannel(realtimeChannel);
   realtimeChannel = supabase
-    .channel(`vendor-${vendorId}`)
+    .channel(`vendor-${vendorId}-${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
       void fetchOrders(vendorId).then(emit);
     })

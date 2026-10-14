@@ -3,6 +3,7 @@ import { SkeletonDetail } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Image } from 'expo-image';
+import Svg, { Circle, Path } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { rowEnter, popIn, popOut, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
@@ -49,7 +50,7 @@ function SpiceIndicator({ level }: { level: number }) {
   return (
     <View style={{ flexDirection: 'row', gap: 2 }}>
       {Array.from({ length: 5 }).map((_, i) => (
-        <Text key={i} style={{ fontSize: 14, opacity: i < level ? 1 : 0.2 }}>🌶</Text>
+        <Image key={i} source={require('../../../assets/images/chili.png')} style={{ width: 24, height: 24, opacity: i < level ? 1 : 0.2 }} />
       ))}
     </View>
   );
@@ -287,17 +288,20 @@ export default function ItemDetailScreen() {
           {/* Dietary badges */}
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
             {item.is_halal && (
-              <View style={{ backgroundColor: '#d1fae5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 13, color: '#065f46', fontWeight: '700' }}>{t('common.halalCertified')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#d1fae5', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Image source={require('../../../assets/images/halal.png')} style={{ width: 22, height: 22 }} />
+                <Text style={{ fontSize: 15, color: '#065f46', fontWeight: '700' }}>{t('common.halalCertified')}</Text>
               </View>
             )}
             {item.is_vegetarian && (
-              <View style={{ backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 13, color: '#166534', fontWeight: '700' }}>{t('common.vegetarian')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Image source={require('../../../assets/images/vegetarian.png')} style={{ width: 22, height: 22 }} />
+                <Text style={{ fontSize: 15, color: '#166534', fontWeight: '700' }}>{t('common.vegetarian')}</Text>
               </View>
             )}
             {item.is_jay && (
-              <View style={{ backgroundColor: '#fef9c3', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef9c3', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Image source={require('../../../assets/images/jay.png')} style={{ width: 16, height: 16 }} />
                 <Text style={{ fontSize: 13, color: '#854d0e', fontWeight: '700' }}>{t('common.jay')}</Text>
               </View>
             )}
@@ -322,14 +326,30 @@ export default function ItemDetailScreen() {
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
           }}>
             {[
-              { icon: '⏱', value: item.preparation_time_min != null ? `${item.preparation_time_min} min` : '—', label: t('item.prepTime') },
-              { icon: '🏷️', value: `฿${item.price}`, label: t('item.price') },
+              {
+                icon: (
+                  <Svg width={22} height={22} viewBox="0 0 512 512">
+                    <Circle cx={256} cy={256} r={233} stroke="#000" strokeWidth={46} fill="none" />
+                    <Path d="M256 138V256L330 312" stroke="#000" strokeWidth={46} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </Svg>
+                ),
+                value: item.preparation_time_min != null ? `${item.preparation_time_min} min` : '—', label: t('item.prepTime') },
+              {
+                icon: (
+                  <Svg width={22} height={22} viewBox="0 0 512 512">
+                    <Path d="M300 36H446Q476 36 476 66V200Q476 230 455 251L262 444Q240 466 218 444L58 284Q36 262 58 240L240 58Q262 36 300 36Z" stroke="#000" strokeWidth={38} strokeLinejoin="round" fill="none" />
+                    <Circle cx={360} cy={150} r={37} stroke="#000" strokeWidth={37} fill="none" />
+                  </Svg>
+                ),
+                value: `฿${item.price}`, label: t('item.price') },
             ].map(({ icon, value, label }, i) => (
               <View key={label} style={{
                 flex: 1, alignItems: 'center', paddingVertical: 14,
                 borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: Brand.border,
               }}>
-                <Text style={{ fontSize: 20, marginBottom: 4 }}>{icon}</Text>
+                {typeof icon === 'string'
+                  ? <Text style={{ fontSize: 20, marginBottom: 4 }}>{icon}</Text>
+                  : <View style={{ height: 24, justifyContent: 'center', marginBottom: 4 }}>{icon}</View>}
                 <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{value}</Text>
                 <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{label}</Text>
               </View>

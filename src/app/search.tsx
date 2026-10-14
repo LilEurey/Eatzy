@@ -68,8 +68,10 @@ function matchScore(item: SearchItem, needle: string): number {
   return 0;
 }
 
-function spiceDots(level: number) {
-  return level === 0 ? '' : ' · ' + '🌶'.repeat(level);
+function SpiceIcons({ level }: { level: number }) {
+  return Array.from({ length: level }).map((_, i) => (
+    <Image key={i} source={require('../../assets/images/chili.png')} style={{ width: 16, height: 16 }} />
+  ));
 }
 
 export default function SearchScreen() {
@@ -234,23 +236,34 @@ export default function SearchScreen() {
                   <Text style={{ fontSize: 15, fontWeight: '600', color: '#261812' }} numberOfLines={1}>
                     {localizedText(item.name, item.name_th, locale)}
                   </Text>
-                  <Text style={{ fontSize: 12, color: '#5a4136', marginTop: 2 }} numberOfLines={1}>
-                    {item.vendorName}{item.category ? ` · ${item.category}` : ''}{spiceDots(item.spice_level)}
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                    <Text style={{ fontSize: 12, color: '#5a4136', flexShrink: 1 }} numberOfLines={1}>
+                      {item.vendorName}{item.category ? ` · ${item.category}` : ''}{item.spice_level > 0 ? ' · ' : ''}
+                    </Text>
+                    <SpiceIcons level={item.spice_level} />
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                     {item.is_halal && (
-                      <View style={{ backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffeae1', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../assets/images/halal.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#565656' }}>{t('common.halal')}</Text>
                       </View>
                     )}
                     {item.is_vegetarian && (
-                      <View style={{ backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.vegetarian')}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffeae1', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../assets/images/vegetarian.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#565656' }}>{t('common.vegetarian')}</Text>
+                      </View>
+                    )}
+                    {item.is_jay && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffeae1', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Image source={require('../../assets/images/jay.png')} style={{ width: 18, height: 18 }} />
+                        <Text style={{ fontSize: 13, color: '#565656' }}>{t('common.jay')}</Text>
                       </View>
                     )}
                     {matchAllergens(item.allergens, prefs).length > 0 && (
-                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
+                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Text style={{ fontSize: 13, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
                       </View>
                     )}
                   </View>

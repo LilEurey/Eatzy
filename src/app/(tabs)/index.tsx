@@ -8,7 +8,7 @@ import { enterUp } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -91,7 +91,8 @@ export default function HomeScreen() {
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   const focusGuard = useFocusGuard();
-  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
+  const { key: refreshKey, done: refreshDone, control: refreshControl, refresh } = usePullToRefresh();
+  const scrollRef = useRefreshOnTabRetap(refresh);
 
   // The whole fetch-filter-rank fanout (8 concurrent queries, dietary +
   // drink-category filtering, rank restore, the two recommendation rows) lives in
@@ -160,7 +161,7 @@ export default function HomeScreen() {
     // order, the notifications row inserts live — subscribe so the dot lights
     // up without needing a tab-away-and-back, same pattern as notifications.tsx.
     const channel = supabase
-      .channel(`home-notifications-${user.id}`)
+      .channel(`home-notifications-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
         if (!isCancelled()) setHasUnreadNotifications(true);
       })
@@ -214,7 +215,7 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       <TopBar avatarUrl={avatarUrl} firstName={firstName} hasUnreadNotifications={hasUnreadNotifications} />
 
-      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Greeting */}
         <Animated.Text entering={enterUp()} lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
           {t(getGreetingKey())}{firstName ? `, ${firstName}.` : '.'}

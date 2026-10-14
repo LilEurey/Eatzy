@@ -14,7 +14,7 @@ import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems } from '@/lib/order-view';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
 import { ORDER_STATUS_LABEL, isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
@@ -29,6 +29,7 @@ type StudentOrder = {
   pickup_end: string | null;
   created_at: string;
   vendor_name: string;
+  rated: boolean;
   items: { name: string; name_th: string | null; quantity: number; addons: { name: string; name_th: string | null }[] }[];
 };
 
@@ -56,7 +57,8 @@ export default function OrdersScreen() {
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
+  const { key: refreshKey, done: refreshDone, control: refreshControl, refresh } = usePullToRefresh();
+  const scrollRef = useRefreshOnTabRetap(refresh);
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -66,7 +68,7 @@ export default function OrdersScreen() {
     async function load() {
       const { data, error } = await supabase
         .from('orders')
-        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,student_picked_up_at,vendors(name),ratings(id),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -78,12 +80,15 @@ export default function OrdersScreen() {
         id: o.id,
         vendor_id: o.vendor_id,
         queue_number: o.queue_number,
-        status: o.status as OrderStatus,
+        // Student confirmed pickup — done from their side even while the
+        // vendor's handoff confirm is pending (DB status stays 'ready').
+        status: (o.status === 'ready' && o.student_picked_up_at ? 'completed' : o.status) as OrderStatus,
         total_amount: o.total_amount,
         pickup_start: o.pickup_start,
         pickup_end: o.pickup_end,
         created_at: o.created_at,
         vendor_name: o.vendors?.name ?? '—',
+        rated: o.ratings.length > 0,
         items: mapOrderItems(o.order_items),
       })));
       setLoading(false);
@@ -93,7 +98,7 @@ export default function OrdersScreen() {
     // otherwise only showed on tab refocus. (orders is in the
     // supabase_realtime publication as of 20260904000000.)
     const channel = supabase
-      .channel(`student-orders-${userId}`)
+      .channel(`student-orders-${userId}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, () => {
         void load();
       })
@@ -158,7 +163,7 @@ export default function OrdersScreen() {
       {loading ? (
         <SkeletonList />
       ) : (
-      <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
         {tab === 'All' && filtered.some(o => isActiveForStudent(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
@@ -251,7 +256,7 @@ export default function OrdersScreen() {
                 </View>
 
                 {/* Action button */}
-                {isActive && (
+                {(isActive || order.status === 'rejected' || order.status === 'cancelled' || order.status === 'completed') && (
                   <Tap
                     onPress={() => router.push(`/track/${order.id}`)}
                     style={{
@@ -263,12 +268,12 @@ export default function OrdersScreen() {
                       fontSize: 13, fontWeight: '700',
                       color: order.status === 'ready' ? '#fff' : Brand.orange,
                     }}>
-                      {order.status === 'ready' ? t('orders.readyForPickup') : t('orders.trackOrder')}
+                      {order.status === 'ready' ? t('orders.readyForPickup') : isActive ? t('orders.trackOrder') : t('orders.viewDetails')}
                     </Text>
                   </Tap>
                 )}
 
-                {order.status === 'completed' && (
+                {order.status === 'completed' && !order.rated && (
                   <Tap
                     onPress={() => router.push(`/rate/${order.id}`)}
                     style={{

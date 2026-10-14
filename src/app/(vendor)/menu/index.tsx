@@ -91,7 +91,7 @@ export default function VendorMenuScreen() {
               <View style={{ padding: 14, gap: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                   <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: Brand.textPrimary }} numberOfLines={2}>{localizedText(item.name, item.name_th, locale)}</Text>
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: Brand.vendorAccent, fontVariant: ['tabular-nums'] }}>{item.price}฿</Text>
+                  <Text numberOfLines={1} style={{ flexShrink: 0, fontSize: 14, fontWeight: '800', color: Brand.vendorAccent, fontVariant: ['tabular-nums'] }}>฿{item.price}</Text>
                 </View>
                 {rank === 0 && units > 0 && (
                   <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: GOLD_BG, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
