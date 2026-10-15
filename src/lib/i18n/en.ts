@@ -345,7 +345,7 @@ export const en = {
   'editPreferences.saving': 'Saving…',
   'editPreferences.savedTitle': 'Preferences updated',
   'editPreferences.savedMsg': 'Your dietary preferences have been saved.',
-  'profile.logout': '→ Logout',
+  'profile.logout': 'Log Out',
   'profile.languagePickerTitle': 'Choose language',
   'profile.avatarPermissionMsg': 'Allow photo library access to set a profile picture.',
   'profile.avatarUploadErrorTitle': 'Couldn’t update profile picture',
