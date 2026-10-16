@@ -18,6 +18,8 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { hasCoords } from '@/lib/geo';
 import { localizedText } from '@/lib/localize';
 import { usePreferences, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
+import { useCart, cartCount, cartSubtotal } from '@/lib/cart-store';
+import { formatBaht } from '@/lib/money';
 import type { Database } from '@/types/database.types';
 
 type Tables = Database['public']['Tables'];
@@ -49,6 +51,7 @@ function SpiceIcons({ level }: { level: number }) {
 
 export default function StoreDetailScreen() {
   const { t, locale } = useI18n();
+  const cart = useCart();
   const { prefs, gate } = usePreferences();
   const prefsError = gate.status === 'error';
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -477,6 +480,15 @@ export default function StoreDetailScreen() {
         </View>
       </Animated.ScrollView>
       <HeroHeader title={vendor.name} barStyle={barStyle} />
+      {cart.vendor_id === vendor.id && cart.items.length > 0 && (
+        <Tap
+          onPress={() => router.push('/cart')}
+          style={{ position: 'absolute', left: 16, right: 16, bottom: 28, height: 60, borderRadius: 30, backgroundColor: Brand.orange, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 }}
+        >
+          <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700' }}>{t('store.basket', { n: cartCount(cart) })}</Text>
+          <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700' }}>{formatBaht(cartSubtotal(cart))}</Text>
+        </Tap>
+      )}
     </SafeAreaView>
   );
 }

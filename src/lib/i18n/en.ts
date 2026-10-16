@@ -161,6 +161,7 @@ export const en = {
   'wallet.txn.refund': 'Escrow refunded — order cancelled/rejected',
 
   // Cart
+  'store.basket': 'Basket • {n} items',
   'cart.title': 'Your Cart',
   'cart.empty': 'Cart is empty',
   'cart.addSomething': 'Add something delicious',

@@ -163,6 +163,7 @@ export const th: Record<TranslationKey, string> = {
   'wallet.txn.refund': 'คืนเงิน — ออเดอร์ถูกยกเลิก/ปฏิเสธ',
 
   // Cart
+  'store.basket': 'ตะกร้า • {n} รายการ',
   'cart.title': 'ตะกร้าของคุณ',
   'cart.empty': 'ตะกร้าว่างเปล่า',
   'cart.addSomething': 'เพิ่มเมนูอร่อย ๆ กันเถอะ',

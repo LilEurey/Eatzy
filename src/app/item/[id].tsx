@@ -227,13 +227,13 @@ export default function ItemDetailScreen() {
         showConfirm(
           t('item.allergyWarningTitle'),
           t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
-          () => { addToCart(currentItem, qty, selectedOptions, note); router.push('/cart'); },
+          () => { addToCart(currentItem, qty, selectedOptions, note); router.back(); },
           { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
         );
         return;
       }
       addToCart(currentItem, qty, selectedOptions, note);
-      router.push('/cart');
+      router.back();
     };
 
     if (hasVendorMismatch(currentItem.vendor_id)) {
