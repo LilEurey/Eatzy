@@ -26,7 +26,7 @@ export function SwipeToConfirm({ label, onConfirm }: { label: string; onConfirm:
   const pan = Gesture.Pan()
     .onChange((e) => { x.value = Math.min(Math.max(x.value + e.changeX, 0), max); })
     .onEnd(() => {
-      if (x.value > max * 0.85) {
+      if (x.value > max * 0.5) {
         x.value = withTiming(max, { duration: 120 });
         scheduleOnRN(confirm);
       } else {
@@ -36,7 +36,7 @@ export function SwipeToConfirm({ label, onConfirm }: { label: string; onConfirm:
 
   const knobStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   const fillStyle = useAnimatedStyle(() => ({ width: x.value + KNOB + PAD * 2 }));
-  const labelStyle = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [0, max * 0.6], [1, 0], 'clamp') }));
+  const labelStyle = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [0, max * 0.4], [1, 0], 'clamp') }));
 
   return (
     <View
@@ -50,7 +50,7 @@ export function SwipeToConfirm({ label, onConfirm }: { label: string; onConfirm:
     >
       {/* darker trail behind the knob shows progress */}
       <Animated.View style={[{ position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: HEIGHT / 2, backgroundColor: 'rgba(0,0,0,0.12)' }, fillStyle]} />
-      <Animated.Text style={[{ position: 'absolute', left: KNOB + PAD, right: 0, textAlign: 'center', color: '#fff', fontSize: 16, fontWeight: '700' }, labelStyle]}>
+      <Animated.Text style={[{ position: 'absolute', left: 0, right: 0, textAlign: 'center', color: '#fff', fontSize: 16, fontWeight: '700' }, labelStyle]}>
         {label}
       </Animated.Text>
       <GestureDetector gesture={pan}>
