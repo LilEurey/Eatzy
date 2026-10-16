@@ -224,8 +224,10 @@ export default function ItemDetailScreen() {
     const currentItem = item;
 
     // Land on the dish's store (basket bar there) so the student keeps shopping.
-    // dismissTo pops back if the store is already under us, else replaces this screen.
-    const backToStore = () => router.dismissTo(`/store/${currentItem.vendor_id}`);
+    // Dishes are only pushed from their store page (openItem / store list), so
+    // that store is the screen underneath; replace covers a deep link with no history.
+    const backToStore = () =>
+      router.canGoBack() ? router.back() : router.replace(`/store/${currentItem.vendor_id}`);
 
     const addNow = () => {
       if (matchedAllergens.length > 0) {
