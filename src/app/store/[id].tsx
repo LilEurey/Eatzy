@@ -11,7 +11,7 @@ import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
 import StoreMiniMap from '@/components/StoreMiniMap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -56,14 +56,21 @@ export default function StoreDetailScreen() {
   const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(220);
   // Opened via openItem(): scroll to + highlight the dish the student tapped.
   // y = content View + menu list + row offsets; scroll once all three are measured.
-  const focusY = useRef<{ content?: number; list?: number; row?: number; done?: boolean }>({});
-  const scrollToFocus = (k: 'content' | 'list' | 'row', y: number) => {
+  // Waits for the push slide to finish so the two motions don't overlap.
+  const focusY = useRef<{ content?: number; list?: number; row?: number; done?: boolean; entered?: boolean }>({});
+  const scrollToFocus = (k?: 'content' | 'list' | 'row', y?: number) => {
     const f = focusY.current;
-    f[k] = y;
-    if (f.done || f.content == null || f.list == null || f.row == null) return;
+    if (k) f[k] = y;
+    if (f.done || !f.entered || f.content == null || f.list == null || f.row == null) return;
     f.done = true;
     heroRef.current?.scrollTo({ y: Math.max(0, f.content + f.list + f.row - 120), animated: true });
   };
+  const navigation = useNavigation();
+  useEffect(() => navigation.addListener('transitionEnd' as never, () => {
+    focusY.current.entered = true;
+    scrollToFocus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- scrollToFocus only touches refs
+  }), [navigation]);
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
