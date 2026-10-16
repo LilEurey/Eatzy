@@ -23,6 +23,7 @@ const LABEL_KEYS: (TranslationKey | null)[] = [
 type RateOrder = {
   id: string;
   vendor_name: string;
+  vendor_image: string | null;
   items: { name: string; name_th: string | null; addons: { name: string; name_th: string | null }[] }[];
   menu_item_ids: string[];
   rated: boolean;
@@ -57,13 +58,14 @@ export default function RateScreen() {
     async function load() {
       const { data } = await supabase
         .from('orders')
-        .select('id,vendors(name),ratings(id),order_items(menu_item_id,quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,vendors(name,cover_image_url),ratings(id),order_items(menu_item_id,quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
       if (!data) { setOrder(null); return; }
       setOrder({
         id: data.id,
         vendor_name: data.vendors?.name ?? '',
+        vendor_image: data.vendors?.cover_image_url ?? null,
         items: mapOrderItems(data.order_items),
         // The review is order-level ("rate your order from X"), so it applies
         // to every dish in it — not to whichever order_items row an unordered
@@ -160,7 +162,9 @@ export default function RateScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
         {/* Vendor + items */}
         <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 28 }}>
-          <Image source={require('../../../assets/images/rate.png')} style={{ width: 64, height: 64, marginBottom: 8 }} resizeMode="contain" />
+          {order.vendor_image
+            ? <Image source={{ uri: order.vendor_image }} style={{ width: 72, height: 72, borderRadius: 36, marginBottom: 8 }} />
+            : <Image source={require('../../../assets/images/rate.png')} style={{ width: 64, height: 64, marginBottom: 8 }} resizeMode="contain" />}
           <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: Brand.textPrimary }}>{vendor}</Text>
           <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' }}>
             {order.items.map(i => {
