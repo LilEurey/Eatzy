@@ -12,7 +12,7 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
-import { mapOrderItems } from '@/lib/order-view';
+import { mapOrderItems, queueTicket } from '@/lib/order-view';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
 import { ORDER_STATUS_LABEL, isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
@@ -201,7 +201,7 @@ export default function OrdersScreen() {
                       {vendor}
                     </Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      {t('orders.queueLine', { n: order.queue_number ?? '—', time: timeAgo(order.created_at, t) })}
+                      {t('orders.queueLine', { n: queueTicket(order.queue_number, order.vendor_name), time: timeAgo(order.created_at, t) })}
                     </Text>
                   </View>
                   <View style={{ backgroundColor: cfg.bg, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 }}>

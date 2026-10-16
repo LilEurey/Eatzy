@@ -14,7 +14,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
-import { mapOrderItems } from '@/lib/order-view';
+import { mapOrderItems, queueTicket } from '@/lib/order-view';
 import { addToCart, clearCart } from '@/lib/cart-store';
 import { confirmHandoff, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 
@@ -349,7 +349,7 @@ export default function TrackScreen() {
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ fontSize: 11, fontWeight: '600', letterSpacing: 1, color: Brand.textSecondary }}>{t('track.queueNumber')}</Text>
-              <Text style={{ fontSize: 32, fontWeight: '800', color: Brand.orange, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
+              <Text style={{ fontSize: 32, fontWeight: '800', color: Brand.orange, fontVariant: ['tabular-nums'] }}>{queueTicket(order.queue_number, order.vendor_name)}</Text>
             </View>
           </View>
         </View>
