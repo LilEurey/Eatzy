@@ -66,6 +66,8 @@ export default function StoreDetailScreen() {
     heroRef.current?.scrollTo({ y: Math.max(0, f.content + f.list + f.row - 120), animated: true });
   };
   const navigation = useNavigation();
+  // Highlight only points the way — cleared on the first dish tap.
+  const [highlightId, setHighlightId] = useState(focusId);
   useEffect(() => navigation.addListener('transitionEnd' as never, () => {
     focusY.current.entered = true;
     scrollToFocus();
@@ -369,7 +371,7 @@ export default function StoreDetailScreen() {
               <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}
                 onLayout={item.id === focusId ? e => scrollToFocus('row', e.nativeEvent.layout.y) : undefined}>
               <Tap
-                onPress={() => router.push(`/item/${item.id}${item.id === focusId && rec ? '?rec=1' : ''}`)}
+                onPress={() => { setHighlightId(undefined); router.push(`/item/${item.id}${item.id === focusId && rec ? '?rec=1' : ''}`); }}
                 activeOpacity={0.85}
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 14,
@@ -379,7 +381,7 @@ export default function StoreDetailScreen() {
                   // Sold out stays tappable (details still useful); the item
                   // page blocks Add to Cart.
                   opacity: item.is_available ? 1 : 0.5,
-                  borderWidth: 2, borderColor: item.id === focusId ? Brand.orange : 'transparent',
+                  borderWidth: 2, borderColor: item.id === highlightId ? Brand.orange : 'transparent',
                 }}
               >
                 {/* Image */}
