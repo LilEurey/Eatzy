@@ -1,6 +1,6 @@
 import { isStoreOpen } from '@/lib/time';
 import { SkeletonDetail } from '@/components/Skeleton';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
@@ -11,13 +11,14 @@ import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
 import StoreMiniMap from '@/components/StoreMiniMap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { hasCoords } from '@/lib/geo';
 import { localizedText } from '@/lib/localize';
 import { usePreferences, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
+import { CartBar } from '@/components/CartBar';
 import type { Database } from '@/types/database.types';
 
 type Tables = Database['public']['Tables'];
@@ -51,8 +52,27 @@ export default function StoreDetailScreen() {
   const { t, locale } = useI18n();
   const { prefs, gate } = usePreferences();
   const prefsError = gate.status === 'error';
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, item: focusId, rec } = useLocalSearchParams<{ id: string; item?: string; rec?: string }>();
   const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(220);
+  // Opened via openItem(): scroll to + highlight the dish the student tapped.
+  // y = content View + menu list + row offsets; scroll once all three are measured.
+  // Waits for the push slide to finish so the two motions don't overlap.
+  const focusY = useRef<{ content?: number; list?: number; row?: number; done?: boolean; entered?: boolean }>({});
+  const scrollToFocus = (k?: 'content' | 'list' | 'row', y?: number) => {
+    const f = focusY.current;
+    if (k) f[k] = y;
+    if (f.done || !f.entered || f.content == null || f.list == null || f.row == null) return;
+    f.done = true;
+    heroRef.current?.scrollTo({ y: Math.max(0, f.content + f.list + f.row - 120), animated: true });
+  };
+  const navigation = useNavigation();
+  // Highlight only points the way — cleared on the first dish tap.
+  const [highlightId, setHighlightId] = useState(focusId);
+  useEffect(() => navigation.addListener('transitionEnd' as never, () => {
+    focusY.current.entered = true;
+    scrollToFocus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- scrollToFocus only touches refs
+  }), [navigation]);
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
@@ -169,7 +189,7 @@ export default function StoreDetailScreen() {
           </View>
         )}
 
-        <View style={{ padding: 20 }}>
+        <View style={{ padding: 20 }} onLayout={focusId ? e => scrollToFocus('content', e.nativeEvent.layout.y) : undefined}>
           {/* Vendor name + tags row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: Brand.textPrimary, flex: 1 }}>
@@ -346,11 +366,12 @@ export default function StoreDetailScreen() {
           </ScrollView>
 
           {/* Menu items */}
-          <View style={{ gap: 12 }}>
+          <View style={{ gap: 12 }} onLayout={focusId ? e => scrollToFocus('list', e.nativeEvent.layout.y) : undefined}>
             {filteredItems.map((item, index) => (
-              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}>
+              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}
+                onLayout={item.id === focusId ? e => scrollToFocus('row', e.nativeEvent.layout.y) : undefined}>
               <Tap
-                onPress={() => router.push(`/item/${item.id}`)}
+                onPress={() => { setHighlightId(undefined); router.push(`/item/${item.id}${item.id === focusId && rec ? '?rec=1' : ''}`); }}
                 activeOpacity={0.85}
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 14,
@@ -360,6 +381,7 @@ export default function StoreDetailScreen() {
                   // Sold out stays tappable (details still useful); the item
                   // page blocks Add to Cart.
                   opacity: item.is_available ? 1 : 0.5,
+                  borderWidth: 2, borderColor: item.id === highlightId ? Brand.orange : 'transparent',
                 }}
               >
                 {/* Image */}
@@ -477,6 +499,9 @@ export default function StoreDetailScreen() {
         </View>
       </Animated.ScrollView>
       <HeroHeader title={vendor.name} barStyle={barStyle} />
+      <View style={{ position: 'absolute', left: 16, right: 16, bottom: 28 }}>
+        <CartBar />
+      </View>
     </SafeAreaView>
   );
 }

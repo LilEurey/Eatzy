@@ -8,13 +8,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, NOTE_MAX } from '@/lib/cart-store';
+import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, groupByVendor, NOTE_MAX } from '@/lib/cart-store';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
 import * as Haptics from 'expo-haptics';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { nextPickupSlots, isStoreOpen } from '@/lib/time';
+import { nextPickupSlots, isStoreOpen, hasPassed } from '@/lib/time';
 import { formatBaht } from '@/lib/money';
 import { placeOrder as placeOrderInDb } from '@/lib/place-order';
 import type { Database } from '@/types/database.types';
@@ -41,20 +41,22 @@ export default function CartScreen() {
   const [slots, setSlots] = useState(() => nextPickupSlots());
   const [selectedIndex, setSelectedIndex] = useState(1);
   const selectedSlot = slots[selectedIndex];
-  const [vendor, setVendor] = useState<Pick<Vendor, 'name' | 'stall_number' | 'is_open' | 'open_time' | 'close_time'> | null>(null);
+  const groups = groupByVendor(items);
+  const vendorKey = groups.map(g => g.vendor_id).sort().join(',');
+  const [vendors, setVendors] = useState<Record<string, Pick<Vendor, 'id' | 'name' | 'stall_number' | 'is_open' | 'open_time' | 'close_time'>>>({});
   const [placing, setPlacing] = useState(false);
 
   const subtotal = cartSubtotal(cart);
   const total = subtotal;
 
   useEffect(() => {
-    if (!cart.vendor_id) return; // cart empty — the empty-state branch below renders instead
-    supabase.from('vendors').select('name,stall_number,is_open,open_time,close_time').eq('id', cart.vendor_id).maybeSingle()
-      .then(({ data }) => setVendor(data ?? null));
-  }, [cart.vendor_id]);
+    if (!vendorKey) return; // cart empty — the empty-state branch below renders instead
+    supabase.from('vendors').select('id,name,stall_number,is_open,open_time,close_time').in('id', vendorKey.split(','))
+      .then(({ data }) => setVendors(Object.fromEntries((data ?? []).map(v => [v.id, v]))));
+  }, [vendorKey]);
 
   function placeOrder() {
-    if (!cart.vendor_id) return;
+    if (groups.length === 0) return;
     // Allergy prefs must be loaded (and correct) before checkout can decide
     // whether to warn — proceeding on stale/default prefs would silently
     // skip the allergen confirm for a student whose prefs failed to load.
@@ -62,8 +64,9 @@ export default function CartScreen() {
       showAlert(t('cart.orderFailedTitle'), t('cart.prefsNotReadyMsg'));
       return;
     }
-    if (vendor && !isStoreOpen(vendor)) {
-      showAlert(t('cart.storeClosedTitle'), t('cart.storeClosedMsg'));
+    const closed = groups.map(g => vendors[g.vendor_id]).find(v => v && !isStoreOpen(v));
+    if (closed) {
+      showAlert(t('cart.storeClosedTitle'), `${closed.name}: ${t('cart.storeClosedMsg')}`);
       return;
     }
     if (orderAllergens.length > 0) {
@@ -79,8 +82,8 @@ export default function CartScreen() {
   }
 
   async function submitOrder() {
-    if (!cart.vendor_id) return;
-    if (selectedSlot.start.getTime() <= Date.now()) {
+    if (groups.length === 0) return;
+    if (hasPassed(selectedSlot.start)) {
       setSlots(nextPickupSlots());
       showAlert(t('cart.orderFailedTitle'), t('cart.slotExpiredMsg'));
       return;
@@ -88,14 +91,14 @@ export default function CartScreen() {
     setPlacing(true);
     try {
       const result = await placeOrderInDb({
-        vendorId: cart.vendor_id,
-        lines: items,
+        orders: groups,
         slot: selectedSlot,
       });
       if (result.ok) {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         clearCart();
-        router.replace(`/track/${result.orderId}`);
+        // One stall: straight to its tracker. Several: the orders tab lists them all.
+        router.replace(result.orderIds.length === 1 ? `/track/${result.orderIds[0]}` : '/(tabs)/orders');
         return;
       }
       if (result.reason === 'slot-expired') setSlots(nextPickupSlots());
@@ -104,7 +107,8 @@ export default function CartScreen() {
         : result.reason === 'item-unavailable' ? t('cart.itemUnavailableMsg')
         : result.reason === 'slot-expired' ? t('cart.slotExpiredMsg')
         : result.message;
-      showAlert(t('cart.orderFailedTitle'), message);
+      const failedStore = result.vendorId ? vendors[result.vendorId]?.name : undefined;
+      showAlert(t('cart.orderFailedTitle'), failedStore ? `${failedStore}: ${message}` : message);
     } finally {
       setPlacing(false);
     }
@@ -152,20 +156,6 @@ export default function CartScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }}>
-        {/* Vendor chip */}
-        {vendor && (
-          <View style={{
-            flexDirection: 'row', alignItems: 'center', gap: 10,
-            backgroundColor: Brand.orangeLight, borderRadius: 14, padding: 12, marginBottom: 20,
-          }}>
-            <Image source={require('../../assets/images/store.png')} style={{ width: 24, height: 24 }} />
-            <View>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textPrimary }}>{vendor.name}</Text>
-              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('cart.stall', { n: vendor.stall_number ?? '' })}</Text>
-            </View>
-          </View>
-        )}
-
         {orderAllergens.length > 0 && (
           <View style={{
             backgroundColor: '#fee2e2', borderRadius: 12, borderWidth: 1, borderColor: '#fecaca',
@@ -181,12 +171,29 @@ export default function CartScreen() {
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
           {t('cart.items')}
         </Text>
+        {groups.map(group => {
+          const vendor = vendors[group.vendor_id];
+          return (
+        <View key={group.vendor_id}>
+        {vendor && (
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', gap: 10,
+            backgroundColor: Brand.orangeLight, borderRadius: 14, padding: 12, marginBottom: 10,
+          }}>
+            <Image source={require('../../assets/images/store.png')} style={{ width: 24, height: 24 }} />
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textPrimary }}>{vendor.name}</Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('cart.stall', { n: vendor.stall_number ?? '' })}</Text>
+            </View>
+          </View>
+        )}
+
         <View style={{
           backgroundColor: Brand.card, borderRadius: 20, overflow: 'hidden', marginBottom: 24,
           shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
         }}>
-          {items.map((item, i) => (
+          {group.items.map((item, i) => (
             <Animated.View key={item.line_id} entering={listEnter(i)} exiting={listExit} layout={listLayout}>
               {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, gap: 14 }}>
@@ -256,7 +263,9 @@ export default function CartScreen() {
             </Animated.View>
           ))}
         </View>
-
+        </View>
+          );
+        })}
         {/* Pickup time slot */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
           {t('cart.pickupTime')}

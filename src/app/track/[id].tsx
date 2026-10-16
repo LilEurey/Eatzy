@@ -5,6 +5,7 @@ import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { enterUp, popIn } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { SwipeToConfirm } from '@/components/SwipeToConfirm';
 import { KitchenBackdrop, ClassroomBackdrop, CanteenBackdrop } from '@/components/KitchenBackdrop';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -14,7 +15,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
-import { mapOrderItems } from '@/lib/order-view';
+import { mapOrderItems, queueTicket } from '@/lib/order-view';
 import { addToCart, clearCart } from '@/lib/cart-store';
 import { confirmHandoff, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 
@@ -58,7 +59,7 @@ type TrackOrder = {
 const STEPS: { key: Status; labelKey: TranslationKey; icon: number; hintKey: TranslationKey }[] = [
   { key: 'pending',   labelKey: 'track.stepPlacedLabel',   icon: require('../../../assets/images/track/step-placed.jpg'), hintKey: 'track.stepPlacedHint' },
   { key: 'accepted',  labelKey: 'orders.status.preparing', icon: require('../../../assets/images/track/step-preparing.jpg'), hintKey: 'track.stepPreparingHint' },
-  { key: 'ready',     labelKey: 'orders.status.ready',     icon: require('../../../assets/images/track/step-ready.jpg'), hintKey: 'track.stepReadyHint' },
+  { key: 'ready',     labelKey: 'track.stepReadyLabel', icon: require('../../../assets/images/track/step-ready.jpg'), hintKey: 'track.stepReadyHint' },
   { key: 'completed', labelKey: 'track.stepPickedUpLabel', icon: require('../../../assets/images/track/step-picked-up.jpg'), hintKey: 'track.stepPickedUpHint' },
 ];
 
@@ -349,7 +350,7 @@ export default function TrackScreen() {
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ fontSize: 11, fontWeight: '600', letterSpacing: 1, color: Brand.textSecondary }}>{t('track.queueNumber')}</Text>
-              <Text style={{ fontSize: 32, fontWeight: '800', color: Brand.orange, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
+              <Text style={{ fontSize: 32, fontWeight: '800', color: Brand.orange, fontVariant: ['tabular-nums'] }}>{queueTicket(order.queue_number, order.vendor_name)}</Text>
             </View>
           </View>
         </View>
@@ -422,13 +423,7 @@ export default function TrackScreen() {
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.rateYourOrder')}</Text>
             </Tap>
           ) : (
-            <Tap
-              activeOpacity={0.85}
-              onPress={markPickedUp}
-              style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.pickedItUp')}</Text>
-            </Tap>
+            <SwipeToConfirm label={t('track.pickedItUp')} onConfirm={markPickedUp} />
           )}
         </View>
       )}

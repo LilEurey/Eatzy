@@ -15,6 +15,7 @@ import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ, bangkokDayKey } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
 import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
+import { queueTicket } from '@/lib/order-view';
 import { ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-lifecycle';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
@@ -214,7 +215,7 @@ export default function WalletScreen() {
                       {o.vendors?.name ?? ''}
                     </Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      {o.queue_number != null ? t('wallet.escrowQueue', { n: o.queue_number }) + ' · ' : ''}{t(ORDER_STATUS_LABEL[o.status as OrderStatus])}
+                      {o.queue_number != null ? t('wallet.escrowQueue', { n: queueTicket(o.queue_number, o.vendors?.name) }) + ' · ' : ''}{t(ORDER_STATUS_LABEL[o.status as OrderStatus])}
                     </Text>
                   </View>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>฿{formatBaht(o.total_amount)}</Text>

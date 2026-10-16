@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { addToCart, hasVendorMismatch, NOTE_MAX } from '@/lib/cart-store';
+import { addToCart, NOTE_MAX } from '@/lib/cart-store';
 import { formatBaht } from '@/lib/money';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { useI18n } from '@/lib/i18n';
@@ -23,7 +23,7 @@ import { invokeEdgeFunction } from '@/lib/edge-function';
 import type { Database } from '@/types/database.types';
 
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
-type SimilarItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
+type SimilarItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_id?: string; vendor_name: string; score: number };
 type Review = {
   id: string;
   score: number;
@@ -58,7 +58,7 @@ function SpiceIndicator({ level }: { level: number }) {
 
 export default function ItemDetailScreen() {
   const { t, locale } = useI18n();
-  const { id, rec } = useLocalSearchParams<{ id: string; rec?: string }>();
+  const { id, rec, sim } = useLocalSearchParams<{ id: string; rec?: string; sim?: string }>();
   const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(280);
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
@@ -222,29 +222,27 @@ export default function ItemDetailScreen() {
     if (soldOut) return;
     const currentItem = item;
 
+    // Land on the dish's store (basket bar there) so the student keeps shopping.
+    // Dishes are only pushed from their store page (openItem / store list), so
+    // that store is the screen underneath; replace covers a deep link with no history.
+    // Similar-dish hops (sim=1) replace this screen, so the store underneath may be a different one.
+    const backToStore = () =>
+      !sim && router.canGoBack() ? router.back() : router.replace(`/store/${currentItem.vendor_id}`);
+
     const addNow = () => {
       if (matchedAllergens.length > 0) {
         showConfirm(
           t('item.allergyWarningTitle'),
           t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
-          () => { addToCart(currentItem, qty, selectedOptions, note); router.push('/cart'); },
+          () => { addToCart(currentItem, qty, selectedOptions, note); backToStore(); },
           { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
         );
         return;
       }
       addToCart(currentItem, qty, selectedOptions, note);
-      router.push('/cart');
+      backToStore();
     };
 
-    if (hasVendorMismatch(currentItem.vendor_id)) {
-      showConfirm(
-        t('item.vendorMismatchTitle'),
-        t('item.vendorMismatchMsg'),
-        addNow,
-        { confirmLabel: t('item.vendorMismatchConfirm'), cancelLabel: t('common.cancel'), destructive: true },
-      );
-      return;
-    }
     addNow();
   }
 
@@ -496,7 +494,7 @@ export default function ItemDetailScreen() {
                 {similar.map((s, si) => (
                   <Animated.View key={s.id} entering={rowEnter(si)}>
                   <Tap
-                    onPress={() => router.push(`/item/${s.id}?rec=1`)}
+                    onPress={() => router.replace(`/item/${s.id}?rec=1&sim=1`)}
                     activeOpacity={0.85}
                     style={{
                       width: 140, borderRadius: 20, backgroundColor: Brand.card, overflow: 'hidden',

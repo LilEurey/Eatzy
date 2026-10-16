@@ -264,7 +264,7 @@ export default function HomeScreen() {
         {featured && similarToFeatured && (
           <CardRow title={t('home.similarFoodsTo', { name: localizedText(featured.name, featured.name_th, locale) })} count={similarToFeatured.length}>
             {similarToFeatured.map(item => (
-              <ItemCard key={item.id} itemId={item.id} recommended imageUrl={item.image_url}
+              <ItemCard key={item.id} itemId={item.id} vendorId={item.vendor_id} recommended imageUrl={item.image_url}
                 title={localizedText(item.name, item.name_th, locale)} vendorName={item.vendor_name} price={item.price} />
             ))}
           </CardRow>
@@ -281,7 +281,7 @@ export default function HomeScreen() {
         {recommendedForYou ? (
           <CardRow title={t('home.recommendedForYou')} count={recommendedForYou.length}>
             {recommendedForYou.map(item => (
-              <ItemCard key={item.id} itemId={item.id} recommended imageUrl={item.image_url}
+              <ItemCard key={item.id} itemId={item.id} vendorId={item.vendor_id} recommended imageUrl={item.image_url}
                 title={localizedText(item.name, item.name_th, locale)} vendorName={item.vendor_name} price={item.price} />
             ))}
           </CardRow>

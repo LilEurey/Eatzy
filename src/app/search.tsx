@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { openItem } from '@/components/home/ItemCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -215,7 +216,7 @@ export default function SearchScreen() {
             {results.map((item, index) => (
               <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}>
               <Tap
-                onPress={() => router.push(`/item/${item.id}`)}
+                onPress={() => openItem(item.id, item.vendor_id)}
                 activeOpacity={0.85}
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 14,

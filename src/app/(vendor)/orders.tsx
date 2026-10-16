@@ -5,15 +5,21 @@ import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
-import { useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone, cancelAcceptedOrder } from '@/lib/vendor-store';
+import { useVendorProfile, useVendorOrders, acceptOrder, rejectOrder, markReady, handOff, toggleItemDone, cancelAcceptedOrder } from '@/lib/vendor-store';
 import { showConfirm } from '@/lib/alert';
 import { useI18n, type Locale } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock12, formatFriendlyDateTime } from '@/lib/time';
 import { PillDropdown } from '@/components/PillDropdown';
+import { queueTicket } from '@/lib/order-view';
 
 type VendorOrder = ReturnType<typeof useVendorOrders>[number];
 type TFn = ReturnType<typeof useI18n>['t'];
+
+function QueueTicket({ n }: { n: number | null }) {
+  const name = useVendorProfile()?.name;
+  return <>{queueTicket(n, name)}</>;
+}
 
 function ActionButton({ label, onPress, bg, color }: { label: string; onPress: () => void; bg: string; color: string }) {
   return (
@@ -106,7 +112,7 @@ function IncomingCard({ order, t, locale }: { order: VendorOrder; t: TFn; locale
       header={
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View>
-            <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}><QueueTicket n={order.queue_number} /></Text>
             <Text style={{ fontSize: 10.5, color: '#8A8F9B', fontWeight: '600' }}>
               {t('vendor.orders.pickup')} {formatBangkokClock12(order.pickup_start)}
             </Text>
@@ -150,7 +156,7 @@ function PreparingCard({ order, t, locale }: { order: VendorOrder; t: TFn; local
       accent="#f59e0b"
       header={
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}><QueueTicket n={order.queue_number} /></Text>
           <TimeChip text={formatBangkokClock12(order.pickup_start)} />
         </View>
       }
@@ -196,7 +202,7 @@ function ReadyCard({ order, t }: { order: VendorOrder; t: TFn }) {
     <CardShell
       header={
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}><QueueTicket n={order.queue_number} /></Text>
           <View style={{ backgroundColor: '#DCFCE7', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
             <Text style={{ fontSize: 10, fontWeight: '700', color: '#16a34a' }}>{t('vendor.orders.waiting')}</Text>
           </View>
@@ -229,7 +235,7 @@ function CompletedTicket({ order, t }: { order: VendorOrder; t: TFn }) {
     }}>
       <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>#{order.queue_number}</Text>
+        <Text style={{ fontSize: 12.5, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}><QueueTicket n={order.queue_number} /></Text>
         <Text style={{ fontSize: 11, color: '#4B4F58', marginTop: 1 }}>
           {t('vendor.orders.itemsCount', { n: itemCount })}
         </Text>

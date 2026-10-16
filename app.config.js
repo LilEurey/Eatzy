@@ -1,4 +1,31 @@
-const { withEntitlementsPlist } = require('expo/config-plugins');
+const { withEntitlementsPlist, withInfoPlist, withAppDelegate } = require('expo/config-plugins');
+
+// iOS 27 kills apps at launch that don't adopt the UIScene life cycle. The SDK 57 prebuild
+// template still starts React Native from the app delegate, so hand window creation to Expo's
+// ExpoAppSceneDelegate. ponytail: drop once the prebuild template ships scene support.
+const withSceneLifecycle = (config) =>
+  withAppDelegate(
+    withInfoPlist(config, (cfg) => {
+      cfg.modResults.UIApplicationSceneManifest = {
+        UIApplicationSupportsMultipleScenes: false,
+        UISceneConfigurations: {
+          UIWindowSceneSessionRoleApplication: [
+            {
+              UISceneConfigurationName: 'Default Configuration',
+              UISceneDelegateClassName: 'EXExpoAppSceneDelegate',
+            },
+          ],
+        },
+      };
+      return cfg;
+    }),
+    (cfg) => {
+      cfg.modResults.contents = cfg.modResults.contents
+        .replace('class AppDelegate: ExpoAppDelegate {', 'class AppDelegate: ExpoAppDelegate, ExpoReactNativeFactoryProvider {')
+        .replace(/#if os\(iOS\) \|\| os\(tvOS\)\n\s*window = UIWindow[\s\S]*?#endif\n/, '');
+      return cfg;
+    }
+  );
 
 // Free (personal) Apple teams can't sign the Push Notifications capability.
 // EXPO_NO_PUSH=1 npx expo run:ios drops the entitlement expo-notifications adds,
@@ -36,7 +63,7 @@ const withFirebase = (config) => {
 };
 
 module.exports = ({ config }) => {
-  const withKey = withFirebase(withMapsKey(config));
+  const withKey = withSceneLifecycle(withFirebase(withMapsKey(config)));
   if (!process.env.EXPO_NO_PUSH) return withKey;
   // NotificationIsland reads extra.noPush and falls back to local notifications.
   return withoutPush({ ...withKey, extra: { ...withKey.extra, noPush: true } });

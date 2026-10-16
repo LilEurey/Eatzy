@@ -17,3 +17,13 @@ export function mapOrderItems(rows: OrderItemRow[] | null) {
     addons: (oi.order_item_addons ?? []).map(a => ({ name: a.name, name_th: a.name_th ?? null, price: a.price })),
   }));
 }
+
+// Queue ticket shown to students and vendors: vendor's initial + zero-padded
+// daily number (A042), so it can't be mistaken for an "N orders ahead" count.
+// Initial comes from the vendor name, not stall_number: admin-created and
+// off-campus stalls have no stall_number, and notifications only snapshot the name.
+export function queueTicket(n: number | null, vendorName: string | null | undefined): string {
+  if (n == null) return '—';
+  const letter = vendorName?.toUpperCase().match(/[A-Z]/)?.[0] ?? 'Q';
+  return letter + String(n).padStart(3, '0');
+}

@@ -6,6 +6,7 @@ import { translateActive as tr } from '@/lib/i18n';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { confirmHandoff, isEarned, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 import { createEmitter } from '@/lib/create-emitter';
+import { queueTicket } from '@/lib/order-view';
 
 // Vendor-side state — orders, menu, store-open — backed by real Supabase
 // queries + Realtime, scoped to whichever vendor the signed-in user owns.
@@ -511,7 +512,7 @@ type VendorPayment = {
   status: 'COMPLETED';
 };
 
-export function paymentsFromOrders(all: VendorOrder[]): VendorPayment[] {
+export function paymentsFromOrders(all: VendorOrder[], vendorName?: string | null): VendorPayment[] {
   // Escrow is held on accept, but only lands in the vendor's wallet once
   // both sides confirm handoff (finalize_order_handoff) — only 'completed'
   // orders are real, received revenue.
@@ -519,7 +520,7 @@ export function paymentsFromOrders(all: VendorOrder[]): VendorPayment[] {
     .filter(o => isEarned(o.status))
     .map(o => ({
       order_id: o.id,
-      display_id: `#${o.queue_number ?? o.id.slice(0, 8).toUpperCase()}`,
+      display_id: o.queue_number != null ? queueTicket(o.queue_number, vendorName) : `#${o.id.slice(0, 8).toUpperCase()}`,
       created_at: o.created_at,
       amount: o.total_amount,
       method: o.payment_method,
@@ -533,5 +534,6 @@ export function paymentsFromOrders(all: VendorOrder[]): VendorPayment[] {
  * else happened to re-render it. */
 export function useVendorPayments(): VendorPayment[] {
   const all = useVendorOrders();
-  return useMemo(() => paymentsFromOrders(all), [all]);
+  const name = useVendorProfile()?.name;
+  return useMemo(() => paymentsFromOrders(all, name), [all, name]);
 }

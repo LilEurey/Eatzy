@@ -1,4 +1,5 @@
 import type { Locale, TranslationKey } from '@/lib/i18n';
+import { queueTicket } from '@/lib/order-view';
 
 // Menu item names/descriptions are vendor-entered data, not app UI strings,
 // so they live in DB columns (name_th/description_th) rather than the
@@ -32,7 +33,7 @@ export function notificationText(
   if (!keys) return { title: n.title, body: n.body };
   const params = {
     vendor: n.vendor_name ?? '',
-    queue: n.queue_number != null ? String(n.queue_number) : '—',
+    queue: queueTicket(n.queue_number, n.vendor_name),
     amount: n.total_amount != null ? String(n.total_amount) : '',
   };
   return { title: t(keys.title, params), body: t(keys.body, params) };
