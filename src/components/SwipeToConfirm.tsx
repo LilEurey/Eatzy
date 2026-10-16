@@ -25,8 +25,8 @@ export function SwipeToConfirm({ label, onConfirm }: { label: string; onConfirm:
 
   const pan = Gesture.Pan()
     .onChange((e) => { x.value = Math.min(Math.max(x.value + e.changeX, 0), max); })
-    .onEnd(() => {
-      if (x.value > max * 0.5) {
+    .onEnd((e) => {
+      if (x.value > max * 0.3 || (x.value > max * 0.15 && e.velocityX > 800)) {
         x.value = withTiming(max, { duration: 120 });
         scheduleOnRN(confirm);
       } else {
@@ -36,7 +36,7 @@ export function SwipeToConfirm({ label, onConfirm }: { label: string; onConfirm:
 
   const knobStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   const fillStyle = useAnimatedStyle(() => ({ width: x.value + KNOB + PAD * 2 }));
-  const labelStyle = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [0, max * 0.4], [1, 0], 'clamp') }));
+  const labelStyle = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [0, max * 0.25], [1, 0], 'clamp') }));
 
   return (
     <View
