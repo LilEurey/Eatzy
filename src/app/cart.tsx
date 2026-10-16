@@ -132,7 +132,7 @@ export default function CartScreen() {
             {t('cart.addSomething')}
           </Text>
           <Tap
-            onPress={() => router.push('/(tabs)')}
+            onPress={() => router.dismissTo('/(tabs)')}
             style={{
               backgroundColor: Brand.orange, borderRadius: 14,
               paddingHorizontal: 28, paddingVertical: 12,
