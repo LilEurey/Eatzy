@@ -7,7 +7,6 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { rowEnter, popIn, popOut, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
-import { openItem } from '@/components/home/ItemCard';
 import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -59,7 +58,7 @@ function SpiceIndicator({ level }: { level: number }) {
 
 export default function ItemDetailScreen() {
   const { t, locale } = useI18n();
-  const { id, rec } = useLocalSearchParams<{ id: string; rec?: string }>();
+  const { id, rec, sim } = useLocalSearchParams<{ id: string; rec?: string; sim?: string }>();
   const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(280);
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
@@ -226,8 +225,9 @@ export default function ItemDetailScreen() {
     // Land on the dish's store (basket bar there) so the student keeps shopping.
     // Dishes are only pushed from their store page (openItem / store list), so
     // that store is the screen underneath; replace covers a deep link with no history.
+    // Similar-dish hops (sim=1) replace this screen, so the store underneath may be a different one.
     const backToStore = () =>
-      router.canGoBack() ? router.back() : router.replace(`/store/${currentItem.vendor_id}`);
+      !sim && router.canGoBack() ? router.back() : router.replace(`/store/${currentItem.vendor_id}`);
 
     const addNow = () => {
       if (matchedAllergens.length > 0) {
@@ -494,7 +494,7 @@ export default function ItemDetailScreen() {
                 {similar.map((s, si) => (
                   <Animated.View key={s.id} entering={rowEnter(si)}>
                   <Tap
-                    onPress={() => openItem(s.id, s.vendor_id, true)}
+                    onPress={() => router.replace(`/item/${s.id}?rec=1&sim=1`)}
                     activeOpacity={0.85}
                     style={{
                       width: 140, borderRadius: 20, backgroundColor: Brand.card, overflow: 'hidden',
