@@ -268,6 +268,7 @@ export const th: Record<TranslationKey, string> = {
   'track.stepPlacedLabel': 'สั่งซื้อแล้ว',
   'track.stepPlacedHint': 'กำลังรอร้านค้ายืนยัน',
   'track.stepPreparingHint': 'กำลังปรุงอาหารของคุณ',
+  'track.stepReadyLabel': 'พร้อมแล้ว มารับได้เลย!',
   'track.stepReadyHint': 'มารับอาหารได้ที่ร้านเลย',
   'track.stepPickedUpLabel': 'รับอาหารแล้ว',
   'track.stepPickedUpHint': 'ทานให้อร่อยนะ!',

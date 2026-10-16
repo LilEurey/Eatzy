@@ -266,6 +266,7 @@ export const en = {
   'track.stepPlacedLabel': 'Order placed',
   'track.stepPlacedHint': 'Waiting for the vendor to accept',
   'track.stepPreparingHint': 'Your food is being cooked',
+  'track.stepReadyLabel': 'Ready — pick it up now!',
   'track.stepReadyHint': 'Come pick it up at the stall',
   'track.stepPickedUpLabel': 'Picked up',
   'track.stepPickedUpHint': 'Enjoy your meal!',

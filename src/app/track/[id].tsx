@@ -58,7 +58,7 @@ type TrackOrder = {
 const STEPS: { key: Status; labelKey: TranslationKey; icon: number; hintKey: TranslationKey }[] = [
   { key: 'pending',   labelKey: 'track.stepPlacedLabel',   icon: require('../../../assets/images/track/step-placed.jpg'), hintKey: 'track.stepPlacedHint' },
   { key: 'accepted',  labelKey: 'orders.status.preparing', icon: require('../../../assets/images/track/step-preparing.jpg'), hintKey: 'track.stepPreparingHint' },
-  { key: 'ready',     labelKey: 'orders.status.ready',     icon: require('../../../assets/images/track/step-ready.jpg'), hintKey: 'track.stepReadyHint' },
+  { key: 'ready',     labelKey: 'track.stepReadyLabel', icon: require('../../../assets/images/track/step-ready.jpg'), hintKey: 'track.stepReadyHint' },
   { key: 'completed', labelKey: 'track.stepPickedUpLabel', icon: require('../../../assets/images/track/step-picked-up.jpg'), hintKey: 'track.stepPickedUpHint' },
 ];
 
