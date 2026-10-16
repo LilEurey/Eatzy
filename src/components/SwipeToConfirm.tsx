@@ -29,7 +29,7 @@ export function SwipeToConfirm({ label, onConfirm }: { label: string; onConfirm:
   const pan = Gesture.Pan()
     .onChange((e) => { x.value = Math.min(Math.max(x.value + e.changeX, 0), max); })
     .onEnd((e) => {
-      if (x.value > max * 0.3 || (x.value > max * 0.15 && e.velocityX > 800)) {
+      if (x.value > max * 0.5 || (x.value > max * 0.25 && e.velocityX > 800)) {
         x.value = withTiming(max, { duration: 120 });
         scheduleOnRN(confirm);
       } else {
