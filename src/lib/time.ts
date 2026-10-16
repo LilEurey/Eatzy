@@ -117,3 +117,8 @@ export function isWithinOpenHours(open: string | null, close: string | null, now
 export function isStoreOpen(v: { is_open: boolean | null; open_time?: string | null; close_time?: string | null }, now: Date = new Date()): boolean {
   return v.is_open === true && isWithinOpenHours(v.open_time ?? null, v.close_time ?? null, now);
 }
+
+/** True once `d` is no longer in the future. */
+export function hasPassed(d: Date, now: Date = new Date()): boolean {
+  return d.getTime() <= now.getTime();
+}

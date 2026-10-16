@@ -14,7 +14,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import * as Haptics from 'expo-haptics';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { nextPickupSlots, isStoreOpen } from '@/lib/time';
+import { nextPickupSlots, isStoreOpen, hasPassed } from '@/lib/time';
 import { formatBaht } from '@/lib/money';
 import { placeOrder as placeOrderInDb } from '@/lib/place-order';
 import type { Database } from '@/types/database.types';
@@ -83,7 +83,7 @@ export default function CartScreen() {
 
   async function submitOrder() {
     if (groups.length === 0) return;
-    if (selectedSlot.start.getTime() <= Date.now()) {
+    if (hasPassed(selectedSlot.start)) {
       setSlots(nextPickupSlots());
       showAlert(t('cart.orderFailedTitle'), t('cart.slotExpiredMsg'));
       return;
