@@ -1,6 +1,6 @@
 import { isStoreOpen } from '@/lib/time';
 import { SkeletonDetail } from '@/components/Skeleton';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
@@ -52,15 +52,18 @@ export default function StoreDetailScreen() {
   const { t, locale } = useI18n();
   const { prefs, gate } = usePreferences();
   const prefsError = gate.status === 'error';
-  const { id, item: openItemId, rec } = useLocalSearchParams<{ id: string; item?: string; rec?: string }>();
-  // Opened via openItem(): push the dish on top, then drop the params so
-  // item/[id]'s dismissTo(`/store/${id}`) matches this screen.
-  useEffect(() => {
-    if (!openItemId) return;
-    router.setParams({ item: undefined, rec: undefined });
-    router.push(`/item/${openItemId}${rec ? '?rec=1' : ''}`);
-  }, [openItemId, rec]);
+  const { id, item: focusId, rec } = useLocalSearchParams<{ id: string; item?: string; rec?: string }>();
   const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(220);
+  // Opened via openItem(): scroll to + highlight the dish the student tapped.
+  // y = content View + menu list + row offsets; scroll once all three are measured.
+  const focusY = useRef<{ content?: number; list?: number; row?: number; done?: boolean }>({});
+  const scrollToFocus = (k: 'content' | 'list' | 'row', y: number) => {
+    const f = focusY.current;
+    f[k] = y;
+    if (f.done || f.content == null || f.list == null || f.row == null) return;
+    f.done = true;
+    heroRef.current?.scrollTo({ y: Math.max(0, f.content + f.list + f.row - 120), animated: true });
+  };
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
@@ -177,7 +180,7 @@ export default function StoreDetailScreen() {
           </View>
         )}
 
-        <View style={{ padding: 20 }}>
+        <View style={{ padding: 20 }} onLayout={focusId ? e => scrollToFocus('content', e.nativeEvent.layout.y) : undefined}>
           {/* Vendor name + tags row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: Brand.textPrimary, flex: 1 }}>
@@ -354,11 +357,12 @@ export default function StoreDetailScreen() {
           </ScrollView>
 
           {/* Menu items */}
-          <View style={{ gap: 12 }}>
+          <View style={{ gap: 12 }} onLayout={focusId ? e => scrollToFocus('list', e.nativeEvent.layout.y) : undefined}>
             {filteredItems.map((item, index) => (
-              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}>
+              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}
+                onLayout={item.id === focusId ? e => scrollToFocus('row', e.nativeEvent.layout.y) : undefined}>
               <Tap
-                onPress={() => router.push(`/item/${item.id}`)}
+                onPress={() => router.push(`/item/${item.id}${item.id === focusId && rec ? '?rec=1' : ''}`)}
                 activeOpacity={0.85}
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 14,
@@ -368,6 +372,7 @@ export default function StoreDetailScreen() {
                   // Sold out stays tappable (details still useful); the item
                   // page blocks Add to Cart.
                   opacity: item.is_available ? 1 : 0.5,
+                  borderWidth: 2, borderColor: item.id === focusId ? Brand.orange : 'transparent',
                 }}
               >
                 {/* Image */}

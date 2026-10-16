@@ -9,7 +9,7 @@ import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
 
-/** Open a dish on top of its store page (Grab-style), so Add to Cart lands back on the store.
+/** Open the dish's store page scrolled to that dish (Grab-style); the student taps it from there.
  *  Falls back to the bare dish page when the caller has no vendor id. */
 export function openItem(itemId: string, vendorId?: string, recommended?: boolean) {
   const rec = recommended ? 'rec=1' : '';
