@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
@@ -15,14 +15,14 @@ const KNOB = HEIGHT - PAD * 2;
 export function SwipeToConfirm({ label, onConfirm }: { label: string; onConfirm: () => Promise<void> | void }) {
   const [width, setWidth] = useState(0);
   const x = useSharedValue(0);
-  const busy = useRef(false);
+  const busy = useSharedValue(false);
   const max = Math.max(width - KNOB - PAD * 2, 1);
 
   async function confirm() {
-    if (busy.current) return; // a second flick / a11y activate mid-request must not fire twice
-    busy.current = true;
+    if (busy.value) return; // a second flick / a11y activate mid-request must not fire twice
+    busy.value = true;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    try { await onConfirm(); } finally { busy.current = false; }
+    try { await onConfirm(); } finally { busy.value = false; }
     x.value = withSpring(0); // back to rest if the action failed and the screen stayed
   }
 
