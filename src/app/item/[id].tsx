@@ -223,17 +223,22 @@ export default function ItemDetailScreen() {
     if (soldOut) return;
     const currentItem = item;
 
+    // Land on the dish's store (basket bar there) so the student keeps shopping.
+    // dismissTo pops back if the store is already under us, else replaces this screen.
+    const backToStore = () => router.dismissTo(`/store/${currentItem.vendor_id}`);
+
     const addNow = () => {
       if (matchedAllergens.length > 0) {
         showConfirm(
           t('item.allergyWarningTitle'),
           t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
-          () => { addToCart(currentItem, qty, selectedOptions, note); },
+          () => { addToCart(currentItem, qty, selectedOptions, note); backToStore(); },
           { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
         );
         return;
       }
       addToCart(currentItem, qty, selectedOptions, note);
+      backToStore();
     };
 
     if (hasVendorMismatch(currentItem.vendor_id)) {
