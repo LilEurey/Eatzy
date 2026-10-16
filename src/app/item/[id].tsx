@@ -20,6 +20,7 @@ import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
+import { CartBar } from '@/components/CartBar';
 import type { Database } from '@/types/database.types';
 
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
@@ -227,13 +228,12 @@ export default function ItemDetailScreen() {
         showConfirm(
           t('item.allergyWarningTitle'),
           t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
-          () => { addToCart(currentItem, qty, selectedOptions, note); router.back(); },
+          () => { addToCart(currentItem, qty, selectedOptions, note); },
           { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
         );
         return;
       }
       addToCart(currentItem, qty, selectedOptions, note);
-      router.back();
     };
 
     if (hasVendorMismatch(currentItem.vendor_id)) {
@@ -250,7 +250,7 @@ export default function ItemDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <Animated.ScrollView ref={heroRef} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 160 }}>
+      <Animated.ScrollView ref={heroRef} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 230 }}>
         {/* Image area */}
         <View style={{ height: 280, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
           <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
@@ -558,6 +558,7 @@ export default function ItemDetailScreen() {
         shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.06, shadowRadius: 12, elevation: 10,
       }}>
+        <CartBar vendorId={item.vendor_id} />
         {!storeOpen && (
           <Text style={{ fontSize: 12, color: Brand.textSecondary, marginBottom: 10, textAlign: 'center' }}>
             {t('item.storeClosedNotice')}
