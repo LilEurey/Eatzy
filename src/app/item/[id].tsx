@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { addToCart, hasVendorMismatch, NOTE_MAX } from '@/lib/cart-store';
+import { addToCart, NOTE_MAX } from '@/lib/cart-store';
 import { formatBaht } from '@/lib/money';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { useI18n } from '@/lib/i18n';
@@ -243,15 +243,6 @@ export default function ItemDetailScreen() {
       backToStore();
     };
 
-    if (hasVendorMismatch(currentItem.vendor_id)) {
-      showConfirm(
-        t('item.vendorMismatchTitle'),
-        t('item.vendorMismatchMsg'),
-        addNow,
-        { confirmLabel: t('item.vendorMismatchConfirm'), cancelLabel: t('common.cancel'), destructive: true },
-      );
-      return;
-    }
     addNow();
   }
 

@@ -491,7 +491,7 @@ export default function StoreDetailScreen() {
       </Animated.ScrollView>
       <HeroHeader title={vendor.name} barStyle={barStyle} />
       <View style={{ position: 'absolute', left: 16, right: 16, bottom: 28 }}>
-        <CartBar vendorId={vendor.id} />
+        <CartBar />
       </View>
     </SafeAreaView>
   );

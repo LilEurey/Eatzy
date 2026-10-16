@@ -6,11 +6,11 @@ import { useI18n } from '@/lib/i18n';
 import { useCart, cartCount, cartSubtotal } from '@/lib/cart-store';
 import { formatBaht } from '@/lib/money';
 
-/** "Basket • n items ฿x" pill — opens the cart. Renders nothing unless the cart holds items from `vendorId`. */
-export function CartBar({ vendorId }: { vendorId: string }) {
+/** "Basket • n items ฿x" pill — opens the cart. Renders nothing when the cart is empty. Counts every store's items (multi-store cart). */
+export function CartBar() {
   const { t } = useI18n();
   const cart = useCart();
-  if (cart.vendor_id !== vendorId || cart.items.length === 0) return null;
+  if (cart.items.length === 0) return null;
   return (
     <Tap
       onPress={() => router.push('/cart')}

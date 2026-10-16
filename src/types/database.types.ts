@@ -924,6 +924,14 @@ export type Database = {
         }
         Returns: string
       }
+      place_orders: {
+        Args: {
+          p_orders: Json
+          p_pickup_end: string
+          p_pickup_start: string
+        }
+        Returns: string[]
+      }
       provision_vendor: {
         Args: {
           p_business_name: string

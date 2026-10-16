@@ -10,11 +10,16 @@ import { placeOrder, type PlaceOrderInput } from '@/lib/place-order';
 const SESSION = { access_token: 'tok', user: { id: 'u1' } };
 
 const input = (over: Partial<PlaceOrderInput> = {}): PlaceOrderInput => ({
-  vendorId: 'v1',
   slot: { start: new Date('2026-06-15T05:00:00Z'), end: new Date('2026-06-15T05:15:00Z') },
-  lines: [
-    { menu_item_id: 'm1', quantity: 1, note: '  ', addons: [] },
-    { menu_item_id: 'm1', quantity: 2, note: ' no chili ', addons: [{ id: 'a1' }] },
+  orders: [
+    {
+      vendor_id: 'v1',
+      items: [
+        { menu_item_id: 'm1', quantity: 1, note: '  ', addons: [] },
+        { menu_item_id: 'm1', quantity: 2, note: ' no chili ', addons: [{ id: 'a1' }] },
+      ],
+    },
+    { vendor_id: 'v2', items: [{ menu_item_id: 'm9', quantity: 1, note: '', addons: [] }] },
   ],
   ...over,
 });
@@ -25,19 +30,24 @@ describe('placeOrder', () => {
     __setSession(SESSION);
   });
 
-  it('places the whole order in one RPC, sending only what the server trusts', async () => {
-    __setNextRpcResult({ data: 'o1', error: null });
+  it('places every stall\'s order in one RPC, sending only what the server trusts', async () => {
+    __setNextRpcResult({ data: ['o1', 'o2'], error: null });
 
-    await expect(placeOrder(input())).resolves.toEqual({ ok: true, orderId: 'o1' });
+    await expect(placeOrder(input())).resolves.toEqual({ ok: true, orderIds: ['o1', 'o2'] });
 
     expect(__getRpcCalls()).toEqual([{
-      name: 'place_order',
+      name: 'place_orders',
       args: {
-        p_vendor_id: 'v1',
-        // Same dish twice stays two lines; blank note -> null, note is trimmed.
-        p_lines: [
-          { menu_item_id: 'm1', quantity: 1, note: null, addon_ids: [] },
-          { menu_item_id: 'm1', quantity: 2, note: 'no chili', addon_ids: ['a1'] },
+        p_orders: [
+          {
+            vendor_id: 'v1',
+            // Same dish twice stays two lines; blank note -> null, note is trimmed.
+            lines: [
+              { menu_item_id: 'm1', quantity: 1, note: null, addon_ids: [] },
+              { menu_item_id: 'm1', quantity: 2, note: 'no chili', addon_ids: ['a1'] },
+            ],
+          },
+          { vendor_id: 'v2', lines: [{ menu_item_id: 'm9', quantity: 1, note: null, addon_ids: [] }] },
         ],
         p_pickup_start: '2026-06-15T05:00:00.000Z',
         p_pickup_end: '2026-06-15T05:15:00.000Z',
@@ -66,6 +76,12 @@ describe('placeOrder', () => {
     __setNextRpcResult({ data: null, error: { message } });
 
     await expect(placeOrder(input())).resolves.toMatchObject({ ok: false, reason });
+  });
+
+  it('names the stall that failed, from the error detail', async () => {
+    __setNextRpcResult({ data: null, error: { message: 'vendor_closed', details: 'v2' } });
+
+    await expect(placeOrder(input())).resolves.toMatchObject({ ok: false, reason: 'vendor-closed', vendorId: 'v2' });
   });
 
   it('formats an unknown error with its code, details and hint', async () => {
