@@ -5,6 +5,7 @@ import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { enterUp, popIn } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { SwipeToConfirm } from '@/components/SwipeToConfirm';
 import { KitchenBackdrop, ClassroomBackdrop, CanteenBackdrop } from '@/components/KitchenBackdrop';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -422,13 +423,7 @@ export default function TrackScreen() {
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.rateYourOrder')}</Text>
             </Tap>
           ) : (
-            <Tap
-              activeOpacity={0.85}
-              onPress={markPickedUp}
-              style={{ backgroundColor: Brand.orange, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{t('track.pickedItUp')}</Text>
-            </Tap>
+            <SwipeToConfirm label={t('track.pickedItUp')} onConfirm={markPickedUp} />
           )}
         </View>
       )}
