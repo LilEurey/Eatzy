@@ -7,6 +7,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { rowEnter, popIn, popOut, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { openItem } from '@/components/home/ItemCard';
 import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,7 +25,7 @@ import { CartBar } from '@/components/CartBar';
 import type { Database } from '@/types/database.types';
 
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
-type SimilarItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
+type SimilarItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_id?: string; vendor_name: string; score: number };
 type Review = {
   id: string;
   score: number;
@@ -501,7 +502,7 @@ export default function ItemDetailScreen() {
                 {similar.map((s, si) => (
                   <Animated.View key={s.id} entering={rowEnter(si)}>
                   <Tap
-                    onPress={() => router.push(`/item/${s.id}?rec=1`)}
+                    onPress={() => openItem(s.id, s.vendor_id, true)}
                     activeOpacity={0.85}
                     style={{
                       width: 140, borderRadius: 20, backgroundColor: Brand.card, overflow: 'hidden',

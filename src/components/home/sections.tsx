@@ -10,7 +10,7 @@ import { listEnter, rowEnter } from '@/lib/motion';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { AllergenPill, EmptyCard, ItemCard, SectionTitle } from '@/components/home/ItemCard';
+import { AllergenPill, EmptyCard, ItemCard, openItem, SectionTitle } from '@/components/home/ItemCard';
 
 // Exact path from the Figma export — the 🔔 emoji it replaced renders with
 // its own baked-in colors on most platforms instead of a clean flat icon.
@@ -174,7 +174,7 @@ export function PromotedSection({ featured }: { featured: MenuItem | null }) {
                       ฿{featured.price}
                     </Text>
                     <Tap
-                      onPress={() => router.push(`/item/${featured.id}`)}
+                      onPress={() => openItem(featured.id, featured.vendor_id)}
                       style={{
                         backgroundColor: '#a04100', borderRadius: 16,
                         paddingHorizontal: 16, paddingVertical: 8,
@@ -219,7 +219,7 @@ export function TrendingSection({ trending }: { trending: MenuItem[] }) {
           {trending.map((item, i) => (
             <Animated.View key={item.id} entering={rowEnter(i)} style={{ flex: 1 }}>
               <Tap
-                onPress={() => router.push(`/item/${item.id}`)}
+                onPress={() => openItem(item.id, item.vendor_id)}
                 activeOpacity={0.85}
                 style={{
                   flex: 1, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
@@ -421,7 +421,7 @@ export function MenuItemCard({ item, recommended, emoji, badge }: { item: MenuIt
   const { locale } = useI18n();
   return (
     <ItemCard
-      itemId={item.id} recommended={recommended} emoji={emoji} badge={badge}
+      itemId={item.id} vendorId={item.vendor_id} recommended={recommended} emoji={emoji} badge={badge}
       imageUrl={item.image_url} title={localizedText(item.name, item.name_th, locale)}
       vendorName={item.vendors?.name ?? ''} price={item.price} allergens={item.allergens}
     />

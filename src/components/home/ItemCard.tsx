@@ -9,6 +9,14 @@ import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
 
+/** Open a dish on top of its store page (Grab-style), so Add to Cart lands back on the store.
+ *  Falls back to the bare dish page when the caller has no vendor id. */
+export function openItem(itemId: string, vendorId?: string, recommended?: boolean) {
+  const rec = recommended ? 'rec=1' : '';
+  if (vendorId) router.push(`/store/${vendorId}?item=${itemId}${rec && `&${rec}`}`);
+  else router.push(`/item/${itemId}${rec && `?${rec}`}`);
+}
+
 // Small red pill shown on a menu card when the dish carries an allergen the
 // student listed. Same "warn, don't hide" treatment as search.tsx. Sections
 // fed by edge functions (recommend-for-you, similar) have no allergens field,
@@ -66,6 +74,7 @@ export function CardRow({ title, count, emptyText, children }: { title: string; 
 
 type ItemCardProps = {
   itemId: string;
+  vendorId?: string;
   // Recommendation rows append ?rec=1 → item/[id] logs the view as
   // was_recommended, so ml_interactions can tell a recommended tap from a browse.
   recommended?: boolean;
@@ -79,10 +88,10 @@ type ItemCardProps = {
   allergens?: string[] | null;
 };
 
-export function ItemCard({ itemId, recommended, imageUrl, emoji = '🍽️', badge, title, vendorName, price, allergens }: ItemCardProps) {
+export function ItemCard({ itemId, vendorId, recommended, imageUrl, emoji = '🍽️', badge, title, vendorName, price, allergens }: ItemCardProps) {
   return (
     <Tap
-      onPress={() => (recommended ? router.push(`/item/${itemId}?rec=1`) : router.push(`/item/${itemId}`))}
+      onPress={() => openItem(itemId, vendorId, recommended)}
       activeOpacity={0.85}
       style={{
         width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',

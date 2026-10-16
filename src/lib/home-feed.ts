@@ -47,10 +47,10 @@ export function restoreRank<T extends { id: string }>(rankedIds: string[], rows:
 }
 
 // recommend-for-you returns flat rows (no vendors() join — computed server-side).
-export type PersonalizedItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
+export type PersonalizedItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_id?: string; vendor_name: string; score: number };
 
 // recommend-similar's response shape (same as item/[id].tsx's SimilarItem).
-export type SimilarToItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
+export type SimilarToItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_id?: string; vendor_name: string; score: number };
 
 export type HomeFeedResult = {
   // null on an anonymous session or a failed load — the caller only applies

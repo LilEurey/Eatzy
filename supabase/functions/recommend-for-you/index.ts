@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
       name_th: item.name_th,
       price: item.price,
       image_url: item.image_url,
+      vendor_id: item.vendor_id,
       vendor_name: item.vendors?.name ?? '',
       score,
     })),

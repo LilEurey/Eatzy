@@ -52,7 +52,14 @@ export default function StoreDetailScreen() {
   const { t, locale } = useI18n();
   const { prefs, gate } = usePreferences();
   const prefsError = gate.status === 'error';
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, item: openItemId, rec } = useLocalSearchParams<{ id: string; item?: string; rec?: string }>();
+  // Opened via openItem(): push the dish on top, then drop the params so
+  // item/[id]'s dismissTo(`/store/${id}`) matches this screen.
+  useEffect(() => {
+    if (!openItemId) return;
+    router.setParams({ item: undefined, rec: undefined });
+    router.push(`/item/${openItemId}${rec ? '?rec=1' : ''}`);
+  }, [openItemId, rec]);
   const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(220);
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
