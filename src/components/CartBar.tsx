@@ -14,7 +14,7 @@ export function CartBar({ vendorId }: { vendorId: string }) {
   return (
     <Tap
       onPress={() => router.push('/cart')}
-      style={{ height: 56, borderRadius: 28, marginBottom: 12, backgroundColor: Brand.orange, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 }}
+      style={{ height: 56, borderRadius: 28, backgroundColor: Brand.orange, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 }}
     >
       <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700' }}>{t('store.basket', { n: cartCount(cart) })}</Text>
       <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700' }}>{formatBaht(cartSubtotal(cart))}</Text>
