@@ -12,7 +12,7 @@ import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, group
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
 import * as Haptics from 'expo-haptics';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { nextPickupSlots, isStoreOpen, hasPassed } from '@/lib/time';
 import { formatBaht } from '@/lib/money';
@@ -52,7 +52,10 @@ export default function CartScreen() {
   useEffect(() => {
     if (!vendorKey) return; // cart empty — the empty-state branch below renders instead
     supabase.from('vendors').select('id,name,stall_number,is_open,open_time,close_time').in('id', vendorKey.split(','))
-      .then(({ data }) => setVendors(Object.fromEntries((data ?? []).map(v => [v.id, v]))));
+      .then(({ data, error }) => {
+        if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
+        setVendors(Object.fromEntries((data ?? []).map(v => [v.id, v])));
+      });
   }, [vendorKey]);
 
   function placeOrder() {

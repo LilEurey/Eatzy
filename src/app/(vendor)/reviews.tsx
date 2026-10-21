@@ -9,7 +9,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { useVendorMenu } from '@/lib/vendor-store';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
+import { showAlert } from '@/lib/alert';
 import { localizedText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
 
@@ -63,8 +64,9 @@ export default function VendorReviewsScreen() {
         .select('id,menu_item_id,score,comment,photo_urls,created_at')
         .in('menu_item_id', ids)
         .order('created_at', { ascending: false })
-        .then(({ data }) => {
+        .then(({ data, error }) => {
           if (cancelled) return;
+          if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
           setRows((data as ReviewRow[] | null) ?? []);
           setLoading(false);
         });

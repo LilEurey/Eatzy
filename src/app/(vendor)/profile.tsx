@@ -9,7 +9,7 @@ import { Brand } from '@/constants/theme';
 import { PillDropdown } from '@/components/PillDropdown';
 import { useVendorProfile, updateVendorProfile, startVendorStripeOnboarding, refreshVendorProfile } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
 import { hasCoords } from '@/lib/geo';
 import { supabase } from '@/lib/supabase';
 
@@ -56,7 +56,8 @@ export default function VendorProfileScreen() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from('users').select('notifications_enabled').eq('id', user.id).maybeSingle();
+      const { data, error } = await supabase.from('users').select('notifications_enabled').eq('id', user.id).maybeSingle();
+      if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
       if (data) setNotificationsEnabled(data.notifications_enabled);
     })();
   }, []);

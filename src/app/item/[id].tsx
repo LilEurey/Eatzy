@@ -18,7 +18,7 @@ import { Brand } from '@/constants/theme';
 import { addToCart, NOTE_MAX } from '@/lib/cart-store';
 import { formatBaht } from '@/lib/money';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
@@ -56,6 +56,7 @@ export default function ItemDetailScreen() {
   const [vendorName, setVendorName] = useState('');
   const [storeOpen, setStoreOpen] = useState(true);
   const [similar, setSimilar] = useState<SimilarItem[]>([]);
+  const [addonsFailed, setAddonsFailed] = useState(false);
   const [groups, setGroups] = useState<AddonGroup[]>([]);
   // groupId -> selected option ids
   const [selected, setSelected] = useState<Record<string, string[]>>({});
@@ -65,7 +66,8 @@ export default function ItemDetailScreen() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('menu_items').select('*, vendors(name,is_open,open_time,close_time)').eq('id', id).maybeSingle();
+      const { data, error } = await supabase.from('menu_items').select('*, vendors(name,is_open,open_time,close_time)').eq('id', id).maybeSingle();
+      if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
       setItem(data ?? null);
       setVendorName(data?.vendors?.name ?? '');
       setStoreOpen(!data?.vendors || isStoreOpen(data.vendors));
@@ -80,7 +82,9 @@ export default function ItemDetailScreen() {
       .select('id,name,name_th,min_select,max_select,sort_order,menu_item_addons(id,name,name_th,price,is_available,sort_order,allergens)')
       .eq('menu_item_id', id)
       .order('sort_order')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // Without the groups a required add-on would vanish and checkout would reject the line.
+        if (error) { setAddonsFailed(true); showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed')); return; }
         const rows = ((data ?? []) as AddonGroup[])
           .map(g => ({
             ...g,
@@ -191,7 +195,7 @@ export default function ItemDetailScreen() {
   const soldOut = !item.is_available;
   const optionsUnavailable = groups.some(g => g.min_select > 0 && g.menu_item_addons.length === 0);
   // Store open and the dish itself orderable — add-on validity is separate.
-  const orderable = storeOpen && !soldOut;
+  const orderable = storeOpen && !soldOut && !addonsFailed;
   // Base dish AND any selected add-on — selecting "Fried Egg" can newly trip
   // the warning even when the dish itself is allergen-free.
   const matchedAllergens = matchLineAllergens(item.allergens, selectedOptions.flatMap(o => o.allergens), prefs);
@@ -220,21 +224,17 @@ export default function ItemDetailScreen() {
     const backToStore = () =>
       !sim && router.canGoBack() ? router.back() : router.replace(`/store/${currentItem.vendor_id}`);
 
-    const addNow = () => {
-      if (matchedAllergens.length > 0) {
-        showConfirm(
-          t('item.allergyWarningTitle'),
-          t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
-          () => { addToCart(currentItem, qty, selectedOptions, note); backToStore(); },
-          { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
-        );
-        return;
-      }
-      addToCart(currentItem, qty, selectedOptions, note);
-      backToStore();
-    };
-
-    addNow();
+    if (matchedAllergens.length > 0) {
+      showConfirm(
+        t('item.allergyWarningTitle'),
+        t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
+        () => { addToCart(currentItem, qty, selectedOptions, note); backToStore(); },
+        { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
+      );
+      return;
+    }
+    addToCart(currentItem, qty, selectedOptions, note);
+    backToStore();
   }
 
   return (

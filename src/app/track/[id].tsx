@@ -16,7 +16,8 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock } from '@/lib/time';
 import { mapOrderItems, queueTicket } from '@/lib/order-view';
-import { addToCart, clearCart } from '@/lib/cart-store';
+import { addToCart, clearCart, useCart, cartCount } from '@/lib/cart-store';
+import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
 import { confirmHandoff, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 
 // Gentle breathing scale on the current step (Reanimated 4 CSS animation).
@@ -93,6 +94,8 @@ export default function TrackScreen() {
   const [order, setOrder] = useState<TrackOrder | null | undefined>(undefined);
   const [status, setStatus] = useState<Status>('pending');
   const [ordersAhead, setOrdersAhead] = useState<number | null>(null);
+  const { prefs, gate } = usePreferences();
+  const cart = useCart();
 
   useEffect(() => {
     let cancelled = false;
@@ -155,41 +158,54 @@ export default function TrackScreen() {
     }
     void fetchOrdersAhead();
 
-    const channel = supabase
-      .channel(`track-queue-${vendorId}-${id}-${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
-        void fetchOrdersAhead();
-      })
-      .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    // Realtime can't deliver other students' orders (RLS), so poll.
+    // ponytail: 15s poll per open tracker, push a per-vendor queue event if load matters
+    const timer = setInterval(() => void fetchOrdersAhead(), 15_000);
+    return () => clearInterval(timer);
   }, [vendorId, id]);
 
   // Refill the cart with the same dishes, add-ons and notes at today's prices.
   // Anything no longer available is left out; place_order() re-validates the rest.
   async function orderAgain() {
+    if (gate.status !== 'ready') { showAlert(t('common.errorTitle'), t('cart.prefsNotReadyMsg')); return; }
     const { data, error } = await supabase
       .from('order_items')
-      .select('quantity,special_instructions,menu_items(id,vendor_id,name,name_th,price,allergens,is_available),order_item_addons(addon_id,menu_item_addons(id,name,name_th,price,allergens,is_available))')
+      .select('quantity,special_instructions,menu_items(id,vendor_id,name,name_th,price,allergens,is_available,is_halal,is_vegetarian,is_jay),order_item_addons(addon_id,menu_item_addons(id,name,name_th,price,allergens,is_available))')
       .eq('order_id', id);
     if (error) { showAlert(t('common.errorTitle'), error.message); return; }
     let skipped = false;
     const lines = (data ?? []).filter(oi => {
-      const ok = !!oi.menu_items?.is_available;
+      const ok = !!oi.menu_items?.is_available && gate.visible(oi.menu_items);
       if (!ok) skipped = true;
       return ok;
     });
     if (lines.length === 0) { showAlert(t('track.orderAgain'), t('track.orderAgainNone')); return; }
-    clearCart();
-    for (const oi of lines) {
-      const addons = oi.order_item_addons.flatMap(a => {
+    const refill = lines.map(oi => ({
+      oi,
+      addons: oi.order_item_addons.flatMap(a => {
         const opt = a.menu_item_addons;
         if (!opt?.is_available) { skipped = true; return []; }
         return [{ id: opt.id, name: opt.name, name_th: opt.name_th, price: opt.price, allergens: opt.allergens ?? [] }];
-      });
-      addToCart(oi.menu_items!, oi.quantity, addons, oi.special_instructions ?? '');
-    }
-    router.push('/cart');
-    if (skipped) showAlert(t('track.orderAgain'), t('track.orderAgainSkipped'));
+      }),
+    }));
+    const allergens = matchAllergens(
+      [...new Set(refill.flatMap(({ oi, addons }) => [...(oi.menu_items!.allergens ?? []), ...addons.flatMap(a => a.allergens)]))],
+      prefs,
+    );
+    const apply = () => {
+      clearCart();
+      for (const { oi, addons } of refill) addToCart(oi.menu_items!, oi.quantity, addons, oi.special_instructions ?? '');
+      router.push('/cart');
+      if (skipped) showAlert(t('track.orderAgain'), t('track.orderAgainSkipped'));
+    };
+    const checkAllergens = () => allergens.length === 0 ? apply() : showConfirm(
+      t('item.allergyWarningTitle'),
+      t('item.allergyWarningMsg', { allergens: allergens.join(', ') }),
+      apply,
+      { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
+    );
+    if (cartCount(cart) === 0) checkAllergens();
+    else showConfirm(t('track.orderAgain'), t('track.orderAgainReplaceCart'), checkAllergens, { confirmLabel: t('track.orderAgain'), cancelLabel: t('common.cancel') });
   }
 
   async function markPickedUp() {

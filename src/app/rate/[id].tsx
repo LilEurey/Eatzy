@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
 import * as Haptics from 'expo-haptics';
-import { useI18n, type TranslationKey } from '@/lib/i18n';
+import { useI18n, translateActive, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { mapOrderItems } from '@/lib/order-view';
 
@@ -56,11 +56,12 @@ export default function RateScreen() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .select('id,vendors(name,cover_image_url),ratings(id),order_items(menu_item_id,quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
+      if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
       if (!data) { setOrder(null); return; }
       setOrder({
         id: data.id,

@@ -40,6 +40,8 @@ export const en = {
   'auth.continueWithGoogle': 'Continue with Google',
   'auth.signingIn': 'Signing in…',
   'auth.signInFailedTitle': 'Sign in failed',
+  'auth.notAdminMsg': 'This account is not registered as an admin.',
+  'auth.notVendorMsg': 'This account is not registered as a vendor.',
   'auth.vendorLoginCta': 'Vendor login',
 
   // Onboarding
@@ -275,6 +277,8 @@ export const en = {
   'track.orderAgain': 'Order again',
   'track.orderAgainSkipped': 'Some items or add-ons are no longer available and were left out.',
   'track.orderAgainNone': 'None of these items are available right now.',
+  'track.orderAgainReplaceCart': "Your cart will be replaced with this order. Continue?",
+  'common.loadFailed': "Couldn't load this page. Pull to refresh or try again.",
   'track.cancelOrder': 'Cancel Order',
   'track.cancelConfirmTitle': 'Cancel this order?',
   'track.cancelConfirmMsg': "You haven't been charged yet — cancelling now is free.",

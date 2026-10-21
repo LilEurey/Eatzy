@@ -42,6 +42,8 @@ export const th: Record<TranslationKey, string> = {
   'auth.continueWithGoogle': 'ดำเนินการต่อด้วย Google',
   'auth.signingIn': 'กำลังเข้าสู่ระบบ…',
   'auth.signInFailedTitle': 'เข้าสู่ระบบไม่สำเร็จ',
+  'auth.notAdminMsg': 'บัญชีนี้ไม่ได้ลงทะเบียนเป็นผู้ดูแลระบบ',
+  'auth.notVendorMsg': 'บัญชีนี้ไม่ได้ลงทะเบียนเป็นร้านค้า',
   'auth.vendorLoginCta': 'เข้าสู่ระบบผู้ขาย',
 
   // Onboarding
@@ -277,6 +279,8 @@ export const th: Record<TranslationKey, string> = {
   'track.orderAgain': 'สั่งอีกครั้ง',
   'track.orderAgainSkipped': 'บางรายการหรือท็อปปิ้งไม่มีจำหน่ายแล้ว จึงไม่ได้ใส่ในตะกร้า',
   'track.orderAgainNone': 'ไม่มีรายการใดในคำสั่งซื้อนี้พร้อมจำหน่ายในขณะนี้',
+  'track.orderAgainReplaceCart': "ตะกร้าของคุณจะถูกแทนที่ด้วยคำสั่งซื้อนี้ ดำเนินการต่อหรือไม่?",
+  'common.loadFailed': "โหลดหน้านี้ไม่สำเร็จ ดึงเพื่อรีเฟรชหรือลองอีกครั้ง",
   'track.cancelOrder': 'ยกเลิกคำสั่งซื้อ',
   'track.cancelConfirmTitle': 'ยกเลิกคำสั่งซื้อนี้หรือไม่?',
   'track.cancelConfirmMsg': 'คุณยังไม่ถูกเรียกเก็บเงิน ยกเลิกตอนนี้ได้ฟรี',
