@@ -228,7 +228,9 @@ export default function CartScreen() {
                     onPress={() => setQty(item.line_id, -1)}
                     style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>−</Text>
+                    {item.quantity === 1
+                      ? <Image source={require('../../assets/images/trash.png')} tintColor={Brand.orange} style={{ width: 16, height: 16 }} />
+                      : <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>−</Text>}
                   </Tap>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, minWidth: 22, textAlign: 'center' }}>
                     {item.quantity}
