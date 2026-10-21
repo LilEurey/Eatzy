@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { SkeletonList } from '@/components/Skeleton';
-import { View, Text, ScrollView, TextInput } from 'react-native';
+import { View, Text, FlatList, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
-import { listEnter, listLayout } from '@/lib/motion';
+import { listEnter } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { openItem } from '@/components/home/ItemCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -80,6 +80,8 @@ export default function SearchScreen() {
   const [items, setItems] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  // Filter/sort ~500 rows off the keystroke path so typing never waits on it.
+  const deferredQuery = useDeferredValue(query);
   const [diet, setDiet] = useState<Set<DietFilter>>(new Set());
 
   const { prefs, gate } = usePreferences();
@@ -93,11 +95,13 @@ export default function SearchScreen() {
     useCallback(() => {
       const cancelledRef = focusGuard.snapshot();
       async function load() {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('menu_items')
           .select('id,vendor_id,name,name_th,description,description_th,price,category,spice_level,is_available,is_halal,is_vegetarian,is_jay,allergens,tags,ingredients,image_url,vendors(name)')
           .eq('is_available', true);
         if (cancelledRef.current) return;
+        // Keep the last good list on a failed refetch instead of blanking to "no results".
+        if (error) { setLoading(false); return; }
 
         const dbItems = (data ?? []) as unknown as (SearchItem & { vendors: { name: string } | null })[];
         setItems(dbItems.map(i => ({ ...i, vendorName: i.vendors?.name ?? '' })));
@@ -112,7 +116,7 @@ export default function SearchScreen() {
   }
 
   const results = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = deferredQuery.trim().toLowerCase();
     return items
       // Saved halal/vegetarian/jay are hard filters everywhere else in the app
       // (home, store/[id], both recommend-* functions) — search was the one
@@ -126,9 +130,9 @@ export default function SearchScreen() {
       .filter(item => [...diet].every(f => item[DIET_FIELD[f]] === true))
       .map(item => ({ item, score: matchScore(item, needle) }))
       .filter(({ score }) => score > 0)
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => b.score - a.score || a.item.id.localeCompare(b.item.id))
       .map(({ item }) => item);
-  }, [items, query, diet, gate]);
+  }, [items, deferredQuery, diet, gate]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -149,6 +153,9 @@ export default function SearchScreen() {
               placeholder={t('search.placeholder')}
               placeholderTextColor="#5a4136"
               autoFocus
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
               style={{ flex: 1, fontSize: 16, color: '#261812', paddingVertical: 14, paddingHorizontal: 10 }}
             />
             {query.length > 0 && (
@@ -207,14 +214,29 @@ export default function SearchScreen() {
           </View>
         </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-          <Text style={{ color: Brand.textSecondary, fontSize: 13, marginBottom: 12 }}>
-            {t('search.resultsCount', { n: results.length })}
-          </Text>
-
-          <View style={{ gap: 12 }}>
-            {results.map((item, index) => (
-              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}>
+        <FlatList
+          data={results}
+          keyExtractor={item => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          initialNumToRender={10}
+          windowSize={7}
+          ListHeaderComponent={
+            <Text style={{ color: Brand.textSecondary, fontSize: 13, marginBottom: 12 }}>
+              {t('search.resultsCount', { n: results.length })}
+            </Text>
+          }
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+              <Text style={{ fontSize: 32, marginBottom: 8 }}>🔍</Text>
+              <Text style={{ color: Brand.textSecondary, textAlign: 'center' }}>{t('search.noResults')}</Text>
+            </View>
+          }
+          renderItem={({ item, index }) => (
+            <Animated.View entering={listEnter(index)}>
               <Tap
                 onPress={() => openItem(item.id, item.vendor_id)}
                 activeOpacity={0.85}
@@ -273,17 +295,9 @@ export default function SearchScreen() {
                   ฿{item.price}
                 </Text>
               </Tap>
-              </Animated.View>
-            ))}
-
-            {results.length === 0 && (
-              <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-                <Text style={{ fontSize: 32, marginBottom: 8 }}>🔍</Text>
-                <Text style={{ color: Brand.textSecondary, textAlign: 'center' }}>{t('search.noResults')}</Text>
-              </View>
-            )}
-          </View>
-        </ScrollView>
+            </Animated.View>
+          )}
+        />
       )}
     </SafeAreaView>
   );
