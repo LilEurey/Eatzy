@@ -198,6 +198,8 @@ export const th: Record<TranslationKey, string> = {
   'search.resultsCount': 'พบ {n} เมนู',
   'search.noResults': 'ไม่พบเมนูที่ค้นหา\nลองชื่ออื่นหรือเปลี่ยนตัวกรอง',
   'search.containsAllergen': '⚠️ สารก่อภูมิแพ้',
+  'search.food': 'อาหาร',
+  'search.drinks': 'เครื่องดื่ม',
 
   // Stores
   'stores.title': 'ร้านค้า',

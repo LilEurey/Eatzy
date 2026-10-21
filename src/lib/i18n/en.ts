@@ -196,6 +196,8 @@ export const en = {
   'search.resultsCount': '{n} dishes found',
   'search.noResults': 'No dishes match your search.\nTry a different name or filter.',
   'search.containsAllergen': '⚠️ Allergen',
+  'search.food': 'Food',
+  'search.drinks': 'Drinks',
 
   // Stores
   'stores.title': 'Stores',

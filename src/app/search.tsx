@@ -14,6 +14,7 @@ import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { toggled } from '@/lib/toggle-set';
 import { localizedText } from '@/lib/localize';
+import { isDrinkCategory } from '@/lib/menu-categories';
 import { usePreferences, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
 
@@ -37,6 +38,10 @@ type SearchItem = {
   image_url: string | null;
   vendorName: string;
 };
+
+const KINDS = ['all', 'food', 'drinks'] as const;
+type Kind = (typeof KINDS)[number];
+const KIND_LABEL: Record<Kind, TranslationKey> = { all: 'common.all', food: 'search.food', drinks: 'search.drinks' };
 
 const DIET_FILTERS = ['Halal', 'Vegetarian', 'Jay'] as const;
 type DietFilter = (typeof DIET_FILTERS)[number];
@@ -82,6 +87,7 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   // Filter/sort ~500 rows off the keystroke path so typing never waits on it.
   const deferredQuery = useDeferredValue(query);
+  const [kind, setKind] = useState<Kind>('all');
   const [diet, setDiet] = useState<Set<DietFilter>>(new Set());
 
   const { prefs, gate } = usePreferences();
@@ -127,12 +133,13 @@ export default function SearchScreen() {
       // store/[id].tsx. The actual gate is the confirm popup on Add to
       // Cart (item/[id].tsx), the moment the student commits to the dish;
       // this only flags matches so the badge below can warn on sight too.
+      .filter(item => kind === 'all' || isDrinkCategory(item.category) === (kind === 'drinks'))
       .filter(item => [...diet].every(f => item[DIET_FIELD[f]] === true))
       .map(item => ({ item, score: matchScore(item, needle) }))
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score || a.item.id.localeCompare(b.item.id))
       .map(({ item }) => item);
-  }, [items, deferredQuery, diet, gate]);
+  }, [items, deferredQuery, kind, diet, gate]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
@@ -166,8 +173,29 @@ export default function SearchScreen() {
           </View>
         </View>
 
-        {/* Dietary filter chips */}
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+        {/* Food / drinks, then dietary chips */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+          {KINDS.map(k => {
+            const selected = kind === k;
+            return (
+              <Tap
+                key={k}
+                onPress={() => setKind(k)}
+                haptic={false}
+                style={{
+                  paddingHorizontal: 14, paddingVertical: 8, borderRadius: 50,
+                  backgroundColor: selected ? Brand.textPrimary : Brand.card,
+                  borderWidth: 1.5, borderColor: selected ? Brand.textPrimary : Brand.border,
+                }}
+              >
+                <Text style={{ color: selected ? '#fff' : Brand.textPrimary, fontWeight: '600', fontSize: 13 }}>
+                  {t(KIND_LABEL[k])}
+                </Text>
+              </Tap>
+            );
+          })}
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
           {DIET_FILTERS.map(f => {
             const selected = diet.has(f);
             return (
