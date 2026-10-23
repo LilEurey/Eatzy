@@ -6,7 +6,7 @@ import { StripeProvider } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { loadUserRole } from '@/lib/user-role';
 import { showAlert, showConfirm } from '@/lib/alert';
-import { I18nProvider } from '@/lib/i18n';
+import { I18nProvider, translateActive } from '@/lib/i18n';
 import { openLaunchNotification, registerForPush } from '@/lib/push';
 import type { Session } from '@supabase/supabase-js';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -97,12 +97,12 @@ export default function RootLayout() {
     // screen's own check and this listener redirected the same sign-in.
     if (originPath === '/admin-login' && role !== 'admin') {
       await supabase.auth.signOut();
-      showAlert('Sign in failed', 'This account is not registered as an admin.');
+      showAlert(translateActive('auth.signInFailedTitle'), translateActive('auth.notAdminMsg'));
       return;
     }
     if (originPath === '/vendor-login' && role !== 'vendor') {
       await supabase.auth.signOut();
-      showAlert('Sign in failed', 'This account is not registered as a vendor.');
+      showAlert(translateActive('auth.signInFailedTitle'), translateActive('auth.notVendorMsg'));
       return;
     }
 

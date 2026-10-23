@@ -147,10 +147,12 @@ function mapOrder(row: OrderRow): VendorOrder {
   };
 }
 
+const MENU_SELECT = 'id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min';
+
 async function fetchMenu(vendorId: string) {
   const { data, error } = await supabase
     .from('menu_items')
-    .select('id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
+    .select(MENU_SELECT)
     .eq('vendor_id', vendorId)
     .order('name');
   // On a failed refetch keep the last good list — [] would show an empty menu.
@@ -169,6 +171,12 @@ async function fetchOrders(vendorId: string) {
   // Keep the last good queue on a failed refetch — [] would tell the vendor nothing is waiting.
   if (error) { console.warn('fetchOrders failed:', error.message); return; }
   orders = data.map(mapOrder);
+}
+
+/** Refetch the signed-in vendor's orders after a mutation, then notify subscribers. */
+async function refreshOrders() {
+  if (vendorProfile) await fetchOrders(vendorProfile.id);
+  emit();
 }
 
 async function fetchNotifications(userId: string) {
@@ -295,8 +303,7 @@ export async function acceptOrder(id: string) {
   if (data === 'insufficient_balance') {
     showAlert(tr('vendor.err.autoRejectedTitle'), tr('vendor.err.autoRejectedMsg'));
   }
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 export async function rejectOrder(id: string) {
@@ -310,8 +317,7 @@ export async function rejectOrder(id: string) {
     lostRaceMessage: tr('vendor.err.notPending'),
   });
   if (!ok) return;
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 export async function markReady(id: string) {
@@ -327,8 +333,7 @@ export async function markReady(id: string) {
     lostRaceMessage: tr('vendor.err.notAccepted'),
   });
   if (!ok) return;
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 // After accept (charged) the only way out is this RPC: it locks the order
@@ -337,15 +342,13 @@ export async function markReady(id: string) {
 export async function cancelAcceptedOrder(id: string) {
   const { error } = await supabase.rpc('vendor_cancel_order', { p_order_id: id });
   if (error) { showAlert(tr('vendor.err.cancelOrder'), error.message); return; }
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 export async function handOff(id: string) {
   const error = await confirmHandoff('vendor', id);
   if (error) { showAlert(tr('vendor.err.handoff'), error); return; }
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 // No order_items column backs a per-item prep checklist in the current schema
@@ -404,7 +407,7 @@ export async function addMenuItem(input: NewMenuItemInput): Promise<boolean> {
   const { data, error } = await supabase
     .from('menu_items')
     .insert({ ...input, vendor_id: vendorProfile.id })
-    .select('id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
+    .select(MENU_SELECT)
     .single();
   if (error || !data) {
     showAlert(tr('vendor.err.saveItem'), error?.message ?? tr('vendor.err.tryAgain'));

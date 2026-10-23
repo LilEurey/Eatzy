@@ -12,7 +12,7 @@ import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, group
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
 import * as Haptics from 'expo-haptics';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { nextPickupSlots, isStoreOpen, hasPassed } from '@/lib/time';
 import { formatBaht } from '@/lib/money';
@@ -52,7 +52,10 @@ export default function CartScreen() {
   useEffect(() => {
     if (!vendorKey) return; // cart empty — the empty-state branch below renders instead
     supabase.from('vendors').select('id,name,stall_number,is_open,open_time,close_time').in('id', vendorKey.split(','))
-      .then(({ data }) => setVendors(Object.fromEntries((data ?? []).map(v => [v.id, v]))));
+      .then(({ data, error }) => {
+        if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
+        setVendors(Object.fromEntries((data ?? []).map(v => [v.id, v])));
+      });
   }, [vendorKey]);
 
   function placeOrder() {
@@ -132,7 +135,7 @@ export default function CartScreen() {
             {t('cart.addSomething')}
           </Text>
           <Tap
-            onPress={() => router.push('/(tabs)')}
+            onPress={() => router.dismissTo('/(tabs)')}
             style={{
               backgroundColor: Brand.orange, borderRadius: 14,
               paddingHorizontal: 28, paddingVertical: 12,
@@ -228,7 +231,9 @@ export default function CartScreen() {
                     onPress={() => setQty(item.line_id, -1)}
                     style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>−</Text>
+                    {item.quantity === 1
+                      ? <Image source={require('../../assets/images/trash.png')} tintColor={Brand.orange} style={{ width: 16, height: 16 }} />
+                      : <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>−</Text>}
                   </Tap>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, minWidth: 22, textAlign: 'center' }}>
                     {item.quantity}
