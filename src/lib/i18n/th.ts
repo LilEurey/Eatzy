@@ -677,7 +677,7 @@ export const th: Record<TranslationKey, string> = {
   'admin.newVendor.emailLabel': 'อีเมลร้าน',
   'admin.newVendor.emailPlaceholder': 'somtamcorner@eatzy.app',
   'admin.newVendor.passwordLabel': 'รหัสผ่าน',
-  'admin.newVendor.passwordPlaceholder': 'อย่างน้อย 6 ตัวอักษร',
+  'admin.newVendor.passwordPlaceholder': 'อย่างน้อย 10 ตัวอักษร',
   'admin.newVendor.businessNameLabel': 'ชื่อร้าน',
   'admin.newVendor.businessNamePlaceholder': 'เช่น ส้มตำคอร์เนอร์',
   'admin.newVendor.cuisineTagsLabel': 'ขายอะไร?',
