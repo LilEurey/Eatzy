@@ -84,6 +84,12 @@ describe('placeOrder', () => {
     await expect(placeOrder(input())).resolves.toMatchObject({ ok: false, reason: 'vendor-closed', vendorId: 'v2' });
   });
 
+  it('fails when the RPC returns no order ids and no error', async () => {
+    __setNextRpcResult({ data: [], error: null });
+
+    await expect(placeOrder(input())).resolves.toEqual({ ok: false, reason: 'failed', message: 'no order id returned' });
+  });
+
   it('formats an unknown error with its code, details and hint', async () => {
     __setNextRpcResult({ data: null, error: { message: 'boom', code: '23505', details: 'dup key', hint: 'retry' } });
 
