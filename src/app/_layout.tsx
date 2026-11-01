@@ -113,7 +113,7 @@ export default function RootLayout() {
     }
 
     if (role === 'admin') {
-      router.replace('/(admin)/new-vendor');
+      router.replace('/(admin)/dashboard');
       return;
     }
 

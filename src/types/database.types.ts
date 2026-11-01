@@ -728,6 +728,7 @@ export type Database = {
           created_at: string
           department: string | null
           email: string
+          expo_push_token: string | null
           id: string
           language: string
           name: string
@@ -741,6 +742,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           email: string
+          expo_push_token?: string | null
           id: string
           language?: string
           name: string
@@ -754,6 +756,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           email?: string
+          expo_push_token?: string | null
           id?: string
           language?: string
           name?: string
@@ -888,9 +891,9 @@ export type Database = {
     }
     Functions: {
       accept_order_and_charge: { Args: { p_order_id: string }; Returns: string }
+      admin_dashboard_stats: { Args: never; Returns: Json }
       auto_finalize_stale_handoffs: { Args: never; Returns: undefined }
       bootstrap_admin: { Args: { p_user_id: string }; Returns: undefined }
-      set_push_token: { Args: { p_token: string }; Returns: undefined }
       debit_wallet_for_dispute: {
         Args: { p_amount: number; p_reference: string; p_user_id: string }
         Returns: number
@@ -925,11 +928,7 @@ export type Database = {
         Returns: string
       }
       place_orders: {
-        Args: {
-          p_orders: Json
-          p_pickup_end: string
-          p_pickup_start: string
-        }
+        Args: { p_orders: Json; p_pickup_end: string; p_pickup_start: string }
         Returns: string[]
       }
       provision_vendor: {
@@ -948,6 +947,7 @@ export type Database = {
         Args: { p_reference: string }
         Returns: number
       }
+      set_push_token: { Args: { p_token: string }; Returns: undefined }
       student_confirm_pickup: {
         Args: { p_order_id: string }
         Returns: undefined
@@ -960,6 +960,10 @@ export type Database = {
       vendor_confirm_handoff: {
         Args: { p_order_id: string }
         Returns: undefined
+      }
+      within_open_hours: {
+        Args: { p_close: string; p_open: string }
+        Returns: boolean
       }
     }
     Enums: {

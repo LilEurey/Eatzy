@@ -691,6 +691,34 @@ export const th: Record<TranslationKey, string> = {
   'admin.newVendor.errorTitle': 'ไม่สามารถสร้างบัญชีร้านได้',
 
   'admin.nav.vendors': 'ร้านค้า',
+
+  'admin.nav.dashboard': 'แดชบอร์ด',
+
+  'admin.dashboard.title': 'ภาพรวม',
+
+  'admin.dashboard.subtitle': 'ผู้ใช้งาน Eatzy และกิจกรรมวันนี้',
+
+  'admin.dashboard.activeNow': 'ใช้งานตอนนี้ (15 นาที)',
+
+  'admin.dashboard.activeToday': 'ใช้งานวันนี้',
+
+  'admin.dashboard.active7d': 'ใช้งานสัปดาห์นี้',
+
+  'admin.dashboard.students': 'นักศึกษา',
+
+  'admin.dashboard.vendors': 'บัญชีผู้ขาย',
+
+  'admin.dashboard.newThisWeek': 'สมัครใหม่ (7 วัน)',
+
+  'admin.dashboard.ordersToday': 'คำสั่งซื้อวันนี้',
+
+  'admin.dashboard.revenueToday': 'ยอดขายวันนี้',
+
+  'admin.dashboard.openStalls': 'ร้านที่เปิด',
+
+  'admin.dashboard.recentActive': 'ใช้งานล่าสุด (24 ชม.)',
+
+  'admin.dashboard.noneActive': 'ไม่มีกิจกรรมใน 24 ชั่วโมงที่ผ่านมา',
   'admin.vendors.title': 'ร้านค้าผู้ขาย',
   'admin.vendors.subtitle': 'ตรวจสอบทุกร้านค้าและสั่งเปิด-ปิดร้านได้',
   'admin.vendors.empty': 'ยังไม่มีร้านค้าผู้ขาย',

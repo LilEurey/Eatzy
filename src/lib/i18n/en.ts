@@ -689,6 +689,34 @@ export const en = {
   'admin.newVendor.errorTitle': 'Could not create store account',
 
   'admin.nav.vendors': 'Vendors',
+
+  'admin.nav.dashboard': 'Dashboard',
+
+  'admin.dashboard.title': 'Overview',
+
+  'admin.dashboard.subtitle': 'Who is using Eatzy and what is happening today.',
+
+  'admin.dashboard.activeNow': 'Active now (15 min)',
+
+  'admin.dashboard.activeToday': 'Active today',
+
+  'admin.dashboard.active7d': 'Active this week',
+
+  'admin.dashboard.students': 'Students',
+
+  'admin.dashboard.vendors': 'Vendor accounts',
+
+  'admin.dashboard.newThisWeek': 'New sign-ups (7 days)',
+
+  'admin.dashboard.ordersToday': 'Orders today',
+
+  'admin.dashboard.revenueToday': 'Sales today',
+
+  'admin.dashboard.openStalls': 'Stalls open',
+
+  'admin.dashboard.recentActive': 'Recently active (24 h)',
+
+  'admin.dashboard.noneActive': 'No activity in the last 24 hours.',
   'admin.vendors.title': 'Vendor Stores',
   'admin.vendors.subtitle': 'Monitor every stall and force it open or closed.',
   'admin.vendors.empty': 'No vendor stores yet.',
