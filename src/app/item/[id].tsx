@@ -1,14 +1,16 @@
 import { isStoreOpen } from '@/lib/time';
 import { SkeletonDetail } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import Svg, { Circle, Path } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
-import { rowEnter, popIn, popOut, useStretchyHero } from '@/lib/motion';
+import { popIn, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
+import { AddonGroups, type AddonGroup, type AddonOption } from '@/components/item/AddonGroups';
+import { SimilarFoods, type SimilarItem } from '@/components/item/SimilarFoods';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -16,14 +18,13 @@ import { Brand } from '@/constants/theme';
 import { addToCart, NOTE_MAX } from '@/lib/cart-store';
 import { formatBaht } from '@/lib/money';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import type { Database } from '@/types/database.types';
 
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
-type SimilarItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_id?: string; vendor_name: string; score: number };
 type Review = {
   id: string;
   score: number;
@@ -33,16 +34,6 @@ type Review = {
   users: { name: string | null; avatar_url: string | null } | null;
 };
 
-type AddonOption = { id: string; name: string; name_th: string | null; price: number; is_available: boolean; sort_order: number; allergens: string[] };
-type AddonGroup = {
-  id: string;
-  name: string;
-  name_th: string | null;
-  min_select: number;
-  max_select: number | null;
-  sort_order: number;
-  menu_item_addons: AddonOption[];
-};
 
 function SpiceIndicator({ level }: { level: number }) {
   const { t } = useI18n();
@@ -65,6 +56,7 @@ export default function ItemDetailScreen() {
   const [vendorName, setVendorName] = useState('');
   const [storeOpen, setStoreOpen] = useState(true);
   const [similar, setSimilar] = useState<SimilarItem[]>([]);
+  const [addonsFailed, setAddonsFailed] = useState(false);
   const [groups, setGroups] = useState<AddonGroup[]>([]);
   // groupId -> selected option ids
   const [selected, setSelected] = useState<Record<string, string[]>>({});
@@ -74,7 +66,8 @@ export default function ItemDetailScreen() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('menu_items').select('*, vendors(name,is_open,open_time,close_time)').eq('id', id).maybeSingle();
+      const { data, error } = await supabase.from('menu_items').select('*, vendors(name,is_open,open_time,close_time)').eq('id', id).maybeSingle();
+      if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
       setItem(data ?? null);
       setVendorName(data?.vendors?.name ?? '');
       setStoreOpen(!data?.vendors || isStoreOpen(data.vendors));
@@ -89,7 +82,9 @@ export default function ItemDetailScreen() {
       .select('id,name,name_th,min_select,max_select,sort_order,menu_item_addons(id,name,name_th,price,is_available,sort_order,allergens)')
       .eq('menu_item_id', id)
       .order('sort_order')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // Without the groups a required add-on would vanish and checkout would reject the line.
+        if (error) { setAddonsFailed(true); showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed')); return; }
         const rows = ((data ?? []) as AddonGroup[])
           .map(g => ({
             ...g,
@@ -200,7 +195,7 @@ export default function ItemDetailScreen() {
   const soldOut = !item.is_available;
   const optionsUnavailable = groups.some(g => g.min_select > 0 && g.menu_item_addons.length === 0);
   // Store open and the dish itself orderable — add-on validity is separate.
-  const orderable = storeOpen && !soldOut;
+  const orderable = storeOpen && !soldOut && !addonsFailed;
   // Base dish AND any selected add-on — selecting "Fried Egg" can newly trip
   // the warning even when the dish itself is allergen-free.
   const matchedAllergens = matchLineAllergens(item.allergens, selectedOptions.flatMap(o => o.allergens), prefs);
@@ -229,21 +224,17 @@ export default function ItemDetailScreen() {
     const backToStore = () =>
       !sim && router.canGoBack() ? router.back() : router.replace(`/store/${currentItem.vendor_id}`);
 
-    const addNow = () => {
-      if (matchedAllergens.length > 0) {
-        showConfirm(
-          t('item.allergyWarningTitle'),
-          t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
-          () => { addToCart(currentItem, qty, selectedOptions, note); backToStore(); },
-          { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
-        );
-        return;
-      }
-      addToCart(currentItem, qty, selectedOptions, note);
-      backToStore();
-    };
-
-    addNow();
+    if (matchedAllergens.length > 0) {
+      showConfirm(
+        t('item.allergyWarningTitle'),
+        t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
+        () => { addToCart(currentItem, qty, selectedOptions, note); backToStore(); },
+        { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
+      );
+      return;
+    }
+    addToCart(currentItem, qty, selectedOptions, note);
+    backToStore();
   }
 
   return (
@@ -392,72 +383,7 @@ export default function ItemDetailScreen() {
             </View>
           )}
 
-          {/* Add-on groups */}
-          {groups.map(group => {
-            const chosen = selected[group.id] ?? [];
-            const ruleLabel = group.max_select === 1
-              ? t('item.addons.chooseOne')
-              : group.max_select != null
-                ? t('item.addons.chooseUpTo', { n: group.max_select })
-                : null;
-            return (
-              <View key={group.id} style={{ marginTop: 20 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary }}>
-                    {localizedText(group.name, group.name_th, locale)}
-                  </Text>
-                  {group.min_select >= 1 && (
-                    <View style={{ backgroundColor: '#fee2e2', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#b91c1c' }}>{t('item.addons.required')}</Text>
-                    </View>
-                  )}
-                  {ruleLabel && (
-                    <Text style={{ fontSize: 12, color: Brand.textSecondary }}>{ruleLabel}</Text>
-                  )}
-                </View>
-                <View style={{
-                  backgroundColor: Brand.card, borderRadius: 16, overflow: 'hidden',
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
-                }}>
-                  {group.menu_item_addons.map((opt, oi) => {
-                    const isOn = chosen.includes(opt.id);
-                    return (
-                      <View key={opt.id}>
-                        {oi > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 14 }} />}
-                        <Tap
-                          onPress={() => toggleOption(group, opt.id)}
-                          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}
-                        >
-                          <Animated.View style={{
-                            width: 22, height: 22,
-                            borderRadius: group.max_select === 1 ? 11 : 6,
-                            borderWidth: 2, borderColor: isOn ? Brand.orange : Brand.border,
-                            backgroundColor: isOn ? Brand.orange : 'transparent',
-                            alignItems: 'center', justifyContent: 'center',
-                            transitionProperty: ['backgroundColor', 'borderColor'], transitionDuration: 180,
-                          }}>
-                            {isOn && (
-                              <Animated.Text entering={popIn} exiting={popOut}
-                                style={{ color: '#fff', fontSize: 13, fontWeight: '900', lineHeight: 15 }}>✓</Animated.Text>
-                            )}
-                          </Animated.View>
-                          <Text style={{ flex: 1, fontSize: 15, color: Brand.textPrimary }}>
-                            {localizedText(opt.name, opt.name_th, locale)}
-                          </Text>
-                          {opt.price > 0 && (
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.textSecondary }}>
-                              {t('item.addons.plusPrice', { price: opt.price })}
-                            </Text>
-                          )}
-                        </Tap>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            );
-          })}
+          <AddonGroups groups={groups} selected={selected} onToggle={toggleOption} />
 
           {/* Note for the kitchen — free-text message that rides with this cart line */}
           <View style={{ marginTop: 20 }}>
@@ -484,41 +410,7 @@ export default function ItemDetailScreen() {
             </Text>
           </View>
 
-          {/* Similar Foods — content-based (TF-IDF + cosine over ingredients/tags/category) */}
-          {similar.length > 0 && (
-            <View style={{ marginTop: 24 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: Brand.textPrimary, marginBottom: 12 }}>
-                {t('item.similarFoods')}
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                {similar.map((s, si) => (
-                  <Animated.View key={s.id} entering={rowEnter(si)}>
-                  <Tap
-                    onPress={() => router.replace(`/item/${s.id}?rec=1&sim=1`)}
-                    activeOpacity={0.85}
-                    style={{
-                      width: 140, borderRadius: 20, backgroundColor: Brand.card, overflow: 'hidden',
-                      shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
-                      shadowOpacity: 0.04, shadowRadius: 16, elevation: 2,
-                    }}
-                  >
-                    <View style={{ height: 120, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-                      {s.image_url
-                        ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
-                        : <Text style={{ fontSize: 32 }}>🍽️</Text>
-                      }
-                    </View>
-                    <View style={{ padding: 10 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>{localizedText(s.name, s.name_th, locale)}</Text>
-                      <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>{s.vendor_name}</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100', fontVariant: ['tabular-nums'] }}>฿{s.price}</Text>
-                    </View>
-                  </Tap>
-                  </Animated.View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+          <SimilarFoods items={similar} />
 
           {/* Community Reviews */}
           <View style={{ marginTop: 24 }}>

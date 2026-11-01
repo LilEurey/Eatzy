@@ -42,6 +42,9 @@ export const th: Record<TranslationKey, string> = {
   'auth.continueWithGoogle': 'ดำเนินการต่อด้วย Google',
   'auth.signingIn': 'กำลังเข้าสู่ระบบ…',
   'auth.signInFailedTitle': 'เข้าสู่ระบบไม่สำเร็จ',
+  'auth.notAdminMsg': 'บัญชีนี้ไม่ได้ลงทะเบียนเป็นผู้ดูแลระบบ',
+  'auth.notVendorMsg': 'บัญชีนี้ไม่ได้ลงทะเบียนเป็นร้านค้า',
+  'auth.adminLoginCta': 'เข้าสู่ระบบผู้ดูแล',
   'auth.vendorLoginCta': 'เข้าสู่ระบบผู้ขาย',
 
   // Onboarding
@@ -198,6 +201,8 @@ export const th: Record<TranslationKey, string> = {
   'search.resultsCount': 'พบ {n} เมนู',
   'search.noResults': 'ไม่พบเมนูที่ค้นหา\nลองชื่ออื่นหรือเปลี่ยนตัวกรอง',
   'search.containsAllergen': '⚠️ สารก่อภูมิแพ้',
+  'search.food': 'อาหาร',
+  'search.drinks': 'เครื่องดื่ม',
 
   // Stores
   'stores.title': 'ร้านค้า',
@@ -275,6 +280,8 @@ export const th: Record<TranslationKey, string> = {
   'track.orderAgain': 'สั่งอีกครั้ง',
   'track.orderAgainSkipped': 'บางรายการหรือท็อปปิ้งไม่มีจำหน่ายแล้ว จึงไม่ได้ใส่ในตะกร้า',
   'track.orderAgainNone': 'ไม่มีรายการใดในคำสั่งซื้อนี้พร้อมจำหน่ายในขณะนี้',
+  'track.orderAgainReplaceCart': "ตะกร้าของคุณจะถูกแทนที่ด้วยคำสั่งซื้อนี้ ดำเนินการต่อหรือไม่?",
+  'common.loadFailed': "โหลดหน้านี้ไม่สำเร็จ ดึงเพื่อรีเฟรชหรือลองอีกครั้ง",
   'track.cancelOrder': 'ยกเลิกคำสั่งซื้อ',
   'track.cancelConfirmTitle': 'ยกเลิกคำสั่งซื้อนี้หรือไม่?',
   'track.cancelConfirmMsg': 'คุณยังไม่ถูกเรียกเก็บเงิน ยกเลิกตอนนี้ได้ฟรี',
@@ -685,6 +692,34 @@ export const th: Record<TranslationKey, string> = {
   'admin.newVendor.errorTitle': 'ไม่สามารถสร้างบัญชีร้านได้',
 
   'admin.nav.vendors': 'ร้านค้า',
+
+  'admin.nav.dashboard': 'แดชบอร์ด',
+
+  'admin.dashboard.title': 'ภาพรวม',
+
+  'admin.dashboard.subtitle': 'ผู้ใช้งาน Eatzy และกิจกรรมวันนี้',
+
+  'admin.dashboard.activeNow': 'ใช้งานตอนนี้ (15 นาที)',
+
+  'admin.dashboard.activeToday': 'ใช้งานวันนี้',
+
+  'admin.dashboard.active7d': 'ใช้งานสัปดาห์นี้',
+
+  'admin.dashboard.students': 'นักศึกษา',
+
+  'admin.dashboard.vendors': 'บัญชีผู้ขาย',
+
+  'admin.dashboard.newThisWeek': 'สมัครใหม่ (7 วัน)',
+
+  'admin.dashboard.ordersToday': 'คำสั่งซื้อวันนี้',
+
+  'admin.dashboard.revenueToday': 'ยอดขายวันนี้',
+
+  'admin.dashboard.openStalls': 'ร้านที่เปิด',
+
+  'admin.dashboard.recentActive': 'ใช้งานล่าสุด (24 ชม.)',
+
+  'admin.dashboard.noneActive': 'ไม่มีกิจกรรมใน 24 ชั่วโมงที่ผ่านมา',
   'admin.vendors.title': 'ร้านค้าผู้ขาย',
   'admin.vendors.subtitle': 'ตรวจสอบทุกร้านค้าและสั่งเปิด-ปิดร้านได้',
   'admin.vendors.empty': 'ยังไม่มีร้านค้าผู้ขาย',

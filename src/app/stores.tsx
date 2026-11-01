@@ -11,7 +11,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
+import { showAlert } from '@/lib/alert';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
@@ -50,6 +51,7 @@ export default function StoresScreen() {
         .order('current_queue_count', { ascending: true })
         .then(({ data, error }) => {
           if (cancelledRef.current) return;
+          if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
           setVendors(error || !data ? [] : (data as Vendor[]));
           setLoading(false);
           refreshDone();

@@ -40,6 +40,9 @@ export const en = {
   'auth.continueWithGoogle': 'Continue with Google',
   'auth.signingIn': 'Signing in…',
   'auth.signInFailedTitle': 'Sign in failed',
+  'auth.notAdminMsg': 'This account is not registered as an admin.',
+  'auth.notVendorMsg': 'This account is not registered as a vendor.',
+  'auth.adminLoginCta': 'Admin login',
   'auth.vendorLoginCta': 'Vendor login',
 
   // Onboarding
@@ -196,6 +199,8 @@ export const en = {
   'search.resultsCount': '{n} dishes found',
   'search.noResults': 'No dishes match your search.\nTry a different name or filter.',
   'search.containsAllergen': '⚠️ Allergen',
+  'search.food': 'Food',
+  'search.drinks': 'Drinks',
 
   // Stores
   'stores.title': 'Stores',
@@ -273,6 +278,8 @@ export const en = {
   'track.orderAgain': 'Order again',
   'track.orderAgainSkipped': 'Some items or add-ons are no longer available and were left out.',
   'track.orderAgainNone': 'None of these items are available right now.',
+  'track.orderAgainReplaceCart': "Your cart will be replaced with this order. Continue?",
+  'common.loadFailed': "Couldn't load this page. Pull to refresh or try again.",
   'track.cancelOrder': 'Cancel Order',
   'track.cancelConfirmTitle': 'Cancel this order?',
   'track.cancelConfirmMsg': "You haven't been charged yet — cancelling now is free.",
@@ -683,6 +690,34 @@ export const en = {
   'admin.newVendor.errorTitle': 'Could not create store account',
 
   'admin.nav.vendors': 'Vendors',
+
+  'admin.nav.dashboard': 'Dashboard',
+
+  'admin.dashboard.title': 'Overview',
+
+  'admin.dashboard.subtitle': 'Who is using Eatzy and what is happening today.',
+
+  'admin.dashboard.activeNow': 'Active now (15 min)',
+
+  'admin.dashboard.activeToday': 'Active today',
+
+  'admin.dashboard.active7d': 'Active this week',
+
+  'admin.dashboard.students': 'Students',
+
+  'admin.dashboard.vendors': 'Vendor accounts',
+
+  'admin.dashboard.newThisWeek': 'New sign-ups (7 days)',
+
+  'admin.dashboard.ordersToday': 'Orders today',
+
+  'admin.dashboard.revenueToday': 'Sales today',
+
+  'admin.dashboard.openStalls': 'Stalls open',
+
+  'admin.dashboard.recentActive': 'Recently active (24 h)',
+
+  'admin.dashboard.noneActive': 'No activity in the last 24 hours.',
   'admin.vendors.title': 'Vendor Stores',
   'admin.vendors.subtitle': 'Monitor every stall and force it open or closed.',
   'admin.vendors.empty': 'No vendor stores yet.',
