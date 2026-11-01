@@ -675,7 +675,7 @@ export const en = {
   'admin.newVendor.emailLabel': 'Store Email',
   'admin.newVendor.emailPlaceholder': 'somtamcorner@eatzy.app',
   'admin.newVendor.passwordLabel': 'Password',
-  'admin.newVendor.passwordPlaceholder': 'At least 6 characters',
+  'admin.newVendor.passwordPlaceholder': 'At least 10 characters',
   'admin.newVendor.businessNameLabel': 'Business Name',
   'admin.newVendor.businessNamePlaceholder': 'e.g. Som Tam Corner',
   'admin.newVendor.cuisineTagsLabel': 'What Do They Sell?',
