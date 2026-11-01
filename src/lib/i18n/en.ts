@@ -42,6 +42,7 @@ export const en = {
   'auth.signInFailedTitle': 'Sign in failed',
   'auth.notAdminMsg': 'This account is not registered as an admin.',
   'auth.notVendorMsg': 'This account is not registered as a vendor.',
+  'auth.adminLoginCta': 'Admin login',
   'auth.vendorLoginCta': 'Vendor login',
 
   // Onboarding

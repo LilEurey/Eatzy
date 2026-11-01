@@ -44,6 +44,7 @@ export const th: Record<TranslationKey, string> = {
   'auth.signInFailedTitle': 'เข้าสู่ระบบไม่สำเร็จ',
   'auth.notAdminMsg': 'บัญชีนี้ไม่ได้ลงทะเบียนเป็นผู้ดูแลระบบ',
   'auth.notVendorMsg': 'บัญชีนี้ไม่ได้ลงทะเบียนเป็นร้านค้า',
+  'auth.adminLoginCta': 'เข้าสู่ระบบผู้ดูแล',
   'auth.vendorLoginCta': 'เข้าสู่ระบบผู้ขาย',
 
   // Onboarding
