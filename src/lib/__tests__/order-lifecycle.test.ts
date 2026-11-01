@@ -59,6 +59,11 @@ describe('transitionOrder', () => {
     await expect(transitionOrder('o1', 'pending', 'cancelled')).resolves.toBe('lost-race');
   });
 
+  it('returns lost-race when the update returns no data and no error', async () => {
+    __setNextResult({ data: null });
+    await expect(transitionOrder('o1', 'pending', 'accepted')).resolves.toBe('lost-race');
+  });
+
   it('returns the error message when the update fails', async () => {
     __setNextResult({ error: { message: 'boom' } });
     await expect(transitionOrder('o1', 'accepted', 'ready')).resolves.toEqual({ error: 'boom' });
