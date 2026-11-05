@@ -379,7 +379,7 @@ export const th: Record<TranslationKey, string> = {
   'notif.vendorNewOrder.body': 'คิว {queue} · ฿{amount}',
 
   // Vendor — login
-  'vendor.login.brand': 'Eatzy',
+  'vendor.login.brand': 'สำหรับเจ้าของร้าน',
   'vendor.login.heading': 'พอร์ทัลผู้ขาย',
   'vendor.login.subtitle': 'เข้าสู่ระบบเพื่อจัดการร้านของคุณ',
   'vendor.login.emailLabel': 'อีเมล',
@@ -657,7 +657,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.location.webOnly': 'เปิดหน้านี้ในแอป Eatzy เพื่อตั้งค่าตำแหน่งร้านของคุณ',
 
   // Admin — login
-  'admin.login.brand': 'Eatzy',
+  'admin.login.brand': 'เฉพาะเจ้าหน้าที่',
   'admin.login.heading': 'พอร์ทัลแอดมิน',
   'admin.login.subtitle': 'เข้าสู่ระบบเพื่อจัดการร้านค้าผู้ขาย',
   'admin.login.emailLabel': 'อีเมล',

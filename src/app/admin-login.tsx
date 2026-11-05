@@ -40,9 +40,9 @@ export default function AdminLoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ maxWidth: 380, width: '100%', alignSelf: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 40 }}>
-            <Ionicons name="shield-checkmark" size={20} color={Brand.adminAccent} />
-            <Text style={{ fontSize: 18, fontWeight: '800', color: Brand.textPrimary }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 6, marginBottom: 32, backgroundColor: Brand.adminAccentLight, borderRadius: 50, paddingHorizontal: 12, paddingVertical: 6 }}>
+            <Ionicons name="shield-checkmark" size={16} color={Brand.adminAccent} />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.adminAccent }}>
               {t('admin.login.brand')}
             </Text>
           </View>
