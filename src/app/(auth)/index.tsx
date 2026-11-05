@@ -2,6 +2,8 @@ import { View, Text, Image, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { listEnter } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { Ionicons } from '@expo/vector-icons';
+import { Brand } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
@@ -165,12 +167,17 @@ export default function LoginScreen() {
               </Text>
             </Tap>
 
-            <Tap onPress={() => router.push('/vendor-login')} style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#5a4136', fontSize: 13, fontWeight: '600' }}>{t('auth.vendorLoginCta')}</Text>
+            <Tap
+              onPress={() => router.push('/vendor-login')}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 50, borderWidth: 1.5, borderColor: Brand.vendorAccent }}
+            >
+              <Ionicons name="restaurant" size={16} color={Brand.vendorAccent} />
+              <Text style={{ color: Brand.vendorAccent, fontSize: 14, fontWeight: '700' }}>{t('auth.vendorLoginCta')}</Text>
             </Tap>
 
-            <Tap onPress={() => router.push('/admin-login')} style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#5a4136', fontSize: 13, fontWeight: '600' }}>{t('auth.adminLoginCta')}</Text>
+            <Tap onPress={() => router.push('/admin-login')} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 16 }}>
+              <Ionicons name="shield-checkmark" size={12} color="#8c7468" />
+              <Text style={{ color: '#8c7468', fontSize: 12, fontWeight: '500' }}>{t('auth.adminLoginCta')}</Text>
             </Tap>
           </Animated.View>
         </View>

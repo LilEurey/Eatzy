@@ -377,7 +377,7 @@ export const en = {
   'notif.vendorNewOrder.body': 'Queue {queue} · ฿{amount}',
 
   // Vendor — login
-  'vendor.login.brand': 'Eatzy',
+  'vendor.login.brand': 'For Stall Owners',
   'vendor.login.heading': 'Vendor Portal',
   'vendor.login.subtitle': 'Sign in to manage your stall operations.',
   'vendor.login.emailLabel': 'Email Address',
@@ -655,7 +655,7 @@ export const en = {
   'vendor.location.webOnly': 'Open this screen on the Eatzy app to set your store location.',
 
   // Admin — login
-  'admin.login.brand': 'Eatzy',
+  'admin.login.brand': 'Staff Only',
   'admin.login.heading': 'Admin Portal',
   'admin.login.subtitle': 'Sign in to manage vendor stores.',
   'admin.login.emailLabel': 'Email Address',

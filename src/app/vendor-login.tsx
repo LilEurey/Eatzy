@@ -43,9 +43,9 @@ export default function VendorLoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ maxWidth: 380, width: '100%', alignSelf: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 40 }}>
-            <Ionicons name="restaurant" size={20} color={Brand.vendorAccent} />
-            <Text style={{ fontSize: 18, fontWeight: '800', color: Brand.textPrimary }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 6, marginBottom: 32, backgroundColor: Brand.vendorAccentLight, borderRadius: 50, paddingHorizontal: 12, paddingVertical: 6 }}>
+            <Ionicons name="restaurant" size={16} color={Brand.vendorAccent} />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.vendorAccent }}>
               {t('vendor.login.brand')}
             </Text>
           </View>
@@ -116,7 +116,7 @@ export default function VendorLoginScreen() {
             disabled={loading}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-              backgroundColor: Brand.orange, borderRadius: 50, paddingVertical: 14,
+              backgroundColor: Brand.vendorAccent, borderRadius: 50, paddingVertical: 14,
               opacity: loading ? 0.7 : 1, marginBottom: 20,
             }}
           >
