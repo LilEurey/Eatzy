@@ -238,7 +238,7 @@ export default function ProfileScreen() {
         </Tap>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {/* Profile card */}
         <View style={{
           backgroundColor: '#fff', borderRadius: 24, padding: 24, marginTop: 8, marginBottom: 12,
