@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput, Switch } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as ExpoLinking from 'expo-linking';
@@ -9,8 +9,9 @@ import { Brand } from '@/constants/theme';
 import { PillDropdown } from '@/components/PillDropdown';
 import { useVendorProfile, updateVendorProfile, startVendorStripeOnboarding, refreshVendorProfile } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
 import { hasCoords } from '@/lib/geo';
+import { supabase } from '@/lib/supabase';
 
 const INPUT_STYLE = { borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.textPrimary } as const;
 const MULTILINE_STYLE = { minHeight: 70, textAlignVertical: 'top' } as const;
@@ -48,6 +49,29 @@ export default function VendorProfileScreen() {
   const { t } = useI18n();
   const vendor = useVendorProfile();
   const [connectingPayouts, setConnectingPayouts] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  // Lives on users (the owner), not vendors — saves on toggle, like the student profile.
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase.from('users').select('notifications_enabled').eq('id', user.id).maybeSingle();
+      if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
+      if (data) setNotificationsEnabled(data.notifications_enabled);
+    })();
+  }, []);
+
+  async function toggleNotifications(next: boolean) {
+    setNotificationsEnabled(next); // optimistic
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setNotificationsEnabled(!next); return; }
+    const { error } = await supabase.from('users').update({ notifications_enabled: next }).eq('id', user.id);
+    if (error) {
+      setNotificationsEnabled(!next);
+      showAlert(t('common.errorTitle'), error.message);
+    }
+  }
 
   async function setUpPayouts() {
     setConnectingPayouts(true);
@@ -93,7 +117,7 @@ export default function VendorProfileScreen() {
   return (
     <View style={{ gap: 20 }}>
       <View>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.profile.title')}</Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary }}>{t('vendor.profile.title')}</Text>
         <Tap onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
           <Ionicons name="arrow-back" size={14} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#8A8F9B' }}>{t('vendor.profile.backCaption')}</Text>
@@ -122,6 +146,18 @@ export default function VendorProfileScreen() {
                 : t('vendor.profile.payoutsSetUp')}
           </Text>
         </Tap>
+      </View>
+
+      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5', maxWidth: 480, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>{t('vendor.profile.notificationsLabel')}</Text>
+          <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 4 }}>{t('vendor.profile.notificationsHint')}</Text>
+        </View>
+        <Switch
+          value={notificationsEnabled}
+          onValueChange={toggleNotifications}
+          trackColor={{ false: '#E2E4EC', true: Brand.vendorAccent }}
+        />
       </View>
 
       <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#EEF0F5', gap: 14, maxWidth: 480 }}>

@@ -1,15 +1,20 @@
 import { isStoreOpen } from '@/lib/time';
+import { SkeletonList } from '@/components/Skeleton';
 import { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput } from 'react-native';
 import { Image } from 'expo-image';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
+import { showAlert } from '@/lib/alert';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 type Vendor = {
   id: string;
@@ -34,6 +39,7 @@ export default function StoresScreen() {
   const [query, setQuery] = useState('');
   const [halalOnly, setHalalOnly] = useState(false);
   const focusGuard = useFocusGuard();
+  const { key: refreshKey, done: refreshDone, control: refreshControl } = usePullToRefresh();
 
   useFocusEffect(
     useCallback(() => {
@@ -45,10 +51,14 @@ export default function StoresScreen() {
         .order('current_queue_count', { ascending: true })
         .then(({ data, error }) => {
           if (cancelledRef.current) return;
+          if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
           setVendors(error || !data ? [] : (data as Vendor[]));
           setLoading(false);
+          refreshDone();
         });
-    }, [focusGuard])
+    // refreshKey: a pull re-runs the load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [focusGuard, refreshKey, refreshDone])
   );
 
   const results = useMemo(() => {
@@ -72,7 +82,7 @@ export default function StoresScreen() {
           <Tap onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={22} color={Brand.textPrimary} />
           </Tap>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>
             {t('stores.title')}
           </Text>
         </View>
@@ -115,11 +125,10 @@ export default function StoresScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={Brand.orange} size="large" />
-        </View>
+        <SkeletonList />
       ) : (
         <ScrollView
+          refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
@@ -129,9 +138,9 @@ export default function StoresScreen() {
           </Text>
 
           <View style={{ gap: 12 }}>
-            {results.map(vendor => (
+            {results.map((vendor, i) => (
+              <Animated.View key={vendor.id} entering={listEnter(i)} layout={listLayout}>
               <Tap
-                key={vendor.id}
                 onPress={() => router.push(`/store/${vendor.id}`)}
                 activeOpacity={0.85}
                 style={{
@@ -148,8 +157,8 @@ export default function StoresScreen() {
                   alignItems: 'center', justifyContent: 'center',
                 }}>
                   {vendor.cover_image_url
-                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                    : <Text style={{ fontSize: 28 }}>🏪</Text>}
+                    ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
+                    : <Image source={require('../../assets/images/store.png')} style={{ width: 32, height: 32 }} />}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', color: '#261812', marginBottom: 2 }}>
@@ -166,18 +175,20 @@ export default function StoresScreen() {
                       <Text style={{ fontSize: 10, color: '#565656' }}>{statusLine(vendor)}</Text>
                     </View>
                     {vendor.is_halal_certified === true && (
-                      <View style={{ backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#ffeae1', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                        <Image source={require('../../assets/images/halal.png')} style={{ width: 12, height: 12 }} />
                         <Text style={{ fontSize: 10, color: '#565656' }}>{t('common.halal')}</Text>
                       </View>
                     )}
                   </View>
                 </View>
               </Tap>
+              </Animated.View>
             ))}
 
             {results.length === 0 && (
               <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-                <Text style={{ fontSize: 32, marginBottom: 8 }}>🏪</Text>
+                <Image source={require('../../assets/images/store.png')} style={{ width: 36, height: 36, marginBottom: 8 }} />
                 <Text style={{ color: Brand.textSecondary, textAlign: 'center' }}>{t('stores.noneFound')}</Text>
               </View>
             )}

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, Linking } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { enterUp } from '@/lib/motion';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,7 +35,7 @@ export default function HelpScreen() {
         <Tap onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={Brand.textPrimary} />
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary, flex: 1 }}>{t('profile.help')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: Brand.textPrimary, flex: 1 }}>{t('profile.help')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 12 }}>
@@ -52,9 +54,9 @@ export default function HelpScreen() {
                 <Ionicons name={open === key ? 'chevron-up' : 'chevron-down'} size={14} color="#5A4136" />
               </View>
               {open === key && (
-                <Text style={{ marginTop: 8, fontSize: 14, lineHeight: 20, color: '#5A4136' }}>
+                <Animated.Text entering={enterUp()} style={{ marginTop: 8, fontSize: 14, lineHeight: 20, color: '#5A4136' }}>
                   {t(`help.a.${key}` as TranslationKey)}
-                </Text>
+                </Animated.Text>
               )}
             </Tap>
           ))}

@@ -1,8 +1,9 @@
-import { lineUnitTotal, cartSubtotal, cartCount, addToCart, clearCart, hasVendorMismatch } from '@/lib/cart-store';
+import { lineUnitTotal, cartSubtotal, cartCount, groupByVendor } from '@/lib/cart-store';
 
 const addon = (price: number) => ({ id: `a${price}`, name: 'x', name_th: null, price, allergens: [] });
 const line = (unit_price: number, quantity: number, addons: ReturnType<typeof addon>[] = []) => ({
   line_id: 'l1',
+  vendor_id: 'v1',
   menu_item_id: 'm1',
   name: 'Dish',
   name_th: null,
@@ -25,12 +26,11 @@ describe('lineUnitTotal', () => {
 
 describe('cartSubtotal', () => {
   it('is zero for an empty cart', () => {
-    expect(cartSubtotal({ vendor_id: null, items: [] })).toBe(0);
+    expect(cartSubtotal({ items: [] })).toBe(0);
   });
 
   it('multiplies each line (price + add-ons) by its quantity', () => {
     const c = {
-      vendor_id: 'v1',
       items: [line(50, 2, [addon(10)]), line(30, 1)],
     };
     // (50+10)*2 + 30*1
@@ -40,25 +40,19 @@ describe('cartSubtotal', () => {
 
 describe('cartCount', () => {
   it('sums quantities across lines', () => {
-    const c = { vendor_id: 'v1', items: [line(10, 3), line(10, 2)] };
+    const c = { items: [line(10, 3), line(10, 2)] };
     expect(cartCount(c)).toBe(5);
   });
 });
 
-describe('hasVendorMismatch', () => {
-  afterEach(() => clearCart());
-
-  it('is false when the cart is empty', () => {
-    expect(hasVendorMismatch('v1')).toBe(false);
-  });
-
-  it('is false for the vendor already in the cart', () => {
-    addToCart({ id: 'm1', vendor_id: 'v1', name: 'Dish', price: 50 });
-    expect(hasVendorMismatch('v1')).toBe(false);
-  });
-
-  it('is true for a different vendor than the one already in the cart', () => {
-    addToCart({ id: 'm1', vendor_id: 'v1', name: 'Dish', price: 50 });
-    expect(hasVendorMismatch('v2')).toBe(true);
+describe('groupByVendor', () => {
+  it('splits lines into one group per stall, in first-added order', () => {
+    const a1 = { ...line(10, 1), vendor_id: 'vA' };
+    const b1 = { ...line(20, 1), vendor_id: 'vB' };
+    const a2 = { ...line(30, 1), vendor_id: 'vA' };
+    expect(groupByVendor([a1, b1, a2])).toEqual([
+      { vendor_id: 'vA', items: [a1, a2] },
+      { vendor_id: 'vB', items: [b1] },
+    ]);
   });
 });

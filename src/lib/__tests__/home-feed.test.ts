@@ -4,6 +4,7 @@ import {
   __setAuthUser,
   __resetMock,
   __getFromCalls,
+  supabase,
 } from './__mocks__/supabase';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { DRINK_CATEGORY_FILTER, getTimeBasedCategories, restoreRank, loadHomeFeed } from '@/lib/home-feed';
@@ -126,11 +127,14 @@ describe('loadHomeFeed', () => {
     // pieces of state and missed similarToFeatured, leaving stale rows on
     // screen after a failed load. loadHomeFeed can no longer do that partial
     // job — a throw anywhere in the fetch resolves to one fully-empty result.
-    (invokeEdgeFunction as jest.Mock).mockImplementation(() => { throw new Error('network down'); });
+    jest.spyOn(supabase.auth, 'getUser').mockRejectedValueOnce(new Error('network down'));
+    // The edge function itself still answers — a failed load must not hand
+    // its rows back next to an otherwise empty feed.
+    (invokeEdgeFunction as jest.Mock).mockResolvedValue({ data: { results: [{ id: 'r1' }] }, error: null });
 
-    const result = await loadHomeFeed(PREFS, NOW);
+    const { recommendedForYou, similarToFeatured, ...sections } = await loadHomeFeed(PREFS, NOW);
 
-    expect(result).toEqual({
+    expect(sections).toEqual({
       profile: null,
       mealSegment: 'lunch',
       allVendors: [],
@@ -138,10 +142,42 @@ describe('loadHomeFeed', () => {
       trending: [],
       latestRelease: [],
       drinks: [],
-      recommendedForYou: [],
       becauseYouOrdered: [],
       timeBasedItems: [],
-      similarToFeatured: [],
     });
+    expect(await recommendedForYou).toEqual([]);
+    expect(await similarToFeatured).toEqual([]);
+  });
+
+  it('resolves the feed without waiting on the recommendation edge functions', async () => {
+    // The whole point of handing these two rows back as promises: each call
+    // takes 0.7–1.8s, and awaiting them held home on its skeleton for 3–4s.
+    const answer: { [name: string]: (v: unknown) => void } = {};
+    (invokeEdgeFunction as jest.Mock).mockImplementation((name: string) => new Promise(resolve => { answer[name] = resolve; }));
+    const promoted = menuItem({ id: 'm1' });
+    __queueResults({ data: [] }, { data: [promoted] }); // vendors, featured
+
+    // Would hang here (and time the test out) if the feed awaited either call.
+    const result = await loadHomeFeed(PREFS, NOW);
+
+    expect(result.featured?.id).toBe('m1');
+    expect(invokeEdgeFunction).toHaveBeenCalledWith('recommend-similar', { body: { item_id: 'm1' } });
+
+    answer['recommend-for-you']({ data: { results: [{ id: 'r1' }] }, error: null });
+    answer['recommend-similar']({ data: { results: [{ id: 's1' }] }, error: null });
+    expect(await result.recommendedForYou).toEqual([{ id: 'r1' }]);
+    expect(await result.similarToFeatured).toEqual([{ id: 's1' }]);
+  });
+
+  it('keeps the feed and empties just the row when a recommendation call fails', async () => {
+    (invokeEdgeFunction as jest.Mock).mockRejectedValue(new Error('edge function down'));
+    const dish = menuItem({ id: 'm1' });
+    __queueResults({ data: [] }, { data: [dish] }, { data: [dish] }); // vendors, featured, latestRelease
+
+    const result = await loadHomeFeed(PREFS, NOW);
+
+    expect(result.latestRelease.map(i => i.id)).toEqual(['m1']);
+    expect(await result.recommendedForYou).toEqual([]);
+    expect(await result.similarToFeatured).toEqual([]);
   });
 });

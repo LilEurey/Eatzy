@@ -214,3 +214,25 @@ export function busyGrid(orders: AnalyticsOrder[], weeks = 4, now: Date = new Da
 
   return { rows, max: Math.max(0, ...rows.flat()) };
 }
+
+export type DailyRevenueBar = { key: string; label: string; value: number; isToday: boolean };
+
+// Revenue per Bangkok calendar day for the last `days` days (oldest first,
+// today last) — Finance page chart. Input is already earned-only payments.
+export function dailyRevenue(
+  payments: { created_at: string; amount: number }[],
+  days = 7,
+  now: Date = new Date(),
+): DailyRevenueBar[] {
+  const bars: DailyRevenueBar[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const key = bangkokDayKey(new Date(now.getTime() - i * 86_400_000));
+    bars.push({ key, label: String(Number(key.slice(8))), value: 0, isToday: i === 0 });
+  }
+  const byKey = new Map(bars.map(b => [b.key, b]));
+  for (const p of payments) {
+    const bar = byKey.get(bangkokDayKey(new Date(p.created_at)));
+    if (bar) bar.value += p.amount;
+  }
+  return bars;
+}

@@ -65,7 +65,7 @@ export function ReviewCard({
           paddingHorizontal: 10, paddingVertical: 4,
         }}>
           <Text style={{ fontSize: 12, color: Brand.orange }}>★</Text>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.orange }}>{score.toFixed(1)}</Text>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.orange, fontVariant: ['tabular-nums'] }}>{score.toFixed(1)}</Text>
         </View>
       </View>
 

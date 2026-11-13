@@ -8,8 +8,8 @@ export const th: Record<TranslationKey, string> = {
   'common.cancel': 'ยกเลิก',
   'common.halal': 'ฮาลาล',
   'common.halalCertified': 'ฮาลาล ✓',
-  'common.vegetarian': 'มังสวิรัติ 🌿',
-  'common.jay': 'เจ 🌿',
+  'common.vegetarian': 'มังสวิรัติ',
+  'common.jay': 'เจ',
   'common.noQueue': 'ไม่มีคิว',
   'common.moderateQueue': 'คิวปานกลาง',
   'common.moderate': 'ปานกลาง',
@@ -42,6 +42,9 @@ export const th: Record<TranslationKey, string> = {
   'auth.continueWithGoogle': 'ดำเนินการต่อด้วย Google',
   'auth.signingIn': 'กำลังเข้าสู่ระบบ…',
   'auth.signInFailedTitle': 'เข้าสู่ระบบไม่สำเร็จ',
+  'auth.notAdminMsg': 'บัญชีนี้ไม่ได้ลงทะเบียนเป็นผู้ดูแลระบบ',
+  'auth.notVendorMsg': 'บัญชีนี้ไม่ได้ลงทะเบียนเป็นร้านค้า',
+  'auth.adminLoginCta': 'เข้าสู่ระบบผู้ดูแล',
   'auth.vendorLoginCta': 'เข้าสู่ระบบผู้ขาย',
 
   // Onboarding
@@ -123,8 +126,9 @@ export const th: Record<TranslationKey, string> = {
   'orders.status.ready': 'พร้อมรับแล้ว!',
   'orders.status.completed': 'เสร็จสิ้น',
   'orders.status.cancelled': 'ยกเลิกแล้ว',
-  'orders.queueLine': 'คิว #{n} · {time}',
+  'orders.queueLine': 'คิว {n} · {time}',
   'orders.readyForPickup': '🎉 พร้อมให้รับแล้ว!',
+  'orders.viewDetails': 'ดูรายละเอียด',
   'orders.trackOrder': 'ติดตามคำสั่งซื้อ',
   'orders.rateOrder': 'ให้คะแนนคำสั่งซื้อ',
   'orders.noOrdersTitle': 'ยังไม่มีคำสั่งซื้อ',
@@ -139,7 +143,7 @@ export const th: Record<TranslationKey, string> = {
   'wallet.escrow': 'พักไว้ · ฿{amount}',
   'wallet.escrowTitle': 'เงินที่พักไว้ (Escrow)',
   'wallet.escrowEmpty': 'ไม่มีออเดอร์ที่กำลังดำเนินการ ไม่มีเงินพักไว้',
-  'wallet.escrowQueue': 'คิว #{n}',
+  'wallet.escrowQueue': 'คิว {n}',
   'wallet.statement': 'รายการเดินบัญชี',
   'wallet.statementIn': 'เงินเข้า',
   'wallet.statementOut': 'เงินออก',
@@ -162,6 +166,7 @@ export const th: Record<TranslationKey, string> = {
   'wallet.txn.refund': 'คืนเงิน — ออเดอร์ถูกยกเลิก/ปฏิเสธ',
 
   // Cart
+  'store.basket': 'ตะกร้า • {n} รายการ',
   'cart.title': 'ตะกร้าของคุณ',
   'cart.empty': 'ตะกร้าว่างเปล่า',
   'cart.addSomething': 'เพิ่มเมนูอร่อย ๆ กันเถอะ',
@@ -196,6 +201,8 @@ export const th: Record<TranslationKey, string> = {
   'search.resultsCount': 'พบ {n} เมนู',
   'search.noResults': 'ไม่พบเมนูที่ค้นหา\nลองชื่ออื่นหรือเปลี่ยนตัวกรอง',
   'search.containsAllergen': '⚠️ สารก่อภูมิแพ้',
+  'search.food': 'อาหาร',
+  'search.drinks': 'เครื่องดื่ม',
 
   // Stores
   'stores.title': 'ร้านค้า',
@@ -219,9 +226,6 @@ export const th: Record<TranslationKey, string> = {
   'item.allergyWarningTitle': '⚠️ คำเตือนภูมิแพ้',
   'item.allergyWarningMsg': 'เมนูนี้มี {allergens} ซึ่งคุณระบุว่าแพ้ ต้องการใส่ตะกร้าต่อไปหรือไม่?',
   'item.addAnyway': 'ใส่ตะกร้าต่อไป',
-  'item.vendorMismatchTitle': 'เริ่มตะกร้าใหม่หรือไม่?',
-  'item.vendorMismatchMsg': 'การเพิ่มเมนูนี้จะล้างตะกร้าปัจจุบันจากร้านอื่น ต้องการดำเนินการต่อหรือไม่?',
-  'item.vendorMismatchConfirm': 'ล้างตะกร้าแล้วเพิ่ม',
   'item.similarFoods': 'เมนูใกล้เคียง',
   'item.noteToVendor': 'โน้ตถึงครัว',
   'item.noteToVendorPlaceholder': 'เช่น ไม่เผ็ด ไม่ใส่ถั่ว เพิ่มข้าว',
@@ -245,12 +249,13 @@ export const th: Record<TranslationKey, string> = {
   'store.hours': 'เวลาเปิด-ปิด',
   'store.menu': 'เมนู',
   'store.all': 'ทั้งหมด',
-  'store.veg': 'มังสวิรัติ 🌿',
+  'store.veg': 'มังสวิรัติ',
   'store.soldOut': 'หมดแล้ว',
   'store.noItemsInCategory': 'ไม่มีเมนูในหมวดนี้',
   'store.allMenusTab': 'เมนูทั้งหมด',
   'store.reviewsTab': 'รีวิว',
   'store.whereToFind': 'ตำแหน่งร้าน',
+  'store.openInMaps': 'เปิดในแผนที่',
   'store.stall': 'ร้าน {n}',
 
   // Community reviews (store Review tab + item detail)
@@ -264,14 +269,19 @@ export const th: Record<TranslationKey, string> = {
   'track.ordersAhead': 'มีคิวก่อนคุณอีก {n} คิว',
   'track.order': 'คำสั่งซื้อ',
   'track.pickedItUp': 'รับอาหารแล้ว',
-  'track.waitingOnVendorConfirm': 'ยืนยันแล้ว! รอร้านค้ายืนยันการส่งมอบ',
   'track.rateYourOrder': 'ให้คะแนนคำสั่งซื้อของคุณ',
   'track.stepPlacedLabel': 'สั่งซื้อแล้ว',
   'track.stepPlacedHint': 'กำลังรอร้านค้ายืนยัน',
   'track.stepPreparingHint': 'กำลังปรุงอาหารของคุณ',
+  'track.stepReadyLabel': 'พร้อมแล้ว มารับได้เลย!',
   'track.stepReadyHint': 'มารับอาหารได้ที่ร้านเลย',
   'track.stepPickedUpLabel': 'รับอาหารแล้ว',
   'track.stepPickedUpHint': 'ทานให้อร่อยนะ!',
+  'track.orderAgain': 'สั่งอีกครั้ง',
+  'track.orderAgainSkipped': 'บางรายการหรือท็อปปิ้งไม่มีจำหน่ายแล้ว จึงไม่ได้ใส่ในตะกร้า',
+  'track.orderAgainNone': 'ไม่มีรายการใดในคำสั่งซื้อนี้พร้อมจำหน่ายในขณะนี้',
+  'track.orderAgainReplaceCart': "ตะกร้าของคุณจะถูกแทนที่ด้วยคำสั่งซื้อนี้ ดำเนินการต่อหรือไม่?",
+  'common.loadFailed': "โหลดหน้านี้ไม่สำเร็จ ดึงเพื่อรีเฟรชหรือลองอีกครั้ง",
   'track.cancelOrder': 'ยกเลิกคำสั่งซื้อ',
   'track.cancelConfirmTitle': 'ยกเลิกคำสั่งซื้อนี้หรือไม่?',
   'track.cancelConfirmMsg': 'คุณยังไม่ถูกเรียกเก็บเงิน ยกเลิกตอนนี้ได้ฟรี',
@@ -286,6 +296,7 @@ export const th: Record<TranslationKey, string> = {
   'rate.addPhotos': 'เพิ่มรูปอาหาร',
   'rate.addPhotosHint': 'เพิ่ม',
   'rate.submit': 'ส่งคะแนน',
+  'rate.alreadyRated': 'คุณให้คะแนนคำสั่งซื้อนี้แล้ว',
   'rate.thanksTitle': 'ขอบคุณสำหรับความคิดเห็น!',
   'rate.thanksMsg': 'คุณให้คะแนน {vendor} {score} ดาว',
   'rate.labelBad': 'แย่',
@@ -342,7 +353,7 @@ export const th: Record<TranslationKey, string> = {
   'editPreferences.saving': 'กำลังบันทึก…',
   'editPreferences.savedTitle': 'อัปเดตค่ากำหนดแล้ว',
   'editPreferences.savedMsg': 'บันทึกความต้องการด้านอาหารของคุณแล้ว',
-  'profile.logout': '→ ออกจากระบบ',
+  'profile.logout': 'ออกจากระบบ',
   'profile.languagePickerTitle': 'เลือกภาษา',
   'profile.avatarPermissionMsg': 'อนุญาตให้เข้าถึงคลังภาพเพื่อตั้งค่ารูปโปรไฟล์',
   'profile.avatarUploadErrorTitle': 'อัปเดตรูปโปรไฟล์ไม่สำเร็จ',
@@ -351,24 +362,24 @@ export const th: Record<TranslationKey, string> = {
   'notifications.title': 'การแจ้งเตือน',
   'notifications.empty': 'ยังไม่มีการแจ้งเตือน',
   'notif.orderAccepted.title': 'ออเดอร์ได้รับการยืนยันแล้ว!',
-  'notif.orderAccepted.body': '{vendor} กำลังเตรียมออเดอร์ของคุณ · คิว #{queue}',
+  'notif.orderAccepted.body': 'คิว {queue} · {vendor} กำลังเตรียมออเดอร์ของคุณ',
   'notif.orderReady.title': 'ออเดอร์พร้อมรับแล้ว!',
-  'notif.orderReady.body': '{vendor} · คิว #{queue}',
+  'notif.orderReady.body': 'คิว {queue} · {vendor}',
   'track.rejectedMsg': '{vendor} ไม่สามารถรับออเดอร์นี้ได้',
   'track.cancelledMsg': 'ออเดอร์นี้ถูกยกเลิกแล้ว',
   'track.terminalNoCharge': 'ไม่มีการหักเงินจากกระเป๋าเงินของคุณ',
   'track.terminalRefund': 'กำลังคืนเงินเข้ากระเป๋าเงินของคุณ',
   'notif.orderRejected.title': 'ออเดอร์ถูกปฏิเสธ',
-  'notif.orderRejected.body': '{vendor} ไม่สามารถรับออเดอร์ได้',
+  'notif.orderRejected.body': 'คิว {queue} · {vendor} ไม่สามารถรับออเดอร์ได้',
   'notif.orderRefunded.title': 'ออเดอร์ถูกยกเลิก',
-  'notif.orderRefunded.body': '{vendor} ยกเลิกออเดอร์ของคุณ และคืนเงินให้แล้ว',
+  'notif.orderRefunded.body': 'คิว {queue} · {vendor} ยกเลิกออเดอร์ของคุณ และคืนเงินให้แล้ว',
   'notif.orderCompleted.title': 'รับออเดอร์เรียบร้อยแล้ว',
-  'notif.orderCompleted.body': 'ขอให้อร่อยกับมื้ออาหารจาก {vendor}!',
+  'notif.orderCompleted.body': 'คิว {queue} · ขอให้อร่อยกับมื้ออาหารจาก {vendor}!',
   'notif.vendorNewOrder.title': 'มีออเดอร์ใหม่!',
-  'notif.vendorNewOrder.body': 'คิว #{queue} · ฿{amount}',
+  'notif.vendorNewOrder.body': 'คิว {queue} · ฿{amount}',
 
   // Vendor — login
-  'vendor.login.brand': 'Eatzy',
+  'vendor.login.brand': 'สำหรับเจ้าของร้าน',
   'vendor.login.heading': 'พอร์ทัลผู้ขาย',
   'vendor.login.subtitle': 'เข้าสู่ระบบเพื่อจัดการร้านของคุณ',
   'vendor.login.emailLabel': 'อีเมล',
@@ -582,6 +593,8 @@ export const th: Record<TranslationKey, string> = {
 
   // Vendor — finance / analytics
   'vendor.finance.title': 'การเงิน',
+  'vendor.finance.revenueChart': 'รายได้',
+  'vendor.finance.days': '{n} วัน',
   'vendor.finance.totalRevenueToday': 'รายได้รวม (วันนี้)',
   'vendor.finance.amountPayment': 'การชำระเงินวันนี้',
   'vendor.finance.availableToWithdraw': 'ยอดเงินพร้อมถอน',
@@ -615,6 +628,8 @@ export const th: Record<TranslationKey, string> = {
   'vendor.profile.cuisineTagsPlaceholder': 'เช่น ไทย, ข้าวราดแกง, แกง',
   'vendor.profile.cuisineTagsHint': 'คั่นแต่ละแท็กด้วยจุลภาค',
   'vendor.profile.halalCertifiedLabel': 'รับรองฮาลาล',
+  'vendor.profile.notificationsLabel': 'แจ้งเตือนออเดอร์ใหม่',
+  'vendor.profile.notificationsHint': 'แจ้งเตือนแบบพุชและในแอปเมื่อนักศึกษาสั่งอาหาร',
   'vendor.profile.openTimeLabel': 'เวลาเปิด',
   'vendor.profile.closeTimeLabel': 'เวลาปิด',
   'vendor.profile.timeNotSet': 'ไม่ระบุ',
@@ -642,7 +657,7 @@ export const th: Record<TranslationKey, string> = {
   'vendor.location.webOnly': 'เปิดหน้านี้ในแอป Eatzy เพื่อตั้งค่าตำแหน่งร้านของคุณ',
 
   // Admin — login
-  'admin.login.brand': 'Eatzy',
+  'admin.login.brand': 'เฉพาะเจ้าหน้าที่',
   'admin.login.heading': 'พอร์ทัลแอดมิน',
   'admin.login.subtitle': 'เข้าสู่ระบบเพื่อจัดการร้านค้าผู้ขาย',
   'admin.login.emailLabel': 'อีเมล',
@@ -662,7 +677,7 @@ export const th: Record<TranslationKey, string> = {
   'admin.newVendor.emailLabel': 'อีเมลร้าน',
   'admin.newVendor.emailPlaceholder': 'somtamcorner@eatzy.app',
   'admin.newVendor.passwordLabel': 'รหัสผ่าน',
-  'admin.newVendor.passwordPlaceholder': 'อย่างน้อย 6 ตัวอักษร',
+  'admin.newVendor.passwordPlaceholder': 'อย่างน้อย 10 ตัวอักษร',
   'admin.newVendor.businessNameLabel': 'ชื่อร้าน',
   'admin.newVendor.businessNamePlaceholder': 'เช่น ส้มตำคอร์เนอร์',
   'admin.newVendor.cuisineTagsLabel': 'ขายอะไร?',
@@ -677,6 +692,34 @@ export const th: Record<TranslationKey, string> = {
   'admin.newVendor.errorTitle': 'ไม่สามารถสร้างบัญชีร้านได้',
 
   'admin.nav.vendors': 'ร้านค้า',
+
+  'admin.nav.dashboard': 'แดชบอร์ด',
+
+  'admin.dashboard.title': 'ภาพรวม',
+
+  'admin.dashboard.subtitle': 'ผู้ใช้งาน Eatzy และกิจกรรมวันนี้',
+
+  'admin.dashboard.activeNow': 'ใช้งานตอนนี้ (15 นาที)',
+
+  'admin.dashboard.activeToday': 'ใช้งานวันนี้',
+
+  'admin.dashboard.active7d': 'ใช้งานสัปดาห์นี้',
+
+  'admin.dashboard.students': 'นักศึกษา',
+
+  'admin.dashboard.vendors': 'บัญชีผู้ขาย',
+
+  'admin.dashboard.newThisWeek': 'สมัครใหม่ (7 วัน)',
+
+  'admin.dashboard.ordersToday': 'คำสั่งซื้อวันนี้',
+
+  'admin.dashboard.revenueToday': 'ยอดขายวันนี้',
+
+  'admin.dashboard.openStalls': 'ร้านที่เปิด',
+
+  'admin.dashboard.recentActive': 'ใช้งานล่าสุด (24 ชม.)',
+
+  'admin.dashboard.noneActive': 'ไม่มีกิจกรรมใน 24 ชั่วโมงที่ผ่านมา',
   'admin.vendors.title': 'ร้านค้าผู้ขาย',
   'admin.vendors.subtitle': 'ตรวจสอบทุกร้านค้าและสั่งเปิด-ปิดร้านได้',
   'admin.vendors.empty': 'ยังไม่มีร้านค้าผู้ขาย',

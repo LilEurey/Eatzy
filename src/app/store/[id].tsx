@@ -1,26 +1,31 @@
 import { isStoreOpen } from '@/lib/time';
-import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { SkeletonDetail } from '@/components/Skeleton';
+import { useEffect, useRef, useState } from 'react';
+import { View, Text, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
 import StoreMiniMap from '@/components/StoreMiniMap';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { hasCoords } from '@/lib/geo';
 import { localizedText } from '@/lib/localize';
 import { usePreferences, matchAllergens, refreshPreferences } from '@/hooks/usePreferences';
+import { CartBar } from '@/components/CartBar';
+import { StoreMenuRow, type StoreMenuItem as MenuItem } from '@/components/store/StoreMenuRow';
 import type { Database } from '@/types/database.types';
 
 type Tables = Database['public']['Tables'];
 const VENDOR_COLUMNS = 'id,name,stall_number,is_open,open_time,close_time,bio,bio_th,cuisine_tags,estimated_wait_min,current_queue_count,cover_image_url,is_halal_certified,latitude,longitude';
 const MENU_ITEM_COLUMNS = 'id,category,name,name_th,description,description_th,price,spice_level,image_url,allergens,is_halal,is_vegetarian,is_jay,is_available';
 type Vendor = Pick<Tables['vendors']['Row'], 'id' | 'name' | 'stall_number' | 'is_open' | 'open_time' | 'close_time' | 'bio' | 'bio_th' | 'cuisine_tags' | 'estimated_wait_min' | 'current_queue_count' | 'cover_image_url' | 'is_halal_certified' | 'latitude' | 'longitude'>;
-type MenuItem = Pick<Tables['menu_items']['Row'], 'id' | 'category' | 'name' | 'name_th' | 'description' | 'description_th' | 'price' | 'spice_level' | 'image_url' | 'allergens' | 'is_halal' | 'is_vegetarian' | 'is_jay' | 'is_available'>;
 type StoreReview = {
   id: string;
   score: number;
@@ -37,16 +42,32 @@ function queueStatus(count: number): { labelKey: TranslationKey; color: string }
   return { labelKey: 'common.busy', color: '#ef4444' };
 }
 
-function spiceLabel(level: number, t: ReturnType<typeof useI18n>['t']) {
-  if (level === 0) return t('common.noSpice');
-  return '🌶'.repeat(level);
-}
 
 export default function StoreDetailScreen() {
   const { t, locale } = useI18n();
   const { prefs, gate } = usePreferences();
   const prefsError = gate.status === 'error';
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, item: focusId, rec } = useLocalSearchParams<{ id: string; item?: string; rec?: string }>();
+  const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(220);
+  // Opened via openItem(): scroll to + highlight the dish the student tapped.
+  // y = content View + menu list + row offsets; scroll once all three are measured.
+  // Waits for the push slide to finish so the two motions don't overlap.
+  const focusY = useRef<{ content?: number; list?: number; row?: number; done?: boolean; entered?: boolean }>({});
+  const scrollToFocus = (k?: 'content' | 'list' | 'row', y?: number) => {
+    const f = focusY.current;
+    if (k) f[k] = y;
+    if (f.done || !f.entered || f.content == null || f.list == null || f.row == null) return;
+    f.done = true;
+    heroRef.current?.scrollTo({ y: Math.max(0, f.content + f.list + f.row - 120), animated: true });
+  };
+  const navigation = useNavigation();
+  // Highlight only points the way — cleared on the first dish tap.
+  const [highlightId, setHighlightId] = useState(focusId);
+  useEffect(() => navigation.addListener('transitionEnd' as never, () => {
+    focusY.current.entered = true;
+    scrollToFocus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- scrollToFocus only touches refs
+  }), [navigation]);
   const [activeTab, setActiveTab] = useState<'menus' | 'reviews'>('menus');
   const [activeCategory, setActiveCategory] = useState('All');
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
@@ -104,9 +125,9 @@ export default function StoreDetailScreen() {
 
   if (vendor === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonDetail heroHeight={220} />
+      </View>
     );
   }
 
@@ -119,7 +140,7 @@ export default function StoreDetailScreen() {
           </Tap>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 40 }}>🏪</Text>
+          <Image source={require('../../../assets/images/store.png')} style={{ width: 44, height: 44 }} />
           <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t('store.notFound')}</Text>
         </View>
       </SafeAreaView>
@@ -130,27 +151,15 @@ export default function StoreDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <Animated.ScrollView ref={heroRef} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header image area */}
         <View style={{ height: 220, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {vendor.cover_image_url
-            ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-            : <Text style={{ fontSize: 72 }}>🏪</Text>
+            ? <Image source={{ uri: vendor.cover_image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
+            : <Image source={require('../../../assets/images/store.png')} style={{ width: 76, height: 76 }} />
           }
-          {/* Back button */}
-          <Tap
-            onPress={() => router.back()}
-            style={{
-              position: 'absolute', top: 16, left: 16,
-              width: 40, height: 40, borderRadius: 20,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              alignItems: 'center', justifyContent: 'center',
-              shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-            }}
-          >
-            <Text style={{ fontSize: 18, color: Brand.textPrimary }}>←</Text>
-          </Tap>
+          </Animated.View>
 
           {/* Open badge */}
           <View style={{
@@ -175,10 +184,10 @@ export default function StoreDetailScreen() {
           </View>
         )}
 
-        <View style={{ padding: 20 }}>
+        <View style={{ padding: 20 }} onLayout={focusId ? e => scrollToFocus('content', e.nativeEvent.layout.y) : undefined}>
           {/* Vendor name + tags row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={{ fontSize: 24, fontWeight: '700', color: Brand.textPrimary, flex: 1 }}>
+            <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: Brand.textPrimary, flex: 1 }}>
               {vendor.name}
             </Text>
             {vendor.is_halal_certified && (
@@ -207,7 +216,7 @@ export default function StoreDetailScreen() {
           {reviews.length > 0 && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 }}>
               <Text style={{ fontSize: 14, color: Brand.orange }}>★</Text>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{avgScore.toFixed(1)}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{avgScore.toFixed(1)}</Text>
               <Text style={{ fontSize: 13, color: Brand.textSecondary }}>({reviews.length})</Text>
             </View>
           )}
@@ -289,6 +298,7 @@ export default function StoreDetailScreen() {
                     paddingBottom: 10,
                     borderBottomWidth: 2,
                     borderBottomColor: active ? Brand.orange : 'transparent',
+                    transitionProperty: 'borderBottomColor', transitionDuration: 180,
                   }}
                 >
                   <Text style={{ fontSize: 16, fontWeight: '700', color: active ? Brand.orange : Brand.textSecondary }}>
@@ -335,6 +345,7 @@ export default function StoreDetailScreen() {
                       backgroundColor: active ? Brand.orange : Brand.card,
                       shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
                       shadowOpacity: active ? 0 : 0.04, shadowRadius: 4, elevation: active ? 0 : 1,
+                      transitionProperty: 'backgroundColor', transitionDuration: 180,
                     }}
                   >
                     <Text style={{
@@ -350,86 +361,17 @@ export default function StoreDetailScreen() {
           </ScrollView>
 
           {/* Menu items */}
-          <View style={{ gap: 12 }}>
-            {filteredItems.map(item => (
-              <Tap
-                key={item.id}
-                onPress={() => router.push(`/item/${item.id}`)}
-                activeOpacity={0.85}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 14,
-                  backgroundColor: Brand.card, borderRadius: 20, padding: 14,
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
-                  // Sold out stays tappable (details still useful); the item
-                  // page blocks Add to Cart.
-                  opacity: item.is_available ? 1 : 0.5,
-                }}
-              >
-                {/* Image */}
-                <View style={{
-                  width: 80, height: 80, borderRadius: 14,
-                  backgroundColor: Brand.orangeLight, overflow: 'hidden',
-                  alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  {item.image_url
-                    ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                    : <Text style={{ fontSize: 34 }}>🍽️</Text>
-                  }
-                </View>
-
-                {/* Info */}
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, marginBottom: 3 }}>
-                    {localizedText(item.name, item.name_th, locale)}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: Brand.textSecondary, marginBottom: 6 }} numberOfLines={2}>
-                    {localizedText(item.description ?? '', item.description_th, locale)}
-                  </Text>
-
-                  {/* Dietary badges */}
-                  <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
-                    {item.is_halal && (
-                      <View style={{ backgroundColor: '#d1fae5', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#065f46', fontWeight: '600' }}>{t('common.halal')}</Text>
-                      </View>
-                    )}
-                    {item.is_vegetarian && (
-                      <View style={{ backgroundColor: '#dcfce7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#166534', fontWeight: '600' }}>{t('store.veg')}</Text>
-                      </View>
-                    )}
-                    {item.spice_level > 0 && (
-                      <View style={{ backgroundColor: '#fef3c7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#92400e' }}>{spiceLabel(item.spice_level, t)}</Text>
-                      </View>
-                    )}
-                    {matchAllergens(item.allergens, prefs).length > 0 && (
-                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#b91c1c', fontWeight: '700' }}>{t('search.containsAllergen')}</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#a04100' }}>
-                      ฿{item.price}
-                    </Text>
-                    {item.is_available ? (
-                      <View style={{
-                        width: 30, height: 30, borderRadius: 15,
-                        backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <Text style={{ fontSize: 18, color: Brand.orange, lineHeight: 20 }}>+</Text>
-                      </View>
-                    ) : (
-                      <View style={{ backgroundColor: Brand.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.textSecondary }}>{t('store.soldOut')}</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </Tap>
+          <View style={{ gap: 12 }} onLayout={focusId ? e => scrollToFocus('list', e.nativeEvent.layout.y) : undefined}>
+            {filteredItems.map((item, index) => (
+              <Animated.View key={item.id} entering={listEnter(index)} layout={listLayout}
+                onLayout={item.id === focusId ? e => scrollToFocus('row', e.nativeEvent.layout.y) : undefined}>
+              <StoreMenuRow
+                item={item}
+                highlighted={item.id === highlightId}
+                hasAllergen={matchAllergens(item.allergens, prefs).length > 0}
+                onPress={() => { setHighlightId(undefined); router.push(`/item/${item.id}${item.id === focusId && rec ? '?rec=1' : ''}`); }}
+              />
+              </Animated.View>
             ))}
 
             {filteredItems.length === 0 && gate.status === 'ready' && (
@@ -443,7 +385,7 @@ export default function StoreDetailScreen() {
           ) : (
           /* Review tab */
           <View>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary, marginBottom: 14 }}>
+            <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary, marginBottom: 14 }}>
               {t('reviews.communityReviews')}
             </Text>
             {reviews.length === 0 ? (
@@ -470,7 +412,11 @@ export default function StoreDetailScreen() {
           </View>
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+      <HeroHeader title={vendor.name} barStyle={barStyle} />
+      <View style={{ position: 'absolute', left: 16, right: 16, bottom: 28 }}>
+        <CartBar />
+      </View>
     </SafeAreaView>
   );
 }

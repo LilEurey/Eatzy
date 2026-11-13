@@ -1,16 +1,20 @@
+import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter, listExit, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, NOTE_MAX } from '@/lib/cart-store';
+import { useCart, setQty, setNote, clearCart, cartSubtotal, lineUnitTotal, groupByVendor, NOTE_MAX } from '@/lib/cart-store';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
 import { showAlert, showConfirm } from '@/lib/alert';
-import { useI18n } from '@/lib/i18n';
+import * as Haptics from 'expo-haptics';
+import { useI18n, translateActive } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
-import { nextPickupSlots, isStoreOpen } from '@/lib/time';
+import { nextPickupSlots, isStoreOpen, hasPassed } from '@/lib/time';
 import { formatBaht } from '@/lib/money';
 import { placeOrder as placeOrderInDb } from '@/lib/place-order';
 import type { Database } from '@/types/database.types';
@@ -37,20 +41,25 @@ export default function CartScreen() {
   const [slots, setSlots] = useState(() => nextPickupSlots());
   const [selectedIndex, setSelectedIndex] = useState(1);
   const selectedSlot = slots[selectedIndex];
-  const [vendor, setVendor] = useState<Pick<Vendor, 'name' | 'stall_number' | 'is_open' | 'open_time' | 'close_time'> | null>(null);
+  const groups = groupByVendor(items);
+  const vendorKey = groups.map(g => g.vendor_id).sort().join(',');
+  const [vendors, setVendors] = useState<Record<string, Pick<Vendor, 'id' | 'name' | 'stall_number' | 'is_open' | 'open_time' | 'close_time'>>>({});
   const [placing, setPlacing] = useState(false);
 
   const subtotal = cartSubtotal(cart);
   const total = subtotal;
 
   useEffect(() => {
-    if (!cart.vendor_id) return; // cart empty — the empty-state branch below renders instead
-    supabase.from('vendors').select('name,stall_number,is_open,open_time,close_time').eq('id', cart.vendor_id).maybeSingle()
-      .then(({ data }) => setVendor(data ?? null));
-  }, [cart.vendor_id]);
+    if (!vendorKey) return; // cart empty — the empty-state branch below renders instead
+    supabase.from('vendors').select('id,name,stall_number,is_open,open_time,close_time').in('id', vendorKey.split(','))
+      .then(({ data, error }) => {
+        if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
+        setVendors(Object.fromEntries((data ?? []).map(v => [v.id, v])));
+      });
+  }, [vendorKey]);
 
   function placeOrder() {
-    if (!cart.vendor_id) return;
+    if (groups.length === 0) return;
     // Allergy prefs must be loaded (and correct) before checkout can decide
     // whether to warn — proceeding on stale/default prefs would silently
     // skip the allergen confirm for a student whose prefs failed to load.
@@ -58,8 +67,9 @@ export default function CartScreen() {
       showAlert(t('cart.orderFailedTitle'), t('cart.prefsNotReadyMsg'));
       return;
     }
-    if (vendor && !isStoreOpen(vendor)) {
-      showAlert(t('cart.storeClosedTitle'), t('cart.storeClosedMsg'));
+    const closed = groups.map(g => vendors[g.vendor_id]).find(v => v && !isStoreOpen(v));
+    if (closed) {
+      showAlert(t('cart.storeClosedTitle'), `${closed.name}: ${t('cart.storeClosedMsg')}`);
       return;
     }
     if (orderAllergens.length > 0) {
@@ -75,8 +85,8 @@ export default function CartScreen() {
   }
 
   async function submitOrder() {
-    if (!cart.vendor_id) return;
-    if (selectedSlot.start.getTime() <= Date.now()) {
+    if (groups.length === 0) return;
+    if (hasPassed(selectedSlot.start)) {
       setSlots(nextPickupSlots());
       showAlert(t('cart.orderFailedTitle'), t('cart.slotExpiredMsg'));
       return;
@@ -84,13 +94,14 @@ export default function CartScreen() {
     setPlacing(true);
     try {
       const result = await placeOrderInDb({
-        vendorId: cart.vendor_id,
-        lines: items,
+        orders: groups,
         slot: selectedSlot,
       });
       if (result.ok) {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         clearCart();
-        router.replace(`/track/${result.orderId}`);
+        // One stall: straight to its tracker. Several: the orders tab lists them all.
+        router.replace(result.orderIds.length === 1 ? `/track/${result.orderIds[0]}` : '/(tabs)/orders');
         return;
       }
       if (result.reason === 'slot-expired') setSlots(nextPickupSlots());
@@ -99,7 +110,8 @@ export default function CartScreen() {
         : result.reason === 'item-unavailable' ? t('cart.itemUnavailableMsg')
         : result.reason === 'slot-expired' ? t('cart.slotExpiredMsg')
         : result.message;
-      showAlert(t('cart.orderFailedTitle'), message);
+      const failedStore = result.vendorId ? vendors[result.vendorId]?.name : undefined;
+      showAlert(t('cart.orderFailedTitle'), failedStore ? `${failedStore}: ${message}` : message);
     } finally {
       setPlacing(false);
     }
@@ -112,7 +124,7 @@ export default function CartScreen() {
           <Tap onPress={() => router.back()}>
             <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
           </Tap>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('cart.title')}</Text>
+          <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('cart.title')}</Text>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 48, marginBottom: 16 }}>🛒</Text>
@@ -123,7 +135,7 @@ export default function CartScreen() {
             {t('cart.addSomething')}
           </Text>
           <Tap
-            onPress={() => router.push('/(tabs)')}
+            onPress={() => router.dismissTo('/(tabs)')}
             style={{
               backgroundColor: Brand.orange, borderRadius: 14,
               paddingHorizontal: 28, paddingVertical: 12,
@@ -143,24 +155,10 @@ export default function CartScreen() {
         <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('cart.title')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('cart.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }}>
-        {/* Vendor chip */}
-        {vendor && (
-          <View style={{
-            flexDirection: 'row', alignItems: 'center', gap: 10,
-            backgroundColor: Brand.orangeLight, borderRadius: 14, padding: 12, marginBottom: 20,
-          }}>
-            <Text style={{ fontSize: 20 }}>🏪</Text>
-            <View>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textPrimary }}>{vendor.name}</Text>
-              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('cart.stall', { n: vendor.stall_number ?? '' })}</Text>
-            </View>
-          </View>
-        )}
-
         {orderAllergens.length > 0 && (
           <View style={{
             backgroundColor: '#fee2e2', borderRadius: 12, borderWidth: 1, borderColor: '#fecaca',
@@ -176,13 +174,30 @@ export default function CartScreen() {
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
           {t('cart.items')}
         </Text>
+        {groups.map(group => {
+          const vendor = vendors[group.vendor_id];
+          return (
+        <View key={group.vendor_id}>
+        {vendor && (
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', gap: 10,
+            backgroundColor: Brand.orangeLight, borderRadius: 14, padding: 12, marginBottom: 10,
+          }}>
+            <Image source={require('../../assets/images/store.png')} style={{ width: 24, height: 24 }} />
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textPrimary }}>{vendor.name}</Text>
+              <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{t('cart.stall', { n: vendor.stall_number ?? '' })}</Text>
+            </View>
+          </View>
+        )}
+
         <View style={{
           backgroundColor: Brand.card, borderRadius: 20, overflow: 'hidden', marginBottom: 24,
           shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
         }}>
-          {items.map((item, i) => (
-            <View key={item.line_id}>
+          {group.items.map((item, i) => (
+            <Animated.View key={item.line_id} entering={listEnter(i)} exiting={listExit} layout={listLayout}>
               {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, gap: 14 }}>
                 <View style={{ flex: 1 }}>
@@ -216,7 +231,9 @@ export default function CartScreen() {
                     onPress={() => setQty(item.line_id, -1)}
                     style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>−</Text>
+                    {item.quantity === 1
+                      ? <Image source={require('../../assets/images/trash.png')} tintColor={Brand.orange} style={{ width: 16, height: 16 }} />
+                      : <Text style={{ fontSize: 18, color: Brand.orange, fontWeight: '700', lineHeight: 20 }}>−</Text>}
                   </Tap>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, minWidth: 22, textAlign: 'center' }}>
                     {item.quantity}
@@ -229,7 +246,7 @@ export default function CartScreen() {
                   </Tap>
                 </View>
 
-                <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, minWidth: 52, textAlign: 'right' }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, minWidth: 52, textAlign: 'right', fontVariant: ['tabular-nums'] }}>
                   ฿{formatBaht(lineUnitTotal(item) * item.quantity)}
                 </Text>
               </View>
@@ -248,10 +265,12 @@ export default function CartScreen() {
                   fontSize: 13, color: Brand.textPrimary, minHeight: 40, textAlignVertical: 'top',
                 }}
               />
-            </View>
+            </Animated.View>
           ))}
         </View>
-
+        </View>
+          );
+        })}
         {/* Pickup time slot */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
           {t('cart.pickupTime')}
@@ -290,12 +309,12 @@ export default function CartScreen() {
         }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 14, color: Brand.textSecondary }}>{t('cart.subtotal')}</Text>
-            <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600' }}>฿{formatBaht(subtotal)}</Text>
+            <Text style={{ fontSize: 14, color: Brand.textPrimary, fontWeight: '600', fontVariant: ['tabular-nums'] }}>฿{formatBaht(subtotal)}</Text>
           </View>
           <View style={{ height: 1, backgroundColor: Brand.border }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary }}>{t('common.total')}</Text>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.orange }}>฿{formatBaht(total)}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.orange, fontVariant: ['tabular-nums'] }}>฿{formatBaht(total)}</Text>
           </View>
         </View>
       </ScrollView>

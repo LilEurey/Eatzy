@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter, listLayout } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -9,9 +12,10 @@ import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { timeAgo } from '@/lib/relative-time';
 import { formatBangkokClock } from '@/lib/time';
-import { mapOrderItems } from '@/lib/order-view';
+import { mapOrderItems, queueTicket } from '@/lib/order-view';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
-import { isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
+import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
+import { ORDER_STATUS_LABEL, isActiveForStudent, isVoided, type OrderStatus } from '@/lib/order-lifecycle';
 
 type FilterTab = 'All' | 'Active' | 'Completed' | 'Cancelled';
 
@@ -25,16 +29,17 @@ type StudentOrder = {
   pickup_end: string | null;
   created_at: string;
   vendor_name: string;
+  rated: boolean;
   items: { name: string; name_th: string | null; quantity: number; addons: { name: string; name_th: string | null }[] }[];
 };
 
-const STATUS_CONFIG: Record<OrderStatus, { labelKey: TranslationKey; color: string; bg: string }> = {
-  pending:   { labelKey: 'orders.status.pending',   color: '#d97706', bg: '#fef3c7' },
-  accepted:  { labelKey: 'orders.status.preparing', color: '#2563eb', bg: '#dbeafe' },
-  rejected:  { labelKey: 'orders.status.rejected',  color: '#dc2626', bg: '#fee2e2' },
-  ready:     { labelKey: 'orders.status.ready',     color: '#16a34a', bg: '#dcfce7' },
-  completed: { labelKey: 'orders.status.completed', color: '#6b7280', bg: '#f3f4f6' },
-  cancelled: { labelKey: 'orders.status.cancelled', color: '#9ca3af', bg: '#f3f4f6' },
+const STATUS_CONFIG: Record<OrderStatus, { color: string; bg: string }> = {
+  pending:   { color: '#d97706', bg: '#fef3c7' },
+  accepted:  { color: '#2563eb', bg: '#dbeafe' },
+  rejected:  { color: '#dc2626', bg: '#fee2e2' },
+  ready:     { color: '#16a34a', bg: '#dcfce7' },
+  completed: { color: '#6b7280', bg: '#f3f4f6' },
+  cancelled: { color: '#9ca3af', bg: '#f3f4f6' },
 };
 
 const FILTER_LABELS: Record<FilterTab, TranslationKey> = {
@@ -52,6 +57,8 @@ export default function OrdersScreen() {
   const [tab, setTab] = useState<FilterTab>('All');
   const [orders, setOrders] = useState<StudentOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const { key: refreshKey, done: refreshDone, control: refreshControl, refresh } = usePullToRefresh();
+  const scrollRef = useRefreshOnTabRetap(refresh);
 
   useLiveWhileFocused(async isCancelled => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -61,23 +68,27 @@ export default function OrdersScreen() {
     async function load() {
       const { data, error } = await supabase
         .from('orders')
-        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,vendors(name),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,vendor_id,queue_number,status,total_amount,pickup_start,pickup_end,created_at,student_picked_up_at,vendors(name),ratings(id),order_items(quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (isCancelled()) return;
+      refreshDone();
       // Keep the list on a failed live refetch — [] would flash "no orders".
       if (error) { console.warn('load orders failed:', error.message); setLoading(false); return; }
       setOrders((data ?? []).map(o => ({
         id: o.id,
         vendor_id: o.vendor_id,
         queue_number: o.queue_number,
-        status: o.status as OrderStatus,
+        // Student confirmed pickup — done from their side even while the
+        // vendor's handoff confirm is pending (DB status stays 'ready').
+        status: (o.status === 'ready' && o.student_picked_up_at ? 'completed' : o.status) as OrderStatus,
         total_amount: o.total_amount,
         pickup_start: o.pickup_start,
         pickup_end: o.pickup_end,
         created_at: o.created_at,
         vendor_name: o.vendors?.name ?? '—',
+        rated: o.ratings.length > 0,
         items: mapOrderItems(o.order_items),
       })));
       setLoading(false);
@@ -87,14 +98,14 @@ export default function OrdersScreen() {
     // otherwise only showed on tab refocus. (orders is in the
     // supabase_realtime publication as of 20260904000000.)
     const channel = supabase
-      .channel(`student-orders-${userId}`)
+      .channel(`student-orders-${userId}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, () => {
         void load();
       })
       .subscribe();
     void load();
     return () => { void supabase.removeChannel(channel); };
-  });
+  }, refreshKey);
 
   const filtered = orders.filter(o => {
     if (tab === 'All') return true;
@@ -150,11 +161,9 @@ export default function OrdersScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={Brand.orange} size="large" />
-        </View>
+        <SkeletonList />
       ) : (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Active orders section */}
         {tab === 'All' && filtered.some(o => isActiveForStudent(o.status)) && (
           <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.textSecondary, letterSpacing: 0.8, marginBottom: 10 }}>
@@ -163,7 +172,7 @@ export default function OrdersScreen() {
         )}
 
         <View style={{ gap: 12 }}>
-          {filtered.map(order => {
+          {filtered.map((order, index) => {
             const cfg = STATUS_CONFIG[order.status];
             const vendor = order.vendor_name;
             const isActive = isActiveForStudent(order.status);
@@ -173,8 +182,10 @@ export default function OrdersScreen() {
             }).join(', ');
 
             return (
-              <View
+              <Animated.View
                 key={order.id}
+                entering={listEnter(index)}
+                layout={listLayout}
                 style={{
                   backgroundColor: Brand.card, borderRadius: 20, padding: 16,
                   shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
@@ -190,11 +201,11 @@ export default function OrdersScreen() {
                       {vendor}
                     </Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      {t('orders.queueLine', { n: order.queue_number ?? '—', time: timeAgo(order.created_at, t) })}
+                      {t('orders.queueLine', { n: queueTicket(order.queue_number, order.vendor_name), time: timeAgo(order.created_at, t) })}
                     </Text>
                   </View>
                   <View style={{ backgroundColor: cfg.bg, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 }}>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: cfg.color }}>{t(cfg.labelKey)}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: cfg.color }}>{t(ORDER_STATUS_LABEL[order.status])}</Text>
                   </View>
                 </View>
 
@@ -207,9 +218,11 @@ export default function OrdersScreen() {
                 {isActive && (
                   <View style={{ marginBottom: 12 }}>
                     <View style={{ height: 4, backgroundColor: Brand.border, borderRadius: 2 }}>
-                      <View style={{
+                      {/* CSS transition: bar glides when realtime bumps the status */}
+                      <Animated.View style={{
                         height: 4, borderRadius: 2, backgroundColor: Brand.orange,
                         width: order.status === 'pending' ? '15%' : order.status === 'accepted' ? '60%' : '100%',
+                        transitionProperty: 'width', transitionDuration: 500,
                       }} />
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
@@ -237,13 +250,13 @@ export default function OrdersScreen() {
                       {t('common.pickupRange', { start: formatBangkokClock(order.pickup_start), end: formatBangkokClock(order.pickup_end) })}
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>
                     ฿{order.total_amount}
                   </Text>
                 </View>
 
                 {/* Action button */}
-                {isActive && (
+                {(isActive || order.status === 'rejected' || order.status === 'cancelled' || order.status === 'completed') && (
                   <Tap
                     onPress={() => router.push(`/track/${order.id}`)}
                     style={{
@@ -255,12 +268,12 @@ export default function OrdersScreen() {
                       fontSize: 13, fontWeight: '700',
                       color: order.status === 'ready' ? '#fff' : Brand.orange,
                     }}>
-                      {order.status === 'ready' ? t('orders.readyForPickup') : t('orders.trackOrder')}
+                      {order.status === 'ready' ? t('orders.readyForPickup') : isActive ? t('orders.trackOrder') : t('orders.viewDetails')}
                     </Text>
                   </Tap>
                 )}
 
-                {order.status === 'completed' && (
+                {order.status === 'completed' && !order.rated && (
                   <Tap
                     onPress={() => router.push(`/rate/${order.id}`)}
                     style={{
@@ -273,7 +286,7 @@ export default function OrdersScreen() {
                     </Text>
                   </Tap>
                 )}
-              </View>
+              </Animated.View>
             );
           })}
 

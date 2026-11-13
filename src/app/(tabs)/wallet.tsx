@@ -1,5 +1,10 @@
 import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
+import Animated from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
+import { CountUp } from '@/components/CountUp';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -9,7 +14,9 @@ import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { BANGKOK_TZ, bangkokDayKey } from '@/lib/time';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
-import type { OrderStatus } from '@/lib/order-lifecycle';
+import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
+import { queueTicket } from '@/lib/order-view';
+import { ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-lifecycle';
 
 type TxType = 'topup' | 'payment' | 'refund' | 'transfer';
 type WalletTxn = { id: string; type: TxType; amount: number; description: string | null; created_at: string };
@@ -18,12 +25,11 @@ type WalletTxn = { id: string; type: TxType; amount: number; description: string
 // (completes to the vendor, or refunds on reject/cancel).
 type HeldOrder = { id: string; queue_number: number | null; status: OrderStatus; total_amount: number; vendors: { name: string } | null };
 const HELD_STATUSES: OrderStatus[] = ['pending', 'accepted', 'ready'];
-const STATUS_KEY = { pending: 'orders.status.pending', accepted: 'orders.status.preparing', ready: 'orders.status.ready' } as const;
 
-const TX_CONFIG: Record<TxType, { icon: string; color: string }> = {
+const TX_CONFIG: Record<TxType, { icon: string; color: string; image?: number }> = {
   topup:    { icon: '↓', color: '#16a34a' },
   payment:  { icon: '↑', color: '#dc2626' },
-  refund:   { icon: '↩', color: '#2563eb' },
+  refund:   { icon: '↩', color: '#2563eb', image: require('../../../assets/images/refund.png') },
   transfer: { icon: '⇄', color: '#7c3aed' },
 };
 
@@ -66,6 +72,8 @@ export default function WalletScreen() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const focusGuard = useFocusGuard();
+  const { key: refreshKey, done: refreshDone, control: refreshControl, refresh: pullRefresh } = usePullToRefresh();
+  const scrollRef = useRefreshOnTabRetap(pullRefresh);
 
   const refresh = useCallback((cancelledRef: { current: boolean }) => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -81,24 +89,27 @@ export default function WalletScreen() {
         setHeld(result.held);
       }
       setLoading(false);
+      refreshDone();
     });
-  }, []);
+  }, [refreshDone]);
 
-  useFocusEffect(useCallback(() => { refresh(focusGuard.snapshot()); }, [focusGuard, refresh]));
+  // refreshKey: a pull re-runs the load.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useFocusEffect(useCallback(() => { refresh(focusGuard.snapshot()); }, [focusGuard, refresh, refreshKey]));
 
   const heldTotal = held.reduce((sum, o) => sum + o.total_amount, 0);
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonList title />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5 }}>
@@ -140,9 +151,8 @@ export default function WalletScreen() {
             <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '600', marginBottom: 8 }}>
               {t('wallet.balanceLabel')}
             </Text>
-            <Text style={{ fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1, marginBottom: 20 }}>
-              ฿{formatBaht(balance)}
-            </Text>
+            <CountUp value={balance} format={n => `฿${formatBaht(n)}`}
+              style={{ fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1, marginBottom: 20, fontVariant: ['tabular-nums'] }} />
 
             <Tap
               onPress={() => router.push('/wallet-topup')}
@@ -159,11 +169,13 @@ export default function WalletScreen() {
         {/* Quick actions */}
         <View style={{ flexDirection: 'row', gap: 12, marginHorizontal: 20, marginBottom: 28 }}>
           {[
-            { icon: '⏳', label: t('wallet.escrow', { amount: formatBaht(heldTotal) }), onPress: () => setShowHeld(v => !v), dim: held.length === 0 },
-            { icon: '📄', label: t('wallet.statement'), onPress: () => router.push('/wallet-statement'), dim: false },
+            { icon: <Image source={require('../../../assets/images/held.png')} style={{ width: 22, height: 22 }} />, label: t('wallet.escrow', { amount: formatBaht(heldTotal) }), onPress: () => setShowHeld(v => !v), dim: held.length === 0 },
+            {
+              icon: <Image source={require('../../../assets/images/statement.png')} style={{ width: 22, height: 22 }} />,
+              label: t('wallet.statement'), onPress: () => router.push('/wallet-statement'), dim: false },
           ].map(({ icon, label, onPress, dim }) => (
             <Tap
-              key={icon}
+              key={label}
               onPress={onPress}
               style={{
                 opacity: dim ? 0.5 : 1,
@@ -177,7 +189,7 @@ export default function WalletScreen() {
                 width: 40, height: 40, borderRadius: 20,
                 backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
               }}>
-                <Text style={{ fontSize: 18, color: Brand.orange }}>{icon}</Text>
+                {icon}
               </View>
               <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.textSecondary }}>{label}</Text>
             </Tap>
@@ -195,7 +207,7 @@ export default function WalletScreen() {
               </Text>
             )}
             {held.map((o, i) => (
-              <View key={o.id}>
+              <Animated.View key={o.id} entering={listEnter(i)}>
                 {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
                 <Tap onPress={() => router.push(`/track/${o.id}`)} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
                   <View style={{ flex: 1 }}>
@@ -203,12 +215,12 @@ export default function WalletScreen() {
                       {o.vendors?.name ?? ''}
                     </Text>
                     <Text style={{ fontSize: 12, color: Brand.textSecondary }}>
-                      {o.queue_number != null ? t('wallet.escrowQueue', { n: o.queue_number }) + ' · ' : ''}{t(STATUS_KEY[o.status as keyof typeof STATUS_KEY])}
+                      {o.queue_number != null ? t('wallet.escrowQueue', { n: queueTicket(o.queue_number, o.vendors?.name) }) + ' · ' : ''}{t(ORDER_STATUS_LABEL[o.status as OrderStatus])}
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary }}>฿{formatBaht(o.total_amount)}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>฿{formatBaht(o.total_amount)}</Text>
                 </Tap>
-              </View>
+              </Animated.View>
             ))}
           </View>
         )}
@@ -240,7 +252,7 @@ export default function WalletScreen() {
               const cfg = TX_CONFIG[tx.type];
               const isPositive = tx.amount > 0;
               return (
-                <View key={tx.id}>
+                <Animated.View key={tx.id} entering={listEnter(i)}>
                   {i > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 16 }} />}
                   <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 }}>
                     {/* Icon */}
@@ -248,7 +260,9 @@ export default function WalletScreen() {
                       width: 44, height: 44, borderRadius: 22,
                       backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <Text style={{ fontSize: 18, color: cfg.color, fontWeight: '700' }}>{cfg.icon}</Text>
+                      {cfg.image
+                        ? <Image source={cfg.image} style={{ width: 24, height: 24 }} />
+                        : <Text style={{ fontSize: 18, color: cfg.color, fontWeight: '700' }}>{cfg.icon}</Text>}
                     </View>
 
                     {/* Info */}
@@ -263,11 +277,11 @@ export default function WalletScreen() {
                     </View>
 
                     {/* Amount */}
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: isPositive ? '#16a34a' : Brand.textPrimary }}>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: isPositive ? '#16a34a' : Brand.textPrimary, fontVariant: ['tabular-nums'] }}>
                       {isPositive ? '+' : ''}฿{formatBaht(Math.abs(tx.amount))}
                     </Text>
                   </View>
-                </View>
+                </Animated.View>
               );
             })}
           </View>

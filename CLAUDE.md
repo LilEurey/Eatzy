@@ -33,6 +33,11 @@ eas submit --platform ios --profile production
 ```
 
 > The store-location map (`react-native-maps`) needs a development build — run `npx expo run:ios` or an EAS `development` build, not Expo Go.
+> `EXPO_NO_PUSH=1 npx expo run:ios` — free Apple team can't sign the Push capability; this drops the entitlement (`app.config.js`) and NotificationIsland falls back to local notifications.
+
+## Environment
+
+`.env.local` (and EAS env for builds): `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `GOOGLE_MAPS_API_KEY` (Android map crashes with "addViewAt: failed" without it — needs rebuild, not reload), `GOOGLE_SERVICES_JSON` (EAS file var; locally `./google-services.json`, Android push).
 
 ## Project Structure
 
@@ -44,9 +49,10 @@ Eatzy/
 │   │   ├── (vendor)/     # Vendor dashboard — index.tsx redirects to overview; orders, menu, analytics, reviews, profile, notifications (real Supabase, not mock)
 │   │   ├── (admin)/      # Admin portal — create vendor store accounts + vendor store monitoring/force open-close (email/password auth, not Google)
 │   │   ├── (auth)/       # Login/onboarding stack
-│   │   ├── admin-login.tsx, vendor-login.tsx, cart.tsx, edit-preferences.tsx, notifications.tsx, search.tsx, stores.tsx, wallet-topup.tsx  # Screens outside the tab groups
+│   │   ├── admin-login.tsx, vendor-login.tsx, cart.tsx, edit-preferences.tsx, help.tsx, notifications.tsx, search.tsx, stores.tsx, wallet-topup.tsx, wallet-statement.tsx  # Screens outside the tab groups
 │   │   └── store/, item/, track/, rate/  # Detail screens
-│   ├── components/       # Reusable RN components (Tap, PillDropdown, ReviewCard, StoreMiniMap / StoreLocationPicker — each has a .web.tsx stub since react-native-maps is native-only)
+│   ├── components/       # Reusable RN components (Tap, PillDropdown, ReviewCard, NotificationIsland, home/ sections, StoreMiniMap / StoreLocationPicker — each has a .web.tsx stub since react-native-maps is native-only)
+│   ├── dynamic-island/   # Vendored iOS Dynamic Island-style notification card (used by NotificationIsland)
 │   ├── hooks/            # useGoogleSignIn, useFocusGuard + useLiveWhileFocused (focus-scoped loads), usePreferences (shared prefs cache + fail-closed dietary gate)
 │   ├── constants/        # theme.ts (Brand colors/tokens)
 │   ├── lib/
@@ -57,6 +63,8 @@ Eatzy/
 │   │   ├── edge-function.ts  # Supabase Edge Function invocation helper
 │   │   ├── alert.ts      # Cross-platform alert helper
 │   │   ├── geo.ts, vendor-analytics.ts, relative-time.ts, allergy-options.ts, scroll-lock.ts  # small helpers (geo, vendor-analytics have tests)
+│   │   ├── push.ts       # Expo push token registration (set_push_token RPC) + foreground handler
+│   │   ├── payments-csv.ts, sales-report.ts, wallet-statement.ts  # pure, tested: vendor CSV export, PDF report HTML, Bangkok-month statements
 │   │   ├── time.ts       # Bangkok timezone formatting / pickup-slot helpers
 │   │   ├── menu-categories.ts  # Drinks/Beverages category reconciliation + top-category picker (cold-start User Vector)
 │   │   ├── place-order.ts  # Checkout → one place_order() RPC (atomic; server owns queue#, prices, availability)
@@ -130,12 +138,13 @@ Real money (Stripe, added 2026-09-15) sits on either side of the in-app ledger:
 - Menu item Thai names/descriptions (`name_th`/`description_th`) and vendor `bio_th` are vendor-entered data, not app UI strings — DB columns, not `lib/i18n/`. Fall back to the base (English) text when the Thai column is empty. Handled by `localizedText()` in `src/lib/localize.ts`.
 - Notification rows snapshot `event` + params (vendor, queue number, amount) at insert time in the DB triggers (`notify_order_status_change()`, `notify_vendor_new_order()`) instead of pre-rendered English text. `notificationText()` in `localize.ts` renders from that snapshot using whatever locale is active *now* — not whichever locale was active when the trigger fired.
 - Student-facing lists that poll live state (orders, wallet) refetch on tab focus (`useFocusEffect`), not just on mount — apply the same pattern to any new tab/screen showing data that can change server-side while the tab is backgrounded.
+- **Push** — `notify_push()` AFTER INSERT trigger on `notifications` posts to Expo's push API via pg_net using `users.expo_push_token` (one token per user, last device wins). iOS suppresses the system banner in foreground; `NotificationIsland` (realtime INSERT subscription) shows its own card instead, so they don't double up.
 
 ## Data Model
 
 Keep schema consistent with this ERD for all SQL/migrations/types. Field names are authoritative.
 
-- **users** — id (uuid, references auth.users), name, email, university_id, role (student|vendor|admin), department, language, wallet_balance, avatar_url, notifications_enabled, created_at
+- **users** — id (uuid, references auth.users), name, email, university_id, role (student|vendor|admin), department, language, wallet_balance, avatar_url, notifications_enabled, expo_push_token, created_at
 - **user_preferences** — user_id, is_halal, is_vegetarian, is_jay, spice_level, budget_max, allergies (text[]), liked_cuisines (text[]), favorite_categories (text[])
 - **vendors** — id, name, stall_number, is_on_campus, address, latitude, longitude, is_halal_certified, open_time, close_time, is_open, bio, bio_th, cuisine_tags (text[]), estimated_wait_min, cover_image_url, current_queue_count, owner_user_id, created_at
 - **menu_items** — id, vendor_id, name, description, price, category, spice_level, is_available, is_halal, is_vegetarian, is_jay, allergens (text[]), tags (text[]), ingredients (text[]), preparation_time_min, image_url, is_featured, available_time_segment (breakfast|lunch|dinner|all), release_date, updated_at
@@ -167,5 +176,5 @@ Discover → Onboarding (Google login, preferences/allergies/budget) → Explore
 All surfaces read real Supabase — the DB carries real seeded KMUTT data (16 stalls, ~500 menu items). Mock fixtures (`src/lib/mock-data.ts`) were removed 2026-08-31; screens now show their own empty states when a query returns nothing, not fake data.
 - **Student side** — Home (`/(tabs)/index.tsx`) and search query Supabase directly. Empty-state copy: `home.noStallsOpen`, `home.noFeaturedItems`, `search.noResults`. Client state: `cart-store.ts` (single-vendor-per-cart rule), local component state for wallet.
 - **Vendor & admin side** — `vendor-store.ts` (orders/menu/profile, with Realtime) and the admin new-vendor / store-monitoring screens hit live tables.
-- Known shortcuts are `ponytail:` comments — `cart-store.ts` (single-vendor-per-cart) and the Stripe edge functions (`create-topup-intent`, `stripe-webhook`, `vendor-stripe-onboarding`, `transfer-order-payout`). Grep `ponytail:` before trusting this list — it drifts.
+- Known shortcuts are `ponytail:` comments (src, edge functions, migrations) — `grep -rn "ponytail:" src supabase` for the current list.
 - Vendor-store alerts use `translateActive()` from `lib/i18n` (non-React translator kept in step by `I18nProvider`) — don't hardcode English there.

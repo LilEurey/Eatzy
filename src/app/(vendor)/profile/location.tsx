@@ -70,14 +70,14 @@ export default function VendorStoreLocationScreen() {
   return (
     <View style={{ gap: 16 }}>
       <View>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.location.rowLabel')}</Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary }}>{t('vendor.location.rowLabel')}</Text>
         <Tap onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
           <Ionicons name="arrow-back" size={14} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#8A8F9B' }}>{t('vendor.profile.backCaption')}</Text>
         </Tap>
       </View>
 
-      <Text style={{ fontSize: 13, color: '#4B4F58', maxWidth: 480 }}>{t('vendor.location.hint')}</Text>
+      <Text style={{ fontSize: 13, lineHeight: 19, color: '#4B4F58', maxWidth: 480 }}>{t('vendor.location.hint')}</Text>
 
       <StoreLocationPicker
         point={point}

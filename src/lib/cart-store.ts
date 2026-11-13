@@ -2,8 +2,8 @@ import { useSyncExternalStore } from 'react';
 import { createEmitter } from '@/lib/create-emitter';
 
 // Minimal cross-screen cart. No dependency — module-level state + useSyncExternalStore.
-// ponytail: single active vendor per cart; adding from another vendor replaces it.
-// Multi-vendor carts would need per-vendor grouping — add when checkout supports it.
+// Multi-store: each line carries its vendor_id; checkout splits into one
+// order per stall via place_orders() (all or nothing).
 
 export type CartAddon = {
   id: string;
@@ -18,6 +18,7 @@ type CartItem = {
   // different add-on selections must coexist as two lines. line_id is a
   // module counter (RN has no reliable crypto.randomUUID).
   line_id: string;
+  vendor_id: string;
   menu_item_id: string;
   name: string;
   name_th: string | null;
@@ -30,12 +31,13 @@ type CartItem = {
 
 export const NOTE_MAX = 200;
 
+export type CartLine = CartItem;
+
 type Cart = {
-  vendor_id: string | null;
   items: CartItem[];
 };
 
-let cart: Cart = { vendor_id: null, items: [] };
+let cart: Cart = { items: [] };
 let lineSeq = 0;
 
 const emitter = createEmitter();
@@ -56,11 +58,6 @@ export function addToCart(
   addons: CartAddon[] = [],
   note = '',
 ) {
-  if (cart.vendor_id && cart.vendor_id !== item.vendor_id) {
-    cart.items = []; // switching vendors clears the cart
-  }
-  cart.vendor_id = item.vendor_id;
-
   const trimmedNote = note.trim().slice(0, NOTE_MAX);
   const sig = configSignature(item.id, addons, trimmedNote);
   const existing = cart.items.find(
@@ -71,6 +68,7 @@ export function addToCart(
   } else {
     cart.items.push({
       line_id: `l${++lineSeq}`,
+      vendor_id: item.vendor_id,
       menu_item_id: item.id,
       name: item.name,
       name_th: item.name_th ?? null,
@@ -96,17 +94,11 @@ export function setQty(lineId: string, delta: number) {
   if (!it) return;
   it.quantity += delta;
   cart.items = cart.items.filter(i => i.quantity > 0);
-  if (cart.items.length === 0) cart.vendor_id = null;
   emit();
 }
 
-/** True when adding an item from `vendorId` would replace the current cart (different vendor already in it). */
-export function hasVendorMismatch(vendorId: string): boolean {
-  return cart.vendor_id !== null && cart.vendor_id !== vendorId;
-}
-
 export function clearCart() {
-  cart = { vendor_id: null, items: [] };
+  cart = { items: [] };
   emit();
 }
 
@@ -115,7 +107,14 @@ export function lineUnitTotal(i: { unit_price: number; addons: CartAddon[] }) {
   return i.unit_price + i.addons.reduce((sum, a) => sum + a.price, 0);
 }
 
-export function cartSubtotal(c: Cart) {
+/** Lines grouped by stall, in first-added order — one checkout order per group. */
+export function groupByVendor<T extends { vendor_id: string }>(items: T[]): { vendor_id: string; items: T[] }[] {
+  const groups = new Map<string, T[]>();
+  for (const i of items) groups.set(i.vendor_id, [...(groups.get(i.vendor_id) ?? []), i]);
+  return [...groups].map(([vendor_id, items]) => ({ vendor_id, items }));
+}
+
+export function cartSubtotal(c: { items: { unit_price: number; addons: CartAddon[]; quantity: number }[] }) {
   return c.items.reduce((sum, i) => sum + lineUnitTotal(i) * i.quantity, 0);
 }
 

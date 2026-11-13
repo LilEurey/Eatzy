@@ -1,24 +1,30 @@
 import { isStoreOpen } from '@/lib/time';
+import { SkeletonDetail } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import { Image } from 'expo-image';
+import Svg, { Circle, Path } from 'react-native-svg';
+import Animated from 'react-native-reanimated';
+import { popIn, useStretchyHero } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
+import { HeroHeader } from '@/components/HeroHeader';
 import { ReviewCard } from '@/components/ReviewCard';
+import { AddonGroups, type AddonGroup, type AddonOption } from '@/components/item/AddonGroups';
+import { SimilarFoods, type SimilarItem } from '@/components/item/SimilarFoods';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
-import { addToCart, hasVendorMismatch, NOTE_MAX } from '@/lib/cart-store';
+import { addToCart, NOTE_MAX } from '@/lib/cart-store';
 import { formatBaht } from '@/lib/money';
 import { usePreferences, matchLineAllergens } from '@/hooks/usePreferences';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, translateActive } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import type { Database } from '@/types/database.types';
 
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
-type SimilarItem = { id: string; name: string; name_th: string | null; price: number; image_url: string | null; vendor_name: string; score: number };
 type Review = {
   id: string;
   score: number;
@@ -28,16 +34,6 @@ type Review = {
   users: { name: string | null; avatar_url: string | null } | null;
 };
 
-type AddonOption = { id: string; name: string; name_th: string | null; price: number; is_available: boolean; sort_order: number; allergens: string[] };
-type AddonGroup = {
-  id: string;
-  name: string;
-  name_th: string | null;
-  min_select: number;
-  max_select: number | null;
-  sort_order: number;
-  menu_item_addons: AddonOption[];
-};
 
 function SpiceIndicator({ level }: { level: number }) {
   const { t } = useI18n();
@@ -45,7 +41,7 @@ function SpiceIndicator({ level }: { level: number }) {
   return (
     <View style={{ flexDirection: 'row', gap: 2 }}>
       {Array.from({ length: 5 }).map((_, i) => (
-        <Text key={i} style={{ fontSize: 14, opacity: i < level ? 1 : 0.2 }}>🌶</Text>
+        <Image key={i} source={require('../../../assets/images/chili.png')} style={{ width: 24, height: 24, opacity: i < level ? 1 : 0.2 }} />
       ))}
     </View>
   );
@@ -53,12 +49,14 @@ function SpiceIndicator({ level }: { level: number }) {
 
 export default function ItemDetailScreen() {
   const { t, locale } = useI18n();
-  const { id, rec } = useLocalSearchParams<{ id: string; rec?: string }>();
+  const { id, rec, sim } = useLocalSearchParams<{ id: string; rec?: string; sim?: string }>();
+  const { ref: heroRef, heroStyle, barStyle } = useStretchyHero(280);
   const [qty, setQty] = useState(1);
   const [item, setItem] = useState<MenuItem | null | undefined>(undefined);
   const [vendorName, setVendorName] = useState('');
   const [storeOpen, setStoreOpen] = useState(true);
   const [similar, setSimilar] = useState<SimilarItem[]>([]);
+  const [addonsFailed, setAddonsFailed] = useState(false);
   const [groups, setGroups] = useState<AddonGroup[]>([]);
   // groupId -> selected option ids
   const [selected, setSelected] = useState<Record<string, string[]>>({});
@@ -68,7 +66,8 @@ export default function ItemDetailScreen() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('menu_items').select('*, vendors(name,is_open,open_time,close_time)').eq('id', id).maybeSingle();
+      const { data, error } = await supabase.from('menu_items').select('*, vendors(name,is_open,open_time,close_time)').eq('id', id).maybeSingle();
+      if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
       setItem(data ?? null);
       setVendorName(data?.vendors?.name ?? '');
       setStoreOpen(!data?.vendors || isStoreOpen(data.vendors));
@@ -83,7 +82,9 @@ export default function ItemDetailScreen() {
       .select('id,name,name_th,min_select,max_select,sort_order,menu_item_addons(id,name,name_th,price,is_available,sort_order,allergens)')
       .eq('menu_item_id', id)
       .order('sort_order')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // Without the groups a required add-on would vanish and checkout would reject the line.
+        if (error) { setAddonsFailed(true); showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed')); return; }
         const rows = ((data ?? []) as AddonGroup[])
           .map(g => ({
             ...g,
@@ -139,9 +140,9 @@ export default function ItemDetailScreen() {
 
   if (item === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonDetail />
+      </View>
     );
   }
 
@@ -194,7 +195,7 @@ export default function ItemDetailScreen() {
   const soldOut = !item.is_available;
   const optionsUnavailable = groups.some(g => g.min_select > 0 && g.menu_item_addons.length === 0);
   // Store open and the dish itself orderable — add-on validity is separate.
-  const orderable = storeOpen && !soldOut;
+  const orderable = storeOpen && !soldOut && !addonsFailed;
   // Base dish AND any selected add-on — selecting "Fried Egg" can newly trip
   // the warning even when the dish itself is allergen-free.
   const matchedAllergens = matchLineAllergens(item.allergens, selectedOptions.flatMap(o => o.allergens), prefs);
@@ -216,55 +217,37 @@ export default function ItemDetailScreen() {
     if (soldOut) return;
     const currentItem = item;
 
-    const addNow = () => {
-      if (matchedAllergens.length > 0) {
-        showConfirm(
-          t('item.allergyWarningTitle'),
-          t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
-          () => { addToCart(currentItem, qty, selectedOptions, note); router.push('/cart'); },
-          { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
-        );
-        return;
-      }
-      addToCart(currentItem, qty, selectedOptions, note);
-      router.push('/cart');
-    };
+    // Land on the dish's store (basket bar there) so the student keeps shopping.
+    // Dishes are only pushed from their store page (openItem / store list), so
+    // that store is the screen underneath; replace covers a deep link with no history.
+    // Similar-dish hops (sim=1) replace this screen, so the store underneath may be a different one.
+    const backToStore = () =>
+      !sim && router.canGoBack() ? router.back() : router.replace(`/store/${currentItem.vendor_id}`);
 
-    if (hasVendorMismatch(currentItem.vendor_id)) {
+    if (matchedAllergens.length > 0) {
       showConfirm(
-        t('item.vendorMismatchTitle'),
-        t('item.vendorMismatchMsg'),
-        addNow,
-        { confirmLabel: t('item.vendorMismatchConfirm'), cancelLabel: t('common.cancel'), destructive: true },
+        t('item.allergyWarningTitle'),
+        t('item.allergyWarningMsg', { allergens: matchedAllergens.join(', ') }),
+        () => { addToCart(currentItem, qty, selectedOptions, note); backToStore(); },
+        { confirmLabel: t('item.addAnyway'), cancelLabel: t('common.cancel'), destructive: true },
       );
       return;
     }
-    addNow();
+    addToCart(currentItem, qty, selectedOptions, note);
+    backToStore();
   }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 160 }}>
+      <Animated.ScrollView ref={heroRef} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 160 }}>
         {/* Image area */}
         <View style={{ height: 280, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, heroStyle]}>
           {item.image_url
-            ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
             : <Text style={{ fontSize: 90 }}>🍽️</Text>
           }
-          {/* Back button */}
-          <Tap
-            onPress={() => router.back()}
-            style={{
-              position: 'absolute', top: 16, left: 16,
-              width: 40, height: 40, borderRadius: 20,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              alignItems: 'center', justifyContent: 'center',
-              shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-            }}
-          >
-            <Text style={{ fontSize: 18, color: Brand.textPrimary }}>←</Text>
-          </Tap>
+          </Animated.View>
 
           {/* Featured badge */}
           {item.is_featured && (
@@ -282,7 +265,7 @@ export default function ItemDetailScreen() {
 
         <View style={{ padding: 20 }}>
           {/* Name + vendor */}
-          <Text style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5, marginBottom: 4 }}>
+          <Text lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 26, fontWeight: '800', color: Brand.textPrimary, letterSpacing: -0.5, marginBottom: 4 }}>
             {localizedText(item.name, item.name_th, locale)}
           </Text>
           <Tap onPress={() => router.push(`/store/${item.vendor_id}`)}>
@@ -294,17 +277,20 @@ export default function ItemDetailScreen() {
           {/* Dietary badges */}
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
             {item.is_halal && (
-              <View style={{ backgroundColor: '#d1fae5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 13, color: '#065f46', fontWeight: '700' }}>{t('common.halalCertified')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#d1fae5', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Image source={require('../../../assets/images/halal.png')} style={{ width: 22, height: 22 }} />
+                <Text style={{ fontSize: 15, color: '#065f46', fontWeight: '700' }}>{t('common.halalCertified')}</Text>
               </View>
             )}
             {item.is_vegetarian && (
-              <View style={{ backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 13, color: '#166534', fontWeight: '700' }}>{t('common.vegetarian')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Image source={require('../../../assets/images/vegetarian.png')} style={{ width: 22, height: 22 }} />
+                <Text style={{ fontSize: 15, color: '#166534', fontWeight: '700' }}>{t('common.vegetarian')}</Text>
               </View>
             )}
             {item.is_jay && (
-              <View style={{ backgroundColor: '#fef9c3', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef9c3', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Image source={require('../../../assets/images/jay.png')} style={{ width: 16, height: 16 }} />
                 <Text style={{ fontSize: 13, color: '#854d0e', fontWeight: '700' }}>{t('common.jay')}</Text>
               </View>
             )}
@@ -329,15 +315,31 @@ export default function ItemDetailScreen() {
             shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
           }}>
             {[
-              { icon: '⏱', value: item.preparation_time_min != null ? `${item.preparation_time_min} min` : '—', label: t('item.prepTime') },
-              { icon: '🏷️', value: `฿${item.price}`, label: t('item.price') },
+              {
+                icon: (
+                  <Svg width={22} height={22} viewBox="0 0 512 512">
+                    <Circle cx={256} cy={256} r={233} stroke="#000" strokeWidth={46} fill="none" />
+                    <Path d="M256 138V256L330 312" stroke="#000" strokeWidth={46} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </Svg>
+                ),
+                value: item.preparation_time_min != null ? `${item.preparation_time_min} min` : '—', label: t('item.prepTime') },
+              {
+                icon: (
+                  <Svg width={22} height={22} viewBox="0 0 512 512">
+                    <Path d="M300 36H446Q476 36 476 66V200Q476 230 455 251L262 444Q240 466 218 444L58 284Q36 262 58 240L240 58Q262 36 300 36Z" stroke="#000" strokeWidth={38} strokeLinejoin="round" fill="none" />
+                    <Circle cx={360} cy={150} r={37} stroke="#000" strokeWidth={37} fill="none" />
+                  </Svg>
+                ),
+                value: `฿${item.price}`, label: t('item.price') },
             ].map(({ icon, value, label }, i) => (
               <View key={label} style={{
                 flex: 1, alignItems: 'center', paddingVertical: 14,
                 borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: Brand.border,
               }}>
-                <Text style={{ fontSize: 20, marginBottom: 4 }}>{icon}</Text>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary }}>{value}</Text>
+                {typeof icon === 'string'
+                  ? <Text style={{ fontSize: 20, marginBottom: 4 }}>{icon}</Text>
+                  : <View style={{ height: 24, justifyContent: 'center', marginBottom: 4 }}>{icon}</View>}
+                <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.textPrimary, fontVariant: ['tabular-nums'] }}>{value}</Text>
                 <Text style={{ fontSize: 11, color: Brand.textSecondary }}>{label}</Text>
               </View>
             ))}
@@ -381,68 +383,7 @@ export default function ItemDetailScreen() {
             </View>
           )}
 
-          {/* Add-on groups */}
-          {groups.map(group => {
-            const chosen = selected[group.id] ?? [];
-            const ruleLabel = group.max_select === 1
-              ? t('item.addons.chooseOne')
-              : group.max_select != null
-                ? t('item.addons.chooseUpTo', { n: group.max_select })
-                : null;
-            return (
-              <View key={group.id} style={{ marginTop: 20 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary }}>
-                    {localizedText(group.name, group.name_th, locale)}
-                  </Text>
-                  {group.min_select >= 1 && (
-                    <View style={{ backgroundColor: '#fee2e2', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#b91c1c' }}>{t('item.addons.required')}</Text>
-                    </View>
-                  )}
-                  {ruleLabel && (
-                    <Text style={{ fontSize: 12, color: Brand.textSecondary }}>{ruleLabel}</Text>
-                  )}
-                </View>
-                <View style={{
-                  backgroundColor: Brand.card, borderRadius: 16, overflow: 'hidden',
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
-                }}>
-                  {group.menu_item_addons.map((opt, oi) => {
-                    const isOn = chosen.includes(opt.id);
-                    return (
-                      <View key={opt.id}>
-                        {oi > 0 && <View style={{ height: 1, backgroundColor: Brand.border, marginHorizontal: 14 }} />}
-                        <Tap
-                          onPress={() => toggleOption(group, opt.id)}
-                          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}
-                        >
-                          <View style={{
-                            width: 22, height: 22,
-                            borderRadius: group.max_select === 1 ? 11 : 6,
-                            borderWidth: 2, borderColor: isOn ? Brand.orange : Brand.border,
-                            backgroundColor: isOn ? Brand.orange : 'transparent',
-                            alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            {isOn && <Text style={{ color: '#fff', fontSize: 13, fontWeight: '900', lineHeight: 15 }}>✓</Text>}
-                          </View>
-                          <Text style={{ flex: 1, fontSize: 15, color: Brand.textPrimary }}>
-                            {localizedText(opt.name, opt.name_th, locale)}
-                          </Text>
-                          {opt.price > 0 && (
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.textSecondary }}>
-                              {t('item.addons.plusPrice', { price: opt.price })}
-                            </Text>
-                          )}
-                        </Tap>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            );
-          })}
+          <AddonGroups groups={groups} selected={selected} onToggle={toggleOption} />
 
           {/* Note for the kitchen — free-text message that rides with this cart line */}
           <View style={{ marginTop: 20 }}>
@@ -469,40 +410,7 @@ export default function ItemDetailScreen() {
             </Text>
           </View>
 
-          {/* Similar Foods — content-based (TF-IDF + cosine over ingredients/tags/category) */}
-          {similar.length > 0 && (
-            <View style={{ marginTop: 24 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: Brand.textPrimary, marginBottom: 12 }}>
-                {t('item.similarFoods')}
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                {similar.map(s => (
-                  <Tap
-                    key={s.id}
-                    onPress={() => router.push(`/item/${s.id}?rec=1`)}
-                    activeOpacity={0.85}
-                    style={{
-                      width: 140, borderRadius: 20, backgroundColor: Brand.card, overflow: 'hidden',
-                      shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
-                      shadowOpacity: 0.04, shadowRadius: 16, elevation: 2,
-                    }}
-                  >
-                    <View style={{ height: 120, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
-                      {s.image_url
-                        ? <Image source={{ uri: s.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                        : <Text style={{ fontSize: 32 }}>🍽️</Text>
-                      }
-                    </View>
-                    <View style={{ padding: 10 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#261812' }} numberOfLines={2}>{localizedText(s.name, s.name_th, locale)}</Text>
-                      <Text style={{ fontSize: 11, color: '#5a4136', marginBottom: 4 }} numberOfLines={1}>{s.vendor_name}</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{s.price}</Text>
-                    </View>
-                  </Tap>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+          <SimilarFoods items={similar} />
 
           {/* Community Reviews */}
           <View style={{ marginTop: 24 }}>
@@ -528,7 +436,8 @@ export default function ItemDetailScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+      <HeroHeader title={localizedText(item.name, item.name_th, locale)} barStyle={barStyle} />
 
       {/* Bottom — qty + add to cart */}
       <View style={{
@@ -571,9 +480,9 @@ export default function ItemDetailScreen() {
             >
               <Text style={{ fontSize: 20, color: Brand.orange, fontWeight: '700', lineHeight: 22 }}>−</Text>
             </Tap>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, minWidth: 28, textAlign: 'center' }}>
+            <Animated.Text key={qty} entering={popIn} style={{ fontSize: 16, fontWeight: '700', color: Brand.textPrimary, minWidth: 28, textAlign: 'center', fontVariant: ['tabular-nums'] }}>
               {qty}
-            </Text>
+            </Animated.Text>
             <Tap
               onPress={() => setQty(q => q + 1)}
               style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}

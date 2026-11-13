@@ -33,7 +33,7 @@ export type Scored<T> = { item: T; score: number };
 // written under both spellings. Keep the two lists in step.
 const DRINK_CATEGORIES = ['beverages', 'drinks'];
 
-export function isDrinkCategory(category: string | null): boolean {
+function isDrinkCategory(category: string | null): boolean {
   return !!category && DRINK_CATEGORIES.includes(category.toLowerCase());
 }
 

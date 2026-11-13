@@ -1,10 +1,14 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { Bone, SkeletonHome } from '@/components/Skeleton';
+import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
+import Animated from 'react-native-reanimated';
+import { enterUp } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { useLiveWhileFocused } from '@/hooks/useLiveWhileFocused';
 import { useFocusGuard } from '@/hooks/useFocusGuard';
+import { usePullToRefresh, useRefreshOnTabRetap } from '@/hooks/usePullToRefresh';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
@@ -12,7 +16,7 @@ import { localizedText } from '@/lib/localize';
 import { bangkokHour, type MealSegment, isStoreOpen } from '@/lib/time';
 import { loadHomeFeed, type PersonalizedItem, type SimilarToItem } from '@/lib/home-feed';
 import { usePreferences, refreshPreferences } from '@/hooks/usePreferences';
-import { CardRow, ItemCard } from '@/components/home/ItemCard';
+import { CardRow, ItemCard, SectionTitle } from '@/components/home/ItemCard';
 import {
   TopBar, QueueBanner, PromotedSection, TrendingSection, NoQueueSection, StoreOptions, MenuItemCard,
   type Vendor, type MenuItem,
@@ -52,6 +56,20 @@ function getTimeBasedHeaderKey(segment: MealSegment): TranslationKey {
   return 'home.timeBasedDinner';
 }
 
+// Stand-in for a recommendation row whose edge function hasn't answered yet —
+// same title and card footprint as the real CardRow, so the sections below
+// don't jump when it fills in.
+function PendingRow({ title }: { title: string }) {
+  return (
+    <View style={{ marginBottom: 28 }}>
+      <SectionTitle>{title}</SectionTitle>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        {[0, 1, 2].map(i => <Bone key={i} style={{ width: 150, height: 210, borderRadius: 24 }} />)}
+      </View>
+    </View>
+  );
+}
+
 export default function HomeScreen() {
   const { t, locale } = useI18n();
   const { prefs, loading: prefsLoading, error: prefsError } = usePreferences();
@@ -62,18 +80,22 @@ export default function HomeScreen() {
   const [trending, setTrending] = useState<MenuItem[]>([]);
   const [latestRelease, setLatestRelease] = useState<MenuItem[]>([]);
   const [drinks, setDrinks] = useState<MenuItem[]>([]);
-  const [recommendedForYou, setRecommendedForYou] = useState<PersonalizedItem[]>([]);
+  // null = the edge function hasn't answered yet (first load only) — renders
+  // a PendingRow. A later reload keeps the previous rows until the new ones land.
+  const [recommendedForYou, setRecommendedForYou] = useState<PersonalizedItem[] | null>(null);
   const [becauseYouOrdered, setBecauseYouOrdered] = useState<MenuItem[]>([]);
   const [timeBasedItems, setTimeBasedItems] = useState<MenuItem[]>([]);
   const [mealSegment, setMealSegment] = useState<MealSegment>('lunch');
-  const [similarToFeatured, setSimilarToFeatured] = useState<SimilarToItem[]>([]);
+  const [similarToFeatured, setSimilarToFeatured] = useState<SimilarToItem[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   const focusGuard = useFocusGuard();
+  const { key: refreshKey, done: refreshDone, control: refreshControl, refresh } = usePullToRefresh();
+  const scrollRef = useRefreshOnTabRetap(refresh);
 
-  // The whole fetch-filter-rank fanout (9 concurrent queries, dietary +
-  // drink-category filtering, rank restore, Similar Foods) lives in
+  // The whole fetch-filter-rank fanout (8 concurrent queries, dietary +
+  // drink-category filtering, rank restore, the two recommendation rows) lives in
   // loadHomeFeed (lib/home-feed.ts) so it's unit-tested without a React tree.
   // It never throws — a failed load comes back with every section already
   // emptied, so there's one plain spread into state here, not a try/catch.
@@ -103,13 +125,19 @@ export default function HomeScreen() {
         setTrending(result.trending);
         setLatestRelease(result.latestRelease);
         setDrinks(result.drinks);
-        setRecommendedForYou(result.recommendedForYou);
         setBecauseYouOrdered(result.becauseYouOrdered);
         setTimeBasedItems(result.timeBasedItems);
-        setSimilarToFeatured(result.similarToFeatured);
         setLoading(false);
+        refreshDone();
+        // The two edge-function rows are still in flight (0.7–1.8s each vs
+        // ~150ms for everything above) — the feed is on screen already and
+        // these fill in when they land. Neither promise rejects.
+        void result.recommendedForYou.then(rows => { if (!cancelledRef.current) setRecommendedForYou(rows); });
+        void result.similarToFeatured.then(rows => { if (!cancelledRef.current) setSimilarToFeatured(rows); });
       })();
-    }, [focusGuard, prefs, prefsLoading])
+    // refreshKey: a pull re-runs the fanout.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [focusGuard, prefs, prefsLoading, refreshKey, refreshDone])
   );
 
   useLiveWhileFocused(async isCancelled => {
@@ -133,7 +161,7 @@ export default function HomeScreen() {
     // order, the notifications row inserts live — subscribe so the dot lights
     // up without needing a tab-away-and-back, same pattern as notifications.tsx.
     const channel = supabase
-      .channel(`home-notifications-${user.id}`)
+      .channel(`home-notifications-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
         if (!isCancelled()) setHasUnreadNotifications(true);
       })
@@ -143,8 +171,8 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonHome />
       </SafeAreaView>
     );
   }
@@ -187,13 +215,14 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }} edges={['top']}>
       <TopBar avatarUrl={avatarUrl} firstName={firstName} hasUnreadNotifications={hasUnreadNotifications} />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} refreshControl={refreshControl} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         {/* Greeting */}
-        <Text style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
+        <Animated.Text entering={enterUp()} lineBreakStrategyIOS="push-out" textBreakStrategy="balanced" style={{ fontSize: 32, fontWeight: '700', color: '#261812', letterSpacing: -0.32, marginBottom: 20 }}>
           {t(getGreetingKey())}{firstName ? `, ${firstName}.` : '.'}
-        </Text>
+        </Animated.Text>
 
         {/* Search bar */}
+        <Animated.View entering={enterUp(80)}>
         <Tap
           activeOpacity={0.8}
           onPress={() => router.push('/search')}
@@ -207,6 +236,7 @@ export default function HomeScreen() {
           </View>
           <Text style={{ color: '#5a4136', fontSize: 16 }}>{t('home.searchPlaceholder')}</Text>
         </Tap>
+        </Animated.View>
 
 
         {topVendor && <QueueBanner vendor={topVendor} queue={queue} />}
@@ -228,10 +258,13 @@ export default function HomeScreen() {
             place this renders is item/[id].tsx (anchored on whatever dish
             the student is viewing); the home feed has no "current dish" to
             anchor on, so Promoted stands in for that. */}
-        {featured && (
+        {featured && !similarToFeatured && (
+          <PendingRow title={t('home.similarFoodsTo', { name: localizedText(featured.name, featured.name_th, locale) })} />
+        )}
+        {featured && similarToFeatured && (
           <CardRow title={t('home.similarFoodsTo', { name: localizedText(featured.name, featured.name_th, locale) })} count={similarToFeatured.length}>
             {similarToFeatured.map(item => (
-              <ItemCard key={item.id} itemId={item.id} recommended imageUrl={item.image_url}
+              <ItemCard key={item.id} itemId={item.id} vendorId={item.vendor_id} recommended imageUrl={item.image_url}
                 title={localizedText(item.name, item.name_th, locale)} vendorName={item.vendor_name} price={item.price} />
             ))}
           </CardRow>
@@ -245,12 +278,16 @@ export default function HomeScreen() {
 
         {/* Recommended For You — personalized TF-IDF ranking (cold-started
             from user_preferences until real order history exists) */}
-        <CardRow title={t('home.recommendedForYou')} count={recommendedForYou.length}>
-          {recommendedForYou.map(item => (
-            <ItemCard key={item.id} itemId={item.id} recommended imageUrl={item.image_url}
-              title={localizedText(item.name, item.name_th, locale)} vendorName={item.vendor_name} price={item.price} />
-          ))}
-        </CardRow>
+        {recommendedForYou ? (
+          <CardRow title={t('home.recommendedForYou')} count={recommendedForYou.length}>
+            {recommendedForYou.map(item => (
+              <ItemCard key={item.id} itemId={item.id} vendorId={item.vendor_id} recommended imageUrl={item.image_url}
+                title={localizedText(item.name, item.name_th, locale)} vendorName={item.vendor_name} price={item.price} />
+            ))}
+          </CardRow>
+        ) : (
+          <PendingRow title={t('home.recommendedForYou')} />
+        )}
 
         {/* Because You Ordered — collaborative filtering off the caller's
             own order history; empty until real orders exist */}

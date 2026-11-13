@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react';
-import { View, Text, TextInput, Switch, Modal, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, Switch, Modal } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn } from '@/lib/motion';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
-import { showAlert } from '@/lib/alert';
+import { showAlert, showConfirm } from '@/lib/alert';
+import { toggled } from '@/lib/toggle-set';
 import { useI18n } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { ALLERGEN_VOCAB } from '@/lib/allergy-options';
@@ -24,16 +27,7 @@ type Group = {
 type GroupDraft = { editing: Group | null; name: string; nameTh: string; min: string; max: string };
 type OptionDraft = { groupId: string; editing: Option | null; name: string; nameTh: string; price: string; available: boolean; allergens: Set<string> };
 
-function confirmDelete(title: string, message: string, onConfirm: () => void) {
-  if (Platform.OS === 'web') {
-    if (window.confirm(`${title}\n\n${message}`)) onConfirm();
-  } else {
-    Alert.alert(title, message, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: onConfirm },
-    ]);
-  }
-}
+const DELETE = { confirmLabel: 'Delete', destructive: true };
 
 export default function MenuItemAddonsScreen() {
   const { t, locale } = useI18n();
@@ -95,11 +89,11 @@ export default function MenuItemAddonsScreen() {
   }
 
   function deleteGroup(g: Group) {
-    confirmDelete(t('vendor.addons.deleteGroupTitle'), t('vendor.addons.deleteGroupMsg', { name: g.name }), async () => {
+    showConfirm(t('vendor.addons.deleteGroupTitle'), t('vendor.addons.deleteGroupMsg', { name: g.name }), async () => {
       const { error } = await supabase.from('menu_item_addon_groups').delete().eq('id', g.id);
       if (error) { showError(error.message); return; }
       await reload();
-    });
+    }, DELETE);
   }
 
   // ─── Option CRUD ──────────────────────────────────────────────────────────
@@ -129,11 +123,11 @@ export default function MenuItemAddonsScreen() {
   }
 
   function deleteOption(o: Option) {
-    confirmDelete(t('vendor.addons.deleteOptionTitle'), t('vendor.addons.deleteOptionMsg', { name: o.name }), async () => {
+    showConfirm(t('vendor.addons.deleteOptionTitle'), t('vendor.addons.deleteOptionMsg', { name: o.name }), async () => {
       const { error } = await supabase.from('menu_item_addons').delete().eq('id', o.id);
       if (error) { showError(error.message); return; }
       await reload();
-    });
+    }, DELETE);
   }
 
   async function toggleOptionAvailable(o: Option) {
@@ -150,7 +144,7 @@ export default function MenuItemAddonsScreen() {
   return (
     <View style={{ gap: 20 }}>
       <View>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.textPrimary }}>{t('vendor.addons.title')}</Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary }}>{t('vendor.addons.title')}</Text>
         <Text style={{ fontSize: 13, color: '#8A8F9B', marginTop: 2 }}>
           {t('vendor.addons.subtitle', { name: dishLabel })}
         </Text>
@@ -293,12 +287,7 @@ export default function MenuItemAddonsScreen() {
               return (
                 <Tap
                   key={a.key}
-                  onPress={() => setOptionDraft(d => {
-                    if (!d) return d;
-                    const next = new Set(d.allergens);
-                    if (next.has(a.key)) next.delete(a.key); else next.add(a.key);
-                    return { ...d, allergens: next };
-                  })}
+                  onPress={() => setOptionDraft(d => d && { ...d, allergens: toggled(d.allergens, a.key) })}
                   style={{
                     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
                     borderColor: on ? Brand.vendorAccent : '#C9CCD6',
@@ -324,9 +313,11 @@ function EditorModal({ visible, onClose, children }: { visible: boolean; onClose
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Tap activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 28 }}>
-        <Tap activeOpacity={1} onPress={() => {}} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, gap: 14 }}>
-          {children}
-        </Tap>
+        <Animated.View entering={dialogIn}>
+          <Tap activeOpacity={1} haptic={false} onPress={() => {}} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, gap: 14 }}>
+            {children}
+          </Tap>
+        </Animated.View>
       </Tap>
     </Modal>
   );

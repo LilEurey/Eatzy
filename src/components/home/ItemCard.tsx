@@ -1,11 +1,21 @@
-import type { ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
+import Animated from 'react-native-reanimated';
+import { enterUp, rowEnter } from '@/lib/motion';
 import { router } from 'expo-router';
 import { Tap } from '@/components/Tap';
 import { Brand } from '@/constants/theme';
 import { useI18n } from '@/lib/i18n';
 import { usePreferences, matchAllergens } from '@/hooks/usePreferences';
+
+/** Open the dish's store page scrolled to that dish (Grab-style); the student taps it from there.
+ *  Falls back to the bare dish page when the caller has no vendor id. */
+export function openItem(itemId: string, vendorId?: string, recommended?: boolean) {
+  const rec = recommended ? 'rec=1' : '';
+  if (vendorId) router.push(`/store/${vendorId}?item=${itemId}${rec && `&${rec}`}`);
+  else router.push(`/item/${itemId}${rec && `?${rec}`}`);
+}
 
 // Small red pill shown on a menu card when the dish carries an allergen the
 // student listed. Same "warn, don't hide" treatment as search.tsx. Sections
@@ -23,7 +33,7 @@ export function AllergenPill({ allergens }: { allergens: string[] | null }) {
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <Text style={{ fontSize: 24, fontWeight: '700', color: '#261812', marginBottom: 16 }}>{children}</Text>;
+  return <Text style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: '#261812', marginBottom: 16 }}>{children}</Text>;
 }
 
 export function EmptyCard({ text, marginBottom }: { text: string; marginBottom?: number }) {
@@ -44,21 +54,27 @@ export function EmptyCard({ text, marginBottom }: { text: string; marginBottom?:
 export function CardRow({ title, count, emptyText, children }: { title: string; count: number; emptyText?: string; children: ReactNode }) {
   if (count === 0 && !emptyText) return null;
   return (
-    <View style={{ marginBottom: 28 }}>
+    <Animated.View entering={enterUp()} style={{ marginBottom: 28 }}>
       <SectionTitle>{title}</SectionTitle>
       {count > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-          {children}
+          {/* Cards cascade in left-to-right; capped so long rows don't lag. */}
+          {Children.toArray(children).map((child, i) => (
+            <Animated.View key={isValidElement(child) && child.key != null ? child.key : i} entering={rowEnter(i)}>
+              {child}
+            </Animated.View>
+          ))}
         </ScrollView>
       ) : (
         <EmptyCard text={emptyText!} />
       )}
-    </View>
+    </Animated.View>
   );
 }
 
 type ItemCardProps = {
   itemId: string;
+  vendorId?: string;
   // Recommendation rows append ?rec=1 → item/[id] logs the view as
   // was_recommended, so ml_interactions can tell a recommended tap from a browse.
   recommended?: boolean;
@@ -72,10 +88,10 @@ type ItemCardProps = {
   allergens?: string[] | null;
 };
 
-export function ItemCard({ itemId, recommended, imageUrl, emoji = '🍽️', badge, title, vendorName, price, allergens }: ItemCardProps) {
+export function ItemCard({ itemId, vendorId, recommended, imageUrl, emoji = '🍽️', badge, title, vendorName, price, allergens }: ItemCardProps) {
   return (
     <Tap
-      onPress={() => (recommended ? router.push(`/item/${itemId}?rec=1`) : router.push(`/item/${itemId}`))}
+      onPress={() => openItem(itemId, vendorId, recommended)}
       activeOpacity={0.85}
       style={{
         width: 150, borderRadius: 24, backgroundColor: Brand.card, overflow: 'hidden',
@@ -85,7 +101,7 @@ export function ItemCard({ itemId, recommended, imageUrl, emoji = '🍽️', bad
     >
       <View style={{ height: 130, backgroundColor: Brand.orangeLight, alignItems: 'center', justifyContent: 'center' }}>
         {imageUrl
-          ? <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+          ? <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
           : <Text style={{ fontSize: 36 }}>{emoji}</Text>
         }
         {badge}
@@ -98,7 +114,7 @@ export function ItemCard({ itemId, recommended, imageUrl, emoji = '🍽️', bad
           {vendorName}
         </Text>
         {allergens !== undefined && <AllergenPill allergens={allergens} />}
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100' }}>฿{price}</Text>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: '#a04100', fontVariant: ['tabular-nums'] }}>฿{price}</Text>
       </View>
     </Tap>
   );

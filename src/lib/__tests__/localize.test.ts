@@ -29,7 +29,7 @@ describe('notificationText', () => {
     );
     expect(out.title).toContain('notif.orderReady.title');
     expect(out.body).toContain('"vendor":"Som Tam"');
-    expect(out.body).toContain('"queue":"7"');
+    expect(out.body).toContain('"queue":"S007"');
   });
 
   it('falls back to the stored title/body when the event is unknown or null', () => {
@@ -45,5 +45,16 @@ describe('notificationText', () => {
       t,
     );
     expect(out.body).toContain('"queue":"—"');
+  });
+});
+
+describe('queueTicket', () => {
+  const { queueTicket } = jest.requireActual('@/lib/order-view') as typeof import('@/lib/order-view');
+  it('formats vendor initial + padded number', () => {
+    expect(queueTicket(7, 'Som Tam')).toBe('S007');
+    expect(queueTicket(1042, 'mama noodle')).toBe('M1042');
+    expect(queueTicket(5, 'ร้าน 99 Kitchen')).toBe('K005');
+    expect(queueTicket(5, null)).toBe('Q005');
+    expect(queueTicket(null, 'Som Tam')).toBe('—');
   });
 });

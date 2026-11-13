@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
+import { SkeletonList } from '@/components/Skeleton';
+import { View, Text, ScrollView, TextInput, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import Animated from 'react-native-reanimated';
+import { enterUp, EASE_OUT } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert } from '@/lib/alert';
-import { useI18n, type TranslationKey } from '@/lib/i18n';
+import * as Haptics from 'expo-haptics';
+import { useI18n, translateActive, type TranslationKey } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { mapOrderItems } from '@/lib/order-view';
 
@@ -19,8 +23,10 @@ const LABEL_KEYS: (TranslationKey | null)[] = [
 type RateOrder = {
   id: string;
   vendor_name: string;
+  vendor_image: string | null;
   items: { name: string; name_th: string | null; addons: { name: string; name_th: string | null }[] }[];
   menu_item_ids: string[];
+  rated: boolean;
 };
 
 export default function RateScreen() {
@@ -50,21 +56,24 @@ export default function RateScreen() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('orders')
-        .select('id,vendors(name),order_items(menu_item_id,quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
+        .select('id,vendors(name,cover_image_url),ratings(id),order_items(menu_item_id,quantity,unit_price,menu_items(name,name_th),order_item_addons(name,name_th,price))')
         .eq('id', id)
         .maybeSingle();
+      if (error) showAlert(translateActive('common.errorTitle'), translateActive('common.loadFailed'));
       if (!data) { setOrder(null); return; }
       setOrder({
         id: data.id,
         vendor_name: data.vendors?.name ?? '',
+        vendor_image: data.vendors?.cover_image_url ?? null,
         items: mapOrderItems(data.order_items),
         // The review is order-level ("rate your order from X"), so it applies
         // to every dish in it — not to whichever order_items row an unordered
         // embed happened to return first (which also made a re-rate upsert
         // against a different dish and create a second review).
         menu_item_ids: [...new Set(data.order_items.map(oi => oi.menu_item_id))].sort(),
+        rated: data.ratings.length > 0,
       });
     }
     void load();
@@ -72,13 +81,13 @@ export default function RateScreen() {
 
   if (order === undefined) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Brand.orange} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
+        <SkeletonList title />
       </SafeAreaView>
     );
   }
 
-  if (!order) {
+  if (!order || order.rated) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Brand.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
@@ -87,8 +96,8 @@ export default function RateScreen() {
           </Tap>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 40 }}>🧾</Text>
-          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t('common.orderNotFound')}</Text>
+          <Text style={{ fontSize: 40 }}>{order ? '⭐' : '🧾'}</Text>
+          <Text style={{ color: Brand.textSecondary, marginTop: 12 }}>{t(order ? 'rate.alreadyRated' : 'common.orderNotFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -120,24 +129,22 @@ export default function RateScreen() {
       return;
     }
 
-    // upsert, not insert: ratings carries unique (user_id, menu_item_id,
-    // order_id), and the orders list offers "Rate" on every completed order
-    // with no already-rated check — so re-rating one raised a raw 23505
-    // duplicate-key error under a "not found" alert. Re-rating now just
-    // revises the existing review, which is what the student meant anyway.
-    const { error } = await supabase.from('ratings').upsert(order.menu_item_ids.map(menuItemId => ({
+    // Plain insert: one rating per order (no UPDATE policy, 20261014020000).
+    // A duplicate means another tab/device already rated it.
+    const { error } = await supabase.from('ratings').insert(order.menu_item_ids.map(menuItemId => ({
       user_id: user.id,
       menu_item_id: menuItemId,
       order_id: order.id,
       score,
       comment: comment.trim() || null,
       photo_urls: photoUrls,
-    })), { onConflict: 'user_id,menu_item_id,order_id' });
+    })));
     setSubmitting(false);
     if (error) {
-      showAlert(t('common.errorTitle'), error.message);
+      showAlert(t('common.errorTitle'), error.code === '23505' ? t('rate.alreadyRated') : error.message);
       return;
     }
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     showAlert(t('rate.thanksTitle'), t('rate.thanksMsg', { vendor, score }), () =>
       router.replace('/(tabs)/orders'),
     );
@@ -150,14 +157,16 @@ export default function RateScreen() {
         <Tap onPress={() => router.back()}>
           <Text style={{ fontSize: 22, color: Brand.orange }}>←</Text>
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.textPrimary }}>{t('rate.title')}</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: Brand.textPrimary }}>{t('rate.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
         {/* Vendor + items */}
         <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 28 }}>
-          <Text style={{ fontSize: 44, marginBottom: 8 }}>🍽️</Text>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary }}>{vendor}</Text>
+          {order.vendor_image
+            ? <Image source={{ uri: order.vendor_image }} style={{ width: 72, height: 72, borderRadius: 36, marginBottom: 8 }} />
+            : <Image source={require('../../../assets/images/rate.png')} style={{ width: 64, height: 64, marginBottom: 8 }} resizeMode="contain" />}
+          <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: Brand.textPrimary }}>{vendor}</Text>
           <Text style={{ fontSize: 13, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' }}>
             {order.items.map(i => {
               const addons = i.addons.length ? ` (${i.addons.map(a => localizedText(a.name, a.name_th, locale)).join(', ')})` : '';
@@ -171,13 +180,20 @@ export default function RateScreen() {
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {[1, 2, 3, 4, 5].map(n => (
               <Tap key={n} onPress={() => setScore(n)} activeOpacity={0.7}>
-                <Text style={{ fontSize: 40, opacity: n <= score ? 1 : 0.25 }}>⭐</Text>
+                {/* Lit stars grow and cascade left-to-right (CSS transition, delay per star) */}
+                <Animated.Text style={{
+                  fontSize: 40, opacity: n <= score ? 1 : 0.25,
+                  transform: [{ scale: n <= score ? 1.12 : 1 }],
+                  transitionProperty: ['opacity', 'transform'], transitionDuration: 220,
+                  transitionDelay: (n - 1) * 40, transitionTimingFunction: EASE_OUT,
+                }}>⭐</Animated.Text>
               </Tap>
             ))}
           </View>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.orange, height: 22, marginTop: 10 }}>
+          <Animated.Text key={score} entering={enterUp()}
+            style={{ fontSize: 15, fontWeight: '700', color: Brand.orange, height: 22, marginTop: 10 }}>
             {LABEL_KEYS[score] ? t(LABEL_KEYS[score]!) : ''}
-          </Text>
+          </Animated.Text>
         </View>
 
         {/* Comment */}

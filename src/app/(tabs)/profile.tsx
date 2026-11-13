@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Modal, Image, ActivityIndicator, Switch } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn } from '@/lib/motion';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -8,10 +10,11 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
+import { ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-lifecycle';
 import { clearCart } from '@/lib/cart-store';
 import { usePreferences } from '@/hooks/usePreferences';
 import { showAlert, comingSoonAlert } from '@/lib/alert';
-import { useI18n, LOCALE_LABELS, type Locale, type TranslationKey } from '@/lib/i18n';
+import { useI18n, LOCALE_LABELS, type Locale } from '@/lib/i18n';
 import { localizedText } from '@/lib/localize';
 import { formatBangkokClock, isBangkokToday, formatBangkokDate } from '@/lib/time';
 
@@ -53,18 +56,11 @@ type RecentOrder = {
   itemSummary: string;
 };
 
-const ORDER_STATUS_LABEL: Record<string, TranslationKey> = {
-  pending: 'orders.status.pending',
-  accepted: 'orders.status.preparing',
-  ready: 'orders.status.ready',
-  completed: 'orders.status.completed',
-  rejected: 'orders.status.rejected',
-  cancelled: 'orders.status.cancelled',
-};
-
 export default function ProfileScreen() {
   const { t, locale, setLocale } = useI18n();
-  const [name, setName] = useState('Student');
+  // Empty until the users row loads — a 'Student' default here flashed on
+  // first open of the tab before the real name replaced it.
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -105,7 +101,7 @@ export default function ProfileScreen() {
       // the in-app users.name row below replaces it — users.name is the
       // only source.
       supabase.auth.getUser().then(async ({ data: { user } }) => {
-        if (!user) { setRecentOrder(null); setHasUnreadNotifications(false); return; } // dev skip-login: keep defaults
+        if (!user) { setName('Student'); setRecentOrder(null); setHasUnreadNotifications(false); return; } // dev skip-login: placeholder profile
         setEmail(user.email ?? '');
 
         const [profileRes, orderRes, notifRes] = await Promise.all([
@@ -242,7 +238,7 @@ export default function ProfileScreen() {
         </Tap>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {/* Profile card */}
         <View style={{
           backgroundColor: '#fff', borderRadius: 24, padding: 24, marginTop: 8, marginBottom: 12,
@@ -280,7 +276,7 @@ export default function ProfileScreen() {
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 24, fontWeight: '800', color: '#261812', letterSpacing: -0.32 }} numberOfLines={1}>{name}</Text>
               <Text style={{ fontSize: 14, color: '#5A4136', marginTop: 4 }} numberOfLines={1}>
-                {email || t('profile.kmuttStudent')}
+                {email || (name ? t('profile.kmuttStudent') : '')}
               </Text>
             </View>
           </View>
@@ -323,7 +319,7 @@ export default function ProfileScreen() {
         {/* Recent Orders */}
         <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.04, shadowRadius: 15, elevation: 1 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#261812' }}>{t('profile.recentOrders')}</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: '#261812' }}>{t('profile.recentOrders')}</Text>
             <Tap onPress={() => router.push('/(tabs)/orders')}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#A04100' }}>{t('profile.viewAll')}</Text>
             </Tap>
@@ -338,8 +334,8 @@ export default function ProfileScreen() {
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, flex: 1 }}>
-                <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#F8DDD2', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 22 }}>🍽️</Text>
+                <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#F8DDD2', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+                  <Image source={require('../../../assets/images/order.png')} style={{ width: 36, height: 36 }} resizeMode="contain" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }} numberOfLines={1}>{recentOrder.itemSummary}</Text>
@@ -347,10 +343,10 @@ export default function ProfileScreen() {
                 </View>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812' }}>฿{recentOrder.total_amount}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#261812', fontVariant: ['tabular-nums'] }}>฿{recentOrder.total_amount}</Text>
                 <View style={{ backgroundColor: 'rgba(255,107,0,0.1)', borderRadius: 9999, paddingHorizontal: 4, paddingVertical: 3, marginTop: 4 }}>
                   <Text style={{ fontSize: 12, fontWeight: '500', color: '#A04100' }}>
-                    {t(ORDER_STATUS_LABEL[recentOrder.status] ?? 'orders.status.completed')}
+                    {t(ORDER_STATUS_LABEL[recentOrder.status as OrderStatus] ?? 'orders.status.completed')}
                   </Text>
                 </View>
               </View>
@@ -425,7 +421,7 @@ export default function ProfileScreen() {
           onPress={() => setLanguagePickerOpen(false)}
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 }}
         >
-          <View style={{ backgroundColor: Brand.card, borderRadius: 20, padding: 8 }}>
+          <Animated.View entering={dialogIn} style={{ backgroundColor: Brand.card, borderRadius: 20, padding: 8 }}>
             <Text style={{
               fontSize: 15, fontWeight: '700', color: Brand.textPrimary,
               paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
@@ -450,7 +446,7 @@ export default function ProfileScreen() {
                 {locale === code && <Text style={{ color: Brand.orange, fontSize: 16, fontWeight: '700' }}>✓</Text>}
               </Tap>
             ))}
-          </View>
+          </Animated.View>
         </Tap>
       </Modal>
     </SafeAreaView>

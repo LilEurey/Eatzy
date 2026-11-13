@@ -6,6 +6,7 @@ import { translateActive as tr } from '@/lib/i18n';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { confirmHandoff, isEarned, transitionOrderWithAlert, type OrderStatus } from '@/lib/order-lifecycle';
 import { createEmitter } from '@/lib/create-emitter';
+import { queueTicket } from '@/lib/order-view';
 
 // Vendor-side state — orders, menu, store-open — backed by real Supabase
 // queries + Realtime, scoped to whichever vendor the signed-in user owns.
@@ -146,10 +147,12 @@ function mapOrder(row: OrderRow): VendorOrder {
   };
 }
 
+const MENU_SELECT = 'id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min';
+
 async function fetchMenu(vendorId: string) {
   const { data, error } = await supabase
     .from('menu_items')
-    .select('id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
+    .select(MENU_SELECT)
     .eq('vendor_id', vendorId)
     .order('name');
   // On a failed refetch keep the last good list — [] would show an empty menu.
@@ -168,6 +171,12 @@ async function fetchOrders(vendorId: string) {
   // Keep the last good queue on a failed refetch — [] would tell the vendor nothing is waiting.
   if (error) { console.warn('fetchOrders failed:', error.message); return; }
   orders = data.map(mapOrder);
+}
+
+/** Refetch the signed-in vendor's orders after a mutation, then notify subscribers. */
+async function refreshOrders() {
+  if (vendorProfile) await fetchOrders(vendorProfile.id);
+  emit();
 }
 
 async function fetchNotifications(userId: string) {
@@ -196,7 +205,7 @@ export async function markNotificationsRead() {
 function subscribeRealtime(vendorId: string, userId: string) {
   if (realtimeChannel) void supabase.removeChannel(realtimeChannel);
   realtimeChannel = supabase
-    .channel(`vendor-${vendorId}`)
+    .channel(`vendor-${vendorId}-${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
       void fetchOrders(vendorId).then(emit);
     })
@@ -294,8 +303,7 @@ export async function acceptOrder(id: string) {
   if (data === 'insufficient_balance') {
     showAlert(tr('vendor.err.autoRejectedTitle'), tr('vendor.err.autoRejectedMsg'));
   }
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 export async function rejectOrder(id: string) {
@@ -309,8 +317,7 @@ export async function rejectOrder(id: string) {
     lostRaceMessage: tr('vendor.err.notPending'),
   });
   if (!ok) return;
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 export async function markReady(id: string) {
@@ -326,8 +333,7 @@ export async function markReady(id: string) {
     lostRaceMessage: tr('vendor.err.notAccepted'),
   });
   if (!ok) return;
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 // After accept (charged) the only way out is this RPC: it locks the order
@@ -336,15 +342,13 @@ export async function markReady(id: string) {
 export async function cancelAcceptedOrder(id: string) {
   const { error } = await supabase.rpc('vendor_cancel_order', { p_order_id: id });
   if (error) { showAlert(tr('vendor.err.cancelOrder'), error.message); return; }
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 export async function handOff(id: string) {
   const error = await confirmHandoff('vendor', id);
   if (error) { showAlert(tr('vendor.err.handoff'), error); return; }
-  if (vendorProfile) await fetchOrders(vendorProfile.id);
-  emit();
+  await refreshOrders();
 }
 
 // No order_items column backs a per-item prep checklist in the current schema
@@ -403,7 +407,7 @@ export async function addMenuItem(input: NewMenuItemInput): Promise<boolean> {
   const { data, error } = await supabase
     .from('menu_items')
     .insert({ ...input, vendor_id: vendorProfile.id })
-    .select('id,vendor_id,name,name_th,description,price,category,spice_level,is_available,is_halal,allergens,image_url,preparation_time_min')
+    .select(MENU_SELECT)
     .single();
   if (error || !data) {
     showAlert(tr('vendor.err.saveItem'), error?.message ?? tr('vendor.err.tryAgain'));
@@ -511,7 +515,7 @@ type VendorPayment = {
   status: 'COMPLETED';
 };
 
-export function paymentsFromOrders(all: VendorOrder[]): VendorPayment[] {
+export function paymentsFromOrders(all: VendorOrder[], vendorName?: string | null): VendorPayment[] {
   // Escrow is held on accept, but only lands in the vendor's wallet once
   // both sides confirm handoff (finalize_order_handoff) — only 'completed'
   // orders are real, received revenue.
@@ -519,7 +523,7 @@ export function paymentsFromOrders(all: VendorOrder[]): VendorPayment[] {
     .filter(o => isEarned(o.status))
     .map(o => ({
       order_id: o.id,
-      display_id: `#${o.queue_number ?? o.id.slice(0, 8).toUpperCase()}`,
+      display_id: o.queue_number != null ? queueTicket(o.queue_number, vendorName) : `#${o.id.slice(0, 8).toUpperCase()}`,
       created_at: o.created_at,
       amount: o.total_amount,
       method: o.payment_method,
@@ -533,5 +537,6 @@ export function paymentsFromOrders(all: VendorOrder[]): VendorPayment[] {
  * else happened to re-render it. */
 export function useVendorPayments(): VendorPayment[] {
   const all = useVendorOrders();
-  return useMemo(() => paymentsFromOrders(all), [all]);
+  const name = useVendorProfile()?.name;
+  return useMemo(() => paymentsFromOrders(all, name), [all, name]);
 }

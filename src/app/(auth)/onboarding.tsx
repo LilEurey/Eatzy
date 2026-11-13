@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { listEnter } from '@/lib/motion';
 import { Tap } from '@/components/Tap';
 import Slider from '@react-native-community/slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +9,8 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert, errorMessage } from '@/lib/alert';
+import { toggled } from '@/lib/toggle-set';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { getTopMenuCategories } from '@/lib/menu-categories';
 import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
@@ -46,7 +50,8 @@ export default function OnboardingScreen() {
   async function loadSavedPreferences() {
     void getTopMenuCategories().then(setCategoryOptions).catch(() => {});
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
 
     const { data, error } = await supabase
@@ -84,33 +89,22 @@ export default function OnboardingScreen() {
   useEffect(() => { void loadPreferences(); }, []);
 
   function toggleDietary(item: Dietary) {
-    setDietary(prev => {
-      const next = new Set(prev);
-      if (next.has(item)) next.delete(item); else next.add(item);
-      return next;
-    });
+    setDietary(prev => toggled(prev, item));
   }
 
   function toggleAllergy(item: Allergy) {
-    setAllergies(prev => {
-      const next = new Set(prev);
-      if (next.has(item)) next.delete(item); else next.add(item);
-      return next;
-    });
+    setAllergies(prev => toggled(prev, item));
   }
 
   function toggleCategory(item: string) {
-    setFavoriteCategories(prev => {
-      const next = new Set(prev);
-      if (next.has(item)) next.delete(item); else next.add(item);
-      return next;
-    });
+    setFavoriteCategories(prev => toggled(prev, item));
   }
 
   async function handleSkip() {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error('Not authenticated');
       const { error } = await supabase.from('user_preferences').upsert({ user_id: user.id });
       if (error) throw error;
@@ -126,7 +120,8 @@ export default function OnboardingScreen() {
   async function handleContinue() {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase.from('user_preferences').upsert({
@@ -180,15 +175,15 @@ export default function OnboardingScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
-        <View style={{ marginTop: 20, marginBottom: 36 }}>
-          <Text style={{ fontSize: 28, fontWeight: '800', color: Brand.textPrimary }}>
+        <Animated.View entering={listEnter(0)} style={{ marginTop: 20, marginBottom: 36 }}>
+          <Text style={{ fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: Brand.textPrimary }}>
             {t('onboarding.title')}
           </Text>
           <Text style={{ fontSize: 22 }}>🥗</Text>
           <Text style={{ color: Brand.textSecondary, fontSize: 15, marginTop: 8, lineHeight: 22 }}>
             {t('onboarding.subtitle')}
           </Text>
-        </View>
+        </Animated.View>
 
         {loadError && (
           <View style={{
@@ -207,7 +202,7 @@ export default function OnboardingScreen() {
         )}
 
         {/* Dietary Preferences */}
-        <View style={{ marginBottom: 32 }}>
+        <Animated.View entering={listEnter(1)} style={{ marginBottom: 32 }}>
           <Text
             style={{
               fontSize: 11,
@@ -254,10 +249,10 @@ export default function OnboardingScreen() {
               );
             })}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Allergies */}
-        <View style={{ marginBottom: 32 }}>
+        <Animated.View entering={listEnter(2)} style={{ marginBottom: 32 }}>
           <Text
             style={{
               fontSize: 11,
@@ -288,7 +283,12 @@ export default function OnboardingScreen() {
                     gap: 5,
                   }}
                 >
-                  {selected && <Text style={{ fontSize: 12 }}>🚫</Text>}
+                  {selected && (
+                    <Svg width={12} height={12} viewBox="0 0 512 512">
+                      <Circle cx={256} cy={256} r={218} stroke="#ED1C24" strokeWidth={40} fill="none" />
+                      <Path d="M102 410L410 102" stroke="#ED1C24" strokeWidth={40} />
+                    </Svg>
+                  )}
                   <Text
                     style={{
                       color: selected ? '#E04040' : Brand.textPrimary,
@@ -302,13 +302,13 @@ export default function OnboardingScreen() {
               );
             })}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Favorite Categories — feeds the personalized "Recommended For
             You" ranking (cold-started from this until real order history
             exists); only shown once the catalog has loaded some options */}
         {categoryOptions.length > 0 && (
-          <View style={{ marginBottom: 32 }}>
+          <Animated.View entering={listEnter(3)} style={{ marginBottom: 32 }}>
             <Text
               style={{
                 fontSize: 11,
@@ -347,11 +347,11 @@ export default function OnboardingScreen() {
                 );
               })}
             </View>
-          </View>
+          </Animated.View>
         )}
 
         {/* Budget */}
-        <View>
+        <Animated.View entering={listEnter(4)}>
           <View
             style={{
               flexDirection: 'row',
@@ -370,7 +370,7 @@ export default function OnboardingScreen() {
             >
               {t('onboarding.budget')}
             </Text>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.orange }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.orange, fontVariant: ['tabular-nums'] }}>
               ฿{budget >= 150 ? '150+' : budget}
             </Text>
           </View>
@@ -409,7 +409,7 @@ export default function OnboardingScreen() {
               </Text>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Sticky Continue button */}

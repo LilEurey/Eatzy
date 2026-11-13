@@ -6,8 +6,8 @@ export const en = {
   'common.cancel': 'Cancel',
   'common.halal': 'Halal',
   'common.halalCertified': 'Halal ✓',
-  'common.vegetarian': 'Vegetarian 🌿',
-  'common.jay': 'Jay 🌿',
+  'common.vegetarian': 'Vegetarian',
+  'common.jay': 'Jay',
   'common.noQueue': 'No Queue',
   'common.moderateQueue': 'Moderate Queue',
   'common.moderate': 'Moderate',
@@ -40,6 +40,9 @@ export const en = {
   'auth.continueWithGoogle': 'Continue with Google',
   'auth.signingIn': 'Signing in…',
   'auth.signInFailedTitle': 'Sign in failed',
+  'auth.notAdminMsg': 'This account is not registered as an admin.',
+  'auth.notVendorMsg': 'This account is not registered as a vendor.',
+  'auth.adminLoginCta': 'Admin login',
   'auth.vendorLoginCta': 'Vendor login',
 
   // Onboarding
@@ -121,8 +124,9 @@ export const en = {
   'orders.status.ready': 'Ready!',
   'orders.status.completed': 'Completed',
   'orders.status.cancelled': 'Cancelled',
-  'orders.queueLine': 'Queue #{n} · {time}',
+  'orders.queueLine': 'Queue {n} · {time}',
   'orders.readyForPickup': '🎉 Ready for Pickup!',
+  'orders.viewDetails': 'View Details',
   'orders.trackOrder': 'Track Order',
   'orders.rateOrder': 'Rate order',
   'orders.noOrdersTitle': 'No orders yet',
@@ -137,7 +141,7 @@ export const en = {
   'wallet.escrow': 'Held · ฿{amount}',
   'wallet.escrowTitle': 'Held in escrow',
   'wallet.escrowEmpty': 'No active orders — nothing is held.',
-  'wallet.escrowQueue': 'Queue #{n}',
+  'wallet.escrowQueue': 'Queue {n}',
   'wallet.statement': 'Statement',
   'wallet.statementIn': 'Money in',
   'wallet.statementOut': 'Money out',
@@ -160,6 +164,7 @@ export const en = {
   'wallet.txn.refund': 'Escrow refunded — order cancelled/rejected',
 
   // Cart
+  'store.basket': 'Basket • {n} items',
   'cart.title': 'Your Cart',
   'cart.empty': 'Cart is empty',
   'cart.addSomething': 'Add something delicious',
@@ -194,6 +199,8 @@ export const en = {
   'search.resultsCount': '{n} dishes found',
   'search.noResults': 'No dishes match your search.\nTry a different name or filter.',
   'search.containsAllergen': '⚠️ Allergen',
+  'search.food': 'Food',
+  'search.drinks': 'Drinks',
 
   // Stores
   'stores.title': 'Stores',
@@ -217,9 +224,6 @@ export const en = {
   'item.allergyWarningTitle': '⚠️ Allergy Warning',
   'item.allergyWarningMsg': 'This dish contains {allergens}, which you\'ve marked as an allergy. Add it to your cart anyway?',
   'item.addAnyway': 'Add Anyway',
-  'item.vendorMismatchTitle': 'Start a new cart?',
-  'item.vendorMismatchMsg': 'Adding this item will clear your current cart from another store. Continue?',
-  'item.vendorMismatchConfirm': 'Clear Cart & Add',
   'item.similarFoods': 'Similar Foods',
   'item.noteToVendor': 'Note for the kitchen',
   'item.noteToVendorPlaceholder': 'e.g. no chili, no peanuts, extra rice',
@@ -243,12 +247,13 @@ export const en = {
   'store.hours': 'Hours',
   'store.menu': 'Menu',
   'store.all': 'All',
-  'store.veg': 'Veg 🌿',
+  'store.veg': 'Veg',
   'store.soldOut': 'Sold out',
   'store.noItemsInCategory': 'No items in this category',
   'store.allMenusTab': 'All Menus',
   'store.reviewsTab': 'Review',
   'store.whereToFind': 'Where to find it',
+  'store.openInMaps': 'Open in Maps',
   'store.stall': 'Stall {n}',
 
   // Community reviews (store Review tab + item detail)
@@ -261,15 +266,20 @@ export const en = {
   'track.queueNumber': 'QUEUE NUMBER',
   'track.ordersAhead': '{n} ahead of you in the queue',
   'track.order': 'ORDER',
-  'track.pickedItUp': 'I’ve picked it up',
-  'track.waitingOnVendorConfirm': 'Confirmed! Waiting for the vendor to confirm hand-off.',
+  'track.pickedItUp': 'Order collected',
   'track.rateYourOrder': 'Rate your order',
   'track.stepPlacedLabel': 'Order placed',
   'track.stepPlacedHint': 'Waiting for the vendor to accept',
   'track.stepPreparingHint': 'Your food is being cooked',
+  'track.stepReadyLabel': 'Ready — pick it up now!',
   'track.stepReadyHint': 'Come pick it up at the stall',
   'track.stepPickedUpLabel': 'Picked up',
   'track.stepPickedUpHint': 'Enjoy your meal!',
+  'track.orderAgain': 'Order again',
+  'track.orderAgainSkipped': 'Some items or add-ons are no longer available and were left out.',
+  'track.orderAgainNone': 'None of these items are available right now.',
+  'track.orderAgainReplaceCart': "Your cart will be replaced with this order. Continue?",
+  'common.loadFailed': "Couldn't load this page. Pull to refresh or try again.",
   'track.cancelOrder': 'Cancel Order',
   'track.cancelConfirmTitle': 'Cancel this order?',
   'track.cancelConfirmMsg': "You haven't been charged yet — cancelling now is free.",
@@ -284,6 +294,7 @@ export const en = {
   'rate.addPhotos': 'ADD FOOD PHOTOS',
   'rate.addPhotosHint': 'Add',
   'rate.submit': 'Submit Rating',
+  'rate.alreadyRated': 'You already rated this order.',
   'rate.thanksTitle': 'Thanks for the feedback!',
   'rate.thanksMsg': 'You rated {vendor} {score}★.',
   'rate.labelBad': 'Bad',
@@ -340,7 +351,7 @@ export const en = {
   'editPreferences.saving': 'Saving…',
   'editPreferences.savedTitle': 'Preferences updated',
   'editPreferences.savedMsg': 'Your dietary preferences have been saved.',
-  'profile.logout': '→ Logout',
+  'profile.logout': 'Log Out',
   'profile.languagePickerTitle': 'Choose language',
   'profile.avatarPermissionMsg': 'Allow photo library access to set a profile picture.',
   'profile.avatarUploadErrorTitle': 'Couldn’t update profile picture',
@@ -349,24 +360,24 @@ export const en = {
   'notifications.title': 'Notifications',
   'notifications.empty': 'No notifications yet',
   'notif.orderAccepted.title': 'Order accepted!',
-  'notif.orderAccepted.body': '{vendor} is preparing your order · Queue #{queue}',
+  'notif.orderAccepted.body': 'Queue {queue} · {vendor} is preparing your order',
   'notif.orderReady.title': 'Order ready for pickup!',
-  'notif.orderReady.body': '{vendor} · Queue #{queue}',
+  'notif.orderReady.body': 'Queue {queue} · {vendor}',
   'track.rejectedMsg': '{vendor} couldn’t accept this order.',
   'track.cancelledMsg': 'This order was cancelled.',
   'track.terminalNoCharge': 'Nothing was charged to your wallet.',
   'track.terminalRefund': 'Your payment is being returned to your wallet.',
   'notif.orderRejected.title': 'Order rejected',
-  'notif.orderRejected.body': "{vendor} couldn't accept your order.",
+  'notif.orderRejected.body': "Queue {queue} · {vendor} couldn't accept your order",
   'notif.orderRefunded.title': 'Order cancelled',
-  'notif.orderRefunded.body': "{vendor} cancelled your order — you've been refunded.",
+  'notif.orderRefunded.body': "Queue {queue} · {vendor} cancelled your order — you've been refunded",
   'notif.orderCompleted.title': 'Order picked up',
-  'notif.orderCompleted.body': 'Enjoy your meal from {vendor}!',
+  'notif.orderCompleted.body': 'Queue {queue} · Enjoy your meal from {vendor}!',
   'notif.vendorNewOrder.title': 'New order!',
-  'notif.vendorNewOrder.body': 'Queue #{queue} · ฿{amount}',
+  'notif.vendorNewOrder.body': 'Queue {queue} · ฿{amount}',
 
   // Vendor — login
-  'vendor.login.brand': 'Eatzy',
+  'vendor.login.brand': 'For Stall Owners',
   'vendor.login.heading': 'Vendor Portal',
   'vendor.login.subtitle': 'Sign in to manage your stall operations.',
   'vendor.login.emailLabel': 'Email Address',
@@ -580,6 +591,8 @@ export const en = {
 
   // Vendor — finance / analytics
   'vendor.finance.title': 'Finance',
+  'vendor.finance.revenueChart': 'Revenue',
+  'vendor.finance.days': '{n}D',
   'vendor.finance.totalRevenueToday': 'TOTAL REVENUE (TODAY)',
   'vendor.finance.amountPayment': 'PAYMENTS TODAY',
   'vendor.finance.availableToWithdraw': 'AVAILABLE TO WITHDRAW',
@@ -613,6 +626,8 @@ export const en = {
   'vendor.profile.cuisineTagsPlaceholder': 'e.g. Thai, Rice Dishes, Curry',
   'vendor.profile.cuisineTagsHint': 'Separate tags with commas',
   'vendor.profile.halalCertifiedLabel': 'Halal Certified',
+  'vendor.profile.notificationsLabel': 'New order notifications',
+  'vendor.profile.notificationsHint': 'Push and in-app alerts when a student places an order.',
   'vendor.profile.openTimeLabel': 'Open Time',
   'vendor.profile.closeTimeLabel': 'Close Time',
   'vendor.profile.timeNotSet': 'Not set',
@@ -640,7 +655,7 @@ export const en = {
   'vendor.location.webOnly': 'Open this screen on the Eatzy app to set your store location.',
 
   // Admin — login
-  'admin.login.brand': 'Eatzy',
+  'admin.login.brand': 'Staff Only',
   'admin.login.heading': 'Admin Portal',
   'admin.login.subtitle': 'Sign in to manage vendor stores.',
   'admin.login.emailLabel': 'Email Address',
@@ -660,7 +675,7 @@ export const en = {
   'admin.newVendor.emailLabel': 'Store Email',
   'admin.newVendor.emailPlaceholder': 'somtamcorner@eatzy.app',
   'admin.newVendor.passwordLabel': 'Password',
-  'admin.newVendor.passwordPlaceholder': 'At least 6 characters',
+  'admin.newVendor.passwordPlaceholder': 'At least 10 characters',
   'admin.newVendor.businessNameLabel': 'Business Name',
   'admin.newVendor.businessNamePlaceholder': 'e.g. Som Tam Corner',
   'admin.newVendor.cuisineTagsLabel': 'What Do They Sell?',
@@ -675,6 +690,34 @@ export const en = {
   'admin.newVendor.errorTitle': 'Could not create store account',
 
   'admin.nav.vendors': 'Vendors',
+
+  'admin.nav.dashboard': 'Dashboard',
+
+  'admin.dashboard.title': 'Overview',
+
+  'admin.dashboard.subtitle': 'Who is using Eatzy and what is happening today.',
+
+  'admin.dashboard.activeNow': 'Active now (15 min)',
+
+  'admin.dashboard.activeToday': 'Active today',
+
+  'admin.dashboard.active7d': 'Active this week',
+
+  'admin.dashboard.students': 'Students',
+
+  'admin.dashboard.vendors': 'Vendor accounts',
+
+  'admin.dashboard.newThisWeek': 'New sign-ups (7 days)',
+
+  'admin.dashboard.ordersToday': 'Orders today',
+
+  'admin.dashboard.revenueToday': 'Sales today',
+
+  'admin.dashboard.openStalls': 'Stalls open',
+
+  'admin.dashboard.recentActive': 'Recently active (24 h)',
+
+  'admin.dashboard.noneActive': 'No activity in the last 24 hours.',
   'admin.vendors.title': 'Vendor Stores',
   'admin.vendors.subtitle': 'Monitor every stall and force it open or closed.',
   'admin.vendors.empty': 'No vendor stores yet.',

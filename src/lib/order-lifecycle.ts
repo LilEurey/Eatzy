@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { invokeEdgeFunction } from '@/lib/edge-function';
 import { showAlert } from '@/lib/alert';
+import type { TranslationKey } from '@/lib/i18n';
 
 // One place for what an order's status *means* and how it moves. The SQL
 // transition guard (20260910000000_order_status_transition_guard.sql) is the
@@ -8,6 +9,16 @@ import { showAlert } from '@/lib/alert';
 // screens stop re-deriving "active" / "earned" / race-loss handling by hand.
 
 export type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'ready' | 'completed' | 'cancelled';
+
+/** Student-facing label for each status ('accepted' reads as "Preparing"). */
+export const ORDER_STATUS_LABEL: Record<OrderStatus, TranslationKey> = {
+  pending: 'orders.status.pending',
+  accepted: 'orders.status.preparing',
+  ready: 'orders.status.ready',
+  completed: 'orders.status.completed',
+  rejected: 'orders.status.rejected',
+  cancelled: 'orders.status.cancelled',
+};
 
 /** Student "Active" tab: the order still needs something to happen. */
 export const isActiveForStudent = (s: OrderStatus) => s === 'pending' || s === 'accepted' || s === 'ready';

@@ -5,6 +5,6 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    ignores: ["dist/*", "src/dynamic-island/*"], // vendored rit3zh/expo-dynamic-notifications
   }
 ]);

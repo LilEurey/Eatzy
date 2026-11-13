@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Brand } from '@/constants/theme';
 import { showAlert, errorMessage } from '@/lib/alert';
+import { toggled } from '@/lib/toggle-set';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { useI18n, type TranslationKey } from '@/lib/i18n';
 import { getTopMenuCategories } from '@/lib/menu-categories';
 import { ALLERGY_OPTIONS, ALLERGY_LABELS, ALLERGY_VALUES, type Allergy } from '@/lib/allergy-options';
@@ -95,27 +97,15 @@ export default function EditPreferencesScreen() {
   useEffect(() => { void load(); }, [load]);
 
   function toggleDietary(item: Dietary) {
-    setDietary(prev => {
-      const next = new Set(prev);
-      if (next.has(item)) next.delete(item); else next.add(item);
-      return next;
-    });
+    setDietary(prev => toggled(prev, item));
   }
 
   function toggleAllergy(item: Allergy) {
-    setAllergies(prev => {
-      const next = new Set(prev);
-      if (next.has(item)) next.delete(item); else next.add(item);
-      return next;
-    });
+    setAllergies(prev => toggled(prev, item));
   }
 
   function toggleCategory(item: string) {
-    setFavoriteCategories(prev => {
-      const next = new Set(prev);
-      if (next.has(item)) next.delete(item); else next.add(item);
-      return next;
-    });
+    setFavoriteCategories(prev => toggled(prev, item));
   }
 
   async function handleSave() {
@@ -165,7 +155,7 @@ export default function EditPreferencesScreen() {
         <Tap onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={Brand.textPrimary} />
         </Tap>
-        <Text style={{ fontSize: 20, fontWeight: '800', color: Brand.textPrimary, flex: 1 }}>
+        <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.2, color: Brand.textPrimary, flex: 1 }}>
           {t('profile.accountDetails')}
         </Text>
       </View>
@@ -269,7 +259,12 @@ export default function EditPreferencesScreen() {
                     flexDirection: 'row', alignItems: 'center', gap: 5,
                   }}
                 >
-                  {selected && <Text style={{ fontSize: 12 }}>🚫</Text>}
+                  {selected && (
+                    <Svg width={12} height={12} viewBox="0 0 512 512">
+                      <Circle cx={256} cy={256} r={218} stroke="#ED1C24" strokeWidth={40} fill="none" />
+                      <Path d="M102 410L410 102" stroke="#ED1C24" strokeWidth={40} />
+                    </Svg>
+                  )}
                   <Text style={{ color: selected ? '#E04040' : Brand.textPrimary, fontWeight: '600', fontSize: 15 }}>
                     {t(ALLERGY_LABELS[item])}
                   </Text>
@@ -323,7 +318,7 @@ export default function EditPreferencesScreen() {
             <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1.2, color: Brand.textSecondary }}>
               {t('onboarding.budget')}
             </Text>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: Brand.orange }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.orange, fontVariant: ['tabular-nums'] }}>
               ฿{budget >= 150 ? '150+' : budget}
             </Text>
           </View>

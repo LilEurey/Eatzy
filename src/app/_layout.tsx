@@ -6,8 +6,12 @@ import { StripeProvider } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { loadUserRole } from '@/lib/user-role';
 import { showAlert, showConfirm } from '@/lib/alert';
-import { I18nProvider } from '@/lib/i18n';
+import { I18nProvider, translateActive } from '@/lib/i18n';
+import { openLaunchNotification, registerForPush } from '@/lib/push';
 import type { Session } from '@supabase/supabase-js';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { DynamicNotifications } from '@/dynamic-island/components';
+import { NotificationIsland } from '@/components/NotificationIsland';
 
 // PaymentSheet needs this native module, which Expo Go doesn't ship — same
 // dev-build requirement as react-native-maps. Falls back to an empty key so
@@ -77,7 +81,12 @@ export default function RootLayout() {
       );
     };
 
-    const { role, error: roleError } = await loadUserRole(userId);
+    // Fetched together: sequential reads doubled the post-login wait. The
+    // prefs read is wasted for vendors/admins but cheap.
+    const [{ role, error: roleError }, { data, error: prefsError }] = await Promise.all([
+      loadUserRole(userId),
+      supabase.from('user_preferences').select('user_id').eq('user_id', userId).maybeSingle(),
+    ]);
     if (roleError) { retryLater(); return; }
 
     // admin-login.tsx and vendor-login.tsx defer entirely to this function
@@ -88,36 +97,33 @@ export default function RootLayout() {
     // screen's own check and this listener redirected the same sign-in.
     if (originPath === '/admin-login' && role !== 'admin') {
       await supabase.auth.signOut();
-      showAlert('Sign in failed', 'This account is not registered as an admin.');
+      showAlert(translateActive('auth.signInFailedTitle'), translateActive('auth.notAdminMsg'));
       return;
     }
     if (originPath === '/vendor-login' && role !== 'vendor') {
       await supabase.auth.signOut();
-      showAlert('Sign in failed', 'This account is not registered as a vendor.');
+      showAlert(translateActive('auth.signInFailedTitle'), translateActive('auth.notVendorMsg'));
       return;
     }
 
     if (role === 'vendor') {
       router.replace('/(vendor)/overview');
+      void openLaunchNotification(userId);
       return;
     }
 
     if (role === 'admin') {
-      router.replace('/(admin)/new-vendor');
+      router.replace('/(admin)/dashboard');
       return;
     }
 
-    const { data, error: prefsError } = await supabase
-      .from('user_preferences')
-      .select('user_id')
-      .eq('user_id', userId)
-      .maybeSingle();
     if (prefsError) { retryLater(); return; }
 
     if (!data) {
       router.replace('/(auth)/onboarding');
     } else {
       router.replace('/(tabs)');
+      void openLaunchNotification(userId);
     }
   }
 
@@ -137,6 +143,7 @@ export default function RootLayout() {
     } else {
       if (session.user.id === routedUserId.current) return; // token refresh, not a new sign-in
       routedUserId.current = session.user.id;
+      void registerForPush();
       routeAfterAuth(session.user.id, currentPath);
     }
     // pathname deliberately excluded: this only needs pathname's value at
@@ -154,8 +161,23 @@ export default function RootLayout() {
   return (
     <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="eatzy" merchantIdentifier="merchant.com.anonymous.eatzy">
       <I18nProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }} />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <DynamicNotifications duration={4000}>
+            <StatusBar style="dark" />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                // Same iOS-style slide + parallax on both platforms, swipe-back from anywhere.
+                animation: 'ios_from_right',
+                fullScreenGestureEnabled: true,
+              }}
+            >
+              <Stack.Screen name="cart" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="search" options={{ animation: 'fade_from_bottom' }} />
+            </Stack>
+            <NotificationIsland userId={session?.user.id} />
+          </DynamicNotifications>
+        </GestureHandlerRootView>
       </I18nProvider>
     </StripeProvider>
   );

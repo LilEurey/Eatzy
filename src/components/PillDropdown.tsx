@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { View, Text, Modal, Pressable, useWindowDimensions, ScrollView } from 'react-native';
 import { Tap } from '@/components/Tap';
+import Animated from 'react-native-reanimated';
+import { dialogIn } from '@/lib/motion';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 
@@ -53,9 +55,11 @@ export function PillDropdown<T extends string>({
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)}>
-          <View
+          <Animated.View
+            entering={dialogIn}
             style={{
               position: 'absolute', top: anchor.y + anchor.height + 4, left: menuLeft,
+              transformOrigin: 'top',
               minWidth: menuWidth, backgroundColor: '#fff', borderRadius: 10,
               borderWidth: 1, borderColor: '#EEF0F5', paddingVertical: 6,
               shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6,
@@ -75,7 +79,7 @@ export function PillDropdown<T extends string>({
                 </Tap>
               ))}
             </ScrollView>
-          </View>
+          </Animated.View>
         </Pressable>
       </Modal>
     </>
