@@ -15,6 +15,7 @@
 import { buildTfidfVectors, cosineSimilarity, fitTfidf, itemDoc, type DocFields } from './tfidf.ts';
 
 export const TOP_K = 5;
+export const SIMILAR_TOP_K = 10;
 
 export type RankableItem = DocFields & {
   id: string;
@@ -67,6 +68,7 @@ function rankAgainst<T extends RankableItem>(
   vectors: Map<string, number>[],
   target: Map<string, number>,
   keep: (item: T, index: number) => boolean,
+  k = TOP_K,
 ): Scored<T>[] {
   return catalog
     .map((item, i) => ({ item, score: cosineSimilarity(target, vectors[i]), i }))
@@ -74,7 +76,7 @@ function rankAgainst<T extends RankableItem>(
     // id breaks score ties, so an unchanged catalog always yields the same
     // top-K regardless of the order the rows arrived in.
     .sort((a, b) => b.score - a.score || a.item.id.localeCompare(b.item.id))
-    .slice(0, TOP_K)
+    .slice(0, k)
     .map(({ item, score }) => ({ item, score }));
 }
 
@@ -108,5 +110,5 @@ export function rankSimilar<T extends RankableItem>(
   if (targetIndex === -1) return null;
   const vectors = buildTfidfVectors(catalog.map(itemDoc));
   return rankAgainst(catalog, vectors, vectors[targetIndex], (item, i) =>
-    i !== targetIndex && passesDiet(item, diet));
+    i !== targetIndex && passesDiet(item, diet), SIMILAR_TOP_K);
 }

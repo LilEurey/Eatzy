@@ -1,4 +1,4 @@
-import { callerDietFrom, rankForPreferences, rankSimilar, TOP_K, type RankableItem } from '../_shared/ranking';
+import { callerDietFrom, rankForPreferences, rankSimilar, SIMILAR_TOP_K, TOP_K, type RankableItem } from '../_shared/ranking';
 
 const item = (id: string, over: Partial<RankableItem> = {}): RankableItem => ({
   id, price: 50, is_halal: false, is_vegetarian: false, is_jay: false,
@@ -79,6 +79,11 @@ describe('rankSimilar', () => {
   it('applies the dietary filter but not the drink or budget filters', () => {
     expect(ids(rankSimilar(CATALOG, 'a', { ...OPEN, is_halal: true })).sort()).toEqual(['b', 'd', 'e']);
     expect(ids(rankSimilar(CATALOG, 'a', OPEN))).toEqual(expect.arrayContaining(['d', 'e'])); // drink and price-100 item still surface
+  });
+
+  it(`returns at most ${SIMILAR_TOP_K}`, () => {
+    const many = Array.from({ length: 15 }, (_, i) => item(`s${i}`, { ingredients: ['rice'] }));
+    expect(rankSimilar(many, 's0', OPEN)).toHaveLength(SIMILAR_TOP_K);
   });
 
   it('is deterministic under input reordering', () => {
