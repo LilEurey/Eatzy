@@ -238,9 +238,8 @@ export default function AddMenuItemScreen() {
 
             {/* Ingredients / tags feed the recommendation ranking directly:
                 itemDoc() in _shared/tfidf.ts builds an item's TF-IDF document
-                from ingredients + tags + category and NOT from its name, so an
-                item saved without these has a document consisting of its
-                category alone — indistinguishable from every other item in
+                from name + ingredients + tags + category, so an item saved
+                without these has a document of just its name and category — indistinguishable from every other item in
                 that category, and effectively absent from Similar Foods and
                 Recommended For You. */}
             <Field label={t('vendor.menuNew.ingredientsLabel')} value={ingredients} onChangeText={setIngredients} placeholder={t('vendor.menuNew.ingredientsPlaceholder')} />

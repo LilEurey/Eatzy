@@ -1,7 +1,7 @@
 """Eatzy recommendation pipeline — capstone demo scale.
 
 Implements the CLAUDE.md User Vector approach:
-  1. Food Vectors : TF-IDF over each item's ingredients + tags + category
+  1. Food Vectors : TF-IDF over each item's name + ingredients + tags + category
   2. User Vector  : quantity-weighted mean of the food vectors the user ordered
   3. Score        : cosine similarity between User Vector and every Food Vector
   4. Rank & filter: drop allergens / dietary conflicts / over-budget, take top-N
@@ -99,9 +99,10 @@ def load_data():
 # ── 2. Food Vectors (TF-IDF) ─────────────────────────────────────────────────
 
 def build_food_vectors(items: pd.DataFrame):
-    """One text document per item: ingredients + tags + category."""
+    """One text document per item: name + ingredients + tags + category."""
     docs = (
-        items["ingredients"].str.replace("|", " ", regex=False)
+        items["name"].fillna("")
+        + " " + items["ingredients"].str.replace("|", " ", regex=False)
         + " " + items["tags"].str.replace("|", " ", regex=False)
         + " " + items["category"]
     )

@@ -8,14 +8,16 @@
 
 /** The item fields that feed the TF-IDF document — ingredients + tags + category. */
 export type DocFields = {
+  name: string | null;
   ingredients: string[] | null;
   tags: string[] | null;
   category: string | null;
 };
 
-/** One text document per item: ingredients + tags + category, lowercased. */
+/** One text document per item: name + ingredients + tags + category, lowercased. */
 export function itemDoc(item: DocFields): string {
-  return [...(item.ingredients ?? []), ...(item.tags ?? []), item.category ?? '']
+  return [item.name, ...(item.ingredients ?? []), ...(item.tags ?? []), item.category]
+    .filter(Boolean)
     .join(' ')
     .toLowerCase();
 }
