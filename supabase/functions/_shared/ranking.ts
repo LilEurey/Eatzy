@@ -15,7 +15,9 @@
 import { buildTfidfVectors, cosineSimilarity, fitTfidf, itemDoc, type DocFields } from './tfidf.ts';
 
 export const TOP_K = 5;
-export const SIMILAR_TOP_K = 10;
+export const SIMILAR_TOP_K = 20;
+// Below this cosine two dishes share only a generic word like "rice" or "beverages".
+export const SIMILAR_MIN_SCORE = 0.3;
 
 export type RankableItem = DocFields & {
   id: string;
@@ -110,5 +112,6 @@ export function rankSimilar<T extends RankableItem>(
   if (targetIndex === -1) return null;
   const vectors = buildTfidfVectors(catalog.map(itemDoc));
   return rankAgainst(catalog, vectors, vectors[targetIndex], (item, i) =>
-    i !== targetIndex && passesDiet(item, diet), SIMILAR_TOP_K);
+    i !== targetIndex && passesDiet(item, diet), SIMILAR_TOP_K)
+    .filter(({ score }) => score >= SIMILAR_MIN_SCORE);
 }
