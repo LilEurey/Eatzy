@@ -418,6 +418,22 @@ export async function addMenuItem(input: NewMenuItemInput): Promise<boolean> {
   return true;
 }
 
+export async function updateMenuItem(itemId: string, input: NewMenuItemInput): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('menu_items')
+    .update(input)
+    .eq('id', itemId)
+    .select(MENU_SELECT)
+    .single();
+  if (error || !data) {
+    showAlert(tr('vendor.err.saveItem'), error?.message ?? tr('vendor.err.tryAgain'));
+    return false;
+  }
+  menuItems = menuItems.map(i => (i.id === itemId ? (data as MenuItem) : i));
+  emit();
+  return true;
+}
+
 // order_items.menu_item_id is `on delete restrict` — an item with order
 // history can't be hard-deleted. Caller (menu screen) shows a "disable
 // instead" message on the 23503 foreign-key-violation code.
