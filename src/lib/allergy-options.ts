@@ -3,7 +3,7 @@ import type { TranslationKey } from '@/lib/i18n';
 // Shared by onboarding.tsx and edit-preferences.tsx (previously duplicated in
 // both, which is how the label/value mismatch below went unnoticed in one
 // copy — single source of truth now).
-export const ALLERGY_OPTIONS = ['Peanuts', 'Dairy', 'Gluten', 'Soy', 'Sesame', 'Seafood', 'Beef', 'Egg', 'Other...'] as const;
+export const ALLERGY_OPTIONS = ['Peanuts', 'Dairy', 'Gluten', 'Soy', 'Sesame', 'Seafood', 'Beef', 'Egg'] as const;
 export type Allergy = (typeof ALLERGY_OPTIONS)[number];
 
 export const ALLERGY_LABELS: Record<Allergy, TranslationKey> = {
@@ -15,7 +15,6 @@ export const ALLERGY_LABELS: Record<Allergy, TranslationKey> = {
   Seafood: 'onboarding.allergy.seafood',
   Beef: 'onboarding.allergy.beef',
   Egg: 'onboarding.allergy.egg',
-  'Other...': 'onboarding.allergy.other',
 };
 
 // The string actually stored in user_preferences.allergies and matched
@@ -35,7 +34,6 @@ export const ALLERGY_VALUES: Record<Allergy, string> = {
   Seafood: 'shellfish',
   Beef: 'beef',
   Egg: 'eggs',
-  'Other...': 'other',
 };
 
 // Canonical allergen tags for the vendor side (base dish in menu/new.tsx and
