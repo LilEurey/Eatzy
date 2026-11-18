@@ -87,6 +87,13 @@ export default function VendorMenuScreen() {
                 >
                   <Ionicons name="trash-outline" size={14} color="#D64545" />
                 </Tap>
+                <Tap
+                  onPress={() => router.push(`/(vendor)/menu/${item.id}/edit`)}
+                  accessibilityLabel={t('vendor.menu.edit')}
+                  style={{ position: 'absolute', top: 8, left: 40, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="create-outline" size={14} color={Brand.textPrimary} />
+                </Tap>
               </View>
               <View style={{ padding: 14, gap: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>

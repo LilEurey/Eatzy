@@ -552,6 +552,10 @@ export const en = {
   'vendor.addons.validationMsg': 'Please add a name.',
 
   // Vendor — add new menu item
+  'vendor.menuNew.editTitle': 'Edit Menu Item',
+  'vendor.menuNew.updatedTitle': 'Item updated',
+  'vendor.menuNew.updatedMsg': '{name} was updated.',
+  'vendor.err.loadItem': 'Couldn’t load this item',
   'vendor.menuNew.title': 'Add New Menu Item',
   'vendor.menuNew.backCaption': 'Create a new offering for your catalog.',
   'vendor.menuNew.basicInfo': 'Basic Information',

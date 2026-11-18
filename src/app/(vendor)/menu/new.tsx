@@ -5,11 +5,11 @@ import Animated from 'react-native-reanimated';
 import { dialogIn } from '@/lib/motion';
 import Slider from '@react-native-community/slider';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
-import { addMenuItem } from '@/lib/vendor-store';
+import { addMenuItem, updateMenuItem } from '@/lib/vendor-store';
 import { showAlert } from '@/lib/alert';
 import { toggled } from '@/lib/toggle-set';
 import { useI18n } from '@/lib/i18n';
@@ -34,8 +34,13 @@ function Field({ label, ...inputProps }: { label: string } & React.ComponentProp
   );
 }
 
+// Also mounted at menu/[id]/edit: an `id` param switches this form to edit mode.
 export default function AddMenuItemScreen() {
   const { t } = useI18n();
+  const { id: editId } = useLocalSearchParams<{ id?: string }>();
+  // Save stays disabled until the row loads, so a slow fetch can't blank the dish.
+  const [loaded, setLoaded] = useState(!editId);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [nameTh, setNameTh] = useState('');
   const [description, setDescription] = useState('');
@@ -69,6 +74,40 @@ export default function AddMenuItemScreen() {
   // are never blank while that query is in flight.
   const [categories, setCategories] = useState<string[]>(FALLBACK_CATEGORIES);
   useEffect(() => { void getTopMenuCategories().then(setCategories); }, []);
+
+  useEffect(() => {
+    if (!editId) return;
+    void supabase
+      .from('menu_items')
+      .select('name,name_th,description,price,category,spice_level,preparation_time_min,is_halal,is_vegetarian,is_jay,allergens,ingredients,tags,image_url')
+      .eq('id', editId)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          showAlert(t('vendor.err.loadItem'), error?.message, () => router.back());
+          return;
+        }
+        setName(data.name);
+        setNameTh(data.name_th ?? '');
+        setDescription(data.description ?? '');
+        setPrice(String(data.price));
+        setCategory(data.category ?? '');
+        setSpiceLevel(data.spice_level ?? 0);
+        setPrepTime(String(data.preparation_time_min ?? 0));
+        setIsHalal(!!data.is_halal);
+        setIsVegetarian(!!data.is_vegetarian);
+        setIsJay(!!data.is_jay);
+        const known = new Set<string>(ALLERGEN_VOCAB.map(a => a.key));
+        const saved = data.allergens ?? [];
+        setAllergens(new Set(saved.filter(a => known.has(a))));
+        setOtherAllergen(saved.filter(a => !known.has(a)).join(', '));
+        setIngredients((data.ingredients ?? []).join(', '));
+        setTags((data.tags ?? []).join(', '));
+        setExistingImageUrl(data.image_url);
+        setImageUri(data.image_url);
+        setLoaded(true);
+      });
+  }, [editId, t]);
 
   function toggleAllergen(key: string) {
     setAllergens(prev => toggled(prev, key));
@@ -120,14 +159,14 @@ export default function AddMenuItemScreen() {
     }
 
     setSaving(true);
-    const allergenList = [...allergens, ...(otherAllergen.trim() ? [otherAllergen.trim()] : [])];
+    const allergenList = [...allergens, ...splitList(otherAllergen)];
 
     // Upload before the insert: a device file:// path is unreachable from any
     // other client, so image_url has to be the bucket's public URL or null.
     // A failed upload aborts the save rather than silently dropping the photo
     // — the form keeps its values so the vendor can retry.
-    let imageUrl: string | null = null;
-    if (imageUri) {
+    let imageUrl: string | null = existingImageUrl;
+    if (imageUri && imageUri !== existingImageUrl) {
       try {
         imageUrl = await uploadImage(imageUri);
       } catch (e) {
@@ -137,7 +176,7 @@ export default function AddMenuItemScreen() {
       }
     }
 
-    const ok = await addMenuItem({
+    const input = {
       name: trimmedName,
       name_th: nameTh.trim() || null,
       description: description.trim(),
@@ -154,18 +193,23 @@ export default function AddMenuItemScreen() {
       ingredients: splitList(ingredients),
       tags: splitList(tags),
       image_url: imageUrl,
-    });
+    };
+    const ok = editId ? await updateMenuItem(editId, input) : await addMenuItem(input);
 
     setSaving(false);
     if (ok) {
-      showAlert(t('vendor.menuNew.savedTitle'), t('vendor.menuNew.savedMsg', { name: trimmedName }), () => router.back());
+      showAlert(
+        t(editId ? 'vendor.menuNew.updatedTitle' : 'vendor.menuNew.savedTitle'),
+        t(editId ? 'vendor.menuNew.updatedMsg' : 'vendor.menuNew.savedMsg', { name: trimmedName }),
+        () => router.back(),
+      );
     }
   }
 
   return (
     <View style={{ gap: 20 }}>
       <View>
-        <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary }}>{t('vendor.menuNew.title')}</Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, color: Brand.textPrimary }}>{t(editId ? 'vendor.menuNew.editTitle' : 'vendor.menuNew.title')}</Text>
         <Tap onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
           <Ionicons name="arrow-back" size={14} color="#8A8F9B" />
           <Text style={{ fontSize: 13, color: '#8A8F9B' }}>{t('vendor.menuNew.backCaption')}</Text>
@@ -194,9 +238,8 @@ export default function AddMenuItemScreen() {
 
             {/* Ingredients / tags feed the recommendation ranking directly:
                 itemDoc() in _shared/tfidf.ts builds an item's TF-IDF document
-                from ingredients + tags + category and NOT from its name, so an
-                item saved without these has a document consisting of its
-                category alone — indistinguishable from every other item in
+                from name + ingredients + tags + category, so an item saved
+                without these has a document of just its name and category — indistinguishable from every other item in
                 that category, and effectively absent from Similar Foods and
                 Recommended For You. */}
             <Field label={t('vendor.menuNew.ingredientsLabel')} value={ingredients} onChangeText={setIngredients} placeholder={t('vendor.menuNew.ingredientsPlaceholder')} />
@@ -350,7 +393,7 @@ export default function AddMenuItemScreen() {
         <Tap onPress={() => router.back()} style={{ borderWidth: 1, borderColor: '#E2E4EC', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}>
           <Text style={{ fontSize: 13, fontWeight: '600', color: Brand.textPrimary }}>{t('vendor.menuNew.cancel')}</Text>
         </Tap>
-        <Tap onPress={saveItem} disabled={saving} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11, opacity: saving ? 0.7 : 1 }}>
+        <Tap onPress={saveItem} disabled={saving || !loaded} style={{ backgroundColor: Brand.orange, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11, opacity: saving || !loaded ? 0.7 : 1 }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{saving ? t('vendor.menuNew.saving') : t('vendor.menuNew.saveItem')}</Text>
         </Tap>
       </View>
