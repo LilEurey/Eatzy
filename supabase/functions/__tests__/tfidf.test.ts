@@ -11,15 +11,15 @@ describe('tokenize', () => {
 });
 
 describe('itemDoc', () => {
-  it('joins ingredients + tags + category, lowercased', () => {
+  it('joins name + ingredients + tags + category, lowercased', () => {
     expect(
-      itemDoc({ ingredients: ['Pork', 'Basil'], tags: ['Spicy'], category: 'Rice Dishes' }),
-    ).toBe('pork basil spicy rice dishes');
+      itemDoc({ name: 'Black Coffee', ingredients: ['Pork', 'Basil'], tags: ['Spicy'], category: 'Rice Dishes' }),
+    ).toBe('black coffee pork basil spicy rice dishes');
   });
 
   it('tolerates null array fields', () => {
-    expect(itemDoc({ ingredients: null, tags: null, category: null })).toBe('');
-    expect(itemDoc({ ingredients: ['rice'], tags: null, category: 'Rice' })).toBe('rice rice');
+    expect(itemDoc({ name: null, ingredients: null, tags: null, category: null })).toBe('');
+    expect(itemDoc({ name: '', ingredients: ['rice'], tags: null, category: 'Rice' })).toBe('rice rice');
   });
 });
 

@@ -129,9 +129,7 @@ export default function OnboardingScreen() {
         is_halal: dietary.has('Halal'),
         is_vegetarian: dietary.has('Vegetarian'),
         is_jay: dietary.has('Jay'),
-        allergies: [...allergies]
-          .filter(a => a !== 'Other...')
-          .map(a => ALLERGY_VALUES[a]),
+        allergies: [...allergies].map(a => ALLERGY_VALUES[a]),
         budget_max: budget >= 150 ? null : budget,
         favorite_categories: [...favoriteCategories],
       });

@@ -554,6 +554,10 @@ export const th: Record<TranslationKey, string> = {
   'vendor.addons.validationMsg': 'กรุณากรอกชื่อ',
 
   // Vendor — add new menu item
+  'vendor.menuNew.editTitle': 'แก้ไขเมนู',
+  'vendor.menuNew.updatedTitle': 'บันทึกแล้ว',
+  'vendor.menuNew.updatedMsg': 'อัปเดต {name} แล้ว',
+  'vendor.err.loadItem': 'โหลดเมนูนี้ไม่ได้',
   'vendor.menuNew.title': 'เพิ่มเมนูใหม่',
   'vendor.menuNew.backCaption': 'สร้างรายการใหม่สำหรับร้านของคุณ',
   'vendor.menuNew.basicInfo': 'ข้อมูลพื้นฐาน',

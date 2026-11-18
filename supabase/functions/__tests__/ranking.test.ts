@@ -1,4 +1,4 @@
-import { callerDietFrom, rankForPreferences, rankSimilar, TOP_K, type RankableItem } from '../_shared/ranking';
+import { callerDietFrom, rankForPreferences, rankSimilar, SIMILAR_MIN_SCORE, SIMILAR_TOP_K, TOP_K, type RankableItem } from '../_shared/ranking';
 
 const item = (id: string, over: Partial<RankableItem> = {}): RankableItem => ({
   id, price: 50, is_halal: false, is_vegetarian: false, is_jay: false,
@@ -12,7 +12,7 @@ const CATALOG: RankableItem[] = [
   item('a', { ingredients: ['pork', 'basil', 'rice'] }),
   item('b', { ingredients: ['chicken', 'rice'], is_halal: true }),
   item('c', { ingredients: ['pork', 'noodles'], category: 'Noodles' }),
-  item('d', { ingredients: ['milk', 'tea', 'rice'], category: 'Drinks', is_halal: true }),
+  item('d', { ingredients: ['basil', 'tea', 'rice'], category: 'Drinks', is_halal: true }),
   item('e', { ingredients: ['tofu', 'rice'], is_halal: true, is_vegetarian: true, price: 100 }),
 ];
 
@@ -79,6 +79,16 @@ describe('rankSimilar', () => {
   it('applies the dietary filter but not the drink or budget filters', () => {
     expect(ids(rankSimilar(CATALOG, 'a', { ...OPEN, is_halal: true })).sort()).toEqual(['b', 'd', 'e']);
     expect(ids(rankSimilar(CATALOG, 'a', OPEN))).toEqual(expect.arrayContaining(['d', 'e'])); // drink and price-100 item still surface
+  });
+
+  it(`returns at most ${SIMILAR_TOP_K}`, () => {
+    const many = Array.from({ length: 25 }, (_, i) => item(`s${i}`, { ingredients: ['rice'] }));
+    expect(rankSimilar(many, 's0', OPEN)).toHaveLength(SIMILAR_TOP_K);
+  });
+
+  it(`drops matches scoring below ${SIMILAR_MIN_SCORE}`, () => {
+    const scores = (rankSimilar(CATALOG, 'a', OPEN) ?? []).map(x => x.score);
+    expect(scores.every(s => s >= SIMILAR_MIN_SCORE)).toBe(true);
   });
 
   it('is deterministic under input reordering', () => {
